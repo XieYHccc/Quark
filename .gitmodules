@@ -1,0 +1,12 @@
+[submodule "external/glfw"]
+	path = external/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "external/GLM"]
+	path = external/glm
+	url = git@github.com:g-truc/glm.git
+[submodule "external/assimp"]
+	path = external/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "external/XMath"]
+	path = external/XMath
+	url = https://github.com/XieYHccc/XMath.git

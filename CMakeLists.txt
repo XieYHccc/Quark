@@ -1,23 +1,40 @@
 cmake_minimum_required(VERSION 3.10)
 project(learnOpenGL)
 
-set(CMAKE_CXX_STANDARD 17)               # 设置C++标准为C++17
+set(CMAKE_CXX_STANDARD 20)              
 
-include_directories(/Users/xieyhccc/thirdpartylib/glfw-3.3.8/include)  # 添加glfw的头文件搜索路径
-include_directories(/Users/xieyhccc/thirdpartylib/glad/include)       # 添加glad的头文件搜索路径
-include_directories(/Users/xieyhccc/thirdpartylib/glm/include)        # 添加glm的头文件搜索路径
-include_directories(/Users/xieyhccc/thirdpartylib/assimp/include)     # 添加assimp的头文件搜索路径
+set(GLFW_SOURCE_DIR "external/glfw")
+set(GLAD_SOURCE_DIR "external/glad-4.6")
+set(ASSIMP_SOURCE_DIR "external/assimp")
+set(STB_IMAGE_SOURCE_DIR "external/stb_image-2.28")
+set(STB_IMAGE_WRITE_SOURCE_DIR "external/stb_image_write-1.16")
 
-link_directories(/Users/xieyhccc/thirdpartylib/glfw-3.3.8/lib)        # 添加glfw库文件搜索路径                                               # 链接glfw3库
-link_directories(/Users/xieyhccc/thirdpartylib/assimp/bin)            # 添加assimp库文件的搜索路径
-find_library(COCOA_LIBRARY Cocoa)       # 查找Cocoa框架库
-find_library(OPENGL_LIBRARY OpenGL)     # 查找OpenGL框架库
-find_library(IOKIT_LIBRARY IOKit)       # 查找IOKit框架库
+# Building STB and GLAD lib
+add_subdirectory(${STB_IMAGE_SOURCE_DIR} ${STB_IMAGE_WRITE_SOURCE_DIR})
+add_subdirectory(${GLAD_SOURCE_DIR})
 
-set(SOURCES
-    src/glad.c
-    src/openwindow.cpp
-    src/shader.cpp)                 # 设置源文件路径
+# Building only the Assimp lib
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "")
+set(ASSIMP_INSTALL OFF CACHE BOOL "")
+add_subdirectory(${ASSIMP_SOURCE_DIR})
 
-add_executable(openwindow ${SOURCES})   # 创建可执行文件目标
-target_link_libraries(openwindow glfw3 assimp ${COCOA_LIBRARY} ${OPENGL_LIBRARY} ${IOKIT_LIBRARY})   # 链接框架库
+# Building only the GLFW lib
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "")
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
+set(GLFW_INSTALL OFF CACHE BOOL "")
+add_subdirectory(${GLFW_SOURCE_DIR})
+
+
+# Add include directories
+include_directories(${PROJECT_SOURCE_DIR}/external/GLM)
+include_directories(${PROJECT_SOURCE_DIR}/external/stb_image-2.28)
+include_directories("${PROJECT_SOURCE_DIR}/external/XMath/include")
+include_directories(${PROJECT_SOURCE_DIR}/external/stb_image_write-1.16)
+include_directories("${GLAD_SOURCE_DIR}/include")
+
+find_package(OpenGL REQUIRED)
+
+add_subdirectory(./src)

@@ -1,16 +1,13 @@
-#ifndef MESH_H
-#define MESH_H
-
-#include <glad/glad.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include "shader.h"
+#pragma once
 
 #include <string>
 #include <vector>
-using namespace std;
+
+#include <glad/glad.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "./Visualization/Shader.h"
 
 struct Vertex {
     glm::vec3 Position;
@@ -22,25 +19,20 @@ struct Vertex {
 
 struct Texture {
     unsigned int id;
-    string type;
-    string path;
+    std::string type;
+    std::string path;
 };
 
 class Mesh {
-    public:
-    // ---------------------mesh data-----------------------
-    vector<Vertex> vertices;
-    vector<unsigned int> indices;
-    vector<Texture> textures;
-
+public:
     // -------------------constructors----------------------
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures) {
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures) {
         this->vertices = vertices;
         this->indices = indices;
         this->textures = textures;
 
-        // now that we have all the required data, set the vertex buffers and its attribute pointers.
-        setupMesh();
+    // now that we have all the required data, set the vertex buffers and its attribute pointers.
+    setupMesh();
     };
 
     // -----------------------API---------------------------
@@ -56,16 +48,14 @@ class Mesh {
         {
             glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
             // retrieve texture number (the N in diffuse_textureN)
-            string number;
-            string name = textures[i].type;
-            if(name == "texture_diffuse")
+            std::string number;
+            std::string name = textures[i].type;
+            if(name == "tex_diffuse")
                 number = std::to_string(diffuseNr++);
-            else if(name == "texture_specular")
+            else if(name == "tex_specular")
                 number = std::to_string(specularNr++); // transfer unsigned int to string
-            else if(name == "texture_normal")
+            else if(name == "tex_normal")
                 number = std::to_string(normalNr++); // transfer unsigned int to string
-            else if(name == "texture_height")
-                number = std::to_string(heightNr++); // transfer unsigned int to string
 
             // now set the sampler to the correct texture unit
             shader.setInt(("material." + name + number).c_str(), i);
@@ -83,10 +73,7 @@ class Mesh {
     }
 
 
-    private:
-    // ----------------------render data--------------------
-    unsigned int VAO, VBO, EBO;
-
+private:
     void setupMesh() {
         // set up buffer data
         glGenVertexArrays(1, &VAO);
@@ -118,5 +105,12 @@ class Mesh {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     };
 
+private:
+    // ---------------------mesh data-----------------------
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    std::vector<Texture> textures;
+    // ----------------------render data--------------------
+    unsigned int VAO, VBO, EBO;
+
 };
-#endif
