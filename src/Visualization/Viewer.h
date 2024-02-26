@@ -3,12 +3,13 @@
 #include "Window.h"
 #include "Camera.h"
 #include "Shader.h"
-#include "../Model.h"
+#include "../mesh_renderer.h"
 
 class Viewer final : public Window {
 public:
 	Viewer(const char* title, int width, int height);
-
+	~Viewer();
+	
 private:
 	void render() override;
 	void process_input(GLFWwindow* window) override;
@@ -25,12 +26,7 @@ private:
 	float deltaTime_;
 	float lastFrame_;
 
-
 public:
-	Shader shader_;
-
-	// Scene
-	std::vector<Model*> render_queue;
-	
-
+	// test
+	MeshRenderer renderer;
 };

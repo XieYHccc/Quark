@@ -29,6 +29,8 @@ const float ZOOM        =  45.0f;
 class Camera
 {
 public:
+    static Camera* global_camera;
+public:
     // camera Attributes
     glm::vec3 Position;
     glm::vec3 Front;
@@ -134,4 +136,5 @@ private:
         Right = glm::normalize(glm::cross(Front, WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         Up    = glm::normalize(glm::cross(Right, Front));
     }
+
 };

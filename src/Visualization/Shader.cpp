@@ -1,4 +1,4 @@
-#include "shader.h"
+#include "Shader.h"
 #include <glm/ext/vector_float3.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
