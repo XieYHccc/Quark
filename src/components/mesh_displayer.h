@@ -3,18 +3,17 @@
 #include "component.h"
 
 #include "../mesh_renderer.h"
-
-class MeshDisplayer : Component {
+#include "../material_importer.h"
+class MeshDisplayer : public Component {
 public:
     MeshDisplayer();
 
 public: 
     void render();
+    // void load_material(std::string path) {renderer_.set_material(mtl_importer.load_from_mtl(path)); }
     void set_material(Material* material) { renderer_.set_material(material); }
     void set_shader(Shader* shader) { renderer_.set_shader(shader); }
-    // void set_model_matrix(glm::mat4 model) { renderer_.set_model_matrix(model); };
-    // void set_view_matrix(glm::mat4 view) { renderer_.set_view_matrix(view); };
-    // void set_projection_matrix(glm::mat4 projection) { renderer_.set_projection_matrix(projection); };
 private:
     MeshRenderer renderer_;
+    MaterialImporter mtl_importer;
 };

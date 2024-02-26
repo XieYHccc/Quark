@@ -17,11 +17,12 @@ public:
     std::vector<Component*>& get_components(std::string component_type_name);
     void foreach_component(std::function<void(Component* component)> func);
 
+public:
+    // Store all objects
+    static std::list<Object*> object_list_;
+    
 private:
     std::string name_;
     std::unordered_map<std::string,std::vector<Component*>> component_type_instance_map_;
 
-private:
-    // Store all objects
-    static std::list<Object*> object_list_;
 };

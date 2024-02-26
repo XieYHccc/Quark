@@ -3,8 +3,8 @@
 class Object;
 class Component {
 public:
-    Component();
-    virtual ~Component();
+    Component() {};
+    virtual ~Component() {};
 
 public:
     Object* get_object() { return object_; }

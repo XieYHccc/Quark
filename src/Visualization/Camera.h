@@ -29,7 +29,7 @@ const float ZOOM        =  45.0f;
 class Camera
 {
 public:
-    static Camera* global_camera;
+    static Camera global_camera;
 public:
     // camera Attributes
     glm::vec3 Position;
@@ -44,6 +44,7 @@ public:
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
+    float aspect;
 
     // constructor with vectors
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)

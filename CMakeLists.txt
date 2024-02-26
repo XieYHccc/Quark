@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(learnOpenGL)
 
-set(CMAKE_CXX_STANDARD 20)              
+set(CMAKE_CXX_STANDARD 17)              
 
 set(GLFW_SOURCE_DIR "external/glfw")
 set(GLAD_SOURCE_DIR "external/glad-4.6")
@@ -20,7 +20,7 @@ add_subdirectory(${TINY_OBJ_LOADER_SOURCE_DIR})
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "")
 set(ASSIMP_INSTALL OFF CACHE BOOL "")
-add_subdirectory(${ASSIMP_SOURCE_DIR})
+# add_subdirectory(${ASSIMP_SOURCE_DIR})
 
 # Building only the GLFW lib
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
@@ -31,7 +31,7 @@ set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(${GLFW_SOURCE_DIR})
 
 # Building RTTR lib
-set(BUILD_STATIC ON CACHE BOOL "")
+# set(BUILD_STATIC ON CACHE BOOL "")
 add_subdirectory(${RTTR_SOURCE_DIR})
 
 # Add include directories

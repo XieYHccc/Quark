@@ -13,8 +13,8 @@ public:
 
 public:
     void render();
-    void setup(Mesh* mesh);
-    bool valid() const;
+    bool valid_vao() const;
+    bool ready_to_render() const;
     
     Material* get_material() { return material_; }
     Shader* get_shader() { return shader_; }
@@ -24,6 +24,7 @@ public:
     void set_model_matrix(glm::mat4 model) { model_ = model;};
     void set_view_matrix(glm::mat4 view) { view_ = view;};
     void set_projection_matrix(glm::mat4 projection){ projection_ = projection; };
+    void setup_vao(Mesh* mesh);
 
 private:
     Shader* shader_;

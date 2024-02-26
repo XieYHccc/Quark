@@ -14,13 +14,29 @@ MeshRenderer::MeshRenderer() {
     element_buffer_object_ = 0;
 
 }
-bool MeshRenderer::valid() const {
+bool MeshRenderer::valid_vao() const {
     if (vertex_array_object_ != 0)
         return true;
     else
         return false;
 }
 
+bool MeshRenderer::ready_to_render() const {
+    if (vertex_array_object_ == 0) {
+        std::cerr << "MeshRenderer::ready_to_render()::vao has not been setup." << std::endl;
+        return false;
+    }
+    if (shader_->get_id() == 0) {
+        std::cerr << "MeshRenderer::ready_to_render()::shader has not been setup." << std::endl;
+        return false;
+    }
+    if (material_->textures.empty()) {
+        std::cerr << "MeshRenderer::ready_to_render()::material has not been setup." << std::endl;
+        return false;
+    }
+
+    return true;
+}
 MeshRenderer::~MeshRenderer() {
     // if (shader_ != nullptr) {
     //     delete shader_;
@@ -34,9 +50,7 @@ MeshRenderer::~MeshRenderer() {
 
 void MeshRenderer::render() {
 
-    if (vertex_array_object_ == 0) {
-        std::cerr << "The Vao has not been setup." << std::endl;
-    }
+    if (!ready_to_render()) { return; }
 
     shader_->use();
     // set mvp matrix
@@ -56,12 +70,15 @@ void MeshRenderer::render() {
 
 }
 
-void MeshRenderer::setup(Mesh* mesh) {
+void MeshRenderer::setup_vao(Mesh* mesh) {
     
     num_vertex = mesh->num_vertex;
     num_index = mesh->num_index;
 
     GLuint shader_id = shader_->get_id(); 
+    if (shader_id == 0) {
+        std::cerr << "MeshRenderer::setup_vao::The shader has not been setup.";
+    }
     GLint vpos_location = glGetAttribLocation(shader_id, "aPos");
     GLint vnor_location = glGetAttribLocation(shader_id, "aNormal");
     GLint vuv_location = glGetAttribLocation(shader_id, "aTexCoord");

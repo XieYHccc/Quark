@@ -17,7 +17,6 @@ private:
 
 private:
 	// Camera attributes
-	Camera cam_;
 	float lastX_;
 	float lastY_;
 	bool first_mouse_;
@@ -26,7 +25,4 @@ private:
 	float deltaTime_;
 	float lastFrame_;
 
-public:
-	// test
-	MeshRenderer renderer;
 };

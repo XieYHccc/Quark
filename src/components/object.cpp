@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include <iostream>
 #include <rttr/registration>
 
 #include "component.h"
@@ -34,6 +35,9 @@ Component* Object::add_component(std::string component_type_name) {
     }
 
     component->awake();
+    if (component == nullptr) {
+        std::cout << "f" << std::endl;
+    }
     return component;
 
 }
