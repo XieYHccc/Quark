@@ -1,23 +1,17 @@
-file(GLOB SRCS ./Visualization/*.cpp)
-file(GLOB HDRS ./Visualization/*.h)
+file(GLOB_RECURSE RENDER_SRCS "./render/*.cpp")
+file(GLOB_RECURSE RENDER_HDRS "./render/*.h")
+file(GLOB CORE_HDRS "./core/*.h")
+file(GLOB CORE_SRCS "./core/*.cpp")
 
-add_executable(openwindow ${HDRS} ${SRCS} 
-               mesh_importer.cpp 
-               openwindow.cpp 
-               material_importer.cpp
-               mesh_renderer.cpp
-               texture.cpp
-               ./components/mesh_displayer.cpp
-               ./components/mesh_filter.cpp
-               ./components/object.cpp
-               ./components/transform.cpp
-               )   # 创建可执行文件目标
+add_executable(application ${RENDER_SRCS} ${RENDER_HDRS} ${CORE_HDRS} ${CORE_SRCS}
+               ./app/main.cpp ./app/viewer.cpp ./app/viewer.h
+)
 
-target_link_libraries(openwindow 
+target_link_libraries(application 
                       tiny_obj_loader
                       glad 
                       stb_image 
                       glfw 
                       ${OPENGL_LIBRARIES} 
-                      RTTR::Core)
+                      RTTR::Core_Lib)
 

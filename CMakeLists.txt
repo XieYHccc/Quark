@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
-project(learnOpenGL)
+project(XEngine)
 
 set(CMAKE_CXX_STANDARD 17)              
 
+# set output path
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build )
+
+# set source directory
 set(GLFW_SOURCE_DIR "external/glfw")
 set(GLAD_SOURCE_DIR "external/glad-4.6")
 set(ASSIMP_SOURCE_DIR "external/assimp")
@@ -31,7 +35,13 @@ set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(${GLFW_SOURCE_DIR})
 
 # Building RTTR lib
-# set(BUILD_STATIC ON CACHE BOOL "")
+set(BUILD_RTTR_DYNAMIC OFF CACHE BOOL "")
+set(BUILD_STATIC ON CACHE BOOL "")
+set(BUILD_UNIT_TESTS  OFF CACHE BOOL "")
+set(BUILD_EXAMPLES  OFF CACHE BOOL "")
+set(BUILD_DOCUMENTATION  OFF CACHE BOOL "")
+set(BUILD_INSTALLER  OFF CACHE BOOL "")
+set(BUILD_PACKAGE  OFF CACHE BOOL "")
 add_subdirectory(${RTTR_SOURCE_DIR})
 
 # Add include directories

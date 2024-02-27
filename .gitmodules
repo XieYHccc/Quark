@@ -4,9 +4,6 @@
 [submodule "external/glm"]
 	path = external/glm
 	url = git@github.com:g-truc/glm.git
-[submodule "external/assimp"]
-	path = external/assimp
-	url = https://github.com/assimp/assimp.git
 [submodule "external/rttr"]
 	path = external/rttr
 	url = https://github.com/rttrorg/rttr.git
