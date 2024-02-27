@@ -7,11 +7,9 @@
 
 #include "component.h"
 
-std::list<Object*> Object::object_list_;
-
 Object::Object(std::string name) {
     set_name(name);
-    object_list_.push_back(this);
+    object_list.push_back(this);
 }
 
 Object::~Object() {

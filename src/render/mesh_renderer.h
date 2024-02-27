@@ -12,9 +12,9 @@ public:
     ~MeshRenderer();
 
 public:
+    // shader, material, and VAO are required to render a mesh
     void render();
     bool valid_vao() const;
-    bool ready_to_render() const;
     
     Material* get_material() { return material_; }
     Shader* get_shader() { return shader_; }
@@ -24,7 +24,12 @@ public:
     void set_model_matrix(glm::mat4 model) { model_ = model;};
     void set_view_matrix(glm::mat4 view) { view_ = view;};
     void set_projection_matrix(glm::mat4 projection){ projection_ = projection; };
+    // call this fuonction after setting shader
     void setup_vao(Mesh* mesh);
+
+private:
+    // determine if shader, material and VAO are valid.
+    bool ready_to_render() const;
 
 private:
     Shader* shader_;

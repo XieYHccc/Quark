@@ -49,7 +49,7 @@ void MeshDisplayer::render() {
     glm::mat4 view = camera.GetViewMatrix();
     renderer_.set_view_matrix(view);
     // Calculate projection matrix
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), camera.aspect, 0.1f, 100.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), camera.aspect, 0.1f, 1000.0f);
     renderer_.set_projection_matrix(projection);
     
     renderer_.render();

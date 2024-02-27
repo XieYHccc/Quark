@@ -7,10 +7,12 @@
 #include "../core/object.h"
 #include "../render/components/mesh_displayer.h"
 
-Camera Camera::global_camera = Camera(glm::vec3(0.0f, 5.0f, 10.0f));
+// global variables
+Camera Camera::global_camera = Camera(glm::vec3(0.0f, 20.0f, 30.0f));
+std::list<Object*> Object::object_list;
 
 Viewer::Viewer(const char* title, int width, int height)
-:Window(title, width, height){
+    :Window(title, width, height) {
 
     lastX_ = 0.f;
     lastY_ = 0.f;
@@ -18,8 +20,11 @@ Viewer::Viewer(const char* title, int width, int height)
     float lastFrame = 0.0f;
     first_mouse_ = true;
     Camera::global_camera.aspect = (float)width / height;
-    
+    Camera::global_camera.MovementSpeed = 40;
+    Camera::global_camera.Yaw = -90.f;
+    Camera::global_camera.Pitch = -30.f;
 }
+
 Viewer::~Viewer() {
 
 }
@@ -72,7 +77,7 @@ void Viewer::render() {
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
     model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
     glm::mat4 mvp = projection * view * model;
-    for (auto obj : Object::object_list_) {
+    for (auto obj : Object::object_list) {
         auto component_mesh_displayer = obj->get_component("MeshDisplayer");
         auto mesh_diplayer = dynamic_cast<MeshDisplayer*>(component_mesh_displayer);
         if (mesh_diplayer != nullptr)

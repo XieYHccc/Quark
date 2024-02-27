@@ -23,7 +23,7 @@ public:
 
 public:
     // Store all objects
-    static std::list<Object*> object_list_;
+    static std::list<Object*> object_list;
     
 private:
     std::string name_;
