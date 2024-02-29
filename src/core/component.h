@@ -3,7 +3,7 @@
 class Object;
 class Component {
 public:
-    Component() {};
+    Component() : object_(nullptr) {};
     virtual ~Component() {};
 
 public:

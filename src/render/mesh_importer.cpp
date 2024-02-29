@@ -45,11 +45,11 @@ Mesh* MeshImporter::load_from_obj(const std::string& path) {
                                                idx.normal_index,
                                                idx.texcoord_index };
 
-				// auto target = vertexIndexMap.find(key_idx);
-				// if (target != vertexIndexMap.end()) {
-				// 	face[v] = target->second;
-				// 	continue;
-				// }
+				 auto target = vertexIndexMap.find(key_idx);
+				 if (target != vertexIndexMap.end()) {
+				 	face[v] = target->second;
+				 	continue;
+				 }
 
 				tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
 				tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];

@@ -58,7 +58,7 @@ void MeshRenderer::render() {
     glm::mat4 mvp = projection_ * view_ * model_;
     shader_->setMat4("mvp", mvp);
     // set textures
-    std::vector<std::pair<std::string,Texture*>>& textures = material_->textures;
+    std::vector<std::pair<std::string, Texture*>>& textures = material_->textures;
     for (size_t i = 0; i < textures.size(); ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D,textures[i].second->get_id());
@@ -72,7 +72,7 @@ void MeshRenderer::render() {
 }
 
 void MeshRenderer::setup_vao(Mesh* mesh) {
-    
+
     num_vertex = mesh->num_vertex;
     num_index = mesh->num_index;
 

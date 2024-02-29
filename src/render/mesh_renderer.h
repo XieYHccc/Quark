@@ -21,9 +21,9 @@ public:
 
     void set_material(Material* material) { material_ = material; }
     void set_shader(Shader* shader) { shader_ = shader; }
-    void set_model_matrix(glm::mat4 model) { model_ = model;};
-    void set_view_matrix(glm::mat4 view) { view_ = view;};
-    void set_projection_matrix(glm::mat4 projection){ projection_ = projection; };
+    void set_model_matrix(const glm::mat4& model) { model_ = model;};
+    void set_view_matrix(const glm::mat4& view) { view_ = view;};
+    void set_projection_matrix(const glm::mat4& projection) { projection_ = projection; };
     // call this fuonction after setting shader
     void setup_vao(Mesh* mesh);
 

@@ -5,11 +5,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "../core/object.h"
+#include "../core/transform.h"
 #include "../render/components/mesh_displayer.h"
+#include "../physics/rigid_body_dynamics.h"
 
 // global variables
-Camera Camera::global_camera = Camera(glm::vec3(0.0f, 20.0f, 30.0f));
-std::list<Object*> Object::object_list;
+Camera Camera::global_camera = Camera(glm::vec3(0.0f, 5.0f, 5.0f));
 
 Viewer::Viewer(const char* title, int width, int height)
     :Window(title, width, height) {
@@ -20,7 +21,7 @@ Viewer::Viewer(const char* title, int width, int height)
     float lastFrame = 0.0f;
     first_mouse_ = true;
     Camera::global_camera.aspect = (float)width / height;
-    Camera::global_camera.MovementSpeed = 40;
+    Camera::global_camera.MovementSpeed = 30;
     Camera::global_camera.Yaw = -90.f;
     Camera::global_camera.Pitch = -30.f;
 }
@@ -37,6 +38,30 @@ void Viewer::process_input(GLFWwindow* window) {
         Camera::global_camera.ProcessKeyboard(LEFT, deltaTime_);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         Camera::global_camera.ProcessKeyboard(RIGHT, deltaTime_);
+
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
+        for (auto obj : Object::object_list) {
+            if (obj->get_name() == "bunny") {
+                auto transform = dynamic_cast<Transform*>(obj->get_component("Transform"));
+                auto rigid_body = dynamic_cast<RigidBodyDynamic*>(obj->get_component("RigidBodyDynamic"));
+                transform->set_position(glm::vec3(0.f, 1.f, 0.f));
+                transform->set_rotation(glm::quat(1.f, 0.f, 0.f, 0.f));
+                rigid_body->init();
+            }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+        for (auto obj : Object::object_list) {
+            if (obj->get_name() == "bunny") {
+                auto transform = dynamic_cast<Transform*>(obj->get_component("Transform"));
+                auto rigid_body = dynamic_cast<RigidBodyDynamic*>(obj->get_component("RigidBodyDynamic"));
+                rigid_body->set_velocity(glm::vec3(0.f, 3.f, -5.f));
+                rigid_body->set_lauched(true);
+            }
+        }
+    }
+        
 }
 
 void Viewer::motion(double xposIn, double yposIn) {
@@ -66,24 +91,20 @@ void Viewer::render() {
     deltaTime_ = currentFrame - lastFrame_;
     lastFrame_ = currentFrame;
 
-    glClearColor(0.6f, 0.6f, 1.0f, 1.0f);
+    glClearColor(0.36f, 0.36f, 0.36f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // view/projection transformations
-    glm::mat4 projection = glm::perspective(glm::radians(Camera::global_camera.Zoom), (float)width() / height(), 0.1f, 100.0f);
-    glm::mat4 view = Camera::global_camera.GetViewMatrix();
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
-    glm::mat4 mvp = projection * view * model;
-    for (auto obj : Object::object_list) {
-        auto component_mesh_displayer = obj->get_component("MeshDisplayer");
-        auto mesh_diplayer = dynamic_cast<MeshDisplayer*>(component_mesh_displayer);
-        if (mesh_diplayer != nullptr)
-            mesh_diplayer->render();
-        else
+    for (const auto obj : Object::object_list) {
+        auto mesh_diplayer = dynamic_cast<MeshDisplayer*>(obj->get_component("MeshDisplayer"));
+        auto rigid_body = dynamic_cast<RigidBodyDynamic*>(obj->get_component("RigidBodyDynamic"));
+        if (mesh_diplayer == nullptr)
             continue;
+
+        if (rigid_body != nullptr) {
+            rigid_body->update();
+        }
+
+        mesh_diplayer->render();
     }
 
 }

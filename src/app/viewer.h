@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../render/window.h"
+#include "../core/window.h"
 #include "../render/camera.h"
 #include "../render/shader.h"
 #include "../render/mesh_renderer.h"

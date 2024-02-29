@@ -7,13 +7,20 @@
 
 #include "component.h"
 
+std::list<Object*> Object::object_list;
+
 Object::Object(std::string name) {
     set_name(name);
     object_list.push_back(this);
 }
 
 Object::~Object() {
-
+    foreach_component([](Component* component) {
+        if (component != nullptr) {
+            delete component;
+            component = nullptr;
+        }
+        });
 }
 
 Component* Object::add_component(std::string component_type_name) {
@@ -33,9 +40,7 @@ Component* Object::add_component(std::string component_type_name) {
     }
 
     component->awake();
-    if (component == nullptr) {
-        std::cout << "f" << std::endl;
-    }
+
     return component;
 
 }

@@ -11,5 +11,7 @@ RTTR_REGISTRATION
             .property("scale", &Transform::get_scale, &Transform::set_scale);
 }
 
-Transform::Transform():position_(0.f),rotation_(0.f),scale_(1.f) {
+Transform::Transform():position_(0.f), scale_(1.f) {
+    quaternion_ = glm::quat(1.f, 0.f, 0.f, 0.f);
 }
+

@@ -8,7 +8,8 @@
 class MeshFilter : public Component {
 public:
     MeshFilter();
-    ~MeshFilter() ;
+    ~MeshFilter();
+
 public:
     Mesh* mesh() {return mesh_; }
     void load_mesh(std::string path);
