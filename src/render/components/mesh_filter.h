@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../core/component.h"
+#include "../../basic/component.h"
 
 #include "../mesh.h"
 #include "../mesh_importer.h"

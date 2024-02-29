@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "../core/component.h"
+#include "../basic/component.h"
 
 #include "../geometry/triangle_mesh.h"
 

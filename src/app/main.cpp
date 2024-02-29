@@ -4,8 +4,8 @@
 
 
 #include "./viewer.h"
-#include "../core/transform.h"
-#include "../core/object.h"
+#include "../basic/transform.h"
+#include "../basic/object.h"
 #include "../render/components/mesh_displayer.h"
 #include "../render/components/mesh_filter.h"
 #include "../render/material_importer.h"

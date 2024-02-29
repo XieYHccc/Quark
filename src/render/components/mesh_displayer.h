@@ -2,7 +2,7 @@
 
 #include "../mesh_renderer.h"
 #include "../material_importer.h"
-#include "../../core/component.h"
+#include "../../basic/component.h"
 #include "../../geometry/bounding_box.h"
 class MeshDisplayer : public Component {
 public:

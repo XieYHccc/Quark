@@ -9,8 +9,8 @@
 #include <glm/gtx/transform2.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-#include "../../core/object.h"
-#include "../../core/transform.h"
+#include "../../basic/object.h"
+#include "../../basic/transform.h"
 #include "../camera.h"
 #include "./mesh_filter.h"
 

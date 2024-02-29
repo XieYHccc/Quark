@@ -4,8 +4,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "../core/object.h"
-#include "../core/transform.h"
+#include "../basic/object.h"
+#include "../basic/transform.h"
 #include "../render/components/mesh_displayer.h"
 #include "../physics/rigid_body_dynamics.h"
 

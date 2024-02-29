@@ -4,8 +4,8 @@
 
 #include <rttr/registration.h>
 
-#include "../core/object.h"
-#include "../core/transform.h"
+#include "../basic/object.h"
+#include "../basic/transform.h"
 #include "../render/components/mesh_filter.h"
 
 using namespace rttr;
