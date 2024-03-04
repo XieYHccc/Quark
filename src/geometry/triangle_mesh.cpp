@@ -8,7 +8,7 @@
 #include "../render/mesh.h"
 
 
-TriMesh::TriMesh(Mesh* mesh) {
+TriMesh::TriMesh(std::shared_ptr<Mesh> mesh) {
 	if (mesh == nullptr)
 		return;
 

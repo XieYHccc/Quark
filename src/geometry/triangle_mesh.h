@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include <glm/glm.hpp>
 
@@ -13,7 +14,7 @@ public:
 
 public:
 	TriMesh() = default;
-	TriMesh(Mesh* mesh);
+	TriMesh(std::shared_ptr<Mesh> mesh);
 
 public:
 	void set_positions(const std::vector<glm::vec3>& positions) { positions_ = positions; }

@@ -11,6 +11,7 @@ add_executable(application ${RENDER_SRCS} ${RENDER_HDRS} ${BASIC_HDRS} ${BASIC_S
                ${GEOMETRY_HDRS} ${GEOMETRY_SRCS}
                ${PHYSICS_HDRS} ${PHYSICS_SRCS}
                ./app/main.cpp ./app/viewer.cpp ./app/viewer.h
+               ./app/asset_manager.h ./app/asset_manager.cpp
 )
 
 target_link_libraries(application 

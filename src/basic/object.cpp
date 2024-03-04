@@ -15,12 +15,7 @@ Object::Object(std::string name) {
 }
 
 Object::~Object() {
-    foreach_component([](Component* component) {
-        if (component != nullptr) {
-            delete component;
-            component = nullptr;
-        }
-        });
+
 }
 
 Component* Object::add_component(std::string component_type_name) {

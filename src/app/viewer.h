@@ -12,7 +12,9 @@ public:
 	
 private:
 	void render() override;
+
 	void process_input(GLFWwindow* window) override;
+
 	void motion(double /*xpos*/, double /*ypos*/) override;
 
 private:

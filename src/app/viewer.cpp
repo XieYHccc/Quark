@@ -46,7 +46,7 @@ void Viewer::process_input(GLFWwindow* window) {
                 auto rigid_body = dynamic_cast<RigidBodyDynamic*>(obj->get_component("RigidBodyDynamic"));
                 transform->set_position(glm::vec3(0.f, 1.f, 0.f));
                 transform->set_rotation(glm::quat(1.f, 0.f, 0.f, 0.f));
-                rigid_body->init();
+                rigid_body->init_velocity();
             }
         }
     }
@@ -56,7 +56,7 @@ void Viewer::process_input(GLFWwindow* window) {
             if (obj->get_name() == "bunny") {
                 auto transform = dynamic_cast<Transform*>(obj->get_component("Transform"));
                 auto rigid_body = dynamic_cast<RigidBodyDynamic*>(obj->get_component("RigidBodyDynamic"));
-                rigid_body->set_velocity(glm::vec3(0.f, 3.f, -5.f));
+                rigid_body->init_velocity(glm::vec3(0.f, 3.f, -5.f));
                 rigid_body->set_lauched(true);
             }
         }

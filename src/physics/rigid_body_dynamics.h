@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <glm/glm.hpp>
 
 #include "../basic/component.h"
@@ -12,10 +14,15 @@ public:
 	RigidBodyDynamic();
 
 public:
-	void init();
-	void set_velocity(glm::vec3 v) { v_ = v; }
-	void set_angular_velocity(glm::vec3 w) { w_ = w; }
+	void init_velocity(const glm::vec3& v = glm::vec3(0.f), const glm::vec3& w = glm::vec3(0.f));
+
 	void set_lauched(bool b) { launched_ = b; }
+
+	float mass() { return mass_; }
+	glm::vec3& velocity() { return v_; }
+	glm::vec3& angular_velocity() { return w_; }
+	const glm::mat3& reference_inertia() const { return inertia_ref_; }
+
 
 public:
 	void awake() override;
@@ -23,17 +30,19 @@ public:
 
 private:
 	bool launched_;
-
-	// geometry
-	TriMesh trimesh_;
 	
-	// physics state
+	// geometry attributes
+	std::shared_ptr<TriMesh> trimesh_;
+
+	// phsical material
 	float mass_;
+	glm::mat3 inertia_ref_; // reference 
+
+	// physical state
 	float dt_;
 	float v_decay_;
 	float w_decay_;
 	glm::vec3 v_; // velocity
 	glm::vec3 w_; // angular velocity
-	glm::mat3 inertia_ref_; // reference inertia
 	
 };

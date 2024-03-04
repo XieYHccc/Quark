@@ -1,10 +1,11 @@
-#include "./mesh_importer.h"
+#include "./mesh_factory.h"
 
 #include <iostream>
 #include <array>
 
 #include "./mesh.h"
-Mesh* MeshImporter::load_from_obj(const std::string& path) {
+
+std::shared_ptr<Mesh> MeshFactory::load_from_obj(const std::string& path) {
 
     tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig config;
@@ -78,7 +79,7 @@ Mesh* MeshImporter::load_from_obj(const std::string& path) {
         }
 	}
 
-    Mesh* mesh = new Mesh();
+	auto mesh = std::make_shared<Mesh>();
     mesh->num_vertex = vertex_array.size();
     mesh->num_index = index_array.size();
     mesh->vertices = vertex_array;
@@ -88,7 +89,7 @@ Mesh* MeshImporter::load_from_obj(const std::string& path) {
     return mesh;
 }
 
-Mesh* MeshImporter::create_plane() {
+std::shared_ptr<Mesh> MeshFactory::create_plane() {
 	float vertex_data[32] = {
 		// positions          // normals           // texture coords
 		 0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   1.0f, 1.0f, // top right
@@ -101,7 +102,7 @@ Mesh* MeshImporter::create_plane() {
 		1, 2, 3  // second triangle
 	};
 
-	Mesh* mesh = new Mesh();
+	auto mesh = std::make_shared<Mesh>();
 	mesh->type_ = MESH_TYPE::PLANE;
 	mesh->num_vertex = 4;
 	mesh->num_index = 6;

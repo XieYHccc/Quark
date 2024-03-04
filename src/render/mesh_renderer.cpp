@@ -3,7 +3,7 @@
 #include "./shader.h"
 #include "./material.h"
 #include "./mesh.h"
-#include "./texture.h"
+#include "./texture2d.h"
 
 MeshRenderer::MeshRenderer() {
     shader_ = nullptr;
@@ -38,16 +38,6 @@ bool MeshRenderer::ready_to_render() const {
 
     return true;
 }
-MeshRenderer::~MeshRenderer() {
-     if (shader_ != nullptr) {
-         delete shader_;
-         shader_ = nullptr;
-     }
-    if (material_ != nullptr) {
-        delete material_;
-        material_ = nullptr;
-    }
-}
 
 void MeshRenderer::render() {
 
@@ -58,7 +48,7 @@ void MeshRenderer::render() {
     glm::mat4 mvp = projection_ * view_ * model_;
     shader_->setMat4("mvp", mvp);
     // set textures
-    std::vector<std::pair<std::string, Texture*>>& textures = material_->textures;
+    auto& textures = material_->textures;
     for (size_t i = 0; i < textures.size(); ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D,textures[i].second->get_id());
@@ -71,7 +61,7 @@ void MeshRenderer::render() {
 
 }
 
-void MeshRenderer::setup_vao(Mesh* mesh) {
+void MeshRenderer::setup_vao(std::shared_ptr<Mesh> mesh) {
 
     num_vertex = mesh->num_vertex;
     num_index = mesh->num_index;

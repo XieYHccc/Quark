@@ -1,7 +1,8 @@
 #pragma once
 
+#include <memory>
+
 #include "../mesh_renderer.h"
-#include "../material_importer.h"
 #include "../../basic/component.h"
 #include "../../geometry/bounding_box.h"
 class MeshDisplayer : public Component {
@@ -11,10 +12,12 @@ public:
 public: 
     void render();
 
-    void set_material(Material* material) { renderer_.set_material(material); }
-    void set_shader(Shader* shader) { renderer_.set_shader(shader); }
+    BoundingBox get_boundingbox() { return aabb_; }
+
+    void set_material(std::shared_ptr<Material> material) { renderer_.set_material(material); }
+    void set_shader(std::shared_ptr<Shader> shader) { renderer_.set_shader(shader); }
+    
 private:
     MeshRenderer renderer_;
-    MaterialImporter mtl_importer;
     BoundingBox aabb_;
 };

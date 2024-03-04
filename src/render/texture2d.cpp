@@ -1,13 +1,13 @@
-#include "./texture.h"
+#include "./texture2d.h"
 
 #include <iostream>
 
 #include <tiny_obj_loader.h>
 #include <stb_image.h>
 
-Texture* Texture::load_texture(std::string image_file_path) {
+std::shared_ptr<Texture2D> Texture2D::load_texture(std::string image_file_path) {
 
-    Texture* texture=new Texture();
+    auto texture = std::make_shared<Texture2D>();
 
     int width, height, nrComponents;
     unsigned char* data = stbi_load(image_file_path.c_str(), &width, &height, &nrComponents, 0);
@@ -22,7 +22,6 @@ Texture* Texture::load_texture(std::string image_file_path) {
 
         texture->width_ = width;
         texture->height_ = height;
-        texture->gl_texture_format_ =format;
         
         glGenTextures(1, &texture->gl_texture_id_);
         glBindTexture(GL_TEXTURE_2D, texture->gl_texture_id_);

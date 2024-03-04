@@ -2,16 +2,15 @@
 
 #include <string>
 #include <vector>
-#include <map>
+#include <memory>
 
-#include "./texture.h"
+#include "./texture2d.h"
 
 struct Material {
-    std::vector<std::pair<std::string,Texture*>> textures;
+    std::vector<std::pair<std::string,std::shared_ptr<Texture2D>>> textures;
 
     Material() {}
+    ~Material() {}
 
-    ~Material() {
-        
-    }
+    static std::shared_ptr<Material> load_from_mtl(const std::string& path);
 };

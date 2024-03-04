@@ -2,6 +2,8 @@
 
 #include <rttr/registration.h>
 
+#include "../mesh_factory.h"
+
 using namespace rttr;
 RTTR_REGISTRATION
 {
@@ -11,23 +13,31 @@ RTTR_REGISTRATION
 
 MeshFilter::MeshFilter() {
     mesh_ = nullptr;
+    trimesh_ = nullptr;
 }
 
 MeshFilter::~MeshFilter() {
-    if (mesh_ != nullptr) {
-        delete mesh_;
-        mesh_ = nullptr;
-    }
 }
 
-void MeshFilter::load_mesh(std::string path) { 
-    if (mesh_ != nullptr) delete mesh_;
 
-    mesh_ = importer_.load_from_obj(path); 
+void MeshFilter::load_mesh(const std::string& path) { 
+
+    MeshFactory factory;
+    mesh_ = factory.load_from_obj(path); 
 }
 
 void MeshFilter::make_plane() {
-    if (mesh_ != nullptr) delete mesh_;
+    MeshFactory factory;
+    mesh_ = factory.create_plane();
+}
 
-    mesh_ = importer_.create_plane();
+std::shared_ptr<TriMesh> MeshFilter::trimesh() {
+
+    if (mesh_ == nullptr)
+        return nullptr;
+
+    if (trimesh_ == nullptr)
+        trimesh_ = std::make_shared<TriMesh>(mesh_);
+
+    return trimesh_;
 }
