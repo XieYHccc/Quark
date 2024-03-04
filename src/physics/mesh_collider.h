@@ -13,14 +13,13 @@ class MeshCollider : public Collider {
 public:
 	using Collider::Collider;
 
+	std::shared_ptr<TriMesh> trimesh;
+
 public:
-	void set_trimesh(std::shared_ptr<TriMesh> trimesh) { trimesh_ = trimesh; }
+	void set_trimesh(std::shared_ptr<TriMesh> trimesh) { trimesh = trimesh; }
 
 public:
 	void awake() override;
 
-private:
-	std::shared_ptr<TriMesh> trimesh_;
 
-	friend bool check_collision(PlaneCollider& plane, MeshCollider& mesh);
 };

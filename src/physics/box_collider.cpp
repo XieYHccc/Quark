@@ -25,7 +25,6 @@ void PlaneCollider::awake() {
 	const glm::vec3& v1 = p2 - p1;
 	const glm::vec3& v2 = p3 - p1;
 
-	normal_ = glm::cross(v1, v2);
-	glm::normalize(normal_);
-	position_ = p1;
+	normal = glm::normalize(glm::cross(v1, v2));
+	position = p1;
 }

@@ -15,6 +15,6 @@ RTTR_REGISTRATION
 void MeshCollider::awake() {
 	auto mesh_fileter = dynamic_cast<MeshFilter*>(get_object()->get_component("MeshFilter"));
 
-	trimesh_ = mesh_fileter->trimesh();
+	trimesh = mesh_fileter->trimesh();
 
 }

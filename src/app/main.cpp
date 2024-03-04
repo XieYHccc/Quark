@@ -2,7 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-
+#include "../scene/scene.h"
 #include "./viewer.h"
 #include "../basic/transform.h"
 #include "../basic/object.h"
@@ -21,10 +21,13 @@ int main()
 
     // add grid box
     // ==========================================================================
-    Object* gridbox = new Object("grid box");
+    auto gridbox = std::make_shared<Object>("grid box");
     auto box_transform = dynamic_cast<Transform*>(gridbox->add_component("Transform"));
     auto box_mesh_filter = dynamic_cast<MeshFilter*>(gridbox->add_component("MeshFilter"));
     auto box_mesh_displayer = dynamic_cast<MeshDisplayer*>(gridbox->add_component("MeshDisplayer"));
+    auto ground_plane_collider = dynamic_cast<PlaneCollider*>(gridbox->add_component("PlaneCollider"));
+    ground_plane_collider->position = glm::vec3(0.f, 0.f, 0.f);
+    ground_plane_collider->normal = glm::vec3(0.f, 1.f, 0.f);
     // load mesh
     box_mesh_filter->make_plane(); 
     // set transform
@@ -40,11 +43,13 @@ int main()
 
     // add wall
     // ==========================================================================
-    Object* wall = new Object("wall");
+    auto wall = std::make_shared<Object>("wall");
     auto wall_transform = dynamic_cast<Transform*>(wall->add_component("Transform"));
     auto wall_mesh_filter = dynamic_cast<MeshFilter*>(wall->add_component("MeshFilter"));
     auto wall_mesh_displayer = dynamic_cast<MeshDisplayer*>(wall->add_component("MeshDisplayer"));
-    auto wall_box_collider = dynamic_cast<PlaneCollider*>(wall->add_component("PlaneCollider"));
+    auto wall_plane_collider = dynamic_cast<PlaneCollider*>(wall->add_component("PlaneCollider"));
+    wall_plane_collider->position = glm::vec3(0.f, 0.f, -3.f);
+    wall_plane_collider->normal = glm::vec3(0.f, 0.f, 1.f);
     wall_transform->set_scale(glm::vec3(10.f, 7.f, 1.f));
     wall_transform->set_position(glm::vec3(0.f, 0.f, -3.f));
     // set shader
@@ -56,11 +61,10 @@ int main()
     wall_mesh_displayer->set_material(wall_mtl);
     // load mesh
     wall_mesh_filter->make_plane();
-    wall_box_collider->awake();
 
     // add bunny
     // ===========================================================================
-    Object* obj = new Object("bunny");
+    auto obj = std::make_shared<Object>("bunny");
     auto transform = dynamic_cast<Transform*>(obj->add_component("Transform"));
     auto mesh_filter = dynamic_cast<MeshFilter*>(obj->add_component("MeshFilter"));
     auto mesh_displayer = dynamic_cast<MeshDisplayer*>(obj->add_component("MeshDisplayer"));
@@ -80,11 +84,12 @@ int main()
     rigid_body->awake();
     mesh_collider->awake();
 
-    viewer.run();
+    // ================================================================
+    Scene::Instance().add_object(gridbox);
+    Scene::Instance().add_object(wall);
+    Scene::Instance().add_object(obj);
 
-    delete gridbox;
-    delete wall;
-    delete obj;
+    viewer.run();
 }
 
 

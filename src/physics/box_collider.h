@@ -10,13 +10,12 @@ class PlaneCollider : public Collider {
 public:
 	using Collider::Collider;
 
+	glm::vec3 normal;
+	glm::vec3 position;
+
 public:
 	void awake() override;
 
-public:
-	glm::vec3 normal_;
-	glm::vec3 position_;
 
-	friend bool check_collision(PlaneCollider& plane, MeshCollider& mesh);
 	
 };

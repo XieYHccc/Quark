@@ -21,7 +21,7 @@ RigidBodyDynamic::RigidBodyDynamic() {
 	init_velocity();
 
 	inertia_ref_ = glm::mat3(0.f);
-	dt_ = 0.005f;
+	dt_ = 0.015f;
 	v_decay_ = 0.999f;
 	w_decay_ = 0.98f;
 	mass_ = 0.f;
@@ -60,10 +60,6 @@ void RigidBodyDynamic::update() {
 
 	auto transform = dynamic_cast<Transform*>(get_object()->get_component("Transform"));
 	auto mesh_collider = dynamic_cast<MeshCollider*>(get_object()->get_component("MeshCollider"));
-	auto plane_collider = PlaneCollider();
-	plane_collider.position_ = glm::vec3(0.f, 0.f, -3.f);
-	plane_collider.normal_ = glm::vec3(0.f, 0.f, 1.f);
-	check_collision(plane_collider, *mesh_collider);
 
 	glm::vec3 position = transform->get_position();
 	glm::quat quat = transform->get_rotation();
@@ -85,7 +81,7 @@ void RigidBodyDynamic::update() {
 	w_ = w_ + dt_ * glm::inverse(inertia) * torque;
 	w_ = w_decay_ * w_;
 	quat += glm::quat(0, 0.5f * dt_ * w_) * quat;
-	glm::normalize(quat);
+	quat = glm::normalize(quat);
 	transform->set_rotation(quat);
 
 };
