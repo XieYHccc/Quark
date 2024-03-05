@@ -1,19 +1,10 @@
 #include "./box_collider.h"
 
-#include <rttr/registration.h>
-
 #include "../basic/object.h"
 #include "../render/components/mesh_filter.h"
 
-using namespace rttr;
-RTTR_REGISTRATION
-{
-	registration::class_<PlaneCollider>("PlaneCollider")
-			.constructor<>()(rttr::policy::ctor::as_raw_ptr);
-}
-
 void PlaneCollider::awake() {
-	auto mesh_filter = dynamic_cast<MeshFilter*>(get_object()->get_component("MeshFilter"));
+	auto mesh_filter = get_object()->get_component<MeshFilter>();
 	auto trimesh = mesh_filter->trimesh();
 	if (!mesh_filter || !trimesh)
 		return;

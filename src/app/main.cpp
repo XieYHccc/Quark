@@ -21,33 +21,34 @@ int main()
 
     // add grid box
     // ==========================================================================
-    auto gridbox = std::make_shared<Object>("grid box");
-    auto box_transform = dynamic_cast<Transform*>(gridbox->add_component("Transform"));
-    auto box_mesh_filter = dynamic_cast<MeshFilter*>(gridbox->add_component("MeshFilter"));
-    auto box_mesh_displayer = dynamic_cast<MeshDisplayer*>(gridbox->add_component("MeshDisplayer"));
-    auto ground_plane_collider = dynamic_cast<PlaneCollider*>(gridbox->add_component("PlaneCollider"));
-    ground_plane_collider->position = glm::vec3(0.f, 0.f, 0.f);
-    ground_plane_collider->normal = glm::vec3(0.f, 1.f, 0.f);
+    auto gridbox = std::make_shared<Object>("gridbox");
+    auto gridbox_transform = gridbox->add_component<Transform>();
+    auto gridbox_mesh_filter = gridbox->add_component<MeshFilter>();
+    auto gridbox_displayer = gridbox->add_component<MeshDisplayer>();
+    auto gridbox_plane_collider = gridbox->add_component<PlaneCollider>();
+
+    gridbox_plane_collider->position = glm::vec3(0.f, 0.f, 0.f);
+    gridbox_plane_collider->normal = glm::vec3(0.f, 1.f, 0.f);
     // load mesh
-    box_mesh_filter->make_plane(); 
+    gridbox_mesh_filter->make_plane(); 
     // set transform
-    box_transform->set_scale(glm::vec3(50.f, 50.f, 50.f));
-    box_transform->set_rotation_by_angle(glm::vec3(glm::radians(90.f), 0.f, 0.f));
+    gridbox_transform->set_scale(glm::vec3(50.f, 50.f, 50.f));
+    gridbox_transform->set_rotation_by_angle(glm::vec3(glm::radians(90.f), 0.f, 0.f));
     // set shader
-    box_mesh_displayer->set_shader(shader);
+    gridbox_displayer->set_shader(shader);
     // set material
     auto gridbox_tex = Texture2D::load_texture("../../resources/textures/marble.jpg");
     auto gridbox_mtl = std::make_shared<Material>();
     gridbox_mtl->textures.push_back(std::make_pair("material.tex_diffuse", gridbox_tex));
-    box_mesh_displayer->set_material(gridbox_mtl);
+    gridbox_displayer->set_material(gridbox_mtl);
 
     // add wall
     // ==========================================================================
     auto wall = std::make_shared<Object>("wall");
-    auto wall_transform = dynamic_cast<Transform*>(wall->add_component("Transform"));
-    auto wall_mesh_filter = dynamic_cast<MeshFilter*>(wall->add_component("MeshFilter"));
-    auto wall_mesh_displayer = dynamic_cast<MeshDisplayer*>(wall->add_component("MeshDisplayer"));
-    auto wall_plane_collider = dynamic_cast<PlaneCollider*>(wall->add_component("PlaneCollider"));
+    auto wall_transform = wall->add_component<Transform>();
+    auto wall_mesh_filter = wall->add_component<MeshFilter>();
+    auto wall_mesh_displayer = wall->add_component<MeshDisplayer>();
+    auto wall_plane_collider = wall->add_component<PlaneCollider>();
     wall_plane_collider->position = glm::vec3(0.f, 0.f, -3.f);
     wall_plane_collider->normal = glm::vec3(0.f, 0.f, 1.f);
     wall_transform->set_scale(glm::vec3(10.f, 7.f, 1.f));
@@ -64,12 +65,12 @@ int main()
 
     // add bunny
     // ===========================================================================
-    auto obj = std::make_shared<Object>("bunny");
-    auto transform = dynamic_cast<Transform*>(obj->add_component("Transform"));
-    auto mesh_filter = dynamic_cast<MeshFilter*>(obj->add_component("MeshFilter"));
-    auto mesh_displayer = dynamic_cast<MeshDisplayer*>(obj->add_component("MeshDisplayer"));
-    auto rigid_body = dynamic_cast<RigidBodyDynamic*>(obj->add_component("RigidBodyDynamic"));
-    auto mesh_collider = dynamic_cast<MeshCollider*>(obj->add_component("MeshCollider"));
+    auto bunny = std::make_shared<Object>("bunny");
+    auto transform = bunny->add_component<Transform>();
+    auto mesh_filter = bunny->add_component<MeshFilter>();
+    auto mesh_displayer = bunny->add_component<MeshDisplayer>();
+    auto rigid_body = bunny->add_component<RigidBodyDynamic>();
+    auto mesh_collider = bunny->add_component<MeshCollider>();
     transform->set_position(glm::vec3(0.f, 1.f, 0.f));
     transform->set_scale(glm::vec3(2.f, 2.f, 2.f));
     // set shader
@@ -87,7 +88,7 @@ int main()
     // ================================================================
     Scene::Instance().add_object(gridbox);
     Scene::Instance().add_object(wall);
-    Scene::Instance().add_object(obj);
+    Scene::Instance().add_object(bunny);
 
     viewer.run();
 }

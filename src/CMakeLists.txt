@@ -23,4 +23,4 @@ target_link_libraries(application
                       stb_image 
                       glfw 
                       ${OPENGL_LIBRARIES} 
-                      RTTR::Core_Lib)
+                      )

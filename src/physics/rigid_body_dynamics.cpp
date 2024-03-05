@@ -2,22 +2,14 @@
 
 #include <iostream>
 
-#include <rttr/registration.h>
-
 #include "../basic/object.h"
 #include "../basic/transform.h"
 #include "../render/components/mesh_filter.h"
 #include "collision_detection.h"
 
 
-using namespace rttr;
-RTTR_REGISTRATION
-{
-	registration::class_<RigidBodyDynamic>("RigidBodyDynamic")
-			.constructor<>()(rttr::policy::ctor::as_raw_ptr);
-}
 
-RigidBodyDynamic::RigidBodyDynamic() {
+RigidBodyDynamic::RigidBodyDynamic(Object* object) : Component(object) {
 	init_velocity();
 
 	inertia_ref_ = glm::mat3(0.f);
@@ -36,10 +28,8 @@ void RigidBodyDynamic::init_velocity(const glm::vec3& v, const glm::vec3& w) {
 void RigidBodyDynamic::awake() {
 	init_velocity();
 
-	auto mesh_fileter = dynamic_cast<MeshFilter*>(get_object()->get_component("MeshFilter"));
-	if (mesh_fileter->mesh() == nullptr) {
-		return;
-	}
+	auto mesh_fileter = get_object()->get_component<MeshFilter>();
+	if (mesh_fileter->mesh() == nullptr) return;
 
 	// assign trimesh
 	trimesh_ = mesh_fileter->trimesh();
@@ -58,8 +48,8 @@ void RigidBodyDynamic::update() {
 	if (!launched_)
 		return;
 
-	auto transform = dynamic_cast<Transform*>(get_object()->get_component("Transform"));
-	auto mesh_collider = dynamic_cast<MeshCollider*>(get_object()->get_component("MeshCollider"));
+	auto transform = get_object()->get_component<Transform>();
+	auto mesh_collider = get_object()->get_component<MeshCollider>();
 
 	glm::vec3 position = transform->get_position();
 	glm::quat quat = transform->get_rotation();

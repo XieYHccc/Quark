@@ -8,10 +8,11 @@
 
 #include "../geometry/triangle_mesh.h"
 
+class Object;
 class RigidBodyDynamic : public Component {
 
 public:
-	RigidBodyDynamic();
+	RigidBodyDynamic(Object* object);
 
 public:
 	void init_velocity(const glm::vec3& v = glm::vec3(0.f), const glm::vec3& w = glm::vec3(0.f));

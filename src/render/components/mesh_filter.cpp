@@ -1,23 +1,6 @@
 #include "./mesh_filter.h"
 
-#include <rttr/registration.h>
-
 #include "../mesh_factory.h"
-
-using namespace rttr;
-RTTR_REGISTRATION
-{
-    registration::class_<MeshFilter>("MeshFilter")
-            .constructor<>()(rttr::policy::ctor::as_raw_ptr);
-}
-
-MeshFilter::MeshFilter() {
-    mesh_ = nullptr;
-    trimesh_ = nullptr;
-}
-
-MeshFilter::~MeshFilter() {
-}
 
 
 void MeshFilter::load_mesh(const std::string& path) { 

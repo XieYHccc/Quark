@@ -5,9 +5,10 @@
 #include "../mesh_renderer.h"
 #include "../../basic/component.h"
 #include "../../geometry/bounding_box.h"
+class Object;
 class MeshDisplayer : public Component {
 public:
-    MeshDisplayer();
+    MeshDisplayer(Object* object) : renderer_(), Component(object) {}
 
 public: 
     void render();

@@ -4,9 +4,14 @@
 #include <glm/gtc/quaternion.hpp>
 #include "./component.h"
 
+class Object;
 class Transform : public Component{
 public:
-    Transform();
+    Transform(Object* object) :
+        quaternion_(1.f, 0.f, 0.f, 0.f),
+        position_(0.f),
+        scale_(1.f),
+        Component(object) {}
 
     glm::vec3 get_position() const { return position_; }
     glm::quat get_rotation() const { return quaternion_; }

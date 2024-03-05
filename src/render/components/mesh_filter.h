@@ -6,10 +6,10 @@
 #include "../mesh.h"
 #include "../../geometry/triangle_mesh.h"
 
+class Object;
 class MeshFilter : public Component {
 public:
-    MeshFilter();
-    ~MeshFilter();
+    MeshFilter(Object* object) : Component(object) {}
 
 public:
 

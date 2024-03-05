@@ -43,8 +43,8 @@ void Viewer::process_input(GLFWwindow* window) {
 
     if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
         auto bunny = Scene::Instance().get_object("bunny");
-        auto transform = dynamic_cast<Transform*>(bunny->get_component("Transform"));
-        auto rigid_body = dynamic_cast<RigidBodyDynamic*>(bunny->get_component("RigidBodyDynamic"));
+        auto transform = bunny->get_component<Transform>();
+        auto rigid_body = bunny->get_component<RigidBodyDynamic>();
         transform->set_position(glm::vec3(0.f, 1.f, 0.f));
         transform->set_rotation(glm::quat(1.f, 0.f, 0.f, 0.f));
         rigid_body->init_velocity();
@@ -53,8 +53,8 @@ void Viewer::process_input(GLFWwindow* window) {
 
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
         auto bunny = Scene::Instance().get_object("bunny");
-        auto transform = dynamic_cast<Transform*>(bunny->get_component("Transform"));
-        auto rigid_body = dynamic_cast<RigidBodyDynamic*>(bunny->get_component("RigidBodyDynamic"));
+        auto transform = bunny->get_component<Transform>();
+        auto rigid_body = bunny->get_component<RigidBodyDynamic>();
         rigid_body->init_velocity(glm::vec3(0.f, 3.f, -6.f));
         rigid_body->set_lauched(true);
     }
@@ -93,16 +93,16 @@ void Viewer::render() {
 
     auto bunny = Scene::Instance().get_object("bunny");
     auto wall  = Scene::Instance().get_object("wall");
-    auto gridbox = Scene::Instance().get_object("grid box");
-    auto mesh_collider = dynamic_cast<MeshCollider*>(bunny->get_component("MeshCollider"));
-    auto wall_plane_collider = dynamic_cast<PlaneCollider*>(wall->get_component("PlaneCollider"));
-    auto ground_plane_collider = dynamic_cast<PlaneCollider*>(gridbox->get_component("PlaneCollider"));
+    auto gridbox = Scene::Instance().get_object("gridbox");
+    auto mesh_collider = bunny->get_component<MeshCollider>();
+    auto wall_plane_collider = wall->get_component<PlaneCollider>();
+    auto ground_plane_collider = gridbox->get_component<PlaneCollider>();
     check_collision(wall_plane_collider, mesh_collider);
     check_collision(ground_plane_collider, mesh_collider);
 
     for (auto& obj : Scene::Instance().object_map) {
-        auto mesh_diplayer = dynamic_cast<MeshDisplayer*>(obj.second->get_component("MeshDisplayer"));
-        auto rigid_body = dynamic_cast<RigidBodyDynamic*>(obj.second->get_component("RigidBodyDynamic"));
+        auto mesh_diplayer = obj.second->get_component<MeshDisplayer>();
+        auto rigid_body = obj.second->get_component<RigidBodyDynamic>();
         if (mesh_diplayer == nullptr)
             continue;
 

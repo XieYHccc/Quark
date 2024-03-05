@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-#include <rttr/registration.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -14,18 +13,9 @@
 #include "../camera.h"
 #include "./mesh_filter.h"
 
-using namespace rttr;
-RTTR_REGISTRATION
-{
-    registration::class_<MeshDisplayer>("MeshDisplayer")
-            .constructor<>()(rttr::policy::ctor::as_raw_ptr);
-}
-
-MeshDisplayer::MeshDisplayer() : renderer_() {}
-
 void MeshDisplayer::render() {
     if (!renderer_.valid_vao()) {
-        auto mesh_filter = dynamic_cast<MeshFilter*>(get_object()->get_component("MeshFilter"));
+        auto mesh_filter = get_object()->get_component<MeshFilter>();
         if (!mesh_filter) {
             std::cerr << "MeshDisplayer::render() : object doesn't have a mesh.";
             return;
@@ -38,7 +28,7 @@ void MeshDisplayer::render() {
     }
 
     // Calculate model matrix
-    auto transform = dynamic_cast<Transform*>(get_object()->get_component("Transform"));
+    auto transform = get_object()->get_component<Transform>();
     if (!transform) { return; }
     glm::mat4 trans = glm::translate(transform->get_position());
     auto quat = transform->get_rotation();

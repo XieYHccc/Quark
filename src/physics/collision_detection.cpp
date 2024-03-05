@@ -19,10 +19,10 @@ glm::mat3 cross_matrix(const glm::vec3& vec) {
 }
 
 // impluse method
-bool check_collision(PlaneCollider* plane, MeshCollider* mesh) {
+bool check_collision(std::shared_ptr<PlaneCollider> plane, std::shared_ptr<MeshCollider> mesh) {
 	// consider plane as a static rigid body, do not involve in dynamic update
-	auto mesh_transform = dynamic_cast<Transform*>(mesh->get_object()->get_component("Transform"));
-	auto mesh_rigid_body = dynamic_cast<RigidBodyDynamic*>(mesh->get_object()->get_component("RigidBodyDynamic"));
+	auto mesh_transform = mesh->get_object()->get_component<Transform>();
+	auto mesh_rigid_body = mesh->get_object()->get_component<RigidBodyDynamic>();
 
 	// plane attributes
 	glm::vec3 plane_normal = plane->normal;
