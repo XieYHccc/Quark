@@ -1,10 +1,10 @@
 #include "./box_collider.h"
 
-#include "../basic/object.h"
-#include "../render/components/mesh_filter.h"
+#include "../object/Object.h"
+#include "../Object/Components/MeshFilterCmpt/MeshFilterCmpt.h"
 
 void PlaneCollider::awake() {
-	auto mesh_filter = get_object()->get_component<MeshFilter>();
+	auto mesh_filter = get_object()->get_component<MeshFilterCmpt>();
 	auto trimesh = mesh_filter->trimesh();
 	if (!mesh_filter || !trimesh)
 		return;

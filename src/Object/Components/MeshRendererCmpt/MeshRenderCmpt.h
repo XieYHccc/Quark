@@ -2,13 +2,13 @@
 
 #include <memory>
 
-#include "../mesh_renderer.h"
-#include "../../basic/component.h"
-#include "../../geometry/bounding_box.h"
+#include "../../../render/mesh_renderer.h"
+#include "../component.h"
+#include "../../../geometry/bounding_box.h"
 class Object;
-class MeshDisplayer : public Component {
+class MeshRendererCmpt : public Component {
 public:
-    MeshDisplayer(Object* object) : renderer_(), Component(object) {}
+    MeshRendererCmpt(Object* object) : renderer_(), Component(object) {}
 
 public: 
     void render();

@@ -1,4 +1,4 @@
-#include "./mesh_displayer.h"
+#include "./MeshRenderCmpt.h"
 
 #include <iostream>
 
@@ -8,16 +8,16 @@
 #include <glm/gtx/transform2.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-#include "../../basic/object.h"
-#include "../../basic/transform.h"
-#include "../camera.h"
-#include "./mesh_filter.h"
+#include "../../Object.h"
+#include "../../Components/TransformCmpt/transform.h"
+#include "../../../Render/camera.h"
+#include "../MeshFilterCmpt/MeshFilterCmpt.h"
 
-void MeshDisplayer::render() {
+void MeshRendererCmpt::render() {
     if (!renderer_.valid_vao()) {
-        auto mesh_filter = get_object()->get_component<MeshFilter>();
+        auto mesh_filter = get_object()->get_component<MeshFilterCmpt>();
         if (!mesh_filter) {
-            std::cerr << "MeshDisplayer::render() : object doesn't have a mesh.";
+            std::cerr << "MeshRendererCmpt::render() : object doesn't have a mesh.";
             return;
         }
         renderer_.setup_vao(mesh_filter->mesh());

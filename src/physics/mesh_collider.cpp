@@ -1,11 +1,11 @@
 #include "./mesh_collider.h"
 
-#include "../basic/object.h"
-#include "../render/components/mesh_filter.h"
+#include "../Object/Object.h"
+#include "../Object/Components/MeshFilterCmpt/MeshFilterCmpt.h"
 
 
 void MeshCollider::awake() {
-	auto mesh_fileter = get_object()->get_component<MeshFilter>();
+	auto mesh_fileter = get_object()->get_component<MeshFilterCmpt>();
 
 	trimesh = mesh_fileter->trimesh();
 

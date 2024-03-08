@@ -2,14 +2,14 @@
 
 #include <string>
 
-#include "../../basic/component.h"
-#include "../mesh.h"
-#include "../../geometry/triangle_mesh.h"
+#include "../component.h"
+#include "../../../render/mesh.h"
+#include "../../../geometry/triangle_mesh.h"
 
 class Object;
-class MeshFilter : public Component {
+class MeshFilterCmpt : public Component {
 public:
-    MeshFilter(Object* object) : Component(object) {}
+    MeshFilterCmpt(Object* object) : Component(object) {}
 
 public:
 

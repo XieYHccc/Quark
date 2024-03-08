@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-#include "../basic/component.h"
+#include "../Object/Components/component.h"
 
 #include "../geometry/triangle_mesh.h"
 

@@ -4,22 +4,24 @@
 #include <unordered_map>
 #include <memory>
 
-#include "../basic/object.h"
+#include "../object/Object.h"
 
-class Scene {
+class SceneMngr {
 public:
 	std::unordered_map<std::string, std::shared_ptr<Object>> object_map;
 
 public:
-	static Scene& Instance() {
-		static Scene instance;
+	static SceneMngr& Instance() {
+		static SceneMngr instance;
 		return instance;
 	}
+	void Initialize() {};
+
 	void add_object(std::shared_ptr<Object> object);
 
 	std::shared_ptr<Object> get_object(const std::string& name);
 
 private:
-	Scene() {}
+	SceneMngr() {}
 
 };

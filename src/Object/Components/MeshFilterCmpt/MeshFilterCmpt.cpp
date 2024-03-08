@@ -1,20 +1,20 @@
-#include "./mesh_filter.h"
+#include "./MeshFilterCmpt.h"
 
-#include "../mesh_factory.h"
+#include "../../../render/mesh_factory.h"
 
 
-void MeshFilter::load_mesh(const std::string& path) { 
+void MeshFilterCmpt::load_mesh(const std::string& path) {
 
     MeshFactory factory;
     mesh_ = factory.load_from_obj(path); 
 }
 
-void MeshFilter::make_plane() {
+void MeshFilterCmpt::make_plane() {
     MeshFactory factory;
     mesh_ = factory.create_plane();
 }
 
-std::shared_ptr<TriMesh> MeshFilter::trimesh() {
+std::shared_ptr<TriMesh> MeshFilterCmpt::trimesh() {
 
     if (mesh_ == nullptr)
         return nullptr;

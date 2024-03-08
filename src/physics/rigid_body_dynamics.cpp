@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-#include "../basic/object.h"
-#include "../basic/transform.h"
-#include "../render/components/mesh_filter.h"
+#include "../Object/Object.h"
+#include "../Object/Components/TransformCmpt/transform.h"
+#include "../Object/Components/MeshFilterCmpt/MeshFilterCmpt.h"
 #include "collision_detection.h"
 
 
@@ -28,7 +28,7 @@ void RigidBodyDynamic::init_velocity(const glm::vec3& v, const glm::vec3& w) {
 void RigidBodyDynamic::awake() {
 	init_velocity();
 
-	auto mesh_fileter = get_object()->get_component<MeshFilter>();
+	auto mesh_fileter = get_object()->get_component<MeshFilterCmpt>();
 	if (mesh_fileter->mesh() == nullptr) return;
 
 	// assign trimesh

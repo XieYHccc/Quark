@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "../physics/rigid_body_dynamics.h"
-#include "../basic/object.h"
-#include "../basic/transform.h"
+#include "../Object/Object.h"
+#include "../Object/Components/TransformCmpt/transform.h"
 
 glm::mat3 cross_matrix(const glm::vec3& vec) {
 	glm::mat3 mat(0.f);
