@@ -4,9 +4,9 @@
 
 #include <glm/glm.hpp>
 
-#include "../Object/Components/component.h"
+#include "../Object/Components/Component.h"
 
-#include "../geometry/triangle_mesh.h"
+#include "../Geometry/triangle_mesh.h"
 
 class Object;
 class RigidBodyDynamic : public Component {

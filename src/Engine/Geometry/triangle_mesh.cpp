@@ -5,7 +5,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
-#include "../render/mesh.h"
+#include "../Render/mesh.h"
 
 
 TriMesh::TriMesh(std::shared_ptr<Mesh> mesh) {

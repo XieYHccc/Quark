@@ -1,6 +1,6 @@
 #include "./box_collider.h"
 
-#include "../object/Object.h"
+#include "../Object/Object.h"
 #include "../Object/Components/MeshFilterCmpt/MeshFilterCmpt.h"
 
 void PlaneCollider::awake() {

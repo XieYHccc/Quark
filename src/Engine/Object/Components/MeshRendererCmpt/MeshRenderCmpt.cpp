@@ -10,7 +10,7 @@
 
 #include "../../Object.h"
 #include "../../Components/TransformCmpt/transform.h"
-#include "../../../Render/camera.h"
+#include "../../../Render/Camera.h"
 #include "../MeshFilterCmpt/MeshFilterCmpt.h"
 
 void MeshRendererCmpt::render() {

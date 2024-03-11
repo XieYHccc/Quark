@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Object/Components/component.h"
+#include "../Object/Components/Component.h"
 
 class Object;
 class Collider : public Component {

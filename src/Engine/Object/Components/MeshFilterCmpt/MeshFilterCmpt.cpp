@@ -1,6 +1,6 @@
 #include "./MeshFilterCmpt.h"
 
-#include "../../../render/mesh_factory.h"
+#include "../../../Render/mesh_factory.h"
 
 
 void MeshFilterCmpt::load_mesh(const std::string& path) {

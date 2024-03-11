@@ -2,9 +2,9 @@
 
 #include <string>
 
-#include "../component.h"
-#include "../../../render/mesh.h"
-#include "../../../geometry/triangle_mesh.h"
+#include "../Component.h"
+#include "../../../Render/mesh.h"
+#include "../../../Geometry/triangle_mesh.h"
 
 class Object;
 class MeshFilterCmpt : public Component {

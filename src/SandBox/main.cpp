@@ -1,26 +1,26 @@
 #include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
-#include "../Scene/SceneMngr.h"
-#include "./application.h"
-#include "../Object/Components/TransformCmpt/transform.h"
-#include "../Object/Object.h"
-#include "../Object/Components/MeshRendererCmpt/MeshRenderCmpt.h"
-#include "../Object/Components/MeshFilterCmpt/MeshFilterCmpt.h"
-#include "../Render/texture2d.h"
-#include "../Render/material.h"
-#include "../Render/shader.h"
-#include "../physics/rigid_body_dynamics.h"
-#include "../physics/box_collider.h"
-#include "../physics/mesh_collider.h"
+#include <glm/glm.hpp>
+
+#include <Scene/SceneMngr.h>
+#include <Application/Application.h>
+#include <Object/Components/TransformCmpt/transform.h>
+#include <Object/Object.h>
+#include <Object/Components/MeshRendererCmpt/MeshRenderCmpt.h>
+#include <Object/Components/MeshFilterCmpt/MeshFilterCmpt.h>
+#include <Render/texture2d.h>
+#include <Render/material.h>
+#include <Render/shader.h>
+#include <physics/rigid_body_dynamics.h>
+#include <physics/box_collider.h>
+#include <physics/mesh_collider.h>
 
 int main()
 {
     Application app;
     app.Initialize("test", 2000, 1200);
     // Viewer viewer("test", 2000, 1200);
-    auto shader = std::make_shared<Shader>("../../src/Render/shader.vs", "../../src/Render/shader.fs");
+    auto shader = std::make_shared<Shader>("../src/Engine/Render/shader.vs", "../src/Engine/Render/shader.fs");
 
     // add grid box
     // ==========================================================================
@@ -40,7 +40,7 @@ int main()
     // set shader
     gridbox_displayer->set_shader(shader);
     // set material
-    auto gridbox_tex = Texture2D::load_texture("../../resources/textures/marble.jpg");
+    auto gridbox_tex = Texture2D::load_texture("../resources/textures/marble.jpg");
     auto gridbox_mtl = std::make_shared<Material>();
     gridbox_mtl->textures.push_back(std::make_pair("material.tex_diffuse", gridbox_tex));
     gridbox_displayer->set_material(gridbox_mtl);
@@ -59,7 +59,7 @@ int main()
     // set shader
     wall_mesh_displayer->set_shader(shader);
     // set material
-    auto wall_tex = Texture2D::load_texture("../../resources/textures/bricks2.jpg");
+    auto wall_tex = Texture2D::load_texture("../resources/textures/bricks2.jpg");
     auto wall_mtl = std::make_shared<Material>();
     wall_mtl->textures.push_back(std::make_pair("material.tex_diffuse", wall_tex));
     wall_mesh_displayer->set_material(wall_mtl);
@@ -79,12 +79,12 @@ int main()
     // set shader
     mesh_displayer->set_shader(shader);
     // set material
-    auto tex = Texture2D::load_texture("../../resources/textures/bunny.jpg");
+    auto tex = Texture2D::load_texture("../resources/textures/bunny.jpg");
     auto mtl = std::make_shared<Material>();
     mtl->textures.push_back(std::make_pair("material.tex_diffuse", tex));
     mesh_displayer->set_material(mtl);
     // load mesh
-    mesh_filter->load_mesh("../../resources/objects/Stanford_Bunny.obj");
+    mesh_filter->load_mesh("../resources/objects/Stanford_Bunny.obj");
     rigid_body->awake();
     mesh_collider->awake();
 

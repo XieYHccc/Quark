@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <memory>
 
-#include "../object/Object.h"
+#include "../Object/Object.h"
 
 class SceneMngr {
 public:

@@ -4,7 +4,7 @@
 
 #include "./collider.h"
 
-#include "../geometry/bounding_box.h"
+#include "../Geometry/bounding_box.h"
 class MeshCollider;
 class PlaneCollider : public Collider {
 public:

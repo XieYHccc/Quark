@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include "../../../render/mesh_renderer.h"
-#include "../component.h"
-#include "../../../geometry/bounding_box.h"
+#include "../../../Render/mesh_renderer.h"
+#include "../Component.h"
+#include "../../../Geometry/bounding_box.h"
 class Object;
 class MeshRendererCmpt : public Component {
 public:

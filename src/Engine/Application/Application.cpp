@@ -5,8 +5,8 @@
 
 #include <glm/glm.hpp>
 
-#include "../object/Object.h"
-#include "../Render/camera.h"
+#include "../Object/Object.h"
+#include "../Render/Camera.h"
 #include "../Scene/SceneMngr.h"
 #include "../Object/Components/MeshRendererCmpt/MeshRenderCmpt.h"
 #include "../physics/rigid_body_dynamics.h"

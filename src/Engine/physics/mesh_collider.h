@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "./collider.h"
-#include "../geometry/bounding_box.h"
+#include "../Geometry/bounding_box.h"
 
 class TriMesh;
 class PlaneCollider;
