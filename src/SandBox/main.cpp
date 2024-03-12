@@ -17,9 +17,7 @@
 
 int main()
 {
-    Application app;
-    app.Initialize("test", 2000, 1200);
-    // Viewer viewer("test", 2000, 1200);
+    Application app("test"," ", 2000, 1200);
     auto shader = std::make_shared<Shader>("../src/Engine/Render/shader.vs", "../src/Engine/Render/shader.fs");
 
     // add grid box

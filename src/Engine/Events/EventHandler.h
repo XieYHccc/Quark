@@ -3,8 +3,8 @@
 #include "Events/Event.h"
 
 #include <functional>
-template<typename EventType>
-using EventCallbackFn = std::function<void(const EventType& e)>;
+template<typename T, typename = std::enable_if_t<std::is_base_of_v<Event, T>>>
+using EventCallbackFn = std::function<void(const T& e)>;
 
 class BaseEventHandler {
 public:
@@ -20,17 +20,21 @@ private:
 
 };
 
-template<typename EventType>
+template<typename T>
 class EventHandler : public BaseEventHandler {
 public:
-    explicit EventHandler(const EventCallbackFn<EventType>& func)
+    explicit EventHandler(const EventCallbackFn<T>& func)
         : callbackfunc_(func) {}
 
     std::string GetName() const override { return callbackfunc_.target_type().name(); }
 
 private:
-    // type check has been done in event manager.
-    void Call(const Event& e) override { callbackfunc_(static_cast<EventType&>(e)); }
+    void Call(const Event& e) override
+    {
+        if (e.GetEventType() == T::GetStaticEventType()) {
+            callbackfunc_(static_cast<const T&>(e));
+        }
+    }
     
-    EventCallbackFn<EventType> callbackfunc_;
+    EventCallbackFn<T> callbackfunc_;
 };

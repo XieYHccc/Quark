@@ -1,30 +1,41 @@
 #pragma once
 
 #include <string>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "Application/Window/Window.h"
+#include "Events/ApplicationEvent.h"
 
 class Application {
 public:
-    Application() {}
-    ~Application();
+    Application(const std::string& title, const std::string& root, int width, int height);
+    virtual ~Application();
+    Application(const Application&) = delete;
+    const Application& operator=(const Application&) = delete;
 
-    void Initialize(const std::string& title, int width, int height);
-    void Finalize();
+    static Application& Instance() { return *instance_; }
+    Window& GetWindow() { return window_; }
+
     void Run();
 
 private:
-    void Update();
-    void Render();
+    // Update some Moudule Per Frame
+    virtual void Update();
+    // Render Per Frame
+    virtual void Render();
+
+    // Callback functions for events
+    void OnWindowClose(const WindowCloseEvent& event);
+    void OnWindowResize(const WindowResizeEvent& event) {}
 
 private:
-
-    GLFWwindow* window_;
-    std::string title_;
-    int width_, height_;
-
-    // per-frame logic
+    static Application* instance_;
+    
+    // Application status
+    float fps_;
+    float frame_time_;
     float delta_time_;
-    float last_frame_;
+    bool running_;
+
+    Window window_;
+    std::string root_;
 
 };

@@ -16,6 +16,7 @@ public:
 		return instance;
 	}
 	void Initialize() {};
+	void Finalize() {};
 
 	void add_object(std::shared_ptr<Object> object);
 

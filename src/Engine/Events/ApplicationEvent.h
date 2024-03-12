@@ -7,7 +7,7 @@
 
 class WindowResizeEvent : public Event {
 public:
-    EVENT_TYPE(WindowResizeEvent)
+    EVENT_TYPE("WindowResizeEvent")
 
     WindowResizeEvent(unsigned int width, unsigned int height)
         : width_(width)
@@ -23,12 +23,12 @@ public:
     }
 
 public:
-    unsigned int width_ { 0 };
-    unsigned int height_ { 0 };
+    unsigned int width_;
+    unsigned int height_;
 };
 
 class WindowCloseEvent : public Event {
 public:
-    EVENT_TYPE(WindowCloseEvent)
+    EVENT_TYPE("WindowCloseEvent")
 };
 

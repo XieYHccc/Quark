@@ -6,39 +6,44 @@
 
 class EventManager {
 public:
+    using EventType = Event::EventType;
 
-    void Initialize();
-    void Finalize();
+    static EventManager& Instance() {
+        static EventManager instance;
+        return instance;
+    }
+    
+    void Initialize() {};
+    void Finalize() {}
 
 public:
-    template<typename EventType, typename = std::enable_if_t<std::is_base_of_v<Event, EventType>>>
-    void Subscribe(const EventCallbackFn<EventType>& func);
+    template<typename T, typename = std::enable_if_t<std::is_base_of_v<Event, T>>>
+    void Subscribe(const EventCallbackFn<T>& func);
 
-    template<typename EventType, typename = std::enable_if_t<std::is_base_of_v<Event, EventType>>>
-    void Unsubscribe(const EventCallbackFn<EventType>& func);
+    template<typename T, typename = std::enable_if_t<std::is_base_of_v<Event, T>>>
+    void Unsubscribe(const EventCallbackFn<T>& func);
 
-    template<typename EventType, typename = std::enable_if_t<std::is_base_of_v<Event, EventType>>>
-    void TriggerEvent(const EventType& evnet);
+    template<typename T, typename = std::enable_if_t<std::is_base_of_v<Event, T>>>
+    void QueueEvent(std::unique_ptr<T>&& event);
 
-    template<typename EventType, typename = std::enable_if_t<std::is_base_of_v<Event, EventType>>>
-    void QueueEvent(std::unique_ptr<EventType>&& event);
-    
+    void TriggerEvent(const Event& evnet);
+
     void DispatchEvents();
 
 private:
     EventManager() = default;
-    void TriggerEvent()
+
     std::vector<std::unique_ptr<Event>> event_queue_;
-    std::unordered_map<std::type_index, std::vector<std::unique_ptr<BaseEventHandler>>> subscribers_;
+    std::unordered_map<EventType, std::vector<std::unique_ptr<BaseEventHandler>>> subscribers_;
 };
 
-template<typename EventType, typename>
-void EventManager::Subscribe(const EventCallbackFn<EventType>& func) 
+template<typename T, typename>
+void EventManager::Subscribe(const EventCallbackFn<T>& func) 
 {
-    EventHandler<EventType>* handler = std::make_unique<EventHandler>(func);
+    auto handler = std::make_unique<EventHandler<T>>(func);
     std::string name = func.target_type().name();
 
-    auto itr = subscribers_.find(std::type_index(typeid(EventType)));
+    auto itr = subscribers_.find(T::GetStaticEventType());
     if (itr != subscribers_.end()) {
         auto& subscribers = itr->second;
         for (auto& subscriber : subscribers) {
@@ -50,15 +55,15 @@ void EventManager::Subscribe(const EventCallbackFn<EventType>& func)
         itr->second.push_back(std::move(handler));
     }
     else {
-        subscribers_[std::type_index(typeid(EventType))].push_back(std::move(handler));
+        subscribers_[T::GetStaticEventType()].push_back(std::move(handler));
     }
 }
 
-template<typename EventType, typename>
-void EventManager::Unsubscribe(const EventCallbackFn<EventType>& func) 
+template<typename T, typename>
+void EventManager::Unsubscribe(const EventCallbackFn<T>& func) 
 {
     std::string name = func.target_type().name();
-    auto itr = subscribers_.find(std::type_index(typeid(EventType)));
+    auto itr = subscribers_.find(T::GetStaticEventType());
     if (itr != subscribers_.end()) {
         auto& subscribers = itr->second;
         for (auto it = subscribers.begin(); it != subscribers.end(); ++it) {
@@ -72,19 +77,8 @@ void EventManager::Unsubscribe(const EventCallbackFn<EventType>& func)
     std::cerr << "this event callback function doesn't exist." << std::endl;
 }
 
-template<typename EventType, typename >
-void EventManager::TriggerEvent(const EventType& evnet) 
+template<typename T, typename>
+void EventManager::QueueEvent(std::unique_ptr<T>&& event) 
 {
-    auto itr = subscribers_.find(std::type_index(typeid(EventType)));
-    if (itr != subscribers_.end()) {
-        for (auto& subscriber : itr->second) {
-            subscriber->Exec(static_cast<Event&>(evnet));
-        }
-    }
-}
-
-template<typename EventType, typename>
-void EventManager::QueueEvent(std::unique_ptr<EventType>&& event) 
-{
-       event_queue_.emplace_back(std::move(event));
+    event_queue_.push_back(std::move(event));
 }
