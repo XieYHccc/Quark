@@ -1,8 +1,8 @@
 #pragma once
-
-#include <_types/_uint16_t.h>
+#include <cstdint>
 
 using Keycode = uint16_t;
+
 enum : Keycode {
     // From glfw3.h
     Space = 32,

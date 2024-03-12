@@ -56,7 +56,7 @@ void Window::Initialize(const WindowProps& props) {
         WindowProps& props = *(WindowProps*)glfwGetWindowUserPointer(window);
         props.width = width;
         props.height = height;
-
+        glViewport(0, 0, width, height);
         EventManager::Instance().TriggerEvent(WindowResizeEvent(width, height));
     });
 
@@ -89,9 +89,13 @@ void Window::Initialize(const WindowProps& props) {
         EventManager::Instance().TriggerEvent(MouseMovedEvent((float)xpos, (float)ypos));
     });
 
-    glfwSetFramebufferSizeCallback(window_, [](GLFWwindow* window, int width, int height)
-    {
-    });
+    glfwSetScrollCallback(window_, [](GLFWwindow* window, double xOffset, double yOffset) {
+        EventManager::Instance().TriggerEvent(MouseScrolledEvent((float)xOffset, (float)yOffset));
+        });
+
+    glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xPos, double yPos) {
+        EventManager::Instance().TriggerEvent(MouseMovedEvent((float)xPos, (float)yPos));
+        });
 
     // Configure global OpenGl state
     glEnable(GL_DEPTH_TEST);
