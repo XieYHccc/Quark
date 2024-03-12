@@ -5,8 +5,8 @@
 
 struct MousePosition 
 {
-    float x_position;
-    float y_position;
+    float x_pos;
+    float y_pos;
 };
 
 class Input {

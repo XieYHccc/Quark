@@ -27,6 +27,17 @@ void Camera::Update(float deltaTime)
         Camera::global_camera.ProcessKeyboard(LEFT, deltaTime);
     if (Input::IsKeyPressed(D))
         Camera::global_camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    MousePosition pos = Input::GetMousePosition();
+    if (Input::first_mouse_) {
+        Input::last_position_ = pos;
+        Input::first_mouse_ = false;
+    }
+    float xoffset = pos.x_pos - Input::last_position_.x_pos;
+    float yoffset = Input::last_position_.y_pos - pos.y_pos; // reversed since y-coordinates go from bottom to top
+    ProcessMouseMovement(xoffset, yoffset);
+
+    Input::last_position_ = pos;
 }
 
 void Camera::ProcessKeyboard(Camera_Movement direction, float deltaTime)

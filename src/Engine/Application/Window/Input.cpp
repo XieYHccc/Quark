@@ -35,17 +35,17 @@ MousePosition Input::GetMousePosition()
     double xPos, yPos;
     MousePosition pos;
     glfwGetCursorPos(window, &xPos, &yPos);
-    pos.x_position = (float)xPos;
-    pos.y_position = (float)yPos;
+    pos.x_pos = (float)xPos;
+    pos.y_pos = (float)yPos;
     return pos;
 }
 
 float Input::GetMouseX()
 {
-    return GetMousePosition().x_position;
+    return GetMousePosition().x_pos;
 }
 
 float Input::GetMouseY()
 {
-    return GetMousePosition().y_position;
+    return GetMousePosition().y_pos;
 }
