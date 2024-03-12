@@ -1,23 +1,21 @@
-#include <iostream>
+#include "SandBoxApp.h"
 
-#include <glm/glm.hpp>
-
-#include <Scene/SceneMngr.h>
-#include <Application/Application.h>
-#include <Object/Components/TransformCmpt/transform.h>
-#include <Object/Object.h>
-#include <Object/Components/MeshRendererCmpt/MeshRenderCmpt.h>
-#include <Object/Components/MeshFilterCmpt/MeshFilterCmpt.h>
+#include <Application/Window/Input.h>
+#include <Render/Camera.h>
 #include <Render/texture2d.h>
 #include <Render/material.h>
 #include <Render/shader.h>
-#include <physics/rigid_body_dynamics.h>
-#include <physics/box_collider.h>
-#include <physics/mesh_collider.h>
+#include <Scene/SceneMngr.h>
+#include <Object/Components/TransformCmpt/transform.h>
+#include "Object/Components/MeshRendererCmpt/MeshRenderCmpt.h"
+#include <Object/Components/MeshFilterCmpt/MeshFilterCmpt.h>
+#include "physics/rigid_body_dynamics.h"
+#include "physics/collision_detection.h"
 
-int main()
+Application* CreateApplication()
 {
-    Application app("test"," ", 2000, 1200);
+    auto application = new SandBoxApp("test"," ", 2000, 1200);
+
     auto shader = std::make_shared<Shader>("../src/Engine/Render/shader.vs", "../src/Engine/Render/shader.fs");
 
     // add grid box
@@ -91,7 +89,52 @@ int main()
     SceneMngr::Instance().add_object(wall);
     SceneMngr::Instance().add_object(bunny);
 
-    app.Run();
+    return application;
 }
 
+void SandBoxApp::Update()
+{
+    if (Input::IsKeyPressed(K)) {
+        auto bunny = SceneMngr::Instance().get_object("bunny");
+        auto transform = bunny->get_component<Transform>();
+        auto rigid_body = bunny->get_component<RigidBodyDynamic>();
+        transform->set_position(glm::vec3(0.f, 1.f, 0.f));
+        transform->set_rotation(glm::quat(1.f, 0.f, 0.f, 0.f));
+        rigid_body->init_velocity();
 
+    }
+    if (Input::IsKeyPressed(L)) {
+        auto bunny = SceneMngr::Instance().get_object("bunny");
+        auto transform = bunny->get_component<Transform>();
+        auto rigid_body = bunny->get_component<RigidBodyDynamic>();
+        rigid_body->init_velocity(glm::vec3(0.f, 3.f, -6.f));
+        rigid_body->set_lauched(true);
+    }
+    auto bunny = SceneMngr::Instance().get_object("bunny");
+    auto wall = SceneMngr::Instance().get_object("wall");
+    auto gridbox = SceneMngr::Instance().get_object("gridbox");
+    auto mesh_collider = bunny->get_component<MeshCollider>();
+    auto wall_plane_collider = wall->get_component<PlaneCollider>();
+    auto ground_plane_collider = gridbox->get_component<PlaneCollider>();
+    check_collision(wall_plane_collider, mesh_collider);
+    check_collision(ground_plane_collider, mesh_collider);
+}
+
+void SandBoxApp::Render()
+{
+    glClearColor(0.36f, 0.36f, 0.36f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    for (auto& obj : SceneMngr::Instance().object_map) {
+        auto mesh_diplayer = obj.second->get_component<MeshRendererCmpt>();
+        auto rigid_body = obj.second->get_component<RigidBodyDynamic>();
+        if (mesh_diplayer == nullptr)
+            continue;
+
+        if (rigid_body != nullptr) {
+            rigid_body->update();
+        }
+
+        mesh_diplayer->render();
+    }
+}

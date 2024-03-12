@@ -17,25 +17,28 @@ public:
     void Run();
 
 private:
-    // Update some Moudule Per Frame
-    virtual void Update();
-    // Render Per Frame
-    virtual void Render();
+    // Update some modules per frame
+    virtual void Update() = 0;
+    // Render per frame
+    virtual void Render() = 0;
 
     // Callback functions for events
     void OnWindowClose(const WindowCloseEvent& event);
     void OnWindowResize(const WindowResizeEvent& event) {}
 
-private:
-    static Application* instance_;
-    
+protected:
     // Application status
     float fps_;
     float frame_time_;
-    float delta_time_;
     bool running_;
 
+    std::string root_; // root directory
+
+private:
+    static Application* instance_;
     Window window_;
-    std::string root_;
 
 };
+
+// To be defined in CLIENT
+Application* CreateApplication();

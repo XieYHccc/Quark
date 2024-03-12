@@ -1,4 +1,4 @@
-#include "Application/Input.h"
+#include "Application/Window/Input.h"
 
 #include <GLFW/glfw3.h>
 
