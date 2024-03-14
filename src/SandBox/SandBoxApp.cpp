@@ -16,7 +16,7 @@ Application* CreateApplication()
 {
     auto application = new SandBoxApp("test"," ", 2000, 1200);
 
-    auto shader = std::make_shared<Shader>("../../src/Engine/Render/shader.vs", "../../src/Engine/Render/shader.fs");
+    auto shader = std::make_shared<Shader>("../src/Engine/Render/shader.vs", "../src/Engine/Render/shader.fs");
 
     // add grid box
     // ==========================================================================
@@ -36,7 +36,7 @@ Application* CreateApplication()
     // set shader
     gridbox_displayer->set_shader(shader);
     // set material
-    auto gridbox_tex = Texture2D::load_texture("../../resources/textures/marble.jpg");
+    auto gridbox_tex = Texture2D::load_texture("../resources/textures/marble.jpg");
     auto gridbox_mtl = std::make_shared<Material>();
     gridbox_mtl->textures.push_back(std::make_pair("material.tex_diffuse", gridbox_tex));
     gridbox_displayer->set_material(gridbox_mtl);
@@ -55,7 +55,7 @@ Application* CreateApplication()
     // set shader
     wall_mesh_displayer->set_shader(shader);
     // set material
-    auto wall_tex = Texture2D::load_texture("../../resources/textures/bricks2.jpg");
+    auto wall_tex = Texture2D::load_texture("../resources/textures/bricks2.jpg");
     auto wall_mtl = std::make_shared<Material>();
     wall_mtl->textures.push_back(std::make_pair("material.tex_diffuse", wall_tex));
     wall_mesh_displayer->set_material(wall_mtl);
@@ -75,12 +75,12 @@ Application* CreateApplication()
     // set shader
     mesh_displayer->set_shader(shader);
     // set material
-    auto tex = Texture2D::load_texture("../../resources/textures/bunny.jpg");
+    auto tex = Texture2D::load_texture("../resources/textures/bunny.jpg");
     auto mtl = std::make_shared<Material>();
     mtl->textures.push_back(std::make_pair("material.tex_diffuse", tex));
     mesh_displayer->set_material(mtl);
     // load mesh
-    mesh_filter->load_mesh("../../resources/objects/Stanford_Bunny.obj");
+    mesh_filter->load_mesh("../resources/objects/Stanford_Bunny.obj");
     rigid_body->awake();
     mesh_collider->awake();
 
