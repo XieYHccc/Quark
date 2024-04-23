@@ -10,21 +10,21 @@ public:
     EVENT_TYPE("WindowResizeEvent")
 
     WindowResizeEvent(unsigned int width, unsigned int height)
-        : width_(width)
-        , height_(height)
+        : width(width)
+        , height(height)
     {
     }
 
     std::string ToString() const override
     {
         std::stringstream ss;
-        ss << "WindowResizeEvent: " << width_ << ", " << height_;
+        ss << "WindowResizeEvent: " << width << ", " << height;
         return ss.str();
     }
 
 public:
-    unsigned int width_;
-    unsigned int height_;
+    unsigned int width;
+    unsigned int height;
 };
 
 class WindowCloseEvent : public Event {

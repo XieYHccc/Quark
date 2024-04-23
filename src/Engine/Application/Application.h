@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "pch.h"
 #include "Application/Window/Window.h"
 #include "Events/ApplicationEvent.h"
 
@@ -29,7 +29,8 @@ private:
 protected:
     // Application status
     float fps_;
-    float frame_time_;
+    float frameTime_;
+    float deltaTime_;
     bool running_;
 
     std::string root_; // root directory

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <string>
-#include <memory>
+#include "pch.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -46,6 +45,7 @@ public:
     bool IsFullScreen() const { return props_.is_fullscreen; }
 
     GLFWwindow* GetNativeWindow() { return window_; }
+    GLFWmonitor* GetPrimaryMonitor() { return monitor_; }
 
 private:
     GLFWwindow* window_;

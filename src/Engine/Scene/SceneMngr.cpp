@@ -1,22 +1,23 @@
 #include "./SceneMngr.h"
 
 #include <iostream>
-void SceneMngr::add_object(std::shared_ptr<Object> object) {
-	auto target = object_map.find(object->get_name());
-	if (target != object_map.end()) {
-		std::cerr << "SceneMngr::add_object: object has existed." << std::endl;
-		return;
-	}
 
-	object_map.emplace(object->get_name(), object);
+#include "AssestLoader/LoadGLTF.h"
+#include "Graphics/Vulkan/RendererVulkan.h"
+
+std::shared_ptr<Scene> SceneMngr::LoadGltfScene(std::filesystem::path filePath)
+{
+	auto newScene = loadGltf(filePath);
+	sceneMap_.emplace(filePath, newScene);
+	
+	return newScene;
 }
 
-std::shared_ptr<Object> SceneMngr::get_object(const std::string& name) {
-	auto target = object_map.find(name);
-	if (target == object_map.end()) {
-		std::cerr << "SceneMngr::add_object: object has existed." << std::endl;
-		return nullptr;
+void SceneMngr::Finalize()
+{
+	vkDeviceWaitIdle(RendererVulkan::GetInstance()->GetVkDevice());
+	
+	for (auto [name, scene] : sceneMap_) {
+		scene->ClearResourses();
 	}
-	else
-		return target->second;
 }

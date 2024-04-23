@@ -16,14 +16,26 @@ Window::~Window()
 }
 
 void Window::Initialize(const WindowProps& props) {
+    // set window properties
+    props_ = props;
+
     // Initialize and configure glfw window 
     if (!glfwInit())
         exit(EXIT_FAILURE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_SAMPLES, 4);
+
+#ifdef GRAPHIC_API_OPENGL
+		windowName = "XEngine <OpenGL " + 
+			std::to_string(3) +"." + 
+			std::to_string(3) + ">";
+
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
+
+#ifdef GRAPHIC_API_VULKAN
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+#endif
 
     // Create GLFW window
     monitor_ = glfwGetPrimaryMonitor();
@@ -40,15 +52,21 @@ void Window::Initialize(const WindowProps& props) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
+    
+#ifdef GRAPHIC_API_OPENGL
     glfwMakeContextCurrent(window_);
+#endif
+
     glfwSetWindowUserPointer(window_, reinterpret_cast<void*>(&props_));
     SetVSync(props_.is_vsync);
 
+#ifdef GRAPHIC_API_OPENGL
     // Initialize glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         exit(EXIT_FAILURE);
     }
+#endif
 
     // Set GLFW callbacks
     glfwSetWindowSizeCallback(window_, [](GLFWwindow* window, int width, int height) 
@@ -56,7 +74,6 @@ void Window::Initialize(const WindowProps& props) {
         WindowProps& props = *(WindowProps*)glfwGetWindowUserPointer(window);
         props.width = width;
         props.height = height;
-        glViewport(0, 0, width, height);
         EventManager::Instance().TriggerEvent(WindowResizeEvent(width, height));
     });
 
@@ -97,8 +114,11 @@ void Window::Initialize(const WindowProps& props) {
         EventManager::Instance().TriggerEvent(MouseMovedEvent((float)xPos, (float)yPos));
         });
 
+#ifdef GRAPHIC_API_OPENGL
     // Configure global OpenGl state
     glEnable(GL_DEPTH_TEST);
+#endif
+
 }
 
 void Window::Finalize()

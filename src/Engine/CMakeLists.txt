@@ -13,15 +13,20 @@ ${EXTERNAL_PATH}/stb_image-2.28
 ${EXTERNAL_PATH}/tinyobjloader
 ${EXTERNAL_PATH}/glm
 ${EXTERNAL_PATH}/spdlog/include
+${EXTERNAL_PATH}/vma
+${EXTERNAL_PATH}/imgui
 )
 
+target_compile_options(EngineCore PRIVATE -Wno-nullability-completeness)
+target_compile_definitions(EngineCore PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 target_include_directories(EngineCore PUBLIC ${ENGINE_INCLUDE_DIRS} )
-target_link_libraries(EngineCore tiny_obj_loader glad stb_image glfw ${OPENGL_LIBRARIES} )
+target_link_libraries(EngineCore tiny_obj_loader glad stb_image glfw ${OPENGL_LIBRARIES} Vulkan::Vulkan imgui fastgltf::fastgltf)
 
-# # pch header file path
-# set(ENGINE_PRECOMPILED_HEADERS
-#     ${ENGINE_SOURCE_DIR}/pch.h
-# )
-# target_precompile_headers(EngineCore PRIVATE ${ENGINE_PRECOMPILED_HEADERS})
+
+# pch header file path
+set(ENGINE_PRECOMPILED_HEADERS
+    ${ENGINE_SOURCE_DIR}/pch.h
+)
+target_precompile_headers(EngineCore PRIVATE ${ENGINE_PRECOMPILED_HEADERS})
 
 # TARGET_COMPILE_DEFINITIONS(EngineCore PUBLIC XENGINE_EXPORTS )
