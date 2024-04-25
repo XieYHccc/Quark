@@ -14,7 +14,7 @@ void Logger::Init()
     logSinks[0]->set_level(spdlog::level::trace);
     logSinks[0]->set_pattern("%^[%T] %n: %v%$");
 
-    logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("XEngine.log", true));
+    logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("bin/XEngine.log", true));
     logSinks[1]->set_level(spdlog::level::trace);
     logSinks[1]->set_pattern("[%T] [%l] %n: %v");
 

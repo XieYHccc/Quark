@@ -43,9 +43,9 @@ VkSamplerMipmapMode extract_mipmap_mode(fastgltf::Filter filter)
     }
 }
 
-std::optional<GpuImageVulkan> load_image(fastgltf::Asset& asset, fastgltf::Image& image)
+std::optional<Texture> load_image(fastgltf::Asset& asset, fastgltf::Image& image)
 {
-    GpuImageVulkan newImage {};
+    Texture newImage {};
 
     int width, height, nrChannels;
 
@@ -174,12 +174,12 @@ std::shared_ptr<Scene> loadGltf(std::filesystem::path filePath)
     // temporal arrays for all the objects to use while creating the GLTF data
     std::vector<GpuMeshVulkan*> meshes;
     std::vector<GameObject*> gameObjects;
-    std::vector<GpuImageVulkan> images;
+    std::vector<Texture> images;
     std::vector<GpuMaterialInstance*> materials;
 
     // load all textures
 	for (fastgltf::Image& image : gltf.images) {
-		std::optional<GpuImageVulkan> img = load_image(gltf, image);
+		std::optional<Texture> img = load_image(gltf, image);
 
 		if (img.has_value()) {
 			images.push_back(*img);

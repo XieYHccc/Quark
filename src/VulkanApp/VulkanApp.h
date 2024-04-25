@@ -18,5 +18,9 @@ public:
     float yaw;
     float pitch;
 
+    ColorAttachment colorAttachment;
+    DepthAttachment depthAttachment;
+    VkExtent2D drawExtent;
+
 
 };

@@ -13,7 +13,7 @@ ${EXTERNAL_PATH}/stb_image-2.28
 ${EXTERNAL_PATH}/tinyobjloader
 ${EXTERNAL_PATH}/glm
 ${EXTERNAL_PATH}/spdlog/include
-${EXTERNAL_PATH}/vma
+${EXTERNAL_PATH}/vma/include
 ${EXTERNAL_PATH}/imgui
 )
 

@@ -5,7 +5,6 @@
 #include "pch.h"
 #include "Graphics/Vulkan/VulkanTypes.h"
 #include "GameObject/GameObject.h"
-#include "GameObject/Camera.h"
 #include "GameObject/Components/CameraCmpt/CameraCmpt.h"
 
 
@@ -14,11 +13,11 @@ class Scene {
 public:
     // gpu resources 
     std::unordered_map<std::string, std::unique_ptr<GpuMeshVulkan>> meshesMap;
-    std::unordered_map<std::string, GpuImageVulkan> imagesMap;
+    std::unordered_map<std::string, Texture> imagesMap;
     std::unordered_map<std::string, std::unique_ptr<GpuMaterialInstance>> materialsMap;
     std::vector<VkSampler> samplers;
     DescriptorAllocator descriptorPool;
-    GpuBufferVulkan materialDataBuffer;
+    UniformBuffer materialDataBuffer;
 
 public:
     Scene();

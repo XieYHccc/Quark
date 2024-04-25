@@ -13,12 +13,17 @@ Application* CreateApplication()
 {
     auto application = new VulkanApp("test"," ", 1300, 800);
 
-    // load scene
+    VkExtent2D swapchainExtent = RendererVulkan::GetInstance()->GetSwapCainExtent();
+    application->drawExtent = swapchainExtent;
+    application->colorAttachment = RendererVulkan::GetInstance()->CreateColorAttachment(swapchainExtent.width, swapchainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT);
+    application->depthAttachment = RendererVulkan::GetInstance()->CreateDepthAttachment(swapchainExtent.width, swapchainExtent.height, VK_FORMAT_D32_SFLOAT);
+
+    // 2. load scene
     application->scene = SceneMngr::Instance().LoadGltfScene("/Users/xieyhccc/develop/XEngine/src/Assets/Gltf/structure.glb");
 
-    // add a camera
+    // 3. add a camera
     auto cam = application->scene->AddGameObject("MainCamera");
-    cam->transformCmpt->SetPosition(glm::vec3(0, 0, 100));
+    cam->transformCmpt->SetPosition(glm::vec3(0, 0, 5));
     application->scene->SetMainCamera(cam->AddComponent<CameraCmpt>());
     application->yaw = 0;
     application->pitch = 0;
@@ -29,7 +34,9 @@ Application* CreateApplication()
 
 VulkanApp::~VulkanApp()
 {
-    
+    vkDeviceWaitIdle(RendererVulkan::GetInstance()->GetVkDevice());
+    RendererVulkan::GetInstance()->DestroyGpuImage(colorAttachment);
+    RendererVulkan::GetInstance()->DestroyGpuImage(depthAttachment);
 }
 
 void VulkanApp::Update()
@@ -94,30 +101,25 @@ void VulkanApp::Render()
     // 2. render frame
     RendererVulkan::GetInstance()->BeginFrame();
 
-    GpuImageVulkan& drawImage = RendererVulkan::GetInstance()->GetBuiltInDrawImage();
-    GpuImageVulkan& depthmage = RendererVulkan::GetInstance()->GetBuiltInDepthImage();
-
     VkImage currentPresentImage = RendererVulkan::GetInstance()->GetCurrentPresentImage();
     VkImageView currentPresentImageView = RendererVulkan::GetInstance()->GetCurrentPresentImageView();
     VkExtent2D swapchainExtent = RendererVulkan::GetInstance()->GetSwapCainExtent();
 
-
-    VkExtent2D drawExtent;
-    drawExtent.height = std::min(swapchainExtent.height, drawImage.imageExtent.height);
-	drawExtent.width= std::min(swapchainExtent.width, drawImage.imageExtent.width);
-
+    VkExtent2D realdrawExtent;
+    realdrawExtent.height = std::min(swapchainExtent.height, colorAttachment.imageExtent.height);
+	realdrawExtent.width= std::min(swapchainExtent.width, colorAttachment.imageExtent.width);
 
     // draw background
-    RendererVulkan::GetInstance()->TransitionImageLayout(drawImage.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-    RendererVulkan::GetInstance()->DrawBackGround();
+    RendererVulkan::GetInstance()->TransitionImageLayout(colorAttachment.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    RendererVulkan::GetInstance()->DrawBackGround(colorAttachment.imageView, realdrawExtent);
     // draw geometry
-    RendererVulkan::GetInstance()->TransitionImageLayout(drawImage.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-    RendererVulkan::GetInstance()->TransitionImageLayout(depthmage.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR);
-    RendererVulkan::GetInstance()->DrawGeometry(drawImage.imageView, depthmage.imageView, drawExtent, scene->GetDrawContext());
+    RendererVulkan::GetInstance()->TransitionImageLayout(colorAttachment.image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    RendererVulkan::GetInstance()->TransitionImageLayout(depthAttachment.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR);
+    RendererVulkan::GetInstance()->DrawGeometry(colorAttachment.imageView, depthAttachment.imageView, realdrawExtent, scene->GetDrawContext());
     // copy image to present image
-    RendererVulkan::GetInstance()->TransitionImageLayout(drawImage.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    RendererVulkan::GetInstance()->TransitionImageLayout(colorAttachment.image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     RendererVulkan::GetInstance()->TransitionImageLayout(currentPresentImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    RendererVulkan::GetInstance()->CopyImagetoImage(drawImage.image, currentPresentImage, drawExtent, swapchainExtent);
+    RendererVulkan::GetInstance()->CopyImagetoImage(colorAttachment.image, currentPresentImage, realdrawExtent, swapchainExtent);
     // draw imgui
     RendererVulkan::GetInstance()->TransitionImageLayout(currentPresentImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     RendererVulkan::GetInstance()->DrawImgui(currentPresentImageView, swapchainExtent);

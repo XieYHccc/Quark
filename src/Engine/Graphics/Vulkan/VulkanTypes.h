@@ -3,21 +3,6 @@
 
 #include <glm/glm.hpp>
 
-enum class GPU_BUFFER_TYPE {
-    INVALID,
-    VERTEX_BUFFER,
-    INDEX_BUFFER,
-    UNIFOR_BUFFER
-
-};
-
-enum class GPU_IMAGE_TYPE {
-    INVALID,
-    TEXTURE,
-    COLOR_FRAME_BUFFER,
-    DEPTH_FRAME_BUFFER
-};
-
 enum class GPU_PIPELINE_TYPE {
     INVALID,
     GRAPHICS,
@@ -30,24 +15,28 @@ enum class MATERIAL_PASS_TYPE :uint8_t {
     TRANSPARENT
 };
 
-struct GpuBufferVulkan {
-
+struct AllocatedBuffer {
     // vulkan objects
     VkBuffer buffer;
     VmaAllocation allocation;
     VmaAllocationInfo info;
-
-    GPU_BUFFER_TYPE type;
 };
 
-struct GpuImageVulkan {
+struct AllocatedImage {
     VkImage image;
     VkImageView imageView;
     VmaAllocation allocation;
     VkExtent3D imageExtent;
     VkFormat imageFormat;
-    GPU_IMAGE_TYPE type;
 };
+
+using UniformBuffer = AllocatedBuffer;
+using VertexBuffer = AllocatedBuffer;
+using IndexBuffer = AllocatedBuffer;
+
+using Texture = AllocatedImage;
+using ColorAttachment = AllocatedImage;
+using DepthAttachment = AllocatedImage;
 
 struct GpuPipeLineVulkan {
 
@@ -124,8 +113,8 @@ struct RenderObject {
 };
 
 struct GpuMeshBuffers {
-    GpuBufferVulkan indexBuffer;
-    GpuBufferVulkan vertexBuffer;
+    IndexBuffer indexBuffer;
+    VertexBuffer vertexBuffer;
     VkDeviceAddress vertexBufferAddress;
 };
 

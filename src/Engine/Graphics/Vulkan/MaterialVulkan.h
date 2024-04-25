@@ -25,9 +25,9 @@ public:
 	};
 
 	struct MaterialResources {
-		GpuImageVulkan colorImage;
+		Texture colorImage;
 		VkSampler colorSampler;
-		GpuImageVulkan metalRoughImage;
+		AllocatedImage metalRoughImage;
 		VkSampler metalRoughSampler;
 		VkBuffer dataBuffer;
 		uint32_t dataBufferOffset;

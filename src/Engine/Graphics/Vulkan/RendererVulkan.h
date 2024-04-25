@@ -42,43 +42,47 @@ public:
     void Initialize();
     void Finalize();
 
+
     // ----------------------------Render Frame API------------------------------
+
+    // all draw commands happens between BeginFrame() and EndFrame()
     void BeginFrame();
     void EndFrame();
 
     void DrawGeometry(VkImageView colorTargetView, VkImageView depthTargetView, VkExtent2D extent, const DrawContext& context);
     void DrawImgui(VkImageView targetView, VkExtent2D extent);
-    void DrawBackGround();
-
-    PerFrameData GetCurrentFrameData() { return frameData_[currentFrame_]; }
-    VkImage GetCurrentPresentImage() { return swapChainImages_[currentPresentImage_];}
-    VkImageView GetCurrentPresentImageView() { return swapchainImageViews_[currentPresentImage_];}
-    GpuImageVulkan& GetBuiltInDrawImage() { return drawImage_; }
-    GpuImageVulkan& GetBuiltInDepthImage() { return depthImage_; }
-    VkExtent2D GetSwapCainExtent() { return swapChainExtent_; }
-    VkDevice GetVkDevice() { return vkDevice_; }
-    VkDescriptorSetLayout GetSceneDescriptorSetLayout() const { return gpuSceneDataDescriptorLayout_;}
+    void DrawBackGround(VkImageView targetView, VkExtent2D extent);
 
     void TransitionImageLayout(VkImage image, VkImageLayout currentLayout, VkImageLayout newLayout);
     void CopyImagetoImage(VkImage source, VkImage destination, VkExtent2D srcSize, VkExtent2D dstSize);
     void ImmediateSubmit(std::function<void(VkCommandBuffer cmd)>&& function);
+    
+    PerFrameData GetCurrentFrameData() { return frameData_[currentFrame_]; }
+    VkImage GetCurrentPresentImage() { return swapChainImages_[currentPresentImage_];}
+    VkImageView GetCurrentPresentImageView() { return swapchainImageViews_[currentPresentImage_];}
+    VkExtent2D GetSwapCainExtent() { return swapChainExtent_; }
+    VkDevice GetVkDevice() { return vkDevice_; }
+
+    VkFormat GetSwapCainImageFormat() { return swapChainImageFormat_; }
+    VkDescriptorSetLayout GetSceneDescriptorSetLayout() const { return gpuSceneDataDescriptorLayout_;}
 
     // -----------------------Gpu Resources Creation API--------------------
-    GpuBufferVulkan CreateUniformBuffer(size_t size);
-    GpuBufferVulkan CreateVertexBuffer(std::span<Vertex> vertices);
-    GpuBufferVulkan CreateIndexBuffer(std::span<uint32_t> indices);
+    UniformBuffer CreateUniformBuffer(size_t size);
+    VertexBuffer CreateVertexBuffer(std::span<Vertex> vertices);
+    IndexBuffer CreateIndexBuffer(std::span<uint32_t> indices);
     GpuMeshBuffers CreateMeshBuffers(std::span<uint32_t> indices, std::span<Vertex> vertices);
-    GpuImageVulkan CreateTexture(void* data, uint32_t width, uint32_t height, bool mipmapped);
-    GpuImageVulkan CreateFrameBuffer(uint32_t width, uint32_t height, VkFormat format, GPU_IMAGE_TYPE type);
+    Texture CreateTexture(void* data, uint32_t width, uint32_t height, bool mipmapped);
+    DepthAttachment CreateDepthAttachment(uint32_t width, uint32_t height, VkFormat format);
+    ColorAttachment CreateColorAttachment(uint32_t width, uint32_t height, VkFormat format);
     VkShaderModule LoadShader(const char* filePath);
 
     // lower level
-    GpuImageVulkan CreateVulkanImage(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, GPU_IMAGE_TYPE type, bool mipmapped = false);
-    GpuBufferVulkan CreateVulkanBuffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+    AllocatedImage CreateVulkanImage(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false);
+    AllocatedBuffer CreateVulkanBuffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
     // destroy resources on GPU
-    void DestroyGpuBuffer(const GpuBufferVulkan& buffer);
-    void DestroyGpuImage(const GpuImageVulkan& image);
+    void DestroyGpuBuffer(const AllocatedBuffer& buffer);
+    void DestroyGpuImage(const AllocatedImage& image);
     
     // --------------------------evnet callback function-------------------
     // evnet callback functions
@@ -116,10 +120,10 @@ private:
 
 public:
     // default textures and samplers
-    GpuImageVulkan whiteImage;
-	GpuImageVulkan blackImage;
-	GpuImageVulkan greyImage;
-	GpuImageVulkan errorCheckerboardImage;
+    AllocatedImage whiteImage;
+	AllocatedImage blackImage;
+	AllocatedImage greyImage;
+	AllocatedImage errorCheckerboardImage;
     VkSampler defaultSamplerLinear;
 	VkSampler defaultSamplerNearest;
 
@@ -155,17 +159,16 @@ private:
     // main deletion queue
     vkutil::DeletionQueue mainDeletionQueue_;
     
-    // only draw one color buffer each time in GPU but preparing 2 groups of frame data in cpu
-    GpuImageVulkan drawImage_;
-    GpuImageVulkan depthImage_;
+    // color and depth attachments
+    VkFormat colorAttachmentFormat_;
+    ColorAttachment colorAttachment_;
+    DepthAttachment depthAttachment_;
     PerFrameData frameData_[FRAME_OVERLAP];
     VkExtent2D drawExtent_; // actual draw extent
     uint32_t currentFrame_;
     uint32_t currentPresentImage_;
 
     // computing background pipeline objects
-    DescriptorAllocator computingPipeLinedescriptorAllocator_;
-	VkDescriptorSet drawImageDescriptors_;
 	VkDescriptorSetLayout drawImageDescriptorLayout_;
     std::vector<ComputeEffect> backgroundEffects_;
 	int currentBackgroundEffect_;

@@ -44,7 +44,7 @@ void RendererVulkan::Creat()
 
 // ----------------------------------------Public Standard API----------------------------------------------
 void RendererVulkan::Initialize()
-{   
+{
     // get application's window
     window_ = Application::Instance().GetWindow().GetNativeWindow();
     int width = 0, height = 0;
@@ -187,23 +187,27 @@ void RendererVulkan::CopyImagetoImage(VkImage source, VkImage destination, VkExt
     vkutil::CopyImageToImage(vkDevice_, currentFrame.mainCommandBuffer, source, destination, srcSize, dstSize);
 }
 
-void RendererVulkan::DrawBackGround()
+void RendererVulkan::DrawBackGround(VkImageView targetView, VkExtent2D extent)
 {
-    VkExtent2D drawExtent;
-    drawExtent.height = std::min(swapChainExtent_.height, drawImage_.imageExtent.height);
-	drawExtent.width= std::min(swapChainExtent_.width, drawImage_.imageExtent.width);
+    PerFrameData& currentFrame = frameData_[currentFrame_];
+    
+    VkDescriptorSet drawImageDescriptor = currentFrame.frameDescriptorPool.Allocate(drawImageDescriptorLayout_);
 
-    VkCommandBuffer cmd = frameData_[currentFrame_].mainCommandBuffer;
+    DescriptorWriter writer;
+	writer.WriteImage(0, targetView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+	writer.UpdateSet(drawImageDescriptor);
+
+    VkCommandBuffer cmd = currentFrame.mainCommandBuffer;
     // select curent compute pipeline
 	ComputeEffect& effect = backgroundEffects_[currentBackgroundEffect_];
 	// bind the background compute pipeline
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, effect.computePipeline.pipeline);
 	// bind the descriptor set containing the draw image for the compute pipeline
-	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,effect.computePipeline.layout, 0, 1, &drawImageDescriptors_, 0, nullptr);
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE,effect.computePipeline.layout, 0, 1, &drawImageDescriptor, 0, nullptr);
 	// bind push constants 
 	vkCmdPushConstants(cmd, effect.computePipeline.layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(ComputePushConstants), &effect.data);
 	// execute the compute  pipeline dispatch. We are using 16x16 workgroup size so we need to divide by it
-	vkCmdDispatch(cmd, std::ceil(drawExtent.width / 16.0), std::ceil(drawExtent.height / 16.0), 1);
+	vkCmdDispatch(cmd, std::ceil(extent.width / 16.0), std::ceil(extent.height / 16.0), 1);
 }
 
 void RendererVulkan::DrawGeometry(VkImageView colorTargetView, VkImageView depthTargetView, VkExtent2D extent, const DrawContext &context)
@@ -219,7 +223,7 @@ void RendererVulkan::DrawGeometry(VkImageView colorTargetView, VkImageView depth
 	VulkanExtentionFuncs::pVkCmdBeginRenderingKHR(cmd, &renderInfo);
 
     // allocate a new uniform buffer for the scene data
-	GpuBufferVulkan gpuSceneDataBuffer = CreateUniformBuffer(sizeof(GpuSceneData));
+	AllocatedBuffer gpuSceneDataBuffer = CreateUniformBuffer(sizeof(GpuSceneData));
 	currentFrame.deletionQueue.push_deletor([=, this]() {
 		DestroyGpuBuffer(gpuSceneDataBuffer);
 	});
@@ -308,7 +312,7 @@ void RendererVulkan::DrawImgui(VkImageView targetView, VkExtent2D extent)
 	VulkanExtentionFuncs::pVkCmdEndRenderingKHR(cmd);
 }
 
-GpuImageVulkan RendererVulkan::CreateFrameBuffer(uint32_t width, uint32_t height, VkFormat format, GPU_IMAGE_TYPE type)
+ColorAttachment RendererVulkan::CreateColorAttachment(uint32_t width, uint32_t height, VkFormat format)
 {
 	VkExtent3D frameBufferExtent = {
 		static_cast<uint32_t>(width),
@@ -317,38 +321,44 @@ GpuImageVulkan RendererVulkan::CreateFrameBuffer(uint32_t width, uint32_t height
 	};
 
     VkImageUsageFlags BufferUsages{};
-    if (type == GPU_IMAGE_TYPE::COLOR_FRAME_BUFFER) {
-        BufferUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        BufferUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        BufferUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
-        BufferUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;   
-    }
-    else {
-    	BufferUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    }
-    return CreateVulkanImage(frameBufferExtent, format, BufferUsages, type);
+    BufferUsages |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    BufferUsages |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    BufferUsages |= VK_IMAGE_USAGE_STORAGE_BIT;
+    BufferUsages |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;   
+    return CreateVulkanImage(frameBufferExtent, format, BufferUsages);
 }
 
-GpuBufferVulkan RendererVulkan::CreateUniformBuffer(size_t size)
+DepthAttachment RendererVulkan::CreateDepthAttachment(uint32_t width, uint32_t height, VkFormat format)
 {
-    GpuBufferVulkan newbuffer = CreateVulkanBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-    newbuffer.type = GPU_BUFFER_TYPE::UNIFOR_BUFFER;
+	VkExtent3D frameBufferExtent = {
+		static_cast<uint32_t>(width),
+		static_cast<uint32_t>(height),
+		1
+	};
 
+    VkImageUsageFlags BufferUsages{};
+    BufferUsages |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    return CreateVulkanImage(frameBufferExtent, format, BufferUsages);
+}
+
+UniformBuffer RendererVulkan::CreateUniformBuffer(size_t size)
+{
+    UniformBuffer newbuffer = CreateVulkanBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
     return newbuffer;
 }
 
-GpuBufferVulkan RendererVulkan::CreateVertexBuffer(std::span<Vertex> vertices)
+VertexBuffer RendererVulkan::CreateVertexBuffer(std::span<Vertex> vertices)
 {
     const size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
 
 
     // create vertex buffer
-    GpuBufferVulkan newbuffer = CreateVulkanBuffer(vertexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+    VertexBuffer newbuffer = CreateVulkanBuffer(vertexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
     VMA_MEMORY_USAGE_GPU_ONLY);
-    newbuffer.type = GPU_BUFFER_TYPE::VERTEX_BUFFER;
 
     // create buffer for copying
-	GpuBufferVulkan staging = CreateVulkanBuffer(vertexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+	AllocatedBuffer staging = CreateVulkanBuffer(vertexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 	void* data = staging.allocation->GetMappedData();
 
     // copy vertex buffer
@@ -367,17 +377,16 @@ GpuBufferVulkan RendererVulkan::CreateVertexBuffer(std::span<Vertex> vertices)
     return newbuffer;
 }
 
-GpuBufferVulkan RendererVulkan::CreateIndexBuffer(std::span<uint32_t> indices)
+IndexBuffer RendererVulkan::CreateIndexBuffer(std::span<uint32_t> indices)
 {
     const size_t indexBufferSize = indices.size() * sizeof(uint32_t);
 
 	// create index buffer
-	GpuBufferVulkan newbuffer = CreateVulkanBuffer(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+	AllocatedBuffer newbuffer = CreateVulkanBuffer(indexBufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		VMA_MEMORY_USAGE_GPU_ONLY);
-    newbuffer.type = GPU_BUFFER_TYPE::INDEX_BUFFER;
 
     // create buffer for copying
-	GpuBufferVulkan staging = CreateVulkanBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+	AllocatedBuffer staging = CreateVulkanBuffer(indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 	void* data = staging.allocation->GetMappedData();
 
     // copy vertex buffer
@@ -397,10 +406,10 @@ GpuBufferVulkan RendererVulkan::CreateIndexBuffer(std::span<uint32_t> indices)
     
 }
 
-GpuImageVulkan RendererVulkan::CreateTexture(void* data, uint32_t width, uint32_t height, bool mipmapped)
+Texture RendererVulkan::CreateTexture(void* data, uint32_t width, uint32_t height, bool mipmapped)
 {
 	size_t data_size = width* height * 4;
-	GpuBufferVulkan staging = CreateVulkanBuffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+	AllocatedBuffer staging = CreateVulkanBuffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 	
     memcpy(staging.info.pMappedData, data, data_size);
 
@@ -409,7 +418,7 @@ GpuImageVulkan RendererVulkan::CreateTexture(void* data, uint32_t width, uint32_
     size.height = height;
     size.depth = 1;
 
-	GpuImageVulkan new_image = CreateVulkanImage(size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, GPU_IMAGE_TYPE::TEXTURE, mipmapped);
+	AllocatedImage new_image = CreateVulkanImage(size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped);
 
     ImmediateSubmit([&](VkCommandBuffer cmd) {
     vkutil::TransitionImage(vkDevice_, cmd, new_image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -458,7 +467,7 @@ GpuMeshBuffers RendererVulkan::CreateMeshBuffers(std::span<uint32_t> indices, st
 		VMA_MEMORY_USAGE_GPU_ONLY);
 
 	// create buffer for copying
-	GpuBufferVulkan staging = CreateVulkanBuffer(vertexBufferSize + indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+	AllocatedBuffer staging = CreateVulkanBuffer(vertexBufferSize + indexBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 	void* data = staging.allocation->GetMappedData();
 
 	// copy vertex buffer
@@ -528,23 +537,22 @@ VkShaderModule RendererVulkan::LoadShader(const char *filePath)
     return shaderModule;
 }
 
-void RendererVulkan::DestroyGpuImage(const GpuImageVulkan& image)
+void RendererVulkan::DestroyGpuImage(const AllocatedImage& image)
 {
     vkDestroyImageView(vkDevice_, image.imageView, nullptr);
     vmaDestroyImage(vmaAllocator_, image.image, image.allocation);
 }
 
-void RendererVulkan::DestroyGpuBuffer(const GpuBufferVulkan &buffer)
+void RendererVulkan::DestroyGpuBuffer(const AllocatedBuffer &buffer)
 {
     vmaDestroyBuffer(vmaAllocator_, buffer.buffer, buffer.allocation);
 }
 
-GpuImageVulkan RendererVulkan::CreateVulkanImage(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, GPU_IMAGE_TYPE type, bool mipmapped)
+AllocatedImage RendererVulkan::CreateVulkanImage(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped)
 {
-	GpuImageVulkan newImage;
+	AllocatedImage newImage;
 	newImage.imageFormat = format;
 	newImage.imageExtent = size;
-    newImage.type = type;
 
 	VkImageCreateInfo img_info = vkutil::image_create_info(format, usage, size);
 	if (mipmapped) {
@@ -578,7 +586,7 @@ GpuImageVulkan RendererVulkan::CreateVulkanImage(VkExtent3D size, VkFormat forma
 	return newImage;
 }
 
-GpuBufferVulkan RendererVulkan::CreateVulkanBuffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+AllocatedBuffer RendererVulkan::CreateVulkanBuffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
 	// allocate buffer
 	VkBufferCreateInfo bufferInfo = {.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -591,7 +599,7 @@ GpuBufferVulkan RendererVulkan::CreateVulkanBuffer(size_t allocSize, VkBufferUsa
 	vmaallocInfo.usage = memoryUsage;
 	vmaallocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-	GpuBufferVulkan newBuffer;
+	AllocatedBuffer newBuffer;
 	// allocate the buffer
 	if (vmaCreateBuffer(vmaAllocator_, &bufferInfo, &vmaallocInfo, &newBuffer.buffer, &newBuffer.allocation,
 		&newBuffer.info) != VK_SUCCESS)
@@ -751,7 +759,8 @@ void RendererVulkan::CreateSwapChain()
     createInfo.presentMode = presentMode;
     createInfo.imageExtent = extent;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT 
+        | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 
     // how to handle images in different queues
     uint32_t tmpQueueFamilyIndices[] = { queueFamilyIndices_.graphics, queueFamilyIndices_.present };
@@ -899,14 +908,14 @@ void RendererVulkan::CreateFrameBuffers()
         width *= (float)resolutionWidth / Application::Instance().GetWindow().GetWidth() ;
         height *= (float)resolutionWidth / Application::Instance().GetWindow().GetWidth() ;
     }
-
+    
     // create color and depth frame buffer
-    drawImage_ = CreateFrameBuffer(width, height, VK_FORMAT_R16G16B16A16_SFLOAT, GPU_IMAGE_TYPE::COLOR_FRAME_BUFFER);
-	depthImage_ = CreateFrameBuffer(width, height, VK_FORMAT_D32_SFLOAT, GPU_IMAGE_TYPE::DEPTH_FRAME_BUFFER);
+    colorAttachment_ = CreateColorAttachment(width, height, VK_FORMAT_R16G16B16A16_SFLOAT);
+	depthAttachment_ = CreateDepthAttachment(width, height, VK_FORMAT_D32_SFLOAT);
 
     mainDeletionQueue_.push_deletor([&](){
-		DestroyGpuImage(drawImage_);
-		DestroyGpuImage(depthImage_);
+		DestroyGpuImage(colorAttachment_);
+		DestroyGpuImage(depthAttachment_);
 	});
 }
 
@@ -950,13 +959,6 @@ void RendererVulkan::CreateSyncObjects()
 
 void RendererVulkan::CreateBuiltInDescriptorAllocators()
 {
-    // create a descriptor pool for computing pipeline
-    std::vector<DescriptorAllocator::PoolSizeRatio> computingPipeLinePoolsizes = { 
-		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 }
-	};
-
-    computingPipeLinedescriptorAllocator_.Init(10, computingPipeLinePoolsizes);
-
     // create descriptor pool for each frame data
 	std::vector<DescriptorAllocator::PoolSizeRatio> GlobalPoolsizes = { 
 		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 3 },
@@ -979,18 +981,10 @@ void RendererVulkan::CreateBuiltInDescriptorAllocators()
 	builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 	gpuSceneDataDescriptorLayout_ = builder.Build();
 
-    // create descriptor set for compute pipeline
-	drawImageDescriptors_ = computingPipeLinedescriptorAllocator_.Allocate(drawImageDescriptorLayout_);	
-
-    DescriptorWriter writer;
-	writer.WriteImage(0, drawImage_.imageView, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-	writer.UpdateSet(drawImageDescriptors_);
-
     mainDeletionQueue_.push_deletor([&]() {
         // destroy builtin descriptor set layout and allocator
         vkDestroyDescriptorSetLayout(vkDevice_, drawImageDescriptorLayout_, nullptr);
         vkDestroyDescriptorSetLayout(vkDevice_, gpuSceneDataDescriptorLayout_, nullptr);
-        computingPipeLinedescriptorAllocator_.DestroyPools();
     });
 }
 
@@ -1100,7 +1094,9 @@ void RendererVulkan::InitImgui()
 	vkCreateDescriptorPool(vkDevice_, &pool_info, nullptr, &imguiPool);
 
     // 2: initialize imgui
+    IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImGui::GetIO().IniFilename = "bin/imgui.ini";
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
