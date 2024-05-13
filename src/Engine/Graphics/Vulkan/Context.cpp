@@ -107,14 +107,14 @@ void Context::Finalize()
     }
     vkDestroyInstance(vkInstance_, nullptr);
 
-    UE_CORE_INFO("Context Destroyed")
+    CORE_LOG_INFO("Context Destroyed")
 
 }
 
 void Context::CreateVkInstance()
 {
     if (enableValidationLayers && !checkValidationLayerSupport(validationLayers)) {
-        UE_CORE_ERROR("validation layers requested, but not available!");
+        CORE_LOG_ERROR("validation layers requested, but not available!");
     }
 
     VkApplicationInfo appInfo{};
@@ -137,7 +137,7 @@ void Context::CreateVkInstance()
     // get extensions for window support
     auto extensions = GetRequiredExtensions();
     bool check = checkInstanceExtensionSupport(extensions);
-    UE_CORE_ASSERT_MSG(check, "Vkinstance extensions are not supported");
+    CORE_ASSERT_MSG(check, "Vkinstance extensions are not supported");
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
@@ -154,7 +154,7 @@ void Context::CreateVkInstance()
 
     VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &vkInstance_));
 
-    UE_CORE_DEBUG("VkInstance Created")
+    CORE_LOG_DEBUG("VkInstance Created")
 
     // vkdebugmessenger is just a wrapper of debug callback function
     if (enableValidationLayers)
@@ -165,7 +165,7 @@ void Context::CreateSurface()
 {
     // surface的具体创建过程是要区分平台的，这里直接用GLFW封装好的接口来创建
     VK_ASSERT(glfwCreateWindowSurface(vkInstance_, window_, nullptr, &surface_));
-    UE_CORE_DEBUG("VkSurfaceKHR Created")
+    CORE_LOG_DEBUG("VkSurfaceKHR Created")
 }
 
 void Context::CreateDebugMessenger()
@@ -177,7 +177,7 @@ void Context::CreateDebugMessenger()
     createInfo.pfnUserCallback = VkDebugCallback;
 
     VK_ASSERT(CreateDebugUtilsMessengerEXT(vkInstance_, &createInfo, nullptr, &debugMessenger_));
-    UE_CORE_DEBUG("VkDebugMessenger Created")
+    CORE_LOG_DEBUG("VkDebugMessenger Created")
 }
 
 void Context::PickGPU()
@@ -186,7 +186,7 @@ void Context::PickGPU()
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, nullptr);
 
-    UE_CORE_ASSERT_MSG(deviceCount !=0, "failed to find GPUs with Vulkan support!")
+    CORE_ASSERT_MSG(deviceCount !=0, "failed to find GPUs with Vulkan support!")
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(vkInstance_, &deviceCount, devices.data());
@@ -198,8 +198,8 @@ void Context::PickGPU()
         }
     }
 
-    UE_CORE_ASSERT_MSG(chosenGPU_ != VK_NULL_HANDLE, "failed to find a suitable GPU!")
-    UE_CORE_DEBUG("VkPhysicalDevice Created")
+    CORE_ASSERT_MSG(chosenGPU_ != VK_NULL_HANDLE, "failed to find a suitable GPU!")
+    CORE_LOG_DEBUG("VkPhysicalDevice Created")
 }
 
 void Context::CreateLogicalDevice()
@@ -269,7 +269,7 @@ void Context::CreateLogicalDevice()
     vkGetDeviceQueue(vkDevice_, queueFamilyIndices_.present, 0, &presentQueue_);
 
 
-    UE_CORE_DEBUG("VkDevice Created")
+    CORE_LOG_DEBUG("VkDevice Created")
 }
 
 void Context::CreateMemoryAllocator()
@@ -280,7 +280,7 @@ void Context::CreateMemoryAllocator()
     vmaInfo.instance = vkInstance_;
     vmaInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     VK_ASSERT(vmaCreateAllocator(&vmaInfo, &vmaAllocator_));
-    UE_CORE_DEBUG("VmaAllocator Created")
+    CORE_LOG_DEBUG("VmaAllocator Created")
 }
 
 void Context::CreateSwapChain()
@@ -361,7 +361,7 @@ void Context::CreateSwapChain()
         VK_ASSERT(vkCreateImageView(vkDevice_, &view_info, nullptr, &swapChainImages_[i].imageView));
     }
 
-    UE_CORE_DEBUG("VkSwapChain Created")
+    CORE_LOG_DEBUG("VkSwapChain Created")
 }
 
 void Context::ResizeSwapchain()

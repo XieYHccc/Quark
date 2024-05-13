@@ -28,8 +28,7 @@ VkDescriptorSetLayout DescriptorSetLayoutBuilder::Build(Context& context)
     info.flags = 0;
 
     VkDescriptorSetLayout set;
-    if (vkCreateDescriptorSetLayout(context.GetVkDevice(), &info, nullptr, &set) != VK_SUCCESS)
-		UE_CORE_ERROR("DescriptorSetLayoutBuilder::Build() : Failed to create descriptor set layout")
+    VK_ASSERT(vkCreateDescriptorSetLayout(context.GetVkDevice(), &info, nullptr, &set));
 
     return set;
 }

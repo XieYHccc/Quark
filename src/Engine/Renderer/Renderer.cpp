@@ -31,7 +31,7 @@ void Renderer::Init()
 
     currentFrame_ = 0;
 
-    UE_CORE_INFO("Init Vulkan Render Device")
+    CORE_LOG_INFO("Init Vulkan Render Device")
 
 }
 
@@ -71,7 +71,7 @@ PerFrameData* Renderer::BeginFrame()
 		return VK_NULL_HANDLE;
 	}
     else if (e != VK_SUCCESS && e != VK_SUBOPTIMAL_KHR)
-        UE_CORE_ERROR("failed to acquire swap chain image!");
+        CORE_LOG_ERROR("failed to acquire swap chain image!");
 
     // refresh frame data
     frameData_[currentFrame_].deletionQueue.flush();
@@ -115,7 +115,7 @@ void Renderer::EndFrame()
 
     if (presentResult != VK_SUCCESS && presentResult != VK_ERROR_OUT_OF_DATE_KHR
 		&& presentResult != VK_SUBOPTIMAL_KHR) {
-        UE_CORE_ASSERT_MSG(false, "failed to present swap chain image!")
+        CORE_ASSERT_MSG(false, "failed to present swap chain image!")
     }
 
     currentFrame_  = (currentFrame_ + 1) % FRAME_OVERLAP;
@@ -195,11 +195,11 @@ void Renderer::CreateCommands()
 	for (int i = 0; i < FRAME_OVERLAP; i++) {
         // create command pool and command buffer for each fbo
 		if (vkCreateCommandPool(vkDevice_, &commandPoolInfo, nullptr, &frameData_[i].commandPool) != VK_SUCCESS)
-            UE_CORE_ERROR("Renderer::CreateCommands() : Failed to create command pool")
+            CORE_ASSERT_MSG(false, "Renderer::CreateCommands() : Failed to create command pool")
 
 		VkCommandBufferAllocateInfo cmdAllocInfo = vk::init::command_buffer_allocate_info(frameData_[i].commandPool, 1);
 		if (vkAllocateCommandBuffers(vkDevice_, &cmdAllocInfo, &frameData_[i].mainCommandBuffer) != VK_SUCCESS)
-            UE_CORE_ERROR("Renderer::CreateCommands() : Fialed to create command buffer")
+            CORE_ASSERT_MSG(false, "Renderer::CreateCommands() : Fialed to create command buffer")
     }
 
 }

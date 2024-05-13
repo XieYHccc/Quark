@@ -45,7 +45,7 @@ Application::Application(const std::string& title, const std::string& root, int 
     // Register application callback functions
     EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
 
-    UE_CORE_INFO("Init Engine Successfully")
+    CORE_LOG_INFO("Init Engine Successfully")
 }
 
 Application::~Application() {

@@ -30,7 +30,7 @@ std::shared_ptr<Sampler> Sampler::GetFromPool(const AssetFilePath &path, const s
         return find->second;
     }
 
-    UE_CORE_WARN(" Sampler Asset with path {} and name {} doesn't exist", path.string() , name);
+    CORE_LOG_WARN(" Sampler Asset with path {} and name {} doesn't exist", path.string() , name);
     return nullptr;
 }
 
@@ -68,7 +68,7 @@ std::shared_ptr<Texture> Texture::GetFromPool(const AssetFilePath &path, const s
         return find->second;
     }
 
-    UE_CLINET_WARN(" Texture Asset with path {} and name {} doesn't exist", path.string() , name);
+    CORE_LOG_WARN(" Texture Asset with path {} and name {} doesn't exist", path.string() , name);
     return nullptr;
 }
 

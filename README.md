@@ -3,3 +3,4 @@
 * 将资产的缓存从std::shared_ptr改为std::weak_ptr，这样就不会导致资产永远无法自动销毁。
 * 改进渲染器renderer和场景scene的接口，为场景添加Light组件
 * 实现PBR渲染。
+* 更新fastgltf模块的代码，使用最新版本，并将其作为一个子模块。

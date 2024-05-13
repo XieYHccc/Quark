@@ -27,26 +27,25 @@ private:
 
 // Engine logging
 #ifndef NDEBUG
-    #define UE_CORE_TRACE(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
-    #define UE_CORE_DEBUG(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
+    #define CORE_LOG_DEBUG(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
 #else
-    #define UE_CORE_TRACE(...)
     #define UE_CORE_DEBUG(...)
 #endif
-#define UE_CORE_INFO(...) Logger::GetCoreLogger()->info(__VA_ARGS__);
-#define UE_CORE_WARN(...) Logger::GetCoreLogger()->warn(__VA_ARGS__);
-#define UE_CORE_ERROR(...) Logger::GetCoreLogger()->error(__VA_ARGS__);
-#define UE_CORE_CRITICAL(...) Logger::GetCoreLogger()->critical(__VA_ARGS__);
+#define CORE_LOG_INFO(...) Logger::GetCoreLogger()->info(__VA_ARGS__);
+#define CORE_LOG_WARN(...) Logger::GetCoreLogger()->warn(__VA_ARGS__);
+#define CORE_LOG_ERROR(...) Logger::GetCoreLogger()->error(__VA_ARGS__);
+#define CORE_LOG_CRITICAL(...) Logger::GetCoreLogger()->critical(__VA_ARGS__);
 
 // Client logging
 #ifndef NDEBUG
-    #define UE_CLIENT_TRACE(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
-    #define UE_CLIENT_DEBUG(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
+    #define CLIENT_LOG_TRACE(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
+    #define CLIENT_LOG_DEBUG(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
 #else
-    #define UE_CLIENT_TRACE(...)
-    #define UE_CLIENT_DEBUG(...)
+    #define CLIENT_LOG_TRACE(...)
+    #define CLIENT_LOG_DEBUG(...)
 #endif
-#define UE_CLINET_INFO(...) Logger::GetClientLogger()->info(__VA_ARGS__);
-#define UE_CLINET_WARN(...) Logger::GetClientLogger()->warn(__VA_ARGS__);
-#define UE_CLINET_ERROR(...) Logger::GetClientLogger()->error(__VA_ARGS__);
-#define UE_CLINET_CRITICAL(...) Logger::GetClientLogger()->critical(__VA_ARGS__);
+
+#define CLINET_LOG_INFO(...) Logger::GetClientLogger()->info(__VA_ARGS__);
+#define CLINET_LOG_WARN(...) Logger::GetClientLogger()->warn(__VA_ARGS__);
+#define CLINET_LOG_ERROR(...) Logger::GetClientLogger()->error(__VA_ARGS__);
+#define CLINET_LOG_CRITICAL(...) Logger::GetClientLogger()->critical(__VA_ARGS__);
