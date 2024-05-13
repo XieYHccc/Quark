@@ -1,3 +1,6 @@
 add_subdirectory(./Engine)
 #add_subdirectory(./SandBox)
 add_subdirectory(./VulkanApp)
+#add_subdirectory(./TestApp)
+#add_subdirectory(./AssetLib)
+#add_subdirectory(./AssetBaker)

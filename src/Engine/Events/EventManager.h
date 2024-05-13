@@ -13,7 +13,7 @@ public:
         return instance;
     }
     
-    void Initialize() {};
+    void Init() {};
     void Finalize() {}
 
 public:

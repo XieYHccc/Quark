@@ -6,7 +6,7 @@
 #include <memory>
 #include <typeindex>
 
-#include "GameObject/Components/TransformCmpt/TransformCmpt.h"
+#include "GameObject/Components/TransformCmpt.h"
 
 class GameObject {
 

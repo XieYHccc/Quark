@@ -13,15 +13,16 @@ public:
 		static SceneMngr instance;
 		return instance;
 	}
-	void Initialize() {};
+	void Init() {};
 	void Finalize();
 
-	std::shared_ptr<Scene> LoadGltfScene(std::filesystem::path filePath);
+	Scene* LoadGLTFScene(const std::filesystem::path& filePath);
+	Scene* CreateScene(const std::string& name);
 
 private:
 	SceneMngr() {}
 
-	std::unordered_map<std::string, std::shared_ptr<Scene>>sceneMap_;
+	std::unordered_map<std::string, std::unique_ptr<Scene>>sceneMap_;
 
 
 };

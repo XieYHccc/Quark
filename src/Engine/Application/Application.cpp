@@ -2,65 +2,78 @@
 
 #include <glad/glad.h>
 
-#include "Foundation/KeyCodes.h"
+#include "Core/KeyCodes.h"
 #include "Events/EventManager.h"
 #include "Events/ApplicationEvent.h"
-#include "Application/Window/Input.h"
+#include "Core/Input.h"
 #include "Scene/SceneMngr.h"
-#include "Graphics/Vulkan/RendererVulkan.h"
+#include "Renderer/Renderer.h"
+#include "Core/Window.h"
+#include "Asset/AssetManager.h"
 
-
-Application* Application::instance_ = nullptr;
+Application* Application::singleton_ = nullptr;
 
 Application::Application(const std::string& title, const std::string& root, int width, int height) 
 {
-    instance_ = this;
+    singleton_ = this;
     root_ = root;
     running_ = true;
     fps_ = 0;
     frameTime_ = 0;
     deltaTime_ = 0;
     
-    // Initialize window
-    WindowProps props;
-    props.title = title;
-    props.height = height;
-    props.width = width;
-    window_.Initialize(props);
+    // Init logger
+    Logger::Init();
 
-    // Initialize run time modules
-    EventManager::Instance().Initialize();
+    // Init run time modules
+    EventManager::Instance().Init();
+
+    // Init window
+    Window::Create();
+    Window::Instance()->Init(title,false,  width, height);
+
+    // Init AssetManager
+    AssetManager::Instance().Init();
+
+    // Init SceneManager
+    SceneMngr::Instance().Init();
 
 #ifdef GRAPHIC_API_VULKAN
-    RendererVulkan::Creat();
-    RendererVulkan::GetInstance()->Initialize();
+    Renderer::Instance().Init();
 #endif
-
-    SceneMngr::Instance().Initialize();
 
     // Register application callback functions
     EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
+
+    UE_CORE_INFO("Init Engine Successfully")
 }
 
 Application::~Application() {
     
     SceneMngr::Instance().Finalize();
 
+    asset::Mesh::ClearPool();
+    asset::Sampler::ClearPool();
+    asset::Texture::ClearPool();
+    asset::Material::ClearPool();
+
+    AssetManager::Instance().Finalize();
+    
 #ifdef GRAPHIC_API_VULKAN
-    RendererVulkan::GetInstance()->Finalize();
+    Renderer::Instance().Finalize();
 #endif 
 
+    // destroy window
+    Window::Instance()->Finalize();
+    Window::Destroy();
+
+    // destroy event manager
     EventManager::Instance().Finalize();
-    window_.Finalize();
 }
 
 void Application::Run()
 {
     while (running_) {
-        // per-frame time logic
-        float current_time = window_.GetFrameTime();
-        deltaTime_ = current_time - frameTime_;
-        frameTime_ = current_time;
 
         // Update each moudule (including processing inputs)
         Update();
@@ -69,7 +82,7 @@ void Application::Run()
         Render();
 
         // swap buffers
-        window_.Update();
+        Window::Instance()->Update();
 
         EventManager::Instance().DispatchEvents();
     }

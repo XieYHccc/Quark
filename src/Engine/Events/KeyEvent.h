@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/KeyCodes.h"
+#include "Core/KeyCodes.h"
 #include "Events/Event.h"
 
 class KeyPressedEvent : public Event {

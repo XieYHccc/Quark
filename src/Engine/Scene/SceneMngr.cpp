@@ -2,22 +2,34 @@
 
 #include <iostream>
 
-#include "AssestLoader/LoadGLTF.h"
-#include "Graphics/Vulkan/RendererVulkan.h"
+#include "Asset/LoadGLTF.h"
+#include "Renderer/Renderer.h"
 
-std::shared_ptr<Scene> SceneMngr::LoadGltfScene(std::filesystem::path filePath)
+Scene* SceneMngr::LoadGLTFScene(const std::filesystem::path& filePath)
 {
 	auto newScene = loadGltf(filePath);
-	sceneMap_.emplace(filePath, newScene);
+	Scene* raw = newScene.get();
+
+	sceneMap_.emplace(newScene->name, std::move(newScene));
 	
-	return newScene;
+	return raw;
+}
+
+Scene* SceneMngr::CreateScene(const std::string &name)
+{
+	auto newScene = std::make_unique<Scene>(name);
+	Scene* raw = newScene.get();
+
+	sceneMap_.emplace(name, std::move(newScene));
+
+	return raw;
 }
 
 void SceneMngr::Finalize()
 {
-	vkDeviceWaitIdle(RendererVulkan::GetInstance()->GetVkDevice());
+	vkDeviceWaitIdle(Renderer::Instance().GetVkDevice());
 	
-	for (auto [name, scene] : sceneMap_) {
-		scene->ClearResourses();
+	for (auto& [name, scene] : sceneMap_) {
+		scene.reset();
 	}
 }

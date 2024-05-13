@@ -1,26 +1,28 @@
-#include <Graphics/Vulkan/VulkanTypes.h>
-#include <Graphics/Vulkan/MaterialVulkan.h>
+#include <Graphics/Vulkan/Image.h>
 #include <Application/Application.h>
 #include <Scene/Scene.h>
+#include "Renderer/Passes/GeometryPass.h"
 
 class VulkanApp : public Application 
 {  
 public:
-    using Application::Application;
+    VulkanApp(const std::string& title, const std::string& root, int width, int height);
 
     ~VulkanApp();
     
     void Update() override;
     void Render() override;
 
-    std::shared_ptr<Scene> scene;
+    Scene* scene;
 
     float yaw;
     float pitch;
 
-    ColorAttachment colorAttachment;
-    DepthAttachment depthAttachment;
+    vk::Image colorAttachment;
+    vk::Image depthAttachment;
     VkExtent2D drawExtent;
+
+    std::unique_ptr<GeometryPass> geometryPass;
 
 
 };

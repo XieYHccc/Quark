@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-#include "Foundation/CRC32.h"
+#include "Core/CRC32.h"
 
 class Event {
 public:

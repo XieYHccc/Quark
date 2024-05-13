@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Foundation/MouseCodes.h"
+#include "Core/MouseCodes.h"
 #include "Events/Event.h"
 
 class MouseMovedEvent : public Event {

@@ -1,18 +1,19 @@
 #pragma once
 
 #include "pch.h"
-#include "Application/Window/Window.h"
 #include "Events/ApplicationEvent.h"
 
 class Application {
+
+public:
+    static Application& Instance() { return *singleton_; }
+private:
+    static Application* singleton_;
 public:
     Application(const std::string& title, const std::string& root, int width, int height);
     virtual ~Application();
     Application(const Application&) = delete;
     const Application& operator=(const Application&) = delete;
-
-    static Application& Instance() { return *instance_; }
-    Window& GetWindow() { return window_; }
 
     void Run();
 
@@ -29,16 +30,12 @@ private:
 protected:
     // Application status
     float fps_;
+
+    // TODO: SUPPORT PER-FRAME LOGIC
     float frameTime_;
     float deltaTime_;
     bool running_;
-
-    std::string root_; // root directory
-
-private:
-    static Application* instance_;
-    Window window_;
-
+    std::string root_;
 };
 
 // To be defined in CLIENT

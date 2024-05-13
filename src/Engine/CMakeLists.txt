@@ -1,3 +1,5 @@
+set(CMAKE_CXX_STANDARD 20)
+
 FILE(GLOB_RECURSE EngineCoreSources ${CMAKE_SOURCE_DIR}/src/Engine "*.cpp" "*.c" "*.h")
 
 add_library(EngineCore ${EngineCoreSources})
