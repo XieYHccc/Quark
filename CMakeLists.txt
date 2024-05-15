@@ -10,16 +10,20 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
-# Set 3rd party source directory
-set(GLFW_SOURCE_DIR "external/glfw")
-set(GLAD_SOURCE_DIR "external/glad-4.6")
-set(STB_IMAGE_SOURCE_DIR "external/stb_image-2.28")
-set(STB_IMAGE_WRITE_SOURCE_DIR "external/stb_image_write-1.16")
-set(TINY_OBJ_LOADER_SOURCE_DIR "external/tinyobjloader")
-set(IMGUI_SOURCE_DIR "external/imgui")
-set(FASTGLTF_SOURCE_DIR "external/fastgltf")
-set(LZ4_SOURCE_DIR "external/lz4")
-set(NLOHMANN_JSON_SOURCE_DIR "external/nlohmann-json")
+################################################################################
+# Third Party                                                                  #
+################################################################################
+set(EXTERNAL_PATH ${CMAKE_SOURCE_DIR}/External) # path to dependencies
+
+set(GLFW_SOURCE_DIR ${EXTERNAL_PATH}/glfw)
+set(GLAD_SOURCE_DIR ${EXTERNAL_PATH}/glad-4.6)
+set(STB_IMAGE_SOURCE_DIR ${EXTERNAL_PATH}/stb_image-2.28)
+set(STB_IMAGE_WRITE_SOURCE_DIR ${EXTERNAL_PATH}/stb_image_write-1.16)
+set(TINY_OBJ_LOADER_SOURCE_DIR ${EXTERNAL_PATH}/tinyobjloader)
+set(IMGUI_SOURCE_DIR ${EXTERNAL_PATH}/imgui)
+set(FASTGLTF_SOURCE_DIR ${EXTERNAL_PATH}/fastgltf)
+set(LZ4_SOURCE_DIR ${EXTERNAL_PATH}/lz4)
+set(NLOHMANN_JSON_SOURCE_DIR ${EXTERNAL_PATH}/nlohmann-json)
 
 # Building STB, GLAD, and TINY_OBJ_LOADER lib
 add_subdirectory(${STB_IMAGE_SOURCE_DIR} ${STB_IMAGE_WRITE_SOURCE_DIR})
@@ -46,4 +50,12 @@ add_subdirectory(${GLFW_SOURCE_DIR})
 
 find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 
-add_subdirectory(./src)
+################################################################################
+# Quark                                                                 #
+################################################################################
+add_subdirectory(./Engine)
+
+add_subdirectory(./SandBox)
+
+add_subdirectory(./VulkanApp)
+
