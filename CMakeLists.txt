@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(UnhearedEngine)
+project(Quark)
 
 set(CMAKE_CXX_STANDARD 20)              
 
@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin )
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-find_package(OpenGL REQUIRED)
+# find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
 ################################################################################
@@ -24,10 +24,13 @@ set(IMGUI_SOURCE_DIR ${EXTERNAL_PATH}/imgui)
 set(FASTGLTF_SOURCE_DIR ${EXTERNAL_PATH}/fastgltf)
 set(LZ4_SOURCE_DIR ${EXTERNAL_PATH}/lz4)
 set(NLOHMANN_JSON_SOURCE_DIR ${EXTERNAL_PATH}/nlohmann-json)
+set(GLM_SOURCE_DIR ${EXTERNAL_PATH}/glm)
+set(VMA_SOURCE_DIR ${EXTERNAL_PATH}/vma)
 
 # Building STB, GLAD, and TINY_OBJ_LOADER lib
-add_subdirectory(${STB_IMAGE_SOURCE_DIR} ${STB_IMAGE_WRITE_SOURCE_DIR})
-add_subdirectory(${GLAD_SOURCE_DIR})
+add_subdirectory(${STB_IMAGE_SOURCE_DIR})
+add_subdirectory(${STB_IMAGE_WRITE_SOURCE_DIR})
+# add_subdirectory(${GLAD_SOURCE_DIR})
 add_subdirectory(${TINY_OBJ_LOADER_SOURCE_DIR})
 add_subdirectory(${IMGUI_SOURCE_DIR})
 add_subdirectory(${FASTGLTF_SOURCE_DIR})
@@ -48,6 +51,15 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
 set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(${GLFW_SOURCE_DIR})
 
+# Build GLM Interface lib
+add_library(glm INTERFACE) 
+target_include_directories(glm INTERFACE ${GLM_SOURCE_DIR})
+
+#Build vma Interface lib
+add_library(vma INTERFACE) 
+target_include_directories(vma INTERFACE ${VMA_SOURCE_DIR}/include)
+
+# Find glslang
 find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 
 ################################################################################

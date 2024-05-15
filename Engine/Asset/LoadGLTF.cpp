@@ -192,7 +192,7 @@ std::unique_ptr<Scene> loadGltf(const std::filesystem::path& filePath)
 			// we failed to load, so lets give the slot a default white texture to not
 			// completely break loading
 			images.push_back(asset::Texture::GetFromPool("BuiltIn", "WhiteTexture"));
-			CORE_LOG_ERROR("gltf failed to load texture {}", image.name);
+			CORE_LOGE("gltf failed to load texture {}", image.name);
 		}
 	}
     

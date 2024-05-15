@@ -1,14 +1,12 @@
 #include "Application/Application.h"
 
-#include <glad/glad.h>
-
 #include "Core/KeyCodes.h"
+#include "Core/Window.h"
+#include "Core/Input.h"
 #include "Events/EventManager.h"
 #include "Events/ApplicationEvent.h"
-#include "Core/Input.h"
 #include "Scene/SceneMngr.h"
 #include "Renderer/Renderer.h"
-#include "Core/Window.h"
 #include "Asset/AssetManager.h"
 
 Application* Application::singleton_ = nullptr;
@@ -45,7 +43,7 @@ Application::Application(const std::string& title, const std::string& root, int 
     // Register application callback functions
     EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
 
-    CORE_LOG_INFO("Init Engine Successfully")
+    CORE_LOGI("Init Engine Successfully")
 }
 
 Application::~Application() {

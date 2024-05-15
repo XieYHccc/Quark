@@ -1,33 +1,23 @@
 set(CMAKE_CXX_STANDARD 20)
 
-FILE(GLOB_RECURSE EngineCoreSources ${CMAKE_SOURCE_DIR}/src/Engine "*.cpp" "*.c" "*.h")
+FILE(GLOB_RECURSE EngineSources ${CMAKE_SOURCE_DIR}/src/Engine "*.cpp" "*.c" "*.h")
 
-add_library(EngineCore ${EngineCoreSources})
+add_library(Engine ${EngineSources})
 
-set(ENGINE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/Engine)
+set(ENGINE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(ENGINE_INCLUDE_DIRS
 ${ENGINE_SOURCE_DIR}
-${EXTERNAL_PATH}/glad-4.6/include
-${EXTERNAL_PATH}/glfw/include
-${EXTERNAL_PATH}/stb_image_write-1.16
-${EXTERNAL_PATH}/stb_image-2.28
-${EXTERNAL_PATH}/tinyobjloader
-${EXTERNAL_PATH}/glm
 ${EXTERNAL_PATH}/spdlog/include
-${EXTERNAL_PATH}/vma/include
-${EXTERNAL_PATH}/imgui
 )
 
-target_compile_options(EngineCore PRIVATE -Wno-nullability-completeness)
-target_compile_definitions(EngineCore PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
-target_include_directories(EngineCore PUBLIC ${ENGINE_INCLUDE_DIRS} )
-target_link_libraries(EngineCore tiny_obj_loader glad stb_image glfw ${OPENGL_LIBRARIES} Vulkan::Vulkan imgui fastgltf::fastgltf)
+target_compile_options(Engine PRIVATE -Wno-nullability-completeness)
+target_compile_definitions(Engine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
+target_include_directories(Engine PUBLIC ${ENGINE_INCLUDE_DIRS} )
+target_link_libraries(Engine glm tiny_obj_loader stb_image glfw Vulkan::Vulkan vma imgui fastgltf::fastgltf)
 
 
 # pch header file path
 set(ENGINE_PRECOMPILED_HEADERS
     ${ENGINE_SOURCE_DIR}/pch.h
 )
-target_precompile_headers(EngineCore PUBLIC ${ENGINE_PRECOMPILED_HEADERS})
-
-# TARGET_COMPILE_DEFINITIONS(EngineCore PUBLIC XENGINE_EXPORTS )
+target_precompile_headers(Engine PUBLIC ${ENGINE_PRECOMPILED_HEADERS})

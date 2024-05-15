@@ -125,7 +125,7 @@ VkPipeline PipelineBuilder::BuildPipeline(Context& context)
     if (vkCreateGraphicsPipelines(context.GetVkDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
             nullptr, &newPipeline) != VK_SUCCESS) 
 	{
-        CORE_LOG_ERROR("failed to create pipeline");
+        CORE_LOGE("failed to create pipeline");
         return VK_NULL_HANDLE;
     } 
     else 

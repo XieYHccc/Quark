@@ -107,14 +107,14 @@ void Context::Finalize()
     }
     vkDestroyInstance(vkInstance_, nullptr);
 
-    CORE_LOG_INFO("Context Destroyed")
+    CORE_LOGI("Context Destroyed")
 
 }
 
 void Context::CreateVkInstance()
 {
     if (enableValidationLayers && !checkValidationLayerSupport(validationLayers)) {
-        CORE_LOG_ERROR("validation layers requested, but not available!");
+        CORE_LOGE("validation layers requested, but not available!");
     }
 
     VkApplicationInfo appInfo{};
@@ -154,7 +154,7 @@ void Context::CreateVkInstance()
 
     VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &vkInstance_));
 
-    CORE_LOG_DEBUG("VkInstance Created")
+    CORE_LOGD("VkInstance Created")
 
     // vkdebugmessenger is just a wrapper of debug callback function
     if (enableValidationLayers)
@@ -165,7 +165,7 @@ void Context::CreateSurface()
 {
     // surface的具体创建过程是要区分平台的，这里直接用GLFW封装好的接口来创建
     VK_ASSERT(glfwCreateWindowSurface(vkInstance_, window_, nullptr, &surface_));
-    CORE_LOG_DEBUG("VkSurfaceKHR Created")
+    CORE_LOGD("VkSurfaceKHR Created")
 }
 
 void Context::CreateDebugMessenger()
@@ -177,7 +177,7 @@ void Context::CreateDebugMessenger()
     createInfo.pfnUserCallback = VkDebugCallback;
 
     VK_ASSERT(CreateDebugUtilsMessengerEXT(vkInstance_, &createInfo, nullptr, &debugMessenger_));
-    CORE_LOG_DEBUG("VkDebugMessenger Created")
+    CORE_LOGD("VkDebugMessenger Created")
 }
 
 void Context::PickGPU()
@@ -199,7 +199,7 @@ void Context::PickGPU()
     }
 
     CORE_ASSERT_MSG(chosenGPU_ != VK_NULL_HANDLE, "failed to find a suitable GPU!")
-    CORE_LOG_DEBUG("VkPhysicalDevice Created")
+    CORE_LOGD("VkPhysicalDevice Created")
 }
 
 void Context::CreateLogicalDevice()
@@ -269,7 +269,7 @@ void Context::CreateLogicalDevice()
     vkGetDeviceQueue(vkDevice_, queueFamilyIndices_.present, 0, &presentQueue_);
 
 
-    CORE_LOG_DEBUG("VkDevice Created")
+    CORE_LOGD("VkDevice Created")
 }
 
 void Context::CreateMemoryAllocator()
@@ -280,7 +280,7 @@ void Context::CreateMemoryAllocator()
     vmaInfo.instance = vkInstance_;
     vmaInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     VK_ASSERT(vmaCreateAllocator(&vmaInfo, &vmaAllocator_));
-    CORE_LOG_DEBUG("VmaAllocator Created")
+    CORE_LOGD("VmaAllocator Created")
 }
 
 void Context::CreateSwapChain()
@@ -361,7 +361,7 @@ void Context::CreateSwapChain()
         VK_ASSERT(vkCreateImageView(vkDevice_, &view_info, nullptr, &swapChainImages_[i].imageView));
     }
 
-    CORE_LOG_DEBUG("VkSwapChain Created")
+    CORE_LOGD("VkSwapChain Created")
 }
 
 void Context::ResizeSwapchain()

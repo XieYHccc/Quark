@@ -49,7 +49,7 @@ public:
             return static_cast<T*>(find->second.get());
         }
 
-        CORE_LOG_ERROR("Asset name: {} in file {} doesn't exist.", name, path);
+        CORE_LOGE("Asset name: {} in file {} doesn't exist.", name, path);
         return nullptr;
     }
 

@@ -31,7 +31,7 @@ std::shared_ptr<Sampler> Sampler::GetFromPool(const std::string &path, const std
         return find->second;
     }
 
-    CORE_LOG_WARN(" Sampler Asset with path {} and name {} doesn't exist", path , name);
+    CORE_LOGW(" Sampler Asset with path {} and name {} doesn't exist", path , name);
     return nullptr;
 }
 
@@ -69,7 +69,7 @@ std::shared_ptr<Texture> Texture::GetFromPool(const std::string &path, const std
         return find->second;
     }
 
-    CORE_LOG_WARN(" Texture Asset with path {} and name {} doesn't exist", path, name);
+    CORE_LOGW(" Texture Asset with path {} and name {} doesn't exist", path, name);
     return nullptr;
 }
 
@@ -97,7 +97,7 @@ Texture::Texture(const std::string& filepath)
         stbi_image_free(info.data);
     }
     else {
-        CORE_LOG_ERROR("Texture failed to load at path", filepath)
+        CORE_LOGE("Texture failed to load at path", filepath)
     }
 
 }

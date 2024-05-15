@@ -40,7 +40,7 @@ std::shared_ptr<Material> Material::GetFromPool(const std::string& path, const s
         return find->second;
     }
 
-    CORE_LOG_WARN(" Texture Asset with path {} and name {} doesn't exist", path, name);
+    CORE_LOGW(" Texture Asset with path {} and name {} doesn't exist", path, name);
     return nullptr;
 }
 

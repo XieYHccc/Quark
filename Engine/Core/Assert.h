@@ -14,7 +14,7 @@
     {                                                                        \
         if (expr) {                                                          \
         } else {                                                             \
-            CORE_LOG_CRITICAL("Assertion Failure: {}, in file: {}, line: {}", \
+            CORE_LOGC("Assertion Failure: {}, in file: {}, line: {}", \
                 #expr, __FILE__, __LINE__)                                   \
             debugBreak();                                                    \
         }                                                                    \
@@ -24,7 +24,7 @@
     {                                                                           \
         if (expr) {                                                             \
         } else {                                                                \
-            CORE_LOG_CRITICAL("Assertion Failure: {}, message: {}, in file: {}," \
+            CORE_LOGC("Assertion Failure: {}, message: {}, in file: {}," \
                 "line: {}", #expr, message,  __FILE__, __LINE__)                  \
             debugBreak();                                                       \
         }                                                                       \
@@ -34,7 +34,7 @@
     {                                                                         \
         if (expr) {                                                           \
         } else {                                                              \
-            CLIENT_LOG_CRITICAL("Assertion Failure: {}, in file: {}, line: {}",\
+            CLIENT_LOGC("Assertion Failure: {}, in file: {}, line: {}",\
                 #expr, __FILE__, __LINE__)                                   \
             debugBreak();                                                     \
         }                                                                     \
@@ -44,7 +44,7 @@
     {                                                                             \
         if (expr) {                                                               \
         } else {                                                                  \
-            CLIENT_LOG_CRITICAL("Assertion Failure: {}, message: {}, in file: {}," \
+            CLIENT_LOGC("Assertion Failure: {}, message: {}, in file: {}," \
                 "line: {}", #expr, message,  __FILE__, __LINE__)                                               \
             debugBreak();                                                         \
         }                                                                         \

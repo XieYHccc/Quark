@@ -1,2 +1,0 @@
-/usr/bin/ar qc /Users/xieyhccc/develop/Quark/bin/libstb_image.a CMakeFiles/stb_image.dir/stb_image.cpp.o
-/usr/bin/ranlib /Users/xieyhccc/develop/Quark/bin/libstb_image.a

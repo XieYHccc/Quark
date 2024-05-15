@@ -7,7 +7,7 @@
     do {                                                                         \
         VkResult err = x;                                                        \
         if (err) {                                                               \
-            CORE_LOG_CRITICAL("Detected Vulkan error: {}", string_VkResult(err)) \
+            CORE_LOGC("Detected Vulkan error: {}", string_VkResult(err)) \
             abort();                                                             \
         }                                                                        \
     } while (0)

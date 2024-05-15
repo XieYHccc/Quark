@@ -31,7 +31,7 @@ void Renderer::Init()
 
     currentFrame_ = 0;
 
-    CORE_LOG_INFO("Init Vulkan Render Device")
+    CORE_LOGI("Init Vulkan Render Device")
 
 }
 
@@ -71,7 +71,7 @@ PerFrameData* Renderer::BeginFrame()
 		return VK_NULL_HANDLE;
 	}
     else if (e != VK_SUCCESS && e != VK_SUBOPTIMAL_KHR)
-        CORE_LOG_ERROR("failed to acquire swap chain image!");
+        CORE_LOGE("failed to acquire swap chain image!");
 
     // refresh frame data
     frameData_[currentFrame_].deletionQueue.flush();
