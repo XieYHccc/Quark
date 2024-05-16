@@ -30,7 +30,7 @@
         }                                                                       \
     }
 
-#define CLIENT_ASSERT(expr)                                                \
+#define ASSERT(expr)                                                \
     {                                                                         \
         if (expr) {                                                           \
         } else {                                                              \
@@ -40,24 +40,24 @@
         }                                                                     \
     }
 
-#define CLIENT_ASSERT_MSG(expr, message)                                       \
+#define ASSERT_MSG(expr, message)                                       \
     {                                                                             \
         if (expr) {                                                               \
         } else {                                                                  \
-            CLIENT_LOGC("Assertion Failure: {}, message: {}, in file: {}," \
+            LOGC("Assertion Failure: {}, message: {}, in file: {}," \
                 "line: {}", #expr, message,  __FILE__, __LINE__)                                               \
             debugBreak();                                                         \
         }                                                                         \
     }
 #ifndef NDEBUG
-    #define CORE_DEBUG_ASSERT(expr) UE_CORE_ASSERT(expr)
-    #define CORE_DEBUG_ASSERT_MSG(expr, message) UE_CORE_ASSERT(expr, message)
-    #define CORE_DEBUG_ASSERT(expr) UE_CORE_ASSERT(expr)
-    #define CORE_DEBUG_ASSERT_MSG(expr, message) UE_CORE_ASSERT(expr, message)
+    #define CORE_DEBUG_ASSERT(expr) CORE_ASSERT(expr)
+    #define CORE_DEBUG_ASSERT_MSG(expr, message) CORE_ASSERT_MSG(expr, message)
+    #define DEBUG_ASSERT(expr) ASSERT(expr)
+    #define DEBUG_ASSERT_MSG(expr, message) ASSERT_MSG(expr, message)
 #else
     #define CORE_DEBUG_ASSERT(expr) 
-    #define CLIENT_DEBUG_ASSERT(expr) 
+    #define DEBUG_ASSERT(expr) 
     #define CORE_DEBUG_ASSERT_MSG(expr, message)
-    #define CLIENT_DEBUG_ASSERT_MSG(expr, message) 
+    #define DEBUG_ASSERT_MSG(expr, message) 
 #endif
 

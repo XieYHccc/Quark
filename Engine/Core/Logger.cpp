@@ -12,13 +12,13 @@ void Logger::Init()
     std::vector<spdlog::sink_ptr> logSinks;
     logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
     logSinks[0]->set_level(spdlog::level::trace);
-    logSinks[0]->set_pattern("%^[%T] [%l] %n: %v%$");
+    logSinks[0]->set_pattern("%^[%T] %n: %v%$");
 
     logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("log/XEngine.log", true));
     logSinks[1]->set_level(spdlog::level::trace);
     logSinks[1]->set_pattern("[%T] [%l] %n: %v");
 
-    m_CoreLogger = std::make_shared<spdlog::logger>("ENGINE", logSinks.begin(), logSinks.end());
+    m_CoreLogger = std::make_shared<spdlog::logger>("QUARK", logSinks.begin(), logSinks.end());
     m_CoreLogger->set_level(spdlog::level::trace);
 
     m_ClientLogger = std::make_shared<spdlog::logger>("APP", logSinks.begin(), logSinks.end());

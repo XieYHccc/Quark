@@ -28,8 +28,10 @@ private:
 // Engine logging
 #ifndef NDEBUG
     #define CORE_LOGD(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
+    #define CORE_LOGT(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
 #else
     #define CORE_LOGD(...)
+    #define CORE_LOGT(...)
 #endif
 #define CORE_LOGI(...) Logger::GetCoreLogger()->info(__VA_ARGS__);
 #define CORE_LOGW(...) Logger::GetCoreLogger()->warn(__VA_ARGS__);
@@ -38,14 +40,14 @@ private:
 
 // Client logging
 #ifndef NDEBUG
-    #define CLIENT_LOGT(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
-    #define CLIENT_LOGD(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
+    #define LOGT(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
+    #define LOGD(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
 #else
-    #define CLIENT_LOGT(...)
-    #define CLIENT_LOGD(...)
+    #define LOGT(...)
+    #define LOGD(...)
 #endif
 
-#define CLINET_LOGI(...) Logger::GetClientLogger()->info(__VA_ARGS__);
-#define CLINET_LOGW(...) Logger::GetClientLogger()->warn(__VA_ARGS__);
-#define CLINET_LOGE(...) Logger::GetClientLogger()->error(__VA_ARGS__);
-#define CLINET_LOGC(...) Logger::GetClientLogger()->critical(__VA_ARGS__);
+#define LOGI(...) Logger::GetClientLogger()->info(__VA_ARGS__);
+#define LOGW(...) Logger::GetClientLogger()->warn(__VA_ARGS__);
+#define LOGE(...) Logger::GetClientLogger()->error(__VA_ARGS__);
+#define LOGC(...) Logger::GetClientLogger()->critical(__VA_ARGS__);

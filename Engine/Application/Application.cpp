@@ -79,7 +79,7 @@ void Application::Run()
         // Render Scene
         Render();
 
-        // swap buffers
+        // Swap buffers
         Window::Instance()->Update();
 
         EventManager::Instance().DispatchEvents();

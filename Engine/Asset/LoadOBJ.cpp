@@ -96,7 +96,7 @@ std::shared_ptr<asset::Mesh> LoadObj(const std::string& filepath)
 		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
 			auto fv = shapes[s].mesh.num_face_vertices[f];
 			if (fv != 3) {
-				CORE_LOGW("Only support Obj files with triangle meshes")
+				CORE_LOGE("Quark only support loading triangle meshes in obj files")
 				return nullptr;
 			}
 			
@@ -154,8 +154,6 @@ std::shared_ptr<asset::Mesh> LoadObj(const std::string& filepath)
 	}
 
 	auto mesh = std::make_shared<asset::Mesh>(info);
-
-	CORE_LOGD("Add mesh in obj file {}", filepath);
 
     return mesh;
 }

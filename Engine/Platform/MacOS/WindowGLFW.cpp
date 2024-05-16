@@ -65,7 +65,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         auto owner = *(WindowGLFW*)glfwGetWindowUserPointer(window);
         owner.width_ = width;
         owner.height_ = height;
-        EventManager::Instance().TriggerEvent(WindowResizeEvent(width, height));
+        EventManager::Instance().ImmediateTrigger(WindowResizeEvent(width, height));
     });
 
     glfwSetWindowCloseCallback(window_, [](GLFWwindow* window)
@@ -78,15 +78,15 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     {
         switch (action) {
         case GLFW_PRESS: {
-            EventManager::Instance().TriggerEvent(KeyPressedEvent(key, 0));
+            EventManager::Instance().ImmediateTrigger(KeyPressedEvent(key, 0));
             break;
         }
         case GLFW_RELEASE: {
-            EventManager::Instance().TriggerEvent(KeyReleasedEvent(key));
+            EventManager::Instance().ImmediateTrigger(KeyReleasedEvent(key));
             break;
         }
         case GLFW_REPEAT: {
-            EventManager::Instance().TriggerEvent(KeyPressedEvent(key, 1));
+            EventManager::Instance().ImmediateTrigger(KeyPressedEvent(key, 1));
             break;
         }
         }
@@ -94,15 +94,15 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
 
     glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos)
     {
-        EventManager::Instance().TriggerEvent(MouseMovedEvent((float)xpos, (float)ypos));
+        EventManager::Instance().ImmediateTrigger(MouseMovedEvent((float)xpos, (float)ypos));
     });
 
     glfwSetScrollCallback(window_, [](GLFWwindow* window, double xOffset, double yOffset) {
-        EventManager::Instance().TriggerEvent(MouseScrolledEvent((float)xOffset, (float)yOffset));
+        EventManager::Instance().ImmediateTrigger(MouseScrolledEvent((float)xOffset, (float)yOffset));
     });
 
     glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xPos, double yPos) {
-        EventManager::Instance().TriggerEvent(MouseMovedEvent((float)xPos, (float)yPos));
+        EventManager::Instance().ImmediateTrigger(MouseMovedEvent((float)xPos, (float)yPos));
     });
 
 #ifdef GRAPHIC_API_OPENGL

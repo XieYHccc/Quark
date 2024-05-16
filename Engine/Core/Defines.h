@@ -53,24 +53,24 @@ STATIC_ASSERT(sizeof(bool) == 1, "Expected bool to be 1 byte.");
 #ifdef KEXPORT
 // Exports
     #ifdef _MSC_VER
-        #define XAPI __declspec(dllexport)
+        #define QK_API __declspec(dllexport)
     #else
-        #define XAPI __attribute__((visibility("default")))
+        #define QK_API __attribute__((visibility("default")))
     #endif
 #else
 // Imports
     #ifdef _MSC_VER
-        #define XAPI __declspec(dllimport)
+        #define QK_API __declspec(dllimport)
     #else
-        #define XAPI
+        #define QK_API
     #endif
 #endif
 
 // Inlining
 #if defined(__clang__) || defined(__gcc__)
-    #define KINLINE __attribute__((always_inline)) inline
-    #define KNOINLINE __attribute__((noinline))
+    #define QK_FORCE_INLINE __attribute__((always_inline)) inline
+    #define QK_NOINLINE __attribute__((noinline))
 #elif defined(_MSC_VER)
-    #define KINLINE __forceinline
-    #define KNOINLINE __declspec(noinline)
+    #define QK_FORCE_INLINE __forceinline
+    #define QK_NOINLINE __declspec(noinline)
 #endif

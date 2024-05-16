@@ -38,9 +38,10 @@ SandBoxApp::SandBoxApp(const std::string& title, const std::string& root, int wi
     VkRenderingAttachmentInfo colorInfo = vk::init::attachment_info(colorAttachment.imageView, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	VkRenderingAttachmentInfo depthInfo = vk::init::depth_attachment_info(depthAttachment.imageView, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
-    geometryPass = std::make_unique<GeometryPass>("/Users/xieyhccc/develop/Quark/Assets/Shaders/Spirv/mesh.vert.spv",
-        "/Users/xieyhccc/develop/Quark/Assets/Shaders/Spirv/mesh.frag.spv", std::vector<VkRenderingAttachmentInfo>{colorInfo}, depthInfo);
+    geometryPass = std::make_unique<GeometryPass>("../Assets/Shaders/Spirv/mesh.vert.spv",
+        "../Assets/Shaders/Spirv/mesh.frag.spv", std::vector<VkRenderingAttachmentInfo>{colorInfo}, depthInfo);
     geometryPass->SetResoluton(swapchainExtent);
+
 }
 
 Application* CreateApplication()
@@ -53,7 +54,7 @@ Application* CreateApplication()
     application->scene = scene;
 
     // 2. Create gameobjects
-    auto mesh = LoadObj("/Users/xieyhccc/develop/Quark/Assets/Meshes/Stanford_Bunny.obj");
+    auto mesh = LoadObj("../Assets/Meshes/Stanford_Bunny.obj");
 
     auto bunny = scene->AddGameObject("bunny");
     auto meshCmpt = bunny->AddComponent<MeshCmpt>();
