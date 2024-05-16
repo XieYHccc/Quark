@@ -30,5 +30,12 @@ public:
 class WindowCloseEvent : public Event {
 public:
     EVENT_TYPE("WindowCloseEvent")
+
+    std::string ToString() const override
+    {
+        std::stringstream ss;
+        ss << "WindowCloseEvent";
+        return ss.str();
+    }
 };
 
