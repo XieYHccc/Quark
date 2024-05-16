@@ -416,6 +416,7 @@ void Renderer::CreateDefaultResources()
 	asset::TextureCreateInfo info{(unsigned char*)&white, 1, 1,
 		4, false, "BuiltIn", "WhiteTexture"};
 	auto whiteTex = asset::Texture::AddToPool(info);
+	CORE_DEBUG_ASSERT(whiteTex != nullptr)
 
 	// Black texture
 	constexpr uint32_t black = __builtin_bswap32(0x000000FF);
@@ -436,6 +437,7 @@ void Renderer::CreateDefaultResources()
 	info.height = 16;
 	info.name = "ErrorTexture";
 	auto errTex = asset::Texture::AddToPool(info);
+	CORE_DEBUG_ASSERT(errTex != nullptr)
 
     // create default nearest sampler
     VkSamplerCreateInfo sampl = {.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};

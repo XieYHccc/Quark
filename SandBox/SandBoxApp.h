@@ -10,7 +10,7 @@ public:
     SandBoxApp(const std::string& title, const std::string& root, int width, int height);
     ~SandBoxApp();
 
-    void Update() override {}
+    void Update() override;
     void Render() override;
 
     Scene* scene;    

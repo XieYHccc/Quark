@@ -1,14 +1,5 @@
 #pragma once
-#include "Defines.h"
-#include "Core/Logger.h"
-
-// Causes a debug breakpoint to be hit.
-#if _MSC_VER
-    #include <intrin.h>
-    #define debugBreak() __debugbreak()
-#else
-    #define debugBreak() __builtin_trap()
-#endif
+#include "Core/Base.h"
 
 #define CORE_ASSERT(expr)                                                 \
     {                                                                        \
@@ -16,7 +7,7 @@
         } else {                                                             \
             CORE_LOGC("Assertion Failure: {}, in file: {}, line: {}", \
                 #expr, __FILE__, __LINE__)                                   \
-            debugBreak();                                                    \
+            QK_DEBUGBREAK();                                                    \
         }                                                                    \
     }
 
@@ -26,7 +17,7 @@
         } else {                                                                \
             CORE_LOGC("Assertion Failure: {}, message: {}, in file: {}," \
                 "line: {}", #expr, message,  __FILE__, __LINE__)                  \
-            debugBreak();                                                       \
+            QK_DEBUGBREAK();                                                       \
         }                                                                       \
     }
 
@@ -34,9 +25,9 @@
     {                                                                         \
         if (expr) {                                                           \
         } else {                                                              \
-            CLIENT_LOGC("Assertion Failure: {}, in file: {}, line: {}",\
+            LOGC("Assertion Failure: {}, in file: {}, line: {}",\
                 #expr, __FILE__, __LINE__)                                   \
-            debugBreak();                                                     \
+            QK_DEBUGBREAK();                                                     \
         }                                                                     \
     }
 
@@ -46,10 +37,10 @@
         } else {                                                                  \
             LOGC("Assertion Failure: {}, message: {}, in file: {}," \
                 "line: {}", #expr, message,  __FILE__, __LINE__)                                               \
-            debugBreak();                                                         \
+            QK_DEBUGBREAK();                                                         \
         }                                                                         \
     }
-#ifndef NDEBUG
+#ifdef QK_DEBUG_BUILD
     #define CORE_DEBUG_ASSERT(expr) CORE_ASSERT(expr)
     #define CORE_DEBUG_ASSERT_MSG(expr, message) CORE_ASSERT_MSG(expr, message)
     #define DEBUG_ASSERT(expr) ASSERT(expr)

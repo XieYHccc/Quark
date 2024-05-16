@@ -40,6 +40,8 @@ GameObject* Scene::AddGameObject(const std::string& name, GameObject* parent) {
 	// move ownership
 	gameObjects_.push_back(std::move(newObject));
 
+	LOGD("Add an Object with name {}", name);
+	
 	return gameObjects_.back().get();
 }
 

@@ -1,8 +1,7 @@
 #include "pch.h"
 #include "Core/Window.h"
-#include "Core/Defines.h"
 
-#ifdef PLATFORM_APPLE
+#ifdef QK_PLATFORM_MACOS
 #include "Platform/MacOS//WindowGLFW.h"
 #endif
 
@@ -15,10 +14,10 @@ Window* Window::Instance()
 
 void Window::Create()
 {
-#ifdef PLATFORM_APPLE
+#ifdef QK_PLATFORM_MACOS
     Window::singleton_ = new WindowGLFW();
 #else
-    XE_CORE_ASSERT_MSG(0, "XEngine currently not support this platform")
+    #error "Platform doesn't support window"
 #endif
 
 }

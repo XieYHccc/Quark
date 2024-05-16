@@ -103,6 +103,11 @@ std::shared_ptr<asset::Mesh> LoadObj(const std::string& filepath)
 			// Loop over vertices in the face.
 			for (size_t v = 0; v < fv; v++) {
                 Vertex vert;
+				vert.color = glm::vec4 { 1.f };
+				vert.normal =  { 1, 0, 0 };
+				vert.uv_x = 0;
+				vert.uv_y = 0;
+				
 				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
 				// fill position

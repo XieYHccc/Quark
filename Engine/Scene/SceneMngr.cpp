@@ -22,6 +22,8 @@ Scene* SceneMngr::CreateScene(const std::string &name)
 
 	sceneMap_.emplace(name, std::move(newScene));
 
+	LOGD("Create a scene with name {}", name)
+	
 	return raw;
 }
 

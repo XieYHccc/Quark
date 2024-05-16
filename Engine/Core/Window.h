@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Defines.h"
+#include "Core/Base.h"
 
 // Window Interface
 class Window {

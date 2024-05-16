@@ -24,6 +24,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "Core/Defines.h"
+#include "Core/Base.h"
 #include "Core/Logger.h"
 #include "Core/Assert.h"

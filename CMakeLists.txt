@@ -3,6 +3,8 @@ project(Quark)
 
 set(CMAKE_CXX_STANDARD 20)              
 
+message("-- [Quark] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+
 # set output path
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin )
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -63,8 +65,21 @@ target_include_directories(vma INTERFACE ${VMA_SOURCE_DIR}/include)
 find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 
 ################################################################################
-# Quark                                                                 #
+# Configuration                                                                #
 ################################################################################
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+    add_definitions(-DQK_DEBUG_BUILD)
+elseif(${CMAKE_BUILD_TYPE} MATCHES Release)
+    add_definitions(-DQK_RELEASE_BUILD)
+else()
+    message( FATAL_ERROR "Unknown build type!" )
+endif()
+
+################################################################################
+# Quark                                                                        #
+################################################################################
+
+
 add_subdirectory(./Engine)
 
 add_subdirectory(./SandBox)

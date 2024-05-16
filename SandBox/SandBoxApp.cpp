@@ -3,6 +3,8 @@
 #include <string>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 #include <Engine/Core/Input.h>
 #include <Engine/Scene/SceneMngr.h>
 #include <Engine/GameObject/Components/MeshCmpt.h>
@@ -81,33 +83,48 @@ SandBoxApp::~SandBoxApp()
     vk::Image::DestroyImage(Renderer::Instance().GetContext(), depthAttachment);
 }
 
-// void SandBoxApp::Update()
-// {
-//     if (Input::IsKeyPressed(K)) {
-//         auto bunny = SceneMngr::Instance().get_object("bunny");
-//         auto transform = bunny->get_component<Transform>();
-//         auto rigid_body = bunny->get_component<RigidBodyDynamic>();
-//         transform->set_position(glm::vec3(0.f, 1.f, 0.f));
-//         transform->set_rotation(glm::quat(1.f, 0.f, 0.f, 0.f));
-//         rigid_body->init_velocity();
+void SandBoxApp::Update()
+{
+    CameraCmpt* cam = scene->GetMainCamera();
+    TransformCmpt& camTrans = *(cam->GetOwner()->transformCmpt);
+    float moveSpeed = 1;
+    float mouseSensitivity = 0.3;
 
-//     }
-//     if (Input::IsKeyPressed(L)) {
-//         auto bunny = SceneMngr::Instance().get_object("bunny");
-//         auto transform = bunny->get_component<Transform>();
-//         auto rigid_body = bunny->get_component<RigidBodyDynamic>();
-//         rigid_body->init_velocity(glm::vec3(0.f, 3.f, -6.f));
-//         rigid_body->set_lauched(true);
-//     }
-//     auto bunny = SceneMngr::Instance().get_object("bunny");
-//     auto wall = SceneMngr::Instance().get_object("wall");
-//     auto gridbox = SceneMngr::Instance().get_object("gridbox");
-//     auto mesh_collider = bunny->get_component<MeshCollider>();
-//     auto wall_plane_collider = wall->get_component<PlaneCollider>();
-//     auto ground_plane_collider = gridbox->get_component<PlaneCollider>();
-//     check_collision(wall_plane_collider, mesh_collider);
-//     check_collision(ground_plane_collider, mesh_collider);
-// }
+    // 1. process mouse inputs
+    MousePosition pos = Input::GetMousePosition();
+
+    if (Input::first_mouse) {
+        Input::last_position = pos;
+        Input::first_mouse = false;
+    }
+
+    float xoffset = pos.x_pos - Input::last_position.x_pos;
+    float yoffset = pos.y_pos - Input::last_position.y_pos;
+
+    pitch -= (glm::radians(yoffset) * mouseSensitivity);
+    yaw -= (glm::radians(xoffset) * mouseSensitivity);
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    pitch = std::clamp(pitch, -1.5f, 1.5f);
+
+    Input::last_position = pos;
+
+    // 2. process keyboard inputs
+    glm::vec3 move {0.f};
+    if (Input::IsKeyPressed(W))
+        move.z = -1;
+    if (Input::IsKeyPressed(S))
+        move.z = 1;
+    if (Input::IsKeyPressed(A))
+        move.x = -1;
+    if (Input::IsKeyPressed(D))
+        move.x = 1;
+    move = move * moveSpeed * 0.01f;
+
+    // 3.update camera's transform
+    camTrans.SetEuler(glm::vec3(pitch, yaw, 0));
+    glm::mat4 rotationMatrix = glm::toMat4(camTrans.GetQuat());
+    camTrans.SetPosition(camTrans.GetPosition() + glm::vec3(rotationMatrix * glm::vec4(move, 0.f)));
+}
 
 void SandBoxApp::Render()
 {

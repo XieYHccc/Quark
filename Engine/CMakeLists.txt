@@ -20,4 +20,4 @@ target_link_libraries(Engine glm tiny_obj_loader stb_image glfw Vulkan::Vulkan v
 set(ENGINE_PRECOMPILED_HEADERS
     ${ENGINE_SOURCE_DIR}/pch.h
 )
-target_precompile_headers(Engine PUBLIC ${ENGINE_PRECOMPILED_HEADERS})
+target_precompile_headers(Engine PRIVATE ${ENGINE_PRECOMPILED_HEADERS})
