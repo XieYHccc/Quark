@@ -19,13 +19,13 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-#ifdef GRAPHIC_API_OPENGL
+#ifdef USE_OPENGL_DRIVER
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
 
-#ifdef GRAPHIC_API_VULKAN
+#ifdef USE_VULKAN_DRIVER
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
 
@@ -45,13 +45,13 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         exit(EXIT_FAILURE);
     }
     
-#ifdef GRAPHIC_API_OPENGL
+#ifdef USE_OPENGL_DRIVER
     glfwMakeContextCurrent(window_);
 #endif
 
     glfwSetWindowUserPointer(window_, reinterpret_cast<void*>(this));
 
-#ifdef GRAPHIC_API_OPENGL
+#ifdef USE_OPENGL_DRIVER
     // Initialize glad: load all OpenGL function pointers
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
@@ -105,11 +105,13 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         EventManager::Instance().ImmediateTrigger(MouseMovedEvent((float)xPos, (float)yPos));
     });
 
-#ifdef GRAPHIC_API_OPENGL
+#ifdef USE_OPENGL_DRIVER
     // Configure global OpenGl state
     glEnable(GL_DEPTH_TEST);
 #endif
+
 }
+
 void WindowGLFW::Finalize()
 {
     glfwTerminate();

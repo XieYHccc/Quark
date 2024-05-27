@@ -27,10 +27,10 @@ std::shared_ptr<asset::Mesh> LoadObj(const std::string& filepath)
 	bool success = reader.ParseFromFile(filepath, config);
 
 	if (!reader.Warning().empty())
-		std::cout << reader.Warning() << std::endl;
+		CORE_LOGW(reader.Warning())
 
 	if (!reader.Error().empty())
-		std::cerr << reader.Error() << std::endl;
+		CORE_LOGE(reader.Error());
 
 	if (!success)
 		return nullptr;

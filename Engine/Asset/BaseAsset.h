@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Base.h"
-#include "Core/CRC32.h"
+#include "Util/CRC32.h"
 
 using AssetType = u32;
 

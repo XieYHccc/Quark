@@ -94,6 +94,9 @@ public:
     PerFrameData* BeginFrame();
     void EndFrame();
 
+    bool BeginRendering(VkCommandBuffer cmd, const VkRenderingInfo& info);
+    void EndRendering();
+
     vk::Context& GetContext() { return vkContext_; }
     VkDevice GetVkDevice() { return vkDevice_; }
     VkFormat GetColorFormat() { return colorFormat_; }

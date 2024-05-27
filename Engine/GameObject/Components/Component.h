@@ -1,5 +1,5 @@
 #pragma  once
-#include "Core/CRC32.h"
+#include "Util/CRC32.h"
 
 class GameObject;
 class Component {

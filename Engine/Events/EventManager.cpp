@@ -7,6 +7,7 @@ void EventManager::ImmediateTrigger(const Event &evnet)
     TriggerEvent(evnet);
     CORE_LOGT("{}", evnet.ToString());
 }
+
 void EventManager::TriggerEvent(const Event &event) 
 {
     for (auto& subscriber : subscribers_[event.GetEventType()])

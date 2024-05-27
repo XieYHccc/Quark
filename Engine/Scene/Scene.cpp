@@ -5,7 +5,6 @@
 
 #include "GameObject/Components/MeshCmpt.h"
 #include "Renderer/Renderer.h"
-#include "Application/Application.h"
 
 Scene::Scene(const std::string& name)
 {
@@ -40,7 +39,7 @@ GameObject* Scene::AddGameObject(const std::string& name, GameObject* parent) {
 	// move ownership
 	gameObjects_.push_back(std::move(newObject));
 
-	LOGD("Add an Object with name {}", name);
+	CORE_LOGD("Add Object \"{}\"", name);
 	
 	return gameObjects_.back().get();
 }

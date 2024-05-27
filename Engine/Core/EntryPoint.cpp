@@ -1,4 +1,4 @@
-#include "Application/EntryPoint.h"
+#include "Core/EntryPoint.h"
 
 int main(int argc, char** argv)
 {

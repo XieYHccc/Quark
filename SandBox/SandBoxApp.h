@@ -1,6 +1,7 @@
-#include "Engine/Graphics/Vulkan/Image.h"
-#include "Engine/Renderer/Passes/GeometryPass.h"
-#include <Engine/Application/Application.h>
+#pragma once
+#include <Engine/Core/Application.h>
+#include <Engine/Graphics/Vulkan/Image.h>
+#include <Engine/Renderer/Passes/GeometryPass.h>
 
 class Scene;
 

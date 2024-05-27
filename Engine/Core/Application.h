@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pch.h"
+#include "Core/Timer.h"
 #include "Events/ApplicationEvent.h"
 
 class Application {
@@ -28,14 +28,19 @@ private:
     void OnWindowResize(const WindowResizeEvent& event) {}
 
 protected:
-    // Application status
-    float fps_;
+    struct AppStatus 
+    {
+        f32 fps { 0 };
+        bool isRunning { true };
+        f64 lastFrameTime {0};
 
-    // TODO: SUPPORT PER-FRAME LOGIC
-    float frameTime_;
-    float deltaTime_;
-    bool running_;
-    std::string root_;
+    };
+
+    Timer m_Timer;
+    AppStatus m_Status;
+
+    // TODO: Support file system
+    std::string m_Root;
 };
 
 // To be defined in CLIENT

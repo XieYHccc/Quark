@@ -4,7 +4,6 @@
 #include "Core/Window.h"
 #include "GameObject/Components/CameraCmpt.h"
 #include "GameObject/GameObject.h"
-#include "Application/Application.h"
 
 void CameraCmpt::Awake()
 {

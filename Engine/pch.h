@@ -1,8 +1,5 @@
 #pragma once
 
-//#define GRAPHIC_API_OPENGL
-#define GRAPHIC_API_VULKAN
-
 #include <algorithm>
 #include <any>
 #include <bitset>

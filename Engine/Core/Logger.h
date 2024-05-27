@@ -2,7 +2,20 @@
 
 #include <memory>
 
+#include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
+
+#define LOG_WARN_ENABLED 1
+#define LOG_INFO_ENABLED 1
+
+// Disable debug and trace logging for release builds.
+#ifdef QK_DEBUG_BUILD
+    #define LOG_DEBUG_ENABLED 1
+    #define LOG_TRACE_ENABLED 1
+#else
+    #define LOG_DEBUG_ENABLED 0
+    #define LOG_TRACE_ENABLED 0
+#endif
 
 class Logger {
 public:
@@ -43,3 +56,5 @@ private:
 #define LOGW(...) Logger::GetClientLogger()->warn(__VA_ARGS__);
 #define LOGE(...) Logger::GetClientLogger()->error(__VA_ARGS__);
 #define LOGC(...) Logger::GetClientLogger()->critical(__VA_ARGS__);
+
+#define DASH_SECTION(x) fmt::format("----------------{}----------------", x)

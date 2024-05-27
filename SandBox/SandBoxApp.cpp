@@ -11,12 +11,15 @@
 #include <Engine/Asset/LoadOBJ.h>
 #include <Engine/Graphics/Vulkan/Initializers.h>
 #include <Engine/Renderer/Renderer.h>
-
+#include <Engine/Rendering/RenderDevice.h>
 
 
 SandBoxApp::SandBoxApp(const std::string& title, const std::string& root, int width, int height)
     : Application(title, root, width, height)
 {
+
+
+
     VkExtent2D swapchainExtent = Renderer::Instance().GetSwapCainExtent();
     this->drawExtent = swapchainExtent;
 
@@ -81,6 +84,8 @@ SandBoxApp::~SandBoxApp()
     vkDeviceWaitIdle(Renderer::Instance().GetVkDevice());
     vk::Image::DestroyImage(Renderer::Instance().GetContext(), colorAttachment);
     vk::Image::DestroyImage(Renderer::Instance().GetContext(), depthAttachment);
+
+
 }
 
 void SandBoxApp::Update()
@@ -133,13 +138,14 @@ void SandBoxApp::Render()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+
     // ImGui::ShowDemoWindow();
     if (ImGui::Begin("Stats")) {
         ImGui::End();
     }
 
     ImGui::Render();
-
+    
     // 2. render frame
     if (auto frame = Renderer::Instance().BeginFrame()) {
         VkCommandBuffer cmd = frame->mainCommandBuffer;

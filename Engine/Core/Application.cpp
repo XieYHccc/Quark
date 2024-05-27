@@ -1,4 +1,4 @@
-#include "Application/Application.h"
+#include "Core/Application.h"
 
 #include "Core/KeyCodes.h"
 #include "Core/Window.h"
@@ -8,17 +8,15 @@
 #include "Scene/SceneMngr.h"
 #include "Renderer/Renderer.h"
 #include "Asset/AssetManager.h"
+#include "Rendering/RenderDevice.h"
 
 Application* Application::singleton_ = nullptr;
 
 Application::Application(const std::string& title, const std::string& root, int width, int height) 
 {
     singleton_ = this;
-    root_ = root;
-    running_ = true;
-    fps_ = 0;
-    frameTime_ = 0;
-    deltaTime_ = 0;
+    m_Root = root;
+    
     
     // Init logger
     Logger::Init();
@@ -36,14 +34,13 @@ Application::Application(const std::string& title, const std::string& root, int 
     // Init SceneManager
     SceneMngr::Instance().Init();
 
-#ifdef GRAPHIC_API_VULKAN
-    Renderer::Instance().Init();
-#endif
+    //Renderer::Instance().Init();
+    RenderDevice::CreateSingleton();
+    RenderDevice::Singleton().Init();
+
 
     // Register application callback functions
     EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
-
-    CORE_LOGI("Init Engine Successfully")
 }
 
 Application::~Application() {
@@ -57,10 +54,9 @@ Application::~Application() {
 
     AssetManager::Instance().Finalize();
     
-#ifdef GRAPHIC_API_VULKAN
-    Renderer::Instance().Finalize();
-#endif 
-
+    //Renderer::Instance().Finalize();
+    RenderDevice::Singleton().ShutDown();
+    RenderDevice::FreeSingleton();
     // destroy window
     Window::Instance()->Finalize();
     Window::Destroy();
@@ -71,8 +67,8 @@ Application::~Application() {
 
 void Application::Run()
 {
-    while (running_) {
-
+    while (m_Status.isRunning) {
+        m_Status.lastFrameTime = m_Timer.Elapsed();
         // Update each moudule (including processing inputs)
         Update();
 
@@ -88,5 +84,5 @@ void Application::Run()
 
 void Application::OnWindowClose(const WindowCloseEvent& e)
 {
-    running_ = false;
+    m_Status.isRunning = false;
 }

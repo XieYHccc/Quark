@@ -22,15 +22,13 @@ Scene* SceneMngr::CreateScene(const std::string &name)
 
 	sceneMap_.emplace(name, std::move(newScene));
 
-	LOGD("Create a scene with name {}", name)
+	CORE_LOGD("Create scene \"{}\"", name)
 	
 	return raw;
 }
 
 void SceneMngr::Finalize()
-{
-	vkDeviceWaitIdle(Renderer::Instance().GetVkDevice());
-	
+{	
 	for (auto& [name, scene] : sceneMap_) {
 		scene.reset();
 	}

@@ -14,8 +14,10 @@ struct SwapChainImage
 
 struct QueueFamilyIndices
 {
-    uint32_t present = UINT32_MAX;
-    uint32_t graphics = UINT32_MAX;
+    u32 present = UINT32_MAX;
+    u32 graphics = UINT32_MAX;
+    u32 transfer = UINT32_MAX;
+    u32 compute = UINT32_MAX;
 
     bool isComplete() const { return present != UINT32_MAX && graphics != UINT32_MAX; }
 };
@@ -81,16 +83,17 @@ private:
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;
     };
-    bool isPhysicalDeviceSuitable(VkPhysicalDevice device) const;
-    bool checkInstanceExtensionSupport(const std::vector<const char*>& extensions) const;
-    bool checkValidationLayerSupport(const std::vector<const char*>& validationLayers) const;
-    bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& extensions) const;
+    bool IsPhysicalDeviceSuitable(VkPhysicalDevice device) const;
     std::vector<const char*> GetRequiredExtensions() const;
     VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablemodes);
     VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
     QueueFamilyIndices GetQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR surface) const;
     SwapChainSupportDetails GetSwapChainSupportDetails(VkPhysicalDevice device, VkSurfaceKHR surface) const;
+    // bool CheckInstanceExtensionSupport(const std::vector<const char*>& extensions) const;
+    // bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayers) const;
+    // bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& extensions) const;
+
     // debug callback function，VKAPI_ATTR and VKAPI_CALL ensure that the function has the right signature for Vulkan to call it
     static VKAPI_ATTR VkBool32 VKAPI_CALL VkDebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
@@ -102,18 +105,23 @@ private:
 
     // Vulkan objects
     VkInstance vkInstance_;
-    VkDebugUtilsMessengerEXT debugMessenger_;
     VkSurfaceKHR surface_;
     VkPhysicalDevice chosenGPU_;
     QueueFamilyIndices queueFamilyIndices_;
     VkDevice vkDevice_;
     VkQueue graphicsQueue_;
     VkQueue presentQueue_;
+    VkQueue transferQueue_;
     VmaAllocator vmaAllocator_;
     VkSwapchainKHR swapChain_;
 	VkExtent2D swapChainExtent_;
     VkFormat swapChainImageFormat_;
     std::vector<SwapChainImage> swapChainImages_;
+
+    // Vulkan debug messenger
+#ifdef QK_DEBUG_BUILD
+    VkDebugUtilsMessengerEXT debugMessenger_;
+#endif
 
     // Built in structures for immediate submmit
     VkFence immFence_;

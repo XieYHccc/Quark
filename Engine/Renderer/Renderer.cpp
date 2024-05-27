@@ -31,7 +31,7 @@ void Renderer::Init()
 
     currentFrame_ = 0;
 
-    CORE_LOGI("Init Vulkan Render Device")
+    CORE_LOGI("Vulkan Renderer Created")
 
 }
 
