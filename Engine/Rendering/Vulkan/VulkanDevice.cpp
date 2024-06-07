@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Rendering/Vulkan/VulkanDevice.h"
-#include "Rendering/Vulkan/RenderDeviceDriver_Vulkan.h"
+#include "Rendering/Vulkan/RenderDevice_Vulkan.h"
 
 //TODO: Make this configurable
 const std::vector<const char*> deviceExtensions = {
@@ -25,7 +25,7 @@ struct physicalDeviceRequirements
 
 };
 
-VulkanDevice::VulkanDevice(RenderDeviceDriver_Vulkan& driver)
+VulkanDevice::VulkanDevice(RenderDevice_Vulkan& driver)
     :driver_(driver)
 {
     CORE_ASSERT(driver.vkInstance != VK_NULL_HANDLE && driver.vkSurface != VK_NULL_HANDLE)
@@ -33,15 +33,11 @@ VulkanDevice::VulkanDevice(RenderDeviceDriver_Vulkan& driver)
     PickGPU(driver_.vkInstance, driver_.vkSurface);
     CreateLogicalDevice();
     CreateAllocator();
-    CreateCommandPool();
 }
 
 VulkanDevice::~VulkanDevice()
 {
-    CORE_LOGI("Destroying command pools...")
-    vkDestroyCommandPool(logicalDevice, graphicCommandPool, nullptr);
-
-    CORE_LOGI("Destroying vma allocator...")
+    CORE_LOGD("Destroying vma allocator...")
     vmaDestroyAllocator(vmaAllocator);
 
     vkDestroyDevice(logicalDevice, nullptr);
@@ -49,7 +45,7 @@ VulkanDevice::~VulkanDevice()
 
 void VulkanDevice::PickGPU(VkInstance instance, VkSurfaceKHR surface)
 {
-    CORE_LOGI("Selecting GPU...")
+    CORE_LOGI("Createing vulkan physical device...")
 
     // Get all GPUs that support vulkan
     uint32_t deviceCount = 0;
@@ -136,35 +132,6 @@ void VulkanDevice::PickGPU(VkInstance instance, VkSurfaceKHR surface)
 void VulkanDevice::CreateLogicalDevice()
 {
     CORE_LOGI("Creating vulkan logical device...")
-    CORE_LOGI("Checking device extesions...")
-
-#ifdef QK_DEBUG_BUILD
-    CORE_LOGD("Required device extensions:")
-    for(const auto& s : deviceExtensions)
-        CORE_LOGD("  {}", s);
-#endif
-
-    uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
-
-    for (u32 i = 0; i < deviceExtensions.size(); ++i) {
-        bool found = false;
-        for (u32 j = 0; j < availableExtensions.size(); ++j) {
-            if (strcmp(deviceExtensions[i], availableExtensions[j].extensionName)==0) {
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            CORE_LOGC("  Required extension not found: {}", deviceExtensions[i]);
-        }
-    }
-    
-    // All extensions are supported
-    CORE_LOGI("All required vulkan device extensions are supported.")
 
     // required queues for logical device
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -244,19 +211,6 @@ void VulkanDevice::CreateAllocator()
     CORE_LOGI("Vma allocator Created")
 }
 
-void VulkanDevice::CreateCommandPool()
-{
-    // Create command pool for graphics queue.
-    VkCommandPoolCreateInfo pool_create_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
-    pool_create_info.queueFamilyIndex = graphicQueueIndex;
-    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    VK_CHECK(vkCreateCommandPool(
-        logicalDevice,
-        &pool_create_info,
-        nullptr,
-        &graphicCommandPool))
-    CORE_LOGI("Graphics command pool created.");
-}
 
 bool VulkanDevice::IsPhysicalDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) const
 {
@@ -284,12 +238,12 @@ bool VulkanDevice::IsPhysicalDeviceSuitable(VkPhysicalDevice device, VkSurfaceKH
 
     requirements.deviceExtensions = deviceExtensions;
 
-    CORE_LOGI("Checking GPU \"{}\"...", deviceProperties.deviceName)
+    CORE_LOGD("Checking GPU \"{}\"...", deviceProperties.deviceName)
 
     // Descrete GPU？
     if (requirements.DescreteGpu) {
         if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            CORE_LOGI("  Device is not a discrete GPU, and one is required. Skipping.", deviceProperties.deviceName)
+            CORE_LOGD("  Device is not a discrete GPU, and one is required. Skipping.", deviceProperties.deviceName)
             return false;
         }
     }
@@ -297,7 +251,7 @@ bool VulkanDevice::IsPhysicalDeviceSuitable(VkPhysicalDevice device, VkSurfaceKH
     // Anisotropy sampler？
     if (requirements.samplerAnisotropy) {
         if (!deviceFeatures.samplerAnisotropy) {
-            CORE_LOGI("  Device do not support anisotropy sampler, which is required. Skipping.", 
+            CORE_LOGD("  Device do not support anisotropy sampler, which is required. Skipping.", 
                 deviceProperties.deviceName)
             return false;
         }
@@ -318,11 +272,17 @@ bool VulkanDevice::IsPhysicalDeviceSuitable(VkPhysicalDevice device, VkSurfaceKH
     // require at least one format and one present mode
     if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty())
     {
-        CORE_LOGI("  Device do not support required swapchain supports. Skipping.")
+        CORE_LOGD("  Device do not support required swapchain supports. Skipping.")
         return false;
     }
 
-    // Check device extension support
+    CORE_LOGD("Checking device extesions...")
+#ifdef QK_DEBUG_BUILD
+    CORE_LOGD("Required device extensions:")
+    for(const auto& s : requirements.deviceExtensions)
+        CORE_LOGD("  {}", s);
+#endif
+
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
@@ -339,13 +299,13 @@ bool VulkanDevice::IsPhysicalDeviceSuitable(VkPhysicalDevice device, VkSurfaceKH
         }
 
         if (!found) {
-            CORE_LOGI("  Required extension not found: {}. Skipping", requirements.deviceExtensions[i]);
+            CORE_LOGD("  Required extension not found: {}. Skipping", requirements.deviceExtensions[i]);
             return false;
         }
     }
     
     // Device meets all requirements
-    CORE_LOGI("GPU \"{}\" meets all requirements.", deviceProperties.deviceName)
+    CORE_LOGD("GPU \"{}\" meets all requirements.", deviceProperties.deviceName)
     return true;
 }
 

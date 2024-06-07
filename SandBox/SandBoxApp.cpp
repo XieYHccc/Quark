@@ -88,7 +88,7 @@ SandBoxApp::~SandBoxApp()
 
 }
 
-void SandBoxApp::Update()
+void SandBoxApp::Update(f32 deltaTime)
 {
     CameraCmpt* cam = scene->GetMainCamera();
     TransformCmpt& camTrans = *(cam->GetOwner()->transformCmpt);
@@ -131,7 +131,7 @@ void SandBoxApp::Update()
     camTrans.SetPosition(camTrans.GetPosition() + glm::vec3(rotationMatrix * glm::vec4(move, 0.f)));
 }
 
-void SandBoxApp::Render()
+void SandBoxApp::Render(f32 deltaTime)
 {
     // 1. prepare imgui data (not executing render commands here)
     ImGui_ImplVulkan_NewFrame();

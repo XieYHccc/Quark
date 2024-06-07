@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Rendering/Vulkan/VulkanSwapChain.h"
-#include "Rendering/Vulkan/RenderDeviceDriver_Vulkan.h"
+#include "Rendering/Vulkan/RenderDevice_Vulkan.h"
 
-VulkanSwapChain::VulkanSwapChain(RenderDeviceDriver_Vulkan& driver, u32 width, u32 height)
+VulkanSwapChain::VulkanSwapChain(RenderDevice_Vulkan& driver, u32 width, u32 height)
     : driver_(driver)
 {
     // Simnply create a new one
@@ -17,14 +17,12 @@ VulkanSwapChain::~VulkanSwapChain()
 
 void VulkanSwapChain::Resize(u32 width, u32 height)
 {
-    CORE_LOGI("Recreating swapchain...")
-
     // Delete the old one and create a new one
     DestroySwapChain();
     CreateSwapChain(width, height);
 }
 
-bool VulkanSwapChain::AquireNextImageIndex(VkSemaphore imageAvailableSemaphore, VkFence fence, u64 timeoutNs, u32 outImageIndex)
+bool VulkanSwapChain::AquireNextImageIndex(VkSemaphore imageAvailableSemaphore, VkFence fence, u64 timeoutNs, u32* outImageIndex)
 {
     VkResult result = vkAcquireNextImageKHR(
         driver_.device->logicalDevice,
@@ -32,11 +30,11 @@ bool VulkanSwapChain::AquireNextImageIndex(VkSemaphore imageAvailableSemaphore, 
         timeoutNs,
         imageAvailableSemaphore,
         fence,
-        &outImageIndex);
+        outImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         // Trigger swapchain recreation, then boot out of the render loop.
-        Resize(driver_.frameBufferWidth, driver_.frameBuferHeight);
+        Resize(driver_.frameBufferWidth, driver_.frameBufferHeight);
         return false;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         CORE_LOGC("Failed to acquire swapchain image!");
@@ -60,7 +58,7 @@ void VulkanSwapChain::Present(VkQueue graphicQueue, VkQueue presentQueue, VkSema
     VkResult result = vkQueuePresentKHR(presentQueue, &present_info);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         // Swapchain is out of date, suboptimal or a framebuffer resize has occurred. Trigger swapchain recreation.
-        Resize(driver_.frameBufferWidth, driver_.frameBuferHeight);
+        Resize(driver_.frameBufferWidth, driver_.frameBufferHeight);
     } else if (result != VK_SUCCESS) {
         CORE_LOGC("Failed to present swap chain image!");
     }
@@ -69,7 +67,6 @@ void VulkanSwapChain::Present(VkQueue graphicQueue, VkQueue presentQueue, VkSema
 void VulkanSwapChain::CreateSwapChain(u32 width, u32 height)
 {
     swapChainExtent = {width, height};
-    maxFramesInFlight = 2;
 
     // Choose a swap surface format.
     SwapChainSupportDetails details = driver_.device->GetSwapChainSupportDetails(driver_.device->physicalDevice, driver_.vkSurface);
@@ -97,14 +94,17 @@ void VulkanSwapChain::CreateSwapChain(u32 width, u32 height)
 
     // Set swapchain extent
     if (details.capabilities.currentExtent.width != UINT32_MAX) {
+        // Must use gpu specified extent
         swapChainExtent = details.capabilities.currentExtent;
     }
-
-    // Clamp to the value allowed by the GPU.
-    VkExtent2D min = details.capabilities.minImageExtent;
-    VkExtent2D max = details.capabilities.maxImageExtent;
-    swapChainExtent.width = std::clamp(swapChainExtent.width, min.width, max.width);
-    swapChainExtent.height = std::clamp(swapChainExtent.height, min.height, max.height);
+    else {
+        CORE_LOGW("Customized width and height are used to create swapchain")
+        // Clamp to the value allowed by the GPU.
+        VkExtent2D min = details.capabilities.minImageExtent;
+        VkExtent2D max = details.capabilities.maxImageExtent;
+        swapChainExtent.width = std::clamp(swapChainExtent.width, min.width, max.width);
+        swapChainExtent.height = std::clamp(swapChainExtent.height, min.height, max.height);
+    }
 
     u32 image_count = details.capabilities.minImageCount + 1;
     if (details.capabilities.maxImageCount > 0 && image_count > details.capabilities.maxImageCount) {
@@ -150,6 +150,7 @@ void VulkanSwapChain::CreateSwapChain(u32 width, u32 height)
     VK_CHECK(vkGetSwapchainImagesKHR(driver_.device->logicalDevice, handle, &imageCount, 0));
     images.resize(imageCount);
     imageViews.resize(imageCount);
+    swapChainImages.resize(image_count);
     VK_CHECK(vkGetSwapchainImagesKHR(driver_.device->logicalDevice, handle, &image_count, images.data()));
 
     for (size_t i = 0; i < imageCount; i++) {
@@ -162,20 +163,32 @@ void VulkanSwapChain::CreateSwapChain(u32 width, u32 height)
         view_info.subresourceRange.levelCount = 1;
         view_info.subresourceRange.baseArrayLayer = 0;
         view_info.subresourceRange.layerCount = 1;
-
         VK_CHECK(vkCreateImageView(driver_.device->logicalDevice, &view_info, nullptr, &imageViews[i]));
+
+        // Store swapchain imges in public image struct
+        auto internal = new RenderDevice_Vulkan::GPUImage_Vulkan();
+        internal->view = imageViews[i];
+        internal->handle = images[i];
+        swapChainImages[i].internal = internal;
+        swapChainImages[i].desc.isSwapChainImage = true;
+        swapChainImages[i].desc.arraySize = 1;
+        swapChainImages[i].desc.width = swapChainExtent.width;
+        swapChainImages[i].desc.height = swapChainExtent.height;
+        swapChainImages[i].desc.mipLevels = 1;
+        swapChainImages[i].desc.type = GPUImageType::TYPE_2D;
+        
     }
 
     // Create depth image and its view
     VkFormat vk_format = driver_.device->GetDepthFormat();
     if (vk_format != VK_FORMAT_UNDEFINED) {
-        GPUImageFormat img_format;
+        DataFormat img_format;
         if (vk_format == VK_FORMAT_D32_SFLOAT) 
-            img_format = GPUImageFormat::D32_SFLOAT;
+            img_format = DataFormat::D32_SFLOAT;
         else if (vk_format == VK_FORMAT_D32_SFLOAT_S8_UINT)
-            img_format = GPUImageFormat::D32_SFLOAT_S8_UINT;
+            img_format = DataFormat::D32_SFLOAT_S8_UINT;
         else
-            img_format = GPUImageFormat::D24_UNORM_S8_UINT;
+            img_format = DataFormat::D24_UNORM_S8_UINT;
 
         GPUImageDesc desc = {
             .arraySize =1,
@@ -200,8 +213,15 @@ void VulkanSwapChain::CreateSwapChain(u32 width, u32 height)
 
 void VulkanSwapChain::DestroySwapChain()
 {
+    vkDeviceWaitIdle(driver_.device->logicalDevice);
     // Destroy depth image
     driver_.ImageFree(&depthimage);
+    
+    // Destroy interface images
+    for(auto& image : swapChainImages)
+    {
+        delete (RenderDevice_Vulkan::GPUImage_Vulkan*)image.internal;
+    }
     
     // Destroy image views
     for (auto& view : imageViews) {

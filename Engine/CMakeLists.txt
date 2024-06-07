@@ -13,11 +13,20 @@ ${EXTERNAL_PATH}/spdlog/include
 target_compile_options(Engine PRIVATE -Wno-nullability-completeness)
 target_compile_definitions(Engine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 target_include_directories(Engine PUBLIC ${ENGINE_INCLUDE_DIRS} )
-target_link_libraries(Engine glm tiny_obj_loader stb_image glfw Vulkan::Vulkan vma imgui fastgltf::fastgltf)
+target_link_libraries(Engine glm tiny_obj_loader stb_image glfw Vulkan::Vulkan vma imgui fastgltf::fastgltf spirv_reflect)
 
+add_dependencies(Engine Shaders)
 
 # pch header file path
 set(ENGINE_PRECOMPILED_HEADERS
     ${ENGINE_SOURCE_DIR}/pch.h
 )
 target_precompile_headers(Engine PRIVATE ${ENGINE_PRECOMPILED_HEADERS})
+
+# copy shader to binary file directory
+set(SPIRV_SOURCE_DIR "${ASSETS_PATH}")
+set(SPIRV_DESTINATION_DIR "${EXECUTABLE_OUTPUT_PATH}/Assets")
+add_custom_command(
+    TARGET Engine POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${SPIRV_SOURCE_DIR} ${SPIRV_DESTINATION_DIR}
+)

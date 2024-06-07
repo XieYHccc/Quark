@@ -19,9 +19,9 @@ public:
 
 private:
     // Update some modules per frame
-    virtual void Update() = 0;
+    virtual void Update(f32 deltaTime) = 0;
     // Render per frame
-    virtual void Render() = 0;
+    virtual void Render(f32 deltaTime) = 0;
 
     // Callback functions for events
     void OnWindowClose(const WindowCloseEvent& event);

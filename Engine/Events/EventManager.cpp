@@ -4,8 +4,8 @@
 
 void EventManager::ImmediateTrigger(const Event &evnet)
 {
-    TriggerEvent(evnet);
     CORE_LOGT("{}", evnet.ToString());
+    TriggerEvent(evnet);
 }
 
 void EventManager::TriggerEvent(const Event &event) 
@@ -22,8 +22,8 @@ void EventManager::TriggerEvent(const Event &event)
 void EventManager::DispatchEvents() 
 {
     for (auto eventItr = event_queue_.begin(); eventItr != event_queue_.end();) {
-        TriggerEvent(*(eventItr->get()));
         CORE_LOGT("{}", eventItr->get()->ToString());
+        TriggerEvent(*(eventItr->get()));
         eventItr = event_queue_.erase(eventItr);
     }
 }

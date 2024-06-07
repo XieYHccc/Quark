@@ -65,7 +65,10 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         auto owner = *(WindowGLFW*)glfwGetWindowUserPointer(window);
         owner.width_ = width;
         owner.height_ = height;
-        EventManager::Instance().ImmediateTrigger(WindowResizeEvent(width, height));
+        int frame_width = 0;
+        int frame_height = 0;
+        glfwGetFramebufferSize(window, &frame_width, &frame_height);
+        EventManager::Instance().ImmediateTrigger(WindowResizeEvent(frame_width, frame_height));
     });
 
     glfwSetWindowCloseCallback(window_, [](GLFWwindow* window)
@@ -123,4 +126,20 @@ void WindowGLFW::Update()
     glfwSwapBuffers(window_);
     // handle events
     glfwPollEvents();
+}
+
+u32 WindowGLFW::GetFrambufferWidth() const
+{   
+    int width, height;
+    glfwGetFramebufferSize(window_, &width, &height);
+
+    return width;
+}
+
+u32 WindowGLFW::GetFrambufferHeight() const
+{
+    int width, height;
+    glfwGetFramebufferSize(window_, &width, &height);
+
+    return height;
 }

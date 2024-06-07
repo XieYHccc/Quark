@@ -65,7 +65,7 @@ VulkanApp::~VulkanApp()
     vk::Image::DestroyImage(Renderer::Instance().GetContext(), depthAttachment);
 }
 
-void VulkanApp::Update()
+void VulkanApp::Update(f32 deltaTime)
 {
     CameraCmpt* cam = scene->GetMainCamera();
     TransformCmpt& camTrans = *(cam->GetOwner()->transformCmpt);
@@ -108,7 +108,7 @@ void VulkanApp::Update()
     camTrans.SetPosition(camTrans.GetPosition() + glm::vec3(rotationMatrix * glm::vec4(move, 0.f)));
 }
 
-void VulkanApp::Render()
+void VulkanApp::Render(f32 deltaTime)
 {   
     // 1. prepare imgui data (not executing render commands here)
     ImGui_ImplVulkan_NewFrame();

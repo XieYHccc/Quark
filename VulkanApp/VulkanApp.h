@@ -13,8 +13,8 @@ public:
 
     ~VulkanApp();
     
-    void Update() override;
-    void Render() override;
+    virtual void Update(f32 deltaTime) override final;
+    virtual void Render(f32 deltaTime) override final;
 
     Scene* scene;
 

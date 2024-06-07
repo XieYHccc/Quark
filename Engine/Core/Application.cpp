@@ -70,10 +70,10 @@ void Application::Run()
     while (m_Status.isRunning) {
         m_Status.lastFrameTime = m_Timer.Elapsed();
         // Update each moudule (including processing inputs)
-        Update();
+        Update(m_Timer.Elapsed() - m_Status.lastFrameTime);
 
         // Render Scene
-        Render();
+        Render(m_Timer.Elapsed() - m_Status.lastFrameTime);
 
         // Swap buffers
         Window::Instance()->Update();

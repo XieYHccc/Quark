@@ -11,9 +11,8 @@ public:
     SandBoxApp(const std::string& title, const std::string& root, int width, int height);
     ~SandBoxApp();
 
-    void Update() override;
-    void Render() override;
-
+    virtual void Update(f32 deltaTime) override final;
+    virtual void Render(f32 deltaTime) override final;
     Scene* scene;    
         
     float yaw;

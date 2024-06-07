@@ -1,5 +1,5 @@
 #pragma once
-#include "Rendering/Vulkan/VulkanTypes.h"
+#include "Rendering/Vulkan/VulkanAssert.h"
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities = {};
@@ -7,7 +7,7 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-class RenderDeviceDriver_Vulkan;
+class RenderDevice_Vulkan;
 // This class is responsible for selecting physical device，creating logical device and allocator
 class VulkanDevice {
 public:
@@ -25,10 +25,9 @@ public:
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceFeatures features;
     VkPhysicalDeviceMemoryProperties memory;
-    VkCommandPool graphicCommandPool;
 
 public:
-    VulkanDevice(RenderDeviceDriver_Vulkan& driver);
+    VulkanDevice(RenderDevice_Vulkan& driver);
     ~VulkanDevice();
 
     SwapChainSupportDetails GetSwapChainSupportDetails(VkPhysicalDevice device, VkSurfaceKHR surface) const;
@@ -38,7 +37,6 @@ private:
     void PickGPU(VkInstance instance, VkSurfaceKHR surface);
     void CreateLogicalDevice();
     void CreateAllocator();
-    void CreateCommandPool();
     bool IsPhysicalDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) const;
 
     struct QueueFamilyIndices {
@@ -51,5 +49,5 @@ private:
     QueueFamilyIndices GetQueueFamilyIndices(VkPhysicalDevice device, VkSurfaceKHR surface) const;
 
 private:
-    RenderDeviceDriver_Vulkan& driver_;
+    RenderDevice_Vulkan& driver_;
 };

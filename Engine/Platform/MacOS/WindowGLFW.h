@@ -7,15 +7,16 @@ public:
     WindowGLFW();
     ~WindowGLFW() {};
 
-    void Init(const std::string& title, bool is_fullscreen, u32 width, u32 height) override;
-    void Finalize() override;
+    virtual void Init(const std::string& title, bool is_fullscreen, u32 width, u32 height) override final;
+    virtual void Finalize() override final;
 
-    void Update() override;
+    virtual void Update() override final;
 
-    uint32_t GetWidth() const override { return width_; }
-    uint32_t GetHeight() const override { return height_; }
-
-    void* GetNativeWindow() override { return window_; }
+    virtual u32 GetWidth() const override final { return width_; }
+    virtual u32 GetHeight() const override final { return height_; }
+    virtual u32 GetFrambufferWidth() const override final;
+    virtual u32 GetFrambufferHeight() const override final;
+    virtual void* GetNativeWindow() override final { return window_; }
     
 private:
     GLFWwindow* window_;

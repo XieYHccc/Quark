@@ -17,10 +17,10 @@ public:
     // update per frame
     virtual void Update() = 0;
 
-    virtual uint32_t GetWidth() const = 0;
-	virtual uint32_t GetHeight() const = 0;
-    //TODO: support to query framebuffer size
-
+    virtual u32 GetWidth() const = 0;
+	virtual u32 GetHeight() const = 0;
+    virtual u32 GetFrambufferWidth() const = 0;
+    virtual u32 GetFrambufferHeight() const = 0;
 
     virtual void* GetNativeWindow() = 0;
 
