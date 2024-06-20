@@ -11,7 +11,7 @@
 #include <Engine/Asset/LoadOBJ.h>
 #include <Engine/Graphics/Vulkan/Initializers.h>
 #include <Engine/Renderer/Renderer.h>
-#include <Engine/Rendering/RenderDevice.h>
+#include <Engine/Graphic/RenderDevice.h>
 
 
 SandBoxApp::SandBoxApp(const std::string& title, const std::string& root, int width, int height)

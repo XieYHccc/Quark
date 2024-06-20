@@ -1,10 +1,9 @@
 #pragma once
-
 #include "Core/Timer.h"
 #include "Events/ApplicationEvent.h"
+#include "Graphic/Device.h"
 
 class Application {
-
 public:
     static Application& Instance() { return *singleton_; }
 private:
@@ -16,6 +15,7 @@ public:
     const Application& operator=(const Application&) = delete;
 
     void Run();
+    graphic::Device* GetGraphicDevice() { return m_GraphicDevice.get();}
 
 private:
     // Update some modules per frame
@@ -38,9 +38,8 @@ protected:
 
     Timer m_Timer;
     AppStatus m_Status;
-
-    // TODO: Support file system
-    std::string m_Root;
+    std::string m_Root; //TODO: Support file system
+    Scope<graphic::Device> m_GraphicDevice;
 };
 
 // To be defined in CLIENT

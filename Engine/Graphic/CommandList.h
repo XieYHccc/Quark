@@ -1,0 +1,99 @@
+#pragma once
+#include "Graphic/Common.h"
+#include "Graphic/Image.h"
+#include "Graphic/PipeLine.h"
+
+namespace graphic {
+enum PipelineStageBits {
+    PIPELINE_STAGE_TOP_OF_PIPE_BIT = (1 << 0),
+    PIPELINE_STAGE_DRAW_INDIRECT_BIT = (1 << 1),
+    PIPELINE_STAGE_VERTEX_INPUT_BIT = (1 << 2),
+    PIPELINE_STAGE_VERTEX_SHADER_BIT = (1 << 3),
+    PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT = (1 << 4),
+    PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT = (1 << 5),
+    PIPELINE_STAGE_GEOMETRY_SHADER_BIT = (1 << 6),
+    PIPELINE_STAGE_FRAGMENT_SHADER_BIT = (1 << 7),
+    PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT = (1 << 8),
+    PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT = (1 << 9),
+    PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT = (1 << 10),
+    PIPELINE_STAGE_COMPUTE_SHADER_BIT = (1 << 11),
+    PIPELINE_STAGE_TRANSFER_BIT = (1 << 12),
+    PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT = (1 << 13),
+    PIPELINE_STAGE_ALL_GRAPHICS_BIT = (1 << 15),
+    PIPELINE_STAGE_ALL_COMMANDS_BIT = (1 << 16),
+};
+
+enum PipelineMemoryAccessBits {
+    BARRIER_ACCESS_INDIRECT_COMMAND_READ_BIT = (1 << 0),
+    BARRIER_ACCESS_INDEX_READ_BIT = (1 << 1),
+    BARRIER_ACCESS_VERTEX_ATTRIBUTE_READ_BIT = (1 << 2),
+    BARRIER_ACCESS_UNIFORM_READ_BIT = (1 << 3),
+    BARRIER_ACCESS_INPUT_ATTACHMENT_READ_BIT = (1 << 4),
+    BARRIER_ACCESS_SHADER_READ_BIT = (1 << 5),
+    BARRIER_ACCESS_SHADER_WRITE_BIT = (1 << 6),
+    BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT = (1 << 7),
+    BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT = (1 << 8),
+    BARRIER_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT = (1 << 9),
+    BARRIER_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT = (1 << 10),
+    BARRIER_ACCESS_TRANSFER_READ_BIT = (1 << 11),
+    BARRIER_ACCESS_TRANSFER_WRITE_BIT = (1 << 12),
+    BARRIER_ACCESS_HOST_READ_BIT = (1 << 13),
+    BARRIER_ACCESS_HOST_WRITE_BIT = (1 << 14),
+    BARRIER_ACCESS_MEMORY_READ_BIT = (1 << 15),
+    BARRIER_ACCESS_MEMORY_WRITE_BIT = (1 << 16),
+};
+
+struct PipelineMemoryBarrier
+{
+    u32 srcStageBits = 0;
+    u32 dstStageBits = 0;
+    u32 srcMemoryAccessBits = 0;
+    u32 dstMemoryAccessBits = 0;
+};
+
+// we don't actually use this...
+struct PipelineBufferBarrier
+{
+    Image* image;
+    u32 srcStageBits = 0;
+    u32 dstStageBits = 0;
+    u32 srcMemoryAccessBits = 0;
+    u32 dstMemoryAccessBits = 0;
+};
+
+// In addition to memory barrier, we need to convert the layout(a state) of a image
+struct PipelineImageBarrier
+{
+    Image* image;
+    u32 srcStageBits = 0;
+    u32 dstStageBits = 0;
+    u32 srcMemoryAccessBits = 0;
+    u32 dstMemoryAccessBits = 0;
+    ImageLayout layoutBefore;
+    ImageLayout layoutAfter;
+    u32 baseMipLevel = UINT32_MAX;
+    u32 baseArrayLayer = UINT32_MAX;
+};
+
+class CommandList : public GpuResource{
+public:
+    virtual ~CommandList() = default;
+
+    virtual void BindPushConstant(const void* data, size_t offset, size_t size) = 0;
+    virtual void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, uint64_t offset = 0, uint64_t size = 0) = 0;   
+    virtual void BindPipeLine(PipeLineType type, const PipeLine& pipeline) = 0;
+    
+    virtual void SetViewPort(const Viewport& viewport) = 0;
+    virtual void SetScissor(const Scissor& scissor) = 0;
+
+    virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) = 0;
+    virtual void BeginRenderPass(const RenderPassInfo& info) = 0;
+    virtual void EndRenderPass() = 0;
+ 
+    // virtual void BindImage(u32 set, u32 binding, Image* image) = 0;
+protected:
+    CommandList(QueueType type) : type_(type) {};
+    QueueType type_;
+};
+
+}

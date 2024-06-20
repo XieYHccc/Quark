@@ -8,7 +8,10 @@
 #include "Scene/SceneMngr.h"
 #include "Renderer/Renderer.h"
 #include "Asset/AssetManager.h"
-#include "Rendering/RenderDevice.h"
+
+#ifdef  USE_VULKAN_DRIVER
+#include "Graphic/Vulkan/Device_Vulkan.h"
+#endif
 
 Application* Application::singleton_ = nullptr;
 
@@ -34,9 +37,11 @@ Application::Application(const std::string& title, const std::string& root, int 
     // Init SceneManager
     SceneMngr::Instance().Init();
 
-    //Renderer::Instance().Init();
-    RenderDevice::CreateSingleton();
-    RenderDevice::Singleton().Init();
+    // Init Graphic Device
+#ifdef  USE_VULKAN_DRIVER
+    m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
+    m_GraphicDevice->Init();
+#endif
 
 
     // Register application callback functions
@@ -54,9 +59,10 @@ Application::~Application() {
 
     AssetManager::Instance().Finalize();
     
-    //Renderer::Instance().Finalize();
-    RenderDevice::Singleton().ShutDown();
-    RenderDevice::FreeSingleton();
+#ifdef  USE_VULKAN_DRIVER
+    m_GraphicDevice->ShutDown();
+#endif
+
     // destroy window
     Window::Instance()->Finalize();
     Window::Destroy();

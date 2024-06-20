@@ -2,7 +2,6 @@
 #include <Engine/Core/Application.h>
 
 class Scene;
-
 class TestBed : public Application 
 {  
 public:
@@ -12,4 +11,7 @@ public:
     virtual void Update(f32 deltaTime) override final;
     virtual void Render(f32 deltaTime) override final;
 
+    Ref<graphic::Shader> vert_shader;
+    Ref<graphic::Shader> frag_shader;
+    Ref<graphic::PipeLine> graphic_pipeline;
 };
