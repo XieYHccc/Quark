@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Graphic/Vulkan/PipeLine_Vulkan.h"
-#include "Util/Util.h"
 #include "Graphic/Vulkan/Shader_Vulkan.h"
 #include "Graphic/Vulkan/Device_Vulkan.h"
 
@@ -108,44 +107,281 @@ constexpr VkBlendOp _ConvertBlendOp(BlendOperation value)
     }
 }
 
+DescriptorSetAllocator::DescriptorSetAllocator(Device_Vulkan* device, const DescriptorSetLayout& layout)
+{
+    CORE_DEBUG_ASSERT(device != nullptr && !layout.bindings.empty())
+
+    this->device_ = device;
+
+    // get pool size ratios
+    for (auto& binding : layout.bindings) {
+        auto& size_ratio = poolSizeRatios_.emplace_back();
+        size_ratio.ratio = binding.descriptorCount;
+        size_ratio.type = binding.descriptorType;
+    }
+
+    // Create descriptor set layout
+    VkDescriptorSetLayoutCreateInfo set_layout_create_info = {};
+    set_layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    set_layout_create_info.pBindings = layout.bindings.data();
+    set_layout_create_info.bindingCount = layout.bindings.size();
+    VK_CHECK(vkCreateDescriptorSetLayout(device->vkDevice, &set_layout_create_info , nullptr, &layout_))
+}
+
+void DescriptorSetAllocator::begin_frame()
+{
+    set_nodes.begin_frame();
+}
+DescriptorSetAllocator::~DescriptorSetAllocator()
+{
+
+    // destroy descriptor pools
+	for (auto p : pools_) {
+		vkDestroyDescriptorPool(device_->vkDevice, p,nullptr);
+    }
+    pools_.clear();
+
+    // clear allocated nodes
+    set_nodes.clear();
+
+    vkDestroyDescriptorSetLayout(device_->vkDevice, layout_, nullptr);
+
+    CORE_LOGD("Desctipor set allocator destroyed")
+}
+
+std::pair<VkDescriptorSet, bool> DescriptorSetAllocator::find(size_t hash)
+{
+	auto* node = set_nodes.request(hash);
+	if (node)
+		return { node->set, true };
+
+	node = set_nodes.request_vacant(hash);
+	if (node)
+		return { node->set, false };
+
+    // need to create new descriptor pool and sets
+	VkDescriptorPool pool;
+	VkDescriptorPoolCreateInfo info = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+	info.maxSets = setsPerPool_;
+    
+    std::vector<VkDescriptorPoolSize> poolSizes;
+	if (!poolSizeRatios_.empty())
+	{
+	    for (PoolSizeRatio ratio : poolSizeRatios_) {
+		    poolSizes.push_back(VkDescriptorPoolSize{
+	        .type = ratio.type,
+			.descriptorCount = uint32_t(ratio.ratio * setsPerPool_)
+		    });
+	    }
+		info.poolSizeCount = poolSizes.size();
+		info.pPoolSizes = poolSizes.data();
+	}
+
+    // increment sets count per pool
+    setsPerPool_ *= 2;
+
+	if (vkCreateDescriptorPool(device_->vkDevice, &info, nullptr, &pool) != VK_SUCCESS)
+	{
+		CORE_LOGE("Failed to create descriptor pool.");
+		return { VK_NULL_HANDLE, false };
+	}
+
+	VkDescriptorSet sets[SET_BINDINGS_MAX_NUM];
+	VkDescriptorSetLayout layouts[SET_BINDINGS_MAX_NUM];
+	std::fill(std::begin(layouts), std::end(layouts), layout_);
+
+	VkDescriptorSetAllocateInfo alloc = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+	alloc.descriptorPool = pool;
+	alloc.descriptorSetCount = SET_BINDINGS_MAX_NUM;
+	alloc.pSetLayouts = layouts;
+
+	if (vkAllocateDescriptorSets(device_->vkDevice, &alloc, sets) != VK_SUCCESS)
+		CORE_LOGE("Failed to allocate descriptor sets.");
+	pools_.push_back(pool);
+
+	for (auto set : sets)
+		set_nodes.make_vacant(set);
+
+	return { set_nodes.request_vacant(hash)->set, false };
+
+}
+
+
+PipeLineLayout::PipeLineLayout(Device_Vulkan* device, const std::array<DescriptorSetLayout, DESCRIPTOR_SET_MAX_NUM>& layouts, const VkPushConstantRange& push_constant, u32 layout_mask)
+    : device(device), pushConstant(push_constant), setLayoutMask(layout_mask)
+{
+    CORE_DEBUG_ASSERT(this->device != nullptr)
+
+    std::copy(layouts.begin(), layouts.end(), setLayouts);
+
+    // Descriptor set layouts
+    std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
+    for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++) {
+        if ((setLayoutMask & 1u << i) == 0)
+            continue;
+        
+        setAllocators[i] = this->device->Request_DescriptorSetAllocator(setLayouts[i]);
+        descriptor_set_layouts.push_back(setAllocators[i]->get_layout());
+    }
+
+    // Pipeline layout 
+    VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
+    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts.data();
+    pipeline_layout_create_info.setLayoutCount = descriptor_set_layouts.size();
+    if (this->pushConstant.size > 0) {
+        pipeline_layout_create_info.pushConstantRangeCount = 1;
+        pipeline_layout_create_info.pPushConstantRanges = &this->pushConstant;
+    }
+    else {
+        pipeline_layout_create_info.pPushConstantRanges = 0;
+        pipeline_layout_create_info.pPushConstantRanges = nullptr;
+    }
+    VK_CHECK(vkCreatePipelineLayout(this->device->vkDevice, &pipeline_layout_create_info, nullptr, &handle))
+
+    // Create descriptor set update template
+    for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; ++set) {
+        if ((setLayoutMask & (1u << set)) == 0) {
+            continue;
+        }  
+
+    	VkDescriptorUpdateTemplateEntry update_entries[SET_BINDINGS_MAX_NUM];
+		uint32_t update_count = 0;
+
+        auto& set_layout = setLayouts[set];
+        for (auto& binding : set_layout.bindings) {
+            CORE_DEBUG_ASSERT(binding.binding < SET_BINDINGS_MAX_NUM)
+
+            auto &entry = update_entries[update_count++];
+            entry.dstBinding = binding.binding;
+            entry.descriptorType = binding.descriptorType;
+            entry.descriptorCount = binding.descriptorCount;
+            entry.dstArrayElement = 0;
+            entry.stride = sizeof(DescriptorBinding);
+            switch (binding.descriptorType) {
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                entry.offset = offsetof(DescriptorBinding, buffer) + sizeof(DescriptorBinding) * binding.binding;
+                break;
+            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER :
+            case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            case VK_DESCRIPTOR_TYPE_SAMPLER:
+                entry.offset = offsetof(DescriptorBinding, image) + sizeof(DescriptorBinding) * binding.binding;
+                break;
+            default:
+                CORE_ASSERT_MSG(0, "Descriptor type not handled yet.")
+            }
+        }
+
+		VkDescriptorUpdateTemplateCreateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO };
+		info.pipelineLayout = handle;
+		info.descriptorSetLayout = setAllocators[set]->get_layout();
+		info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+		info.set = set;
+		info.descriptorUpdateEntryCount = update_count;
+		info.pDescriptorUpdateEntries = update_entries;
+		info.pipelineBindPoint = (set_layout.set_stage_mask & VK_SHADER_STAGE_COMPUTE_BIT) ?
+				VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
+        
+        if (vkCreateDescriptorUpdateTemplate(device->vkDevice, &info, nullptr, &updateTemplate[set]) != VK_SUCCESS) {
+            CORE_LOGE("Failed to create descriptor update template")
+        }
+    }
+}
+
+PipeLineLayout::~PipeLineLayout()
+{
+    for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; ++set) {
+        if (setLayoutMask & (1u << set)) {
+            vkDestroyDescriptorUpdateTemplate(device->vkDevice, updateTemplate[set], nullptr);
+        }
+
+    }
+    vkDestroyPipelineLayout(device->vkDevice, handle, nullptr);
+
+    CORE_LOGD("Pipeline layout destroyed")
+}
+
 PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
     :PipeLine(PipeLineType::GRAPHIC), device_(device)
 {
     CORE_DEBUG_ASSERT(device_)
-    PipeLineLayout pipeline_layout = {};
+    CORE_DEBUG_ASSERT(desc.vertShader != nullptr && desc.fragShader != nullptr)
 
-    // Combine Descripotr Set Bindings
+    // Combine shader's resource bindings and create pipeline layout
     {
-        auto insert_shader = [&](Ref<Shader> shader) {
+        std::array<DescriptorSetLayout, DESCRIPTOR_SET_MAX_NUM> combined_layout;
+        VkPushConstantRange combined_push_constant = {};
+        u32 set_mask = 0;
+        auto insert_shader = [&](Ref<Shader> shader)
+        {
             auto& internal_shader = ToInternal(shader.get());
-            // binding slot
-            for (size_t i = 0; i < Shader::SHADER_RESOURCE_SET_MAX_NUM; ++i) {
+            // loop each set of bindings
+            for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i) {
+                if (internal_shader.bindings_[i].empty()) 
+                    continue;
+
+                set_mask |= 1u << i;
+                auto& vk_set_layout_bindings = combined_layout[i].vk_bindings;
                 for (size_t j = 0; j < internal_shader.bindings_[i].size(); ++j) {
-                    bool found = false;
                     auto& x = internal_shader.bindings_[i][j];
-                    for (auto& y : pipeline_layout.setLayoutBindings[i]) {
-                        if (x.binding == y.binding) {
+                    auto& y = combined_layout[i].vk_bindings[j];
+
+                    y.binding = x.binding;
+                    y.descriptorCount = x.descriptorCount;
+                    y.descriptorType = x.descriptorType;
+                    y.stageFlags |= x.stageFlags;
+
+                    combined_layout[i].set_stage_mask |= x.stageFlags;
+                    switch (x.descriptorType) {
+                    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                        combined_layout[i].uniform_buffer_mask |= 1u << x.binding;
+                        break;
+                    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                        combined_layout[i].storage_buffer_mask |= 1u << x.binding;
+                        break;
+                    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                        combined_layout[i].sampled_image_mask |= 1u << x.binding;
+                        break;
+                    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                        combined_layout[i].separate_image_mask |= 1u << x.binding;
+                        break;
+                    case VK_DESCRIPTOR_TYPE_SAMPLER:
+                        combined_layout[i].sampler_mask |= 1u << x.binding;
+                        break;
+                    default:
+                        CORE_DEBUG_ASSERT("Descriptor type not handled!")
+                        break;
+                    }
+                    
+                    bool found = false;
+                    for (auto& z : combined_layout[i].bindings) {
+                        if (x.binding == z.binding) {
 							// If the asserts fire, it means there are overlapping bindings between shader stages
 							// This is not supported now for performance reasons (less binding management)!
 							// (Overlaps between s/b/t bind points are not a problem because those are shifted by the compiler)
-                            CORE_ASSERT(x.descriptorCount == y.descriptorCount)
-                            CORE_ASSERT(x.descriptorType == y.descriptorType)
+                            CORE_ASSERT(x.descriptorCount == z.descriptorCount)
+                            CORE_ASSERT(x.descriptorType == z.descriptorType)
                             found = true;
-                            y.stageFlags |= x.stageFlags;
+                            z.stageFlags |= x.stageFlags;
                             break;
                         }
                     }
+
                     if (!found) {
-                        pipeline_layout.setLayoutBindings[i].push_back(x);
-                        pipeline_layout.imageViewTypes[i].push_back(internal_shader.bindingViews_[i][j]);
+                        combined_layout[i].bindings.push_back(x);
+                        // tmp_layout.imageViewTypes[i].push_back(internal_shader.bindingViews_[i][j]);
                     }
                 }
             }
             // push constant
             if (internal_shader.pushConstant_.size > 0) {
-                pipeline_layout.pushConstant.offset = std::min(internal_shader.pushConstant_.offset, pipeline_layout.pushConstant.offset);
-				pipeline_layout.pushConstant.size = std::max(internal_shader.pushConstant_.size, pipeline_layout.pushConstant.size);
-				pipeline_layout.pushConstant.stageFlags |= internal_shader.pushConstant_.stageFlags;
+                combined_push_constant.offset = std::min(internal_shader.pushConstant_.offset, combined_push_constant.offset);
+				combined_push_constant.size = std::max(internal_shader.pushConstant_.size, combined_push_constant.size);
+				combined_push_constant.stageFlags |= internal_shader.pushConstant_.stageFlags;
             }
 
         };
@@ -153,61 +389,11 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
         insert_shader(desc.vertShader);
         insert_shader(desc.fragShader);
 
-        // Compute layout hash
-        pipeline_layout.hash = 0;
-        for (size_t i = 0; i < Shader::SHADER_RESOURCE_SET_MAX_NUM; ++i) {
-            for (size_t j = 0; auto& x : pipeline_layout.setLayoutBindings[i]) {
-                util::hash_combine(pipeline_layout.hash, x.binding);
-                util::hash_combine(pipeline_layout.hash, x.descriptorCount);
-                util::hash_combine(pipeline_layout.hash, x.descriptorType);
-                util::hash_combine(pipeline_layout.hash, x.stageFlags);
-                util::hash_combine(pipeline_layout.hash, pipeline_layout.imageViewTypes[i][j]);
-                j++;
-            }
-        }
-        util::hash_combine(pipeline_layout.hash, pipeline_layout.pushConstant.offset);
-        util::hash_combine(pipeline_layout.hash, pipeline_layout.pushConstant.size);
-        util::hash_combine(pipeline_layout.hash, pipeline_layout.pushConstant.stageFlags);
-
-    }
-
-    // Create Pipeline Layout
-    {
-        if (device_->cached_PipelineLayouts[pipeline_layout.hash].pipelineLayout == VK_NULL_HANDLE) { // need to create a new pipeline layout
-            // Descriptor set layouts
-            for (size_t i = 0; i < Shader::SHADER_RESOURCE_SET_MAX_NUM; i++) {
-                VkDescriptorSetLayoutCreateInfo set_layout_create_info = {};
-                set_layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                set_layout_create_info.pBindings = pipeline_layout.setLayoutBindings[i].data();
-                set_layout_create_info.bindingCount = pipeline_layout.setLayoutBindings[i].size();
-                VK_CHECK(vkCreateDescriptorSetLayout(device_->vkDevice, &set_layout_create_info , nullptr, &pipeline_layout.setLayouts[i]))
-            }
-
-            // Pipeline layout 
-            VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
-            pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-            pipeline_layout_create_info.pSetLayouts = pipeline_layout.setLayouts;
-            pipeline_layout_create_info.setLayoutCount = Shader::SHADER_RESOURCE_SET_MAX_NUM;
-            if (pipeline_layout.pushConstant.size > 0) {
-                pipeline_layout_create_info.pushConstantRangeCount = 1;
-                pipeline_layout_create_info.pPushConstantRanges = &pipeline_layout.pushConstant;
-            }
-            else {
-                pipeline_layout_create_info.pPushConstantRanges = 0;
-                pipeline_layout_create_info.pPushConstantRanges = nullptr;
-            }
-            VK_CHECK(vkCreatePipelineLayout(device_->vkDevice, &pipeline_layout_create_info, nullptr, &pipeline_layout.pipelineLayout))
-
-            device_->cached_PipelineLayouts[pipeline_layout.hash] = pipeline_layout; 
-            layout_ = &device_->cached_PipelineLayouts[pipeline_layout.hash];
-        }
-        else {  // Find cached pipeline layout
-            layout_ = &device_->cached_PipelineLayouts[pipeline_layout.hash];
-        }
+        // Create Pipeline Layout
+        layout_ = device_->Request_PipeLineLayout(combined_layout, combined_push_constant, set_mask);
     }
 
     // Shaderstage Info
-    CORE_DEBUG_ASSERT(desc.vertShader != nullptr && desc.fragShader != nullptr)
     auto& vert_shader_internal = ToInternal(desc.vertShader.get());
     auto& frag_shader_internal = ToInternal(desc.fragShader.get());
     VkPipelineShaderStageCreateInfo shader_stage_info[2] = { vert_shader_internal.stageInfo_, frag_shader_internal.stageInfo_};
@@ -216,8 +402,9 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info = {};
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_create_info.pNext = nullptr;
+    std::vector<VkVertexInputBindingDescription> bindings(desc.vertexBindInfos.size());
+    std::vector<VkVertexInputAttributeDescription> attributes(desc.vertexAttribInfos.size());
     if (!desc.vertexAttribInfos.empty() && !desc.vertexBindInfos.empty()) {
-        std::vector<VkVertexInputBindingDescription> bindings(desc.vertexBindInfos.size());
         for (size_t i = 0; i < bindings.size(); i++)
         {
             bindings[i].binding = desc.vertexBindInfos[i].binding;
@@ -229,7 +416,6 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
                 bindings[i].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
         }
 
-        std::vector<VkVertexInputAttributeDescription> attributes(desc.vertexAttribInfos.size());
         for (size_t i = 0; i < attributes.size(); i++)
         {
             attributes[i].binding = desc.vertexAttribInfos[i].binding;
@@ -275,7 +461,6 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
 	rasterization_state_create_info.depthClampEnable = desc.rasterState.enableDepthClamp;
 	rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
 	rasterization_state_create_info.polygonMode = _ConvertPolygonMode(desc.rasterState.polygonMode);
-	rasterization_state_create_info.cullMode = VK_CULL_MODE_NONE;
 	rasterization_state_create_info.frontFace = (desc.rasterState.frontFaceType == FrontFaceType::COUNTER_CLOCKWISE ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE );
     rasterization_state_create_info.lineWidth = desc.rasterState.lineWidth;
     rasterization_state_create_info.cullMode = _ConverCullMode(desc.rasterState.cullMode);
@@ -285,10 +470,10 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
 	rasterization_state_create_info.depthBiasClamp = 0;
 	rasterization_state_create_info.depthBiasSlopeFactor = 0;
 
-    // Multisample TODO: Support multisample. Just hard code for now
+    // Multisampling
     VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
     multisample_state_create_info.sampleShadingEnable = VK_FALSE;
-    multisample_state_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisample_state_create_info.rasterizationSamples = (VkSampleCountFlagBits)desc.rasterState.SampleCount;
     multisample_state_create_info.minSampleShading = 1.0f;
     multisample_state_create_info.pSampleMask = 0;
     multisample_state_create_info.alphaToCoverageEnable = VK_FALSE;
@@ -363,19 +548,19 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
 	pipeline_create_info.pDepthStencilState = &depth_stencil_state_create_info;
 	pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
 	pipeline_create_info.pDynamicState = &dynamic_state_create_info;
-	pipeline_create_info.layout = layout_->pipelineLayout;
+	pipeline_create_info.layout = layout_->handle;
     pipeline_create_info.pNext = &renderingInfo;
     pipeline_create_info.renderPass = nullptr;
-    VK_CHECK(vkCreateGraphicsPipelines(device_->vkDevice, nullptr, 1, &pipeline_create_info, nullptr, &pipeline_))
+    VK_CHECK(vkCreateGraphicsPipelines(device_->vkDevice, nullptr, 1, &pipeline_create_info, nullptr, &handle_))
 
     CORE_LOGD("Graphic Pipeline created")
 }
 
 PipeLine_Vulkan::~PipeLine_Vulkan()
 {
-    if (pipeline_ != VK_NULL_HANDLE) {
+    if (handle_ != VK_NULL_HANDLE) {
         auto& frame = device_->GetCurrentFrame();
-        frame.garbagePipelines.push_back(pipeline_);
+        frame.garbagePipelines.push_back(handle_);
     }
 }
 

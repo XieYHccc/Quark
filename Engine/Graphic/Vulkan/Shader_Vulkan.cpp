@@ -5,7 +5,7 @@
 
 namespace graphic {
     
-#define SPV_REFLECT_CHECK(x) CORE_DEBUG_ASSERT(x == SPV_REFLECT_RESULT_SUCCESS)
+#define SPV_REFLECT_CHECK(x) CORE_ASSERT(x == SPV_REFLECT_RESULT_SUCCESS)
 
 Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const void* shaderCode, size_t codeSize)
     : Shader(stage), device_(device)
@@ -21,8 +21,8 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleInfo.codeSize = codeSize;
     moduleInfo.pCode = (const uint32_t*)shaderCode;
-    VK_CHECK(vkCreateShaderModule(vk_device, &moduleInfo, nullptr, &shaderModule_))
-    
+    if (vkCreateShaderModule(vk_device, &moduleInfo, nullptr, &shaderModule_) != VK_SUCCESS)
+        CORE_LOGE("Failed to create vulkan shader module.")
     stageInfo_.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stageInfo_.module = shaderModule_;
     stageInfo_.pName = "main";
@@ -63,53 +63,62 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
 
     for (auto& x : push_constants)
     {
-        CORE_ASSERT(x->size < Shader::PUSH_CONSTANT_DATA_SIZE)
+        CORE_ASSERT(x->size < PUSH_CONSTANT_DATA_SIZE)
         pushConstant_.stageFlags = stageInfo_.stage;
         pushConstant_.offset = x->offset;
         pushConstant_.size = x->size;
     }
 
     for (auto& binding : bindings) {
-        CORE_DEBUG_ASSERT(binding->set < Shader::SHADER_RESOURCE_SET_MAX_NUM) // only support shaders with 4 sets or less
+        CORE_DEBUG_ASSERT(binding->set < DESCRIPTOR_SET_MAX_NUM) // only support shaders with 4 sets or less
 
         auto bind_slot = binding->binding;
         auto set = binding->set; 
 
         auto& descriptor_binding = bindings_[set].emplace_back();
+        CORE_ASSERT(binding->count == 1) // limit this to 1 for the simplity of updating VkDescriptor set
         descriptor_binding.binding = bind_slot;
         descriptor_binding.stageFlags = stageInfo_.stage;
         descriptor_binding.descriptorCount = binding->count;
         descriptor_binding.descriptorType = (VkDescriptorType)binding->descriptor_type;
 
-        VkImageViewType& view_type = bindingViews_[set].emplace_back();
-        view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
-        switch (binding->descriptor_type) {
-        default:
-            break;
-        case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-        case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-            switch (binding->image.dim) {
-            default:
-                CORE_DEBUG_ASSERT("only support 2D, 3D and cube image!")
-                break;
-            case SpvDim2D:
-                if (binding->image.arrayed == 0)
-                    view_type = VK_IMAGE_VIEW_TYPE_2D;
-                else
-                    view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-                break;
-            case SpvDim3D:
-                view_type = VK_IMAGE_VIEW_TYPE_3D;
-                break;
-            case SpvDimCube:
-                if (binding->image.arrayed == 0)
-                    view_type = VK_IMAGE_VIEW_TYPE_CUBE;
-                else
-                    view_type = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-                break;
-            }
-            break;
+        if (descriptor_binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+        {
+            // For now, always replace VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER with VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+            // It would be quite messy to track which buffer is dynamic and which is not in the binding code, consider multiple pipeline bind points too
+            // But maybe the dynamic uniform buffer is not always best because it occupies more registers (like DX12 root descriptor)?
+            descriptor_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
         }
+        
+        // VkImageViewType& view_type = bindingViews_[set].emplace_back();
+        // view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+        // switch (binding->descriptor_type) {
+        // default:
+        //     break;
+        // case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        // case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+        //     switch (binding->image.dim) {
+        //     default:
+        //         CORE_DEBUG_ASSERT("only support 2D, 3D and cube image!")
+        //         break;
+        //     case SpvDim2D:
+        //         if (binding->image.arrayed == 0)
+        //             view_type = VK_IMAGE_VIEW_TYPE_2D;
+        //         else
+        //             view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        //         break;
+        //     case SpvDim3D:
+        //         view_type = VK_IMAGE_VIEW_TYPE_3D;
+        //         break;
+        //     case SpvDimCube:
+        //         if (binding->image.arrayed == 0)
+        //             view_type = VK_IMAGE_VIEW_TYPE_CUBE;
+        //         else
+        //             view_type = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        //         break;
+        //     }
+        //     break;
+        // }
     }
     spvReflectDestroyShaderModule(&spv_reflcet_module);
 

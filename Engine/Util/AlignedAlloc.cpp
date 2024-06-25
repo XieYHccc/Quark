@@ -6,8 +6,7 @@
 #include <malloc.h>
 #endif
 
-namespace util
-{
+namespace util {
 void *memalign_alloc(size_t boundary, size_t size)
 {
 #if defined(_WIN32)

@@ -73,6 +73,8 @@ if(${CMAKE_BUILD_TYPE} MATCHES Debug)
     add_definitions(-DQK_DEBUG_BUILD)
 elseif(${CMAKE_BUILD_TYPE} MATCHES Release)
     add_definitions(-DQK_RELEASE_BUILD)
+elseif(${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo)
+    add_definitions(-DQK_DEBUG_BUILD)
 else()
     message( FATAL_ERROR "Unknown build type!" )
 endif()
@@ -86,6 +88,7 @@ add_subdirectory(./Engine)
 #add_subdirectory(./SandBox)
 #add_subdirectory(./VulkanApp)
 add_subdirectory(./TestBed)
+add_subdirectory(./Examples)
 
 ################################################################################
 # Shader Compilation                                                           #

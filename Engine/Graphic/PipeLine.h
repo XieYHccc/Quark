@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Base.h"
 #include "Common.h"
 
 namespace graphic {
@@ -20,7 +21,6 @@ enum class TopologyType {
     POINT_LIST,
     MAX_ENUM
 };
-
 
 enum class CullMode{
     NONE,
@@ -68,8 +68,8 @@ struct VertexBindInfo
 		INPUT_RATE_INSTANCE
 	};
 
-	uint32_t binding;
-	uint32_t stride;
+	u32 binding;
+	u32 stride;
 	InputRate inputRate;
 };
 
@@ -82,9 +82,9 @@ struct VertexAttribInfo
 		ATTRIB_FORMAT_VEC4,
 	};
 
-	uint32_t binding;
-	uint32_t location;
-	uint32_t offset;
+	u32 binding;
+	u32 location;
+	u32 offset;
 	AttribFormat format;
 };
 
@@ -137,9 +137,8 @@ struct RasterizationState {
     FrontFaceType frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
     PolygonMode polygonMode = PolygonMode::Fill;
     bool enableDepthClamp = false;
-    bool enableMultisample = false;
     bool enableAntialiasedLine = false;
-    uint32_t SampleCount = 0;
+    SampleCount SampleCount = SampleCount::SAMPLES_1;
     float lineWidth = 1.f;
 };
 
@@ -164,7 +163,7 @@ struct GraphicPipeLineDesc {
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
     // For dynamic rendering
     std::vector<DataFormat> colorAttachmentFormats;
-    DataFormat depthAttachmentFormat = DataFormat::MAX_ENUM; 
+    DataFormat depthAttachmentFormat = DataFormat::UNDEFINED; 
 };
 
 

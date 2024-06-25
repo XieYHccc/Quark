@@ -40,28 +40,6 @@ constexpr VkImageType ConvertImageType(ImageType type)
         return VK_IMAGE_TYPE_3D;
     }
 }
-constexpr VkSampleCountFlagBits ConvertSampleBits(ImageSamples sample)
-{
-    switch (sample) 
-    {
-    case ImageSamples::SAMPLES_1:
-        return VK_SAMPLE_COUNT_1_BIT;
-    case ImageSamples::SAMPLES_2:
-        return VK_SAMPLE_COUNT_2_BIT;
-    case ImageSamples::SAMPLES_4:
-        return VK_SAMPLE_COUNT_4_BIT;
-    case ImageSamples::SAMPLES_8:
-        return VK_SAMPLE_COUNT_8_BIT;
-    case ImageSamples::SAMPLES_16:
-        return VK_SAMPLE_COUNT_16_BIT;
-    case ImageSamples::SAMPLES_32:
-        return VK_SAMPLE_COUNT_32_BIT;
-    case ImageSamples::SAMPLES_64:
-        return VK_SAMPLE_COUNT_64_BIT;
-    default:
-        return VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
-    }
-}
 
 class Image_Vulkan : public Image {
     friend class Device_Vulkan;

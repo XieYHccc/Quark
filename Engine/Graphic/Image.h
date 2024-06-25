@@ -18,16 +18,6 @@ enum class ImageType {
     TYPE_CUBE,
 };
 
-enum class ImageSamples {
-    SAMPLES_1,
-    SAMPLES_2,
-    SAMPLES_4,
-    SAMPLES_8,
-    SAMPLES_16,
-    SAMPLES_32,
-    SAMPLES_64,
-};
-
 enum class ImageLayout {
     UNDEFINED,
     GENERAL,    // usuallly used for shader read and write
@@ -61,7 +51,7 @@ struct ImageDesc {
     u32 arraySize = 1;
     ImageType type = ImageType::TYPE_2D;
     DataFormat format =  DataFormat::R8G8B8A8_UNORM;
-    ImageSamples samples = ImageSamples::SAMPLES_1;
+    SampleCount samples = SampleCount::SAMPLES_1;
     ImageLayout initialLayout = ImageLayout::UNDEFINED;
     u32 usageBits  = 0;
 };

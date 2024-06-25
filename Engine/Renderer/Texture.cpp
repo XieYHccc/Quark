@@ -92,7 +92,7 @@ Texture::Texture(const std::string& filepath)
         info.height = height;
         info.nChannels = nChannels;
 
-        image = vk::Image::CreateTexImage(Renderer::Instance().GetContext(), info.data, info.width, info.height, info.mipmapped);\
+        image = vk::Image::CreateTexImage(Renderer::Instance().GetContext(), info.data, info.width, info.height, info.mipmapped);
 
         stbi_image_free(info.data);
     }

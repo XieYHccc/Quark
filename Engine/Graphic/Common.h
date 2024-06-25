@@ -1,6 +1,13 @@
 #pragma once
+#include "Core/Base.h"
 
 namespace graphic {
+
+// Macro
+#define DESCRIPTOR_SET_MAX_NUM 4
+#define SET_BINDINGS_MAX_NUM 16
+#define PUSH_CONSTANT_DATA_SIZE 128
+#define VERTEX_BUFFER_MAX_NUM 8
 
 // Forward declaraton
 class Device;
@@ -37,6 +44,7 @@ enum QueueType
 
 // TODO: Support various image format
 enum class DataFormat {
+    UNDEFINED,
     R8G8B8A8_UNORM,
     B8G8R8A8_UNORM,
     R16G16B16A16_SFLOAT,
@@ -44,7 +52,6 @@ enum class DataFormat {
     D32_SFLOAT,
     D32_SFLOAT_S8_UINT,
     D24_UNORM_S8_UINT,
-    MAX_ENUM
 };
 
 enum class LogicOperation {
@@ -86,6 +93,16 @@ enum class ShaderStage{
     MAX_ENUM
 };
 
+enum class SampleCount {
+    SAMPLES_1 = 1,
+    SAMPLES_2 = 2,
+    SAMPLES_4 = 4,
+    SAMPLES_8 = 8,
+    SAMPLES_16 = 16,
+    SAMPLES_32 = 32,
+    SAMPLES_64 = 64,
+};
+
 struct Viewport
 {
     float x, y, width, height, minDepth, maxDepth;
@@ -107,7 +124,7 @@ struct Scissor
     Extent extent;
 };
 
-constexpr uint32_t GetFormatStride(DataFormat format)
+constexpr u32 GetFormatStride(DataFormat format)
 {
     switch (format) {
     case DataFormat::R8G8B8A8_UNORM:

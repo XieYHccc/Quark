@@ -13,10 +13,10 @@ public:
 
 private:
     Device_Vulkan* device_;
-    VkBuffer handle_;
-    VmaAllocation allocation_;
-    VmaAllocationInfo allocInfo_;
-    VkDeviceAddress bufferDeviceAddress_;
+    VkBuffer handle_ = VK_NULL_HANDLE;
+    VmaAllocation allocation_ = VK_NULL_HANDLE;
+    VmaAllocationInfo allocInfo_ = {};
+    VkDeviceAddress bufferDeviceAddress_ = UINT64_MAX;
 
 };
 

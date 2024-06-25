@@ -11,6 +11,11 @@ enum class BufferType {
     UNIFORM_BUFFER
 };
 
+enum class IndexBufferFormat{
+    UINT16,
+    UINT32
+};
+
 enum class BufferMemoryDomain {
     GPU,
     CPU,

@@ -17,7 +17,6 @@ namespace graphic {
         }                                                                        \
     } while (0);
 
-
 // Forward declaration
 #define VULKAN_INTERNAL_CLASS(x_) \
     class x_##_Vulkan; \
@@ -37,28 +36,30 @@ VULKAN_INTERNAL_CLASS(PipeLine)
     inline x_##_Vulkan& ToInternal(x_* ptr) { return *static_cast<x_##_Vulkan*>(ptr);} \
     inline const x_##_Vulkan& ToInternal(const x_* ptr) {return *static_cast<const x_##_Vulkan*>(ptr);}\
 
-class Cookie {  // track the resource information when bind resouces to shader
-public:
-    Cookie(uint64_t cookie) : cookie_(cookie) {};
-    uint64_t get_cookie() const { return cookie_;}
-protected:
-    static uint64_t allocate_cookie() 
-    {
-        // Reserve lower bits for "special purposes".
-        uint64_t new_cookie = cookie_allocator + 16;
-        cookie_allocator += 16;
+// class Cookie {  // track the resource information when bind resouces to shader
+// public:
+//     Cookie(uint64_t cookie) : cookie_(cookie) {};
+//     uint64_t get_cookie() const { return cookie_;}
+// protected:
+//     static uint64_t allocate_cookie() 
+//     {
+//         // Reserve lower bits for "special purposes".
+//         uint64_t new_cookie = cookie_allocator + 16;
+//         cookie_allocator += 16;
 
-        return new_cookie;
-    }
-private:
-    uint64_t cookie_;
-    inline static uint64_t cookie_allocator = 0;
-};
+//         return new_cookie;
+//     }
+// private:
+//     uint64_t cookie_;
+//     inline static uint64_t cookie_allocator = 0;
+// };
 
 constexpr VkFormat ConvertDataFormat(DataFormat value)
 {
     switch(value)
     {
+    case DataFormat::UNDEFINED:
+        return VK_FORMAT_UNDEFINED;
     case DataFormat::B8G8R8A8_UNORM:
         return VK_FORMAT_B8G8R8A8_UNORM;
     case DataFormat::R8G8B8A8_UNORM:

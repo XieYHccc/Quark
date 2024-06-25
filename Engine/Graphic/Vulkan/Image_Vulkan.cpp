@@ -52,7 +52,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
     create_info.arrayLayers = desc.arraySize;
     create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    create_info.samples = ConvertSampleBits(desc.samples);
+    create_info.samples = (VkSampleCountFlagBits)desc.samples;
     create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     create_info.flags = 0;
     switch (desc.type) {

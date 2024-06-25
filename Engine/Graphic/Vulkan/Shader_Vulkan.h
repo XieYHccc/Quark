@@ -7,6 +7,7 @@ class Shader_Vulkan : public Shader {
     friend class Device_Vulkan;
     friend class CommandList_Vulkan;
     friend class PipeLine_Vulkan;
+    friend struct PipeLineLayout;
 public:
     Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const void* shaderCode, size_t codeSize);
     ~Shader_Vulkan();
@@ -16,8 +17,8 @@ private:
     VkPipelineShaderStageCreateInfo stageInfo_;
 
     // Layout info
-    std::vector<VkDescriptorSetLayoutBinding> bindings_[SHADER_RESOURCE_SET_MAX_NUM];
-    std::vector<VkImageViewType> bindingViews_[SHADER_RESOURCE_SET_MAX_NUM];
+    std::vector<VkDescriptorSetLayoutBinding> bindings_[DESCRIPTOR_SET_MAX_NUM];
+    // std::vector<VkImageViewType> bindingViews_[DESCRIPTOR_SET_MAX_NUM];
     VkPushConstantRange pushConstant_;
 };
 

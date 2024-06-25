@@ -1,8 +1,10 @@
-#include "Graphic/Vulkan/Shader_Vulkan.h"
 #include "pch.h"
-#include "Device_Vulkan.h"
 #include "Core/Window.h"
 #include "Events/EventManager.h"
+#include "Util/Hash.h"
+#include "Graphic/Vulkan/Shader_Vulkan.h"
+#include "Graphic/Vulkan/Device_Vulkan.h"
+
 
 namespace graphic {
 
@@ -100,6 +102,19 @@ void Device_Vulkan::PerFrameData::clear()
     garbageImages.clear();
     garbagePipelines.clear();
     garbageShaderModules.clear();
+}
+
+void Device_Vulkan::PerFrameData::reset()
+{
+	vkResetFences(device->vkDevice, QUEUE_TYPE_MAX_ENUM, queueFences);
+
+    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++){
+        cmdListCount[i] = 0;
+    }
+    imageAvailableSemaphoreConsumed = false;
+
+    // Destroy deferred-destroyed resources
+    clear();
 }
 
 void Device_Vulkan::PerFrameData::destroy()
@@ -229,17 +244,14 @@ bool Device_Vulkan::Init()
 
 void Device_Vulkan::ShutDown()
 {
-    CORE_LOGI("Shutdown vulkan backend...")
+    CORE_LOGI("Shutdown vulkan device...")
     vkDeviceWaitIdle(vkDevice);
     
-    // Destroy cached pipeline layout and descriptor set layout
-    for (auto& [id, layout] : cached_PipelineLayouts) {
-        for (size_t i = 0; i < Shader::SHADER_RESOURCE_SET_MAX_NUM; i++) {
-            vkDestroyDescriptorSetLayout(vkDevice, layout.setLayouts[i], nullptr);
-        }
+    // Destroy cached pipeline layout
+    cached_pipelineLayouts.clear();
 
-        vkDestroyPipelineLayout(vkDevice, layout.pipelineLayout, nullptr);
-    }
+    // Destory cached descriptor allocator
+    cached_descriptorSetAllocator.clear();
 
     // Destroy transfer cmd structure
     transferCmd.destroy();
@@ -270,12 +282,12 @@ bool Device_Vulkan::BeiginFrame(f32 deltaTime)
     vkWaitForFences(vkDevice, QUEUE_TYPE_MAX_ENUM, frame.queueFences, true, 1000000000);
     
     // Reset frame status
-	vkResetFences(vkDevice, QUEUE_TYPE_MAX_ENUM, frame.queueFences);
-    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++){
-        frame.cmdListCount[i] = 0;
+    frame.reset();
+
+    // put unused (more than 8 frames) descriptor set back to vacant pool
+    for (auto& [k, value] : cached_descriptorSetAllocator) {
+        value.begin_frame();   
     }
-    frame.imageAvailableSemaphoreConsumed = false;
-    frame.clear();
 
     // Acquire a swapchain image 
     VkResult result = vkAcquireNextImageKHR(
@@ -339,7 +351,11 @@ Ref<Image> Device_Vulkan::CreateImage(const ImageDesc &desc, const ImageInitData
 
 Ref<Shader> Device_Vulkan::CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize)
 {
-    return CreateRef<Shader_Vulkan>(this, stage, byteCode, codeSize);
+    auto new_shader =  CreateRef<Shader_Vulkan>(this, stage, byteCode, codeSize);
+    if (new_shader->shaderModule_ == VK_NULL_HANDLE)
+        return nullptr;
+
+    return new_shader;
 }
 
 Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path)
@@ -358,7 +374,13 @@ Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std:
     file.read((char*)buffer.data(), fileSize);
     file.close();
 
-    return CreateShaderFromBytes(stage, buffer.data(), buffer.size());
+    auto new_shader = CreateShaderFromBytes(stage, buffer.data(), buffer.size());
+    if (new_shader == nullptr) {
+        CORE_LOGE("Faile to create shader from file: {}", file_path)
+        return nullptr;
+    }
+
+    return new_shader;
 }
 
 Ref<PipeLine> Device_Vulkan::CreateGraphicPipeLine(const GraphicPipeLineDesc &desc)
@@ -458,6 +480,7 @@ void Device_Vulkan::ResizeSwapchain()
         desc.height = context->swapChainExtent.height;
         desc.width = context->swapChainExtent.width;
         desc.depth = 1;
+        desc.format = GetSwapChainImageFormat();
 
         Ref<Image> newImage = CreateRef<Image_Vulkan>(desc);
         auto& internal_image = ToInternal(newImage.get());
@@ -485,6 +508,59 @@ DataFormat Device_Vulkan::GetSwapChainImageFormat()
     default:
         CORE_ASSERT_MSG(0, "format not handled yet")
     }
+}
+
+PipeLineLayout* Device_Vulkan::Request_PipeLineLayout(const std::array<DescriptorSetLayout, DESCRIPTOR_SET_MAX_NUM>& layouts, VkPushConstantRange push_constant, u32 layout_mask)
+{
+    // Compute pipeline layout hash
+    size_t hash = 0;
+    for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i) {
+        for (size_t j = 0; j < SET_BINDINGS_MAX_NUM; ++j) {
+            auto& binding = layouts[i].vk_bindings[j];
+            util::hash_combine(hash, binding.binding);
+            util::hash_combine(hash, binding.descriptorCount);
+            util::hash_combine(hash, binding.descriptorType);
+            util::hash_combine(hash, binding.stageFlags);
+            // util::hash_combine(hash, pipeline_layout.imageViewTypes[i][j]);
+        }
+    }
+    util::hash_combine(hash, push_constant.offset);
+    util::hash_combine(hash, push_constant.size);
+    util::hash_combine(hash, push_constant.stageFlags);
+    util::hash_combine(hash, layout_mask);
+
+    auto find = cached_pipelineLayouts.find(hash);
+    if (find == cached_pipelineLayouts.end()) { 
+        // need to create a new pipeline layout
+        auto result = cached_pipelineLayouts.try_emplace(hash, this, layouts, push_constant, layout_mask);
+        return &(result.first->second);
+    }
+    else { 
+        return &find->second;
+    }
+}
+
+DescriptorSetAllocator* Device_Vulkan::Request_DescriptorSetAllocator(const DescriptorSetLayout& layout)
+{
+    size_t hash = 0;
+    util::hash_combine(hash, layout.uniform_buffer_mask);
+    util::hash_combine(hash, layout.storage_buffer_mask);
+    util::hash_combine(hash, layout.sampled_image_mask);
+    util::hash_combine(hash, layout.storage_image_mask);
+    util::hash_combine(hash, layout.separate_image_mask);
+    util::hash_combine(hash, layout.sampler_mask);
+    util::hash_combine(hash, layout.input_attachment_mask);
+
+    auto find = cached_descriptorSetAllocator.find(hash);
+    if (find == cached_descriptorSetAllocator.end()) {
+        // need to create a new descriptor set allocator
+        auto ret = cached_descriptorSetAllocator.try_emplace(hash, this, layout);
+        return &(ret.first->second);
+    }
+    else {
+        return &find->second;
+    }
+
 }
 }
 

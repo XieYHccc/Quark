@@ -1,4 +1,5 @@
 #pragma once
+#include "Graphic/Buffer.h"
 #include "Graphic/Common.h"
 #include "Graphic/Image.h"
 #include "Graphic/PipeLine.h"
@@ -80,8 +81,15 @@ public:
     virtual ~CommandList() = default;
 
     virtual void BindPushConstant(const void* data, size_t offset, size_t size) = 0;
-    virtual void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, uint64_t offset = 0, uint64_t size = 0) = 0;   
-    virtual void BindPipeLine(PipeLineType type, const PipeLine& pipeline) = 0;
+    virtual void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) = 0;   
+    virtual void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) = 0;
+    virtual void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) = 0;
+    virtual void BindPipeLine(const PipeLine& pipeline) = 0;
+    virtual void BindVertexBuffer(u32 binding, const Buffer& buffer, u64 offset) = 0;
+    virtual void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) = 0;
+
+    virtual void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) = 0;
+    virtual void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) = 0;
     
     virtual void SetViewPort(const Viewport& viewport) = 0;
     virtual void SetScissor(const Scissor& scissor) = 0;
@@ -90,7 +98,6 @@ public:
     virtual void BeginRenderPass(const RenderPassInfo& info) = 0;
     virtual void EndRenderPass() = 0;
  
-    // virtual void BindImage(u32 set, u32 binding, Image* image) = 0;
 protected:
     CommandList(QueueType type) : type_(type) {};
     QueueType type_;

@@ -51,6 +51,7 @@ void TestBed::Update(f32 deltaTime)
 
 void TestBed::Render(f32 deltaTime)
 {
+    
     auto graphic_device = Application::Instance().GetGraphicDevice();
 
     if (graphic_device->BeiginFrame(deltaTime)) {
@@ -116,6 +117,7 @@ void TestBed::Render(f32 deltaTime)
         render_pass_info.clearColors[0].color[3] = 0.f;
         cmd->BeginRenderPass(render_pass_info);
 
+        cmd->BindPipeLine(*graphic_pipeline);
         //....
         
         cmd->EndRenderPass();

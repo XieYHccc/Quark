@@ -1,34 +1,10 @@
 #pragma once
-#include "pch.h"
 #include "Graphic/Vulkan/Common_Vulkan.h"
 #include "Graphic/CommandList.h"
 #include "Graphic/RenderPassInfo.h"
-#include "Graphic/Vulkan/Shader_Vulkan.h"
+#include "Graphic/Vulkan/PipeLine_Vulkan.h"
 
 namespace graphic {
-struct ShaderResouceBinding {
-    union{
-        VkDescriptorBufferInfo buffer;
-        VkDescriptorImageInfo image;
-    };
-};
-
-struct ShaderResourceBinder
-{
-    ShaderResouceBinding bindings[Shader::SHADER_RESOURCE_SET_MAX_NUM][Shader::SET_BINDINGS_MAX_NUM];
-    uint64_t cookies[Shader::SHADER_RESOURCE_SET_MAX_NUM][Shader::SET_BINDINGS_MAX_NUM];
-};
-
-enum CommandListDirtyBits
-{
-	COMMAN_LIST_DIRTY_STATIC_STATE_BIT = 1 << 0,
-	COMMAN_LIST_DIRTY_PIPELINE_BIT = 1 << 1,
-	COMMAN_LIST_DIRTY_VIEWPORT_BIT = 1 << 2,
-	COMMAN_LIST_DIRTY_SCISSOR_BIT = 1 << 3,
-	COMMAN_LIST_DIRTY_STATIC_VERTEX_BIT = 1 << 6,
-	COMMAN_LIST_DIRTY_PUSH_CONSTANTS_BIT = 1 << 7,
-	COMMAN_LIST_DIRTY_DYNAMIC_BITS = COMMAN_LIST_DIRTY_VIEWPORT_BIT | COMMAN_LIST_DIRTY_SCISSOR_BIT
-};
 
 class CommandList_Vulkan : public CommandList {
     friend class Device_Vulkan;
@@ -36,17 +12,28 @@ public:
     CommandList_Vulkan(Device_Vulkan* device, QueueType type_);
     ~CommandList_Vulkan();
 
+    void BindPipeLine(const PipeLine& pipeline) override;
     void BindPushConstant(const void* data, size_t offset, size_t size) override;
-    void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, uint64_t offset = 0, uint64_t size = 0) override;
-    void BindPipeLine(PipeLineType type, const PipeLine& pipeline) override;
+    void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override;
+    void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override;
+    void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) override;
+    void BindVertexBuffer(u32 binding, const Buffer& buffer, u64 offset) override;
+    void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) override;
+    
+    void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) override;
+    void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) override;
+
     void SetViewPort(const Viewport& viewport) override;
     void SetScissor(const Scissor& scissor) override;
+
     void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* imageBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) override;
     void BeginRenderPass(const RenderPassInfo& info) override;
     void EndRenderPass() override;
+
+private:
+    void Flush_DescriptorSet(u32 set);
+    void Rebind_DescriptorSet(u32 set);
     void ResetAndBeginCmdBuffer();
-
-
 private:
     Device_Vulkan* device_;
     VkSemaphore cmdCompleteSemaphore_;
@@ -58,13 +45,33 @@ private:
     bool waitForSwapchainImage_ = false;
     u32 swapChainWaitStages_ = 0;
 
-    // Rendering structures
-    VkViewport viewport_;
-    VkRect2D scissor_;
-    const PipeLine_Vulkan* currentPipeLine_;
-    ShaderResouceBinding bindings_[Shader::SHADER_RESOURCE_SET_MAX_NUM][Shader::SET_BINDINGS_MAX_NUM];
-    uint32_t dirtyBits_;
-    uint32_t dirtySetBits_;
+    // Rendering state 
+    const PipeLine_Vulkan* currentPipeLine_ = nullptr;
+    VkDescriptorSet currentSets[DESCRIPTOR_SET_MAX_NUM] = {};
+    VkViewport viewport_ = {};
+    VkRect2D scissor_ = {};
+
+    struct BindingState {
+        DescriptorBinding descriptorBindings[DESCRIPTOR_SET_MAX_NUM][SET_BINDINGS_MAX_NUM] = {};
+        struct VertexBufferBindingState
+        {
+            VkBuffer buffers[VERTEX_BUFFER_MAX_NUM] = {};
+            VkDeviceSize offsets[VERTEX_BUFFER_MAX_NUM] = {};
+        } vertexBufferBindingState;
+        
+        struct IndexBufferBindingState
+        {
+            VkBuffer buffer = VK_NULL_HANDLE;
+            VkDeviceSize offset = 0;
+            IndexBufferFormat format = IndexBufferFormat::UINT32;
+        } indexBufferBindingState;
+
+    } bindingState_;
+
+
+    u32 dirty_SetBits_ = 0;
+    u32 ditry_SetDynamicBits_ = 0;
+    u32 dirty_VertexBufferBits_ = 0;
 };
 
 CONVERT_TO_VULKAN_INTERNAL(CommandList)

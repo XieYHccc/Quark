@@ -13,6 +13,7 @@ class Device_Vulkan final: public Device{
     friend class Buffer_Vulkan;
     friend class PipeLine_Vulkan;
     friend class Shader_Vulkan;
+    friend struct PipeLineLayout;
 private:
     struct CommandQueue {     // Responsible for queuing commad buffers and submit them in batch
         Device_Vulkan* device = nullptr;
@@ -90,6 +91,8 @@ public:
     DataFormat GetSwapChainImageFormat() override final;
 private:
     PerFrameData& GetCurrentFrame() { return frames[currentFrame]; }
+    DescriptorSetAllocator* Request_DescriptorSetAllocator(const DescriptorSetLayout& layout);
+    PipeLineLayout* Request_PipeLineLayout(const std::array<DescriptorSetLayout, DESCRIPTOR_SET_MAX_NUM>& layouts, VkPushConstantRange push_constant, u32 set_mask);
     void ResizeSwapchain();
 
 public:
@@ -105,6 +108,7 @@ public:
     bool recreateSwapchain;
 
     // Cached object
-    std::unordered_map<size_t, PipeLineLayout> cached_PipelineLayouts;
+    std::unordered_map<size_t, PipeLineLayout> cached_pipelineLayouts;
+    std::unordered_map<size_t, DescriptorSetAllocator> cached_descriptorSetAllocator;
 };
 }

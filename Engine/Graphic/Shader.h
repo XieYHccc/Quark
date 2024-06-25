@@ -12,11 +12,7 @@ namespace graphic {
 // - Set 3: Per-draw uniforms
 class Shader : public GpuResource {
 public:
-    static constexpr uint32_t SHADER_RESOURCE_SET_MAX_NUM = 4;
-    static constexpr uint32_t PUSH_CONSTANT_DATA_SIZE = 128;
-    static constexpr uint32_t SET_BINDINGS_MAX_NUM = 8;
-    virtual ~Shader() = default;
-    
+    virtual ~Shader() = default;    
     ShaderStage GetStage() const {return stage_; }
 protected:
     Shader(ShaderStage stage) : stage_(stage) {};
