@@ -32,6 +32,9 @@ TestBed::TestBed(const std::string& title, const std::string& root, int width, i
     };
 
     graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc);
+
+    scene = CreateScope<scene::Scene>("Testbed");
+    
 }
 
 Application* CreateApplication()

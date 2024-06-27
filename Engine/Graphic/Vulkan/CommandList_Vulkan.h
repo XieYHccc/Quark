@@ -32,8 +32,10 @@ public:
 
 private:
     void Flush_DescriptorSet(u32 set);
+    void Flush_RenderState();
     void Rebind_DescriptorSet(u32 set);
     void ResetAndBeginCmdBuffer();
+    
 private:
     Device_Vulkan* device_;
     VkSemaphore cmdCompleteSemaphore_;

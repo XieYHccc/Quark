@@ -12,31 +12,6 @@ union ClearValue
     } depth_stencil;
 };
 
-struct RenderPassAttachment{
-    enum class Type
-    {
-        RENDERTARGET,
-        DEPTH_STENCIL,
-    } type = Type::RENDERTARGET;
-
-    enum class LoadOp
-    {
-        LOAD,
-        CLEAR,
-        DONTCARE,
-    } loadOp = LoadOp::LOAD;
-
-    enum class StoreOp
-    {
-        STORE,
-        DONTCARE,
-    } storeOp = StoreOp::STORE;
-
-    Image* image;
-    ClearValue clearValue = {};
-
-};
-
 // Do not have Gpu resouce handle.
 // We are using vulkan dynamic rendering.
 struct RenderPassInfo {
@@ -55,7 +30,7 @@ struct RenderPassInfo {
     };
 
     // Color images
-    Image* colorAttachments[MAX_COLOR_ATTHACHEMNT_NUM];
+    Ref<Image> colorAttachments[MAX_COLOR_ATTHACHEMNT_NUM];
     ClearValue clearColors[MAX_COLOR_ATTHACHEMNT_NUM] = {};
     AttachmentLoadOp colorAttatchemtsLoadOp[MAX_COLOR_ATTHACHEMNT_NUM];
     AttachmentStoreOp colorAttatchemtsStoreOp[MAX_COLOR_ATTHACHEMNT_NUM];
@@ -68,7 +43,7 @@ struct RenderPassInfo {
     u32 numResolveAttachments = 0;
 
     // Depth images
-    Image* depthAttatchment = nullptr;
+    Ref<Image> depthAttatchment = nullptr;
     AttachmentLoadOp depthAttachmentLoadOp = AttachmentLoadOp::LOAD;
     AttachmentStoreOp depthAttachmentStoreOp = AttachmentStoreOp::STORE;
     ClearValue ClearDepthStencil = {1.f, 0.f};

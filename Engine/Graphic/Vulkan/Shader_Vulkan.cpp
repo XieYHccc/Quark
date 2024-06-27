@@ -131,7 +131,7 @@ Shader_Vulkan::~Shader_Vulkan()
     if (shaderModule_ != VK_NULL_HANDLE) {
         frame.garbageShaderModules.push_back(shaderModule_);
     }
-    CORE_LOGD("Shader module destroyed")
+    CORE_LOGD("Vulkan shader destroyed")
 }
 
 }

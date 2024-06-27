@@ -20,6 +20,9 @@ public:
     Device() = default;
     virtual ~Device() = default;
 
+    u32 GetResolutionWidth() { return frameBufferWidth;}
+    u32 GetResolutionHeight() { return frameBufferHeight;}
+
     virtual bool Init() = 0;
     virtual void ShutDown() = 0;
     virtual bool BeiginFrame(f32 deltaTime) = 0;
@@ -29,7 +32,7 @@ public:
 	/*** RESOURCES ***/  
 public:
     virtual Ref<Buffer> CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr) = 0;
-    virtual Ref<Image> CreateImage(const ImageDesc& desc, const ImageInitData* initdata) = 0;
+    virtual Ref<Image> CreateImage(const ImageDesc& desc, const ImageInitData* initdata = nullptr) = 0;
     virtual Ref<Shader> CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize) = 0;
     virtual Ref<Shader> CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) = 0;
     virtual Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) = 0;
@@ -39,7 +42,7 @@ public:
     virtual void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) = 0;
 
 	/*** SWAPCHAIN ***/
-    virtual Image* GetSwapChainImage() = 0; // Owned by device.
+    virtual Ref<Image> GetSwapChainImage() = 0; // Owned by device.
     virtual DataFormat GetSwapChainImageFormat() = 0;
 };
 

@@ -45,7 +45,7 @@ class Image_Vulkan : public Image {
     friend class Device_Vulkan;
     friend class CommandList_Vulkan;
 public:
-    Image_Vulkan(const ImageDesc& desc); // used for fill swapchain image infomation
+    Image_Vulkan(const ImageDesc& desc); // only used for fill swapchain image infomation
     Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data);
     virtual ~Image_Vulkan();
     

@@ -26,6 +26,10 @@ public:
     // Index buffer
     Ref<graphic::Buffer> index_buffer;
     
+    // Depth image : for depth test and write
+    Ref<graphic::Image> depth_image;
+    graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;
+
     // Shaders and pipeline
     Ref<graphic::Shader> vert_shader;
     Ref<graphic::Shader> frag_shader;
@@ -73,6 +77,28 @@ public:
         index_buffer = graphic_device->CreateBuffer(buffer_desc, indexBuffer.data());
     }
 
+    void CreateDepthImage()
+    {
+        using namespace graphic;
+        auto graphic_device = Application::Instance().GetGraphicDevice();
+
+        // Image create info
+        ImageDesc depth_image_desc = {
+            .type = ImageType::TYPE_2D,
+            .width = graphic_device->GetResolutionWidth(),
+            .height = graphic_device->GetResolutionHeight(),
+            .depth = 1,
+            .format = depth_format,
+            .arraySize = 1,
+            .mipLevels = 1,
+            .initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            .usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+        };
+
+        // Create depth image
+        depth_image = graphic_device->CreateImage(depth_image_desc);
+    }
+
     void CreateGraphicPipeline()
     {
         using namespace graphic;
@@ -90,7 +116,7 @@ public:
         pipe_desc.fragShader = frag_shader;
         pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
         pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-        pipe_desc.depthAttachmentFormat = DataFormat::UNDEFINED; 
+        pipe_desc.depthAttachmentFormat = depth_format;
         pipe_desc.colorAttachmentFormats.push_back(graphic_device->GetSwapChainImageFormat());
 
         // Depth-stencil state
@@ -135,12 +161,14 @@ public:
         graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc);
     }
 
+
     TrangleApp(const std::string& title, const std::string& root, int width, int height)
         :Application(title, root, width, height)
     {
         CreateGraphicPipeline();
         CreateVertexBuffer();
         CreateIndexBuffer();
+        CreateDepthImage();
     }
 
     ~TrangleApp() {};
@@ -180,12 +208,16 @@ public:
             graphic::RenderPassInfo render_pass_info;
             render_pass_info.numColorAttachments = 1;
             render_pass_info.colorAttachments[0] = swap_chain_image;
-            render_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-            render_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+            render_pass_info.colorAttatchemtsLoadOp[0] = RenderPassInfo::AttachmentLoadOp::CLEAR;
+            render_pass_info.colorAttatchemtsStoreOp[0] = RenderPassInfo::AttachmentStoreOp::STORE;
             render_pass_info.clearColors[0].color[0] = 0.f;
             render_pass_info.clearColors[0].color[1] = 0.f;
             render_pass_info.clearColors[0].color[2] = 0.4f;
             render_pass_info.clearColors[0].color[3] = 1.f;
+            render_pass_info.depthAttatchment = depth_image;
+            render_pass_info.depthAttachmentLoadOp = RenderPassInfo::AttachmentLoadOp::CLEAR;
+            render_pass_info.depthAttachmentStoreOp = RenderPassInfo::AttachmentStoreOp::STORE;
+
             cmd->BeginRenderPass(render_pass_info);
 
             // 4. Bind pipeline and set viewport and scissor

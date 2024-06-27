@@ -1,7 +1,7 @@
 #pragma once
 #include <Engine/Core/Application.h>
+#include <Engine/Scene/NewScene.h>
 
-class Scene;
 class TestBed : public Application 
 {  
 public:
@@ -14,4 +14,6 @@ public:
     Ref<graphic::Shader> vert_shader;
     Ref<graphic::Shader> frag_shader;
     Ref<graphic::PipeLine> graphic_pipeline;
+
+    Scope<scene::Scene> scene;
 };

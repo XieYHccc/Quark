@@ -21,6 +21,7 @@
 #include <unordered_set>
 #include <vector>
 #include <list>
+#include <map>
 
 #include "Core/Base.h"
 #include "Core/Logger.h"

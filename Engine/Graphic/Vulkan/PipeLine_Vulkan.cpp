@@ -562,6 +562,8 @@ PipeLine_Vulkan::~PipeLine_Vulkan()
         auto& frame = device_->GetCurrentFrame();
         frame.garbagePipelines.push_back(handle_);
     }
+
+    CORE_LOGD("Vulkan pipeline destroyed")
 }
 
 }

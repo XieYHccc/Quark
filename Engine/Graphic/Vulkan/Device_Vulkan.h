@@ -87,7 +87,7 @@ public:
     void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) override final;
 
 	/*** SWAPCHAIN ***/
-    Image* GetSwapChainImage() override final { return swapChainImages[currentSwapChainImageIdx].get(); }
+    Ref<Image> GetSwapChainImage() override final { return swapChainImages[currentSwapChainImageIdx]; }
     DataFormat GetSwapChainImageFormat() override final;
 private:
     PerFrameData& GetCurrentFrame() { return frames[currentFrame]; }
