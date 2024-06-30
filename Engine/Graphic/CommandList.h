@@ -87,7 +87,8 @@ public:
     virtual void BindPipeLine(const PipeLine& pipeline) = 0;
     virtual void BindVertexBuffer(u32 binding, const Buffer& buffer, u64 offset) = 0;
     virtual void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) = 0;
-
+    virtual void BindSampler(u32 set, u32 binding, const Sampler& sampler) = 0;
+    
     virtual void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) = 0;
     virtual void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) = 0;
     

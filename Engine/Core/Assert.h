@@ -42,6 +42,7 @@
     }
 #ifdef QK_DEBUG_BUILD
     #define CORE_DEBUG_ASSERT(expr) CORE_ASSERT(expr)
+    #define CORE_DEBUG_ASSERT_MSG(expr, message) CORE_ASSERT_MSG(expr, message)
     #define DEBUG_ASSERT(expr) ASSERT(expr)
 #else
     #define CORE_DEBUG_ASSERT(expr) 

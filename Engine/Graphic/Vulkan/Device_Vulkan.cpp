@@ -81,6 +81,9 @@ void Device_Vulkan::PerFrameData::clear()
 {
     VkDevice vk_device = device->vkDevice;
     // Destroy deferred destroyed resources
+    for (auto& sampler : garbageSamplers) {
+        vkDestroySampler(vk_device, sampler, nullptr);
+    }
     for (auto& view : grabageViews) {
         vkDestroyImageView(vk_device, view, nullptr);
     }
@@ -97,6 +100,7 @@ void Device_Vulkan::PerFrameData::clear()
         vkDestroyShaderModule(vk_device, shaderModule_, nullptr);
     }
 
+    garbageSamplers.clear();
     garbageBuffers.clear();
     grabageViews.clear();
     garbageImages.clear();
@@ -386,6 +390,11 @@ Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std:
 Ref<PipeLine> Device_Vulkan::CreateGraphicPipeLine(const GraphicPipeLineDesc &desc)
 {
     return CreateRef<PipeLine_Vulkan>(this, desc);
+}
+
+Ref<Sampler> Device_Vulkan::CreateSampler(const SamplerDesc &desc)
+{
+    return CreateRef<Sampler_Vulkan>(this, desc);
 }
 
 CommandList* Device_Vulkan::BeginCommandList(QueueType type)

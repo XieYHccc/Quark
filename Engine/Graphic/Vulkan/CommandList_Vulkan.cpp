@@ -364,8 +364,8 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
     if (currentPipeLine_ == nullptr) {
         CORE_LOGE("You must bind a pipeline before binding a image.")
     }
-    if ((image.GetDesc().usageBits & IMAGE_USAGE_SAMPLING_BIT) ||
-        (image.GetDesc().usageBits & IMAGE_USAGE_STORAGE_BIT)) {
+    if (!(image.GetDesc().usageBits & IMAGE_USAGE_SAMPLING_BIT) &&
+        !(image.GetDesc().usageBits & IMAGE_USAGE_STORAGE_BIT)) {
         CORE_LOGE("Binded Image must with usage bits: IMAGE_USAGE_SAMPLING_BIT and IMAGE_USAGE_STORAGE_BIT")
     }
     if (layout != ImageLayout::SHADER_READ_ONLY_OPTIMAL && layout != ImageLayout::GENERAL) {
@@ -400,6 +400,27 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
         vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.handle_);
 
     currentPipeLine_ = &internal_pipeline;
+}
+
+void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sampler)
+{
+    CORE_DEBUG_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
+    CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
+
+#ifdef QK_DEBUG_BUILD
+    if (currentPipeLine_ == nullptr) {
+        CORE_LOGE("You must bind a pipeline before binding a sampler.")
+    }
+#endif
+
+    auto& internal_sampler = ToInternal(&sampler);
+    auto& b = bindingState_.descriptorBindings[set][binding];
+
+    if (b.image.sampler == internal_sampler.handle_)
+        return;
+
+    b.image.sampler = internal_sampler.handle_;
+    dirty_SetBits_ |= 1u << set;
 }
 
 void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const IndexBufferFormat format)
@@ -501,8 +522,18 @@ void CommandList_Vulkan::Flush_DescriptorSet(u32 set)
                 h.pointer(bindings[b.binding + i].image.imageView);
                 h.pointer(bindings[b.binding + i].image.sampler);
                 h.u32(bindings[b.binding + i].image.imageLayout);
-                CORE_DEBUG_ASSERT(bindings[b.binding + i].image.imageView != VK_NULL_HANDLE)
-                CORE_DEBUG_ASSERT(bindings[b.binding + i].image.sampler != VK_NULL_HANDLE)
+
+#ifdef QK_DEBUG_BUILD
+                if (bindings[b.binding + i].image.imageView == VK_NULL_HANDLE) {
+                    CORE_LOGC("Texture at Set: {}, Binding: {} is not bound.", set, b.binding)
+                    CORE_DEBUG_ASSERT(0)
+                }
+                if (bindings[b.binding + i].image.sampler == VK_NULL_HANDLE)
+                {
+                    CORE_LOGC("Sampler at Set: {}, Binding: {} is not bound.", set, b.binding)
+                    CORE_DEBUG_ASSERT(0)
+                }
+#endif
             }
             break;
         }

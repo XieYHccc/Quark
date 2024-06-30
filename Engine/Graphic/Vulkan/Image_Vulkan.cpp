@@ -282,4 +282,69 @@ Image_Vulkan::~Image_Vulkan()
     }
 
 }
+
+Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
+    : device_(device)
+{
+    auto convert_sampler_filter = [](SamplerFilter filter) {
+        switch (filter) {
+        case SamplerFilter::NEAREST:
+            return VK_FILTER_NEAREST;
+        case SamplerFilter::LINEAR:
+            return VK_FILTER_LINEAR;
+        default:
+            return VK_FILTER_MAX_ENUM;
+        }
+    };
+
+    auto convert_sampler_address_mode = [](SamplerAddressMode mode) {
+        switch (mode) {
+        case SamplerAddressMode::REPEAT:
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case SamplerAddressMode::MIRRORED_REPEAT:
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case SamplerAddressMode::CLAMPED_TO_EDGE:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        default:
+            return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
+        }
+    };
+
+    // Sampler create info
+	VkSamplerCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	info.magFilter = convert_sampler_filter(desc.minFilter);
+	info.minFilter = convert_sampler_filter(desc.magFliter);
+	info.addressModeU = convert_sampler_address_mode(desc.addressModeU);
+	info.addressModeV = convert_sampler_address_mode(desc.addressModeV);
+	info.addressModeW = convert_sampler_address_mode(desc.addressModeW);
+	info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	info.unnormalizedCoordinates = VK_FALSE;
+	info.compareEnable = VK_FALSE;
+	info.compareOp = VK_COMPARE_OP_ALWAYS;
+	info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	info.mipLodBias = 0.f;
+	info.minLod = 0.f;
+	info.maxLod = 1;
+
+    if (desc.enableAnisotropy) {
+        info.anisotropyEnable = VK_TRUE;
+        info.maxAnisotropy = device_->context->properties2.properties.limits.maxSamplerAnisotropy;
+    }
+    else {
+        info.anisotropyEnable = VK_FALSE;
+    }
+
+    VK_CHECK(vkCreateSampler(device_->vkDevice, &info, nullptr, &handle_))
+
+    CORE_LOGD("Sampler Created")
+}
+
+Sampler_Vulkan::~Sampler_Vulkan()
+{
+    if (handle_) {
+        device_->GetCurrentFrame().garbageSamplers.push_back(handle_);
+    }
+}
+
 }

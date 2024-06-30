@@ -36,7 +36,7 @@ enum class SamplerFilter
     LINEAR = 2
 };
 
-enum class SamplerWrapMode
+enum class SamplerAddressMode
 {
     REPEAT = 1,
     MIRRORED_REPEAT = 2,
@@ -72,31 +72,32 @@ protected:
 
 };
 
-struct SamplerSpecification
+struct SamplerDesc
 {
-    SamplerFilter nearFilter;
-    SamplerFilter farFliter;
-    SamplerWrapMode wrapModeU, wrapModeV, wrapModeW;
+    SamplerFilter minFilter;
+    SamplerFilter magFliter;
+    SamplerAddressMode addressModeU, addressModeV, addressModeW;
+    bool enableAnisotropy = false;
 
     uint32_t GetHash() const
     {
         uint32_t Id = 0;
-        Id += (uint32_t)farFliter * 1;
-        Id += (uint32_t)nearFilter * 10;
-        Id += (uint32_t)wrapModeU * 100;
-        Id += (uint32_t)wrapModeV * 1000;
-        Id += (uint32_t)wrapModeW * 10000;
+        Id += (uint32_t)minFilter * 1;
+        Id += (uint32_t)magFliter * 10;
+        Id += (uint32_t)addressModeU * 100;
+        Id += (uint32_t)addressModeV * 1000;
+        Id += (uint32_t)addressModeW * 10000;
 
         return Id;
     }
 
     void ResolveHash(uint32_t HashId)
     {
-        farFliter = (SamplerFilter)((HashId / 1) % 10);
-        nearFilter = (SamplerFilter)((HashId / 10) % 10);
-        wrapModeU = (SamplerWrapMode)((HashId / 100) % 10);
-        wrapModeV = (SamplerWrapMode)((HashId / 1000) % 10);
-        wrapModeW = (SamplerWrapMode)((HashId / 10000) % 10);
+        minFilter = (SamplerFilter)((HashId / 1) % 10);
+        magFliter = (SamplerFilter)((HashId / 10) % 10);
+        addressModeU = (SamplerAddressMode)((HashId / 100) % 10);
+        addressModeV = (SamplerAddressMode)((HashId / 1000) % 10);
+        addressModeW = (SamplerAddressMode)((HashId / 10000) % 10);
     };
 };
 
@@ -106,6 +107,7 @@ public:
     virtual ~Sampler() = default;
 protected:
     Sampler() = default;
+    SamplerDesc desc_;
 };
 
 }

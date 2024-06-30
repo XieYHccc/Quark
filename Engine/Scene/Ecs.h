@@ -1,63 +1,33 @@
 #pragma once
+#include "Util/CompileTimeHash.h"
 #include "Util/IntrusiveHashMap.h"
-#include "Scene/Components/TransformCmpt.h"
-#include "Scene/Component.h"
 
+/*
+A simple Entity-component system immplementation
+*/
 namespace scene {
+using ComponentType = u64;
 
-class EntityRegistry;
-class Entity : public util::IntrusiveListEnabled<Entity>{
-    friend class EntityRegistry;
-    friend class Scene;
-    friend class util::ObjectPool<Entity>;
+class Entity;
+class Component {
 public:
-    Entity() = delete;
-    ~Entity() = default;
+    Component(Entity* entity) : entity_(entity) { Awake();};
+    virtual ComponentType GetType() = 0;
+    virtual ~Component() {};
+    virtual void Awake() {};
+    Entity* GetEntity() { return entity_; }
 
-    util::Hash GetId() const { return hashId_;};
-
-    void SetParent(Entity* parent) { parent_ = parent;}
-    Entity* GetParent() { return parent_; }
-
-    void AddChild(Entity* child) { children_.insert_front(child);}
-    void RemoveChild(Entity* child) { children_.erase(child); }
-
-    template<typename T>
-    bool HasComponent() {
-        auto find = componentMap_.find(T::GetStaticComponentType());
-        return find != componentMap_.end();
-    }
-    
-    template<typename T>
-    T* GetComponent() {
-        auto find = componentMap_.find(T::GetStaticComponentType());
-        if (find != componentMap_.end()) 
-            return static_cast<T*>(find->second);
-        else
-            return nullptr;
-    }
-
-    std::unordered_map<ComponentType, Component*>& GetComponentsMap() { return componentMap_; }
-
-    template<typename T, typename... Ts>
-    T* AddComponent(Ts&&... ts);
-
-    template<typename T>
-    void RemoveComponent();
-    
 private:
-    Entity(EntityRegistry* registry, util::Hash hash, const std::string& name);
-
-    EntityRegistry* registry_;
-    size_t registryOffset_; // be allocated and used in Registry
-    std::string name_;
-    util::Hash hashId_;
-    Entity* parent_;
-    util::IntrusiveList<Entity> children_;
-    TransformCmpt* transformCmpt_;
-    std::unordered_map<ComponentType, Component*> componentMap_;
-
+    Entity* entity_;
 };
+
+#define QK_COMPONENT_TYPE_DECL(x) \
+static inline constexpr ComponentType GetStaticComponentType() { \
+    return ComponentType(util::compile_time_fnv1(#x)); \
+}\
+ComponentType GetType() override {\
+    return GetStaticComponentType();\
+}
 
 template <typename... Ts>
 using ComponentGroup = std::tuple<Ts*...>;
@@ -69,6 +39,49 @@ template <typename... Ts>
 constexpr u64 GetComponentGroupId(){
     return util::compile_time_fnv1_merged(Ts::GetComponentTypeHash()...);
 }
+
+class EntityRegistry;
+class Entity {
+    friend class EntityRegistry;
+    friend class util::ObjectPool<Entity>;
+public:
+    Entity() = delete;
+    ~Entity() = default;
+
+    util::Hash GetId() const { return hashId_;};
+
+    bool HasComponent(ComponentType id) {
+        auto find = componentMap_.find(id);
+        return find != nullptr;
+    }
+
+    template<typename T>
+    bool HasComponent() { HasComponent(T::GetStaticComponentType()); }
+
+    template<typename T>
+    T* GetComponent() {
+        auto* find = componentMap_.find(T::GetStaticComponentType());
+        if (find)
+            return static_cast<T*>(find->get());
+        else
+            return nullptr;;
+    }
+
+    template<typename T, typename... Ts>
+    T* AddComponent(Ts&&... ts);
+
+    template<typename T>
+    void RemoveComponent();
+    
+private:
+    Entity(EntityRegistry* EntityRegistry, util::Hash hash);
+
+    EntityRegistry* EntityRegistry_;
+    size_t EntityRegistryOffset_; // be allocated and used in EntityRegistry
+    util::Hash hashId_;
+    util::IntrusiveHashMapHolder<util::IntrusivePODWrapper<Component*>> componentMap_;
+
+};
 
 class EntityGroupBase : public util::IntrusiveHashMapEnabled<EntityGroupBase> {
     friend class EntityRegistry;
@@ -84,8 +97,10 @@ private:
 template <typename... Ts>
 class EntityGroup final : public EntityGroupBase {
 public:
-    const std::vector<Entity*>& GetEntities() { return entities_;}
-    const ComponentGroupVector<Ts...>& GetComponentGroup() { return groups_;}
+    const std::vector<Entity*>& GetEntities() const  { return entities_; }
+    std::vector<Entity*>& GetEntities() { return entities_; }
+    const ComponentGroupVector<Ts...>& GetComponentGroup() const  { return groups_; }
+    ComponentGroupVector<Ts...>& GetComponentGroup() { return groups_; }
 
 private:
     void AddEntity(const Entity* entity) override final {
@@ -150,7 +165,10 @@ public:
     void operator=(const EntityRegistry &) = delete;
     EntityRegistry(const EntityRegistry &) = delete;
 
-    Entity* CreateEntity(const std::string& name = "");
+    const std::vector<Entity*>& GetEntities() const { return entities_;}    
+    std::vector<Entity*>& GetEntities() { return entities_;}
+    
+    Entity* CreateEntity();
     void DeleteEntity(Entity* entity);
 
 	template <typename... Ts>
@@ -176,30 +194,32 @@ public:
     template<typename T, typename... Ts>
     T* Register(Entity* entity, Ts&&... ts )
     {
-        auto component_type = T::GetStaticComponentType();
-		auto* t = componentAllocators_.find(component_type);
+        auto id = T::GetStaticComponentType();
+		auto* t = componentAllocators_.find(id);
 		if (!t)
 		{
 			t = new ComponentAllocator<T>();
-			t->set_hash(component_type);
+			t->set_hash(id);
 			componentAllocators_.insert_yield(t);
 		}
 
 		auto* allocator = static_cast<ComponentAllocator<T>*>(t);
-		auto find = entity->componentMap_.find(component_type);
+		auto find = entity->componentMap_.find(id);
 
-		if (find != entity->componentMap_.end()) {
-			auto* comp = static_cast<T*>(find->second);
+		if (find != nullptr) {
+			auto* comp = static_cast<T*>(find->get());
 			// In-place modify. Destroy old data, and in-place construct.
 			// Do not need to fiddle with data structures internally.
 			comp->~T();
-			return new(comp) T(std::forward<Ts>(ts)...);
+			return new(comp) T(entity, std::forward<Ts>(ts)...);
 		}
 		else {
-			auto* comp = allocator->pool.allocate(std::forward<Ts>(ts)...);
-			entity->componentMap_.emplace(std::make_pair(component_type, comp));
+			auto* comp = allocator->pool.allocate(entity, std::forward<Ts>(ts)...);
+            auto* node = componentHashedNodePool_.allocate(comp);
+            node->set_hash(id);
+			entity->componentMap_.insert_replace(node);
 
-			auto* group_set = componentToGroups_.find(component_type);
+			auto* group_set = componentToGroups_.find(id);
 			if (group_set)
 				for (auto& group : *group_set)
 					entityGroups_.find(group.get_hash())->AddEntity(entity);
@@ -209,6 +229,8 @@ public:
     }
 
     // Unregister a component of a entity
+    template<typename T>
+    void UnRegister(Entity* entity) { UnRegister(entity, entity->GetComponent<T>()); }
     void UnRegister(Entity* entity, Component* component);
 
 private:
@@ -257,6 +279,7 @@ private:
     util::IntrusiveHashMapHolder<ComponentAllocatorBase> componentAllocators_;
     util::IntrusiveHashMapHolder<EntityGroupBase> entityGroups_;
     util::IntrusiveHashMap<GroupKeySet> componentToGroups_;
+    util::ObjectPool<util::IntrusivePODWrapper<Component*>> componentHashedNodePool_;
     std::vector<Entity*> entities_;
     u64 cookie_ = 0;
 
@@ -294,13 +317,13 @@ private:
 template<typename T, typename... Ts>
 T* Entity::AddComponent(Ts&&... ts)
 {
-    return registry_->Register<T>(this, ts...);
+    return EntityRegistry_->Register<T>(this, ts...);
 }
 
 template<typename T>
 void Entity::RemoveComponent() 
 {
-    registry_->UnRegister(this, GetComponent<T>());
+    EntityRegistry_->UnRegister<T>(this);
 }
 
 }

@@ -1,22 +1,22 @@
 #include "pch.h"
-#include "Scene/Entity.h"
+#include "Scene/Ecs.h"
 
 namespace scene {
 
-Entity::Entity(EntityRegistry* registry, util::Hash hash, const std::string& name)
-    : registry_(registry), hashId_(hash), name_(name)
+Entity::Entity(EntityRegistry* EntityRegistry, util::Hash hash)
+    : EntityRegistry_(EntityRegistry), hashId_(hash)
 {
-    transformCmpt_ = AddComponent<TransformCmpt>(this);
 }
 
-void EntityRegistry::UnRegister(Entity * entity, Component* component)
+void EntityRegistry::UnRegister(Entity* entity, Component* component)
 {
-    auto* allocator = componentAllocators_.find(component->GetType());
-    CORE_DEBUG_ASSERT(allocator)
+    if (component == nullptr)
+        return;
     CORE_DEBUG_ASSERT(component->GetEntity() == entity) // Double check
 
-    auto* group_key_set = componentToGroups_.find(component->GetType());
+    entity->componentMap_.erase(component->GetType());
 
+    auto* group_key_set = componentToGroups_.find(component->GetType());
     if (group_key_set) {
         for (auto &group_key : *group_key_set) {
             auto* group = entityGroups_.find(group_key.get_hash());
@@ -25,15 +25,18 @@ void EntityRegistry::UnRegister(Entity * entity, Component* component)
         }
     }  
 
+    auto* allocator = componentAllocators_.find(component->GetType());
+    CORE_DEBUG_ASSERT(allocator)
+
     allocator->FreeComponent(component);
 }
 
-Entity* EntityRegistry::CreateEntity(const std::string& name)
+Entity* EntityRegistry::CreateEntity()
 {
 	util::Hasher hasher;
     hasher.u64(cookie_++);
-	auto* entity = entityPool_.allocate(this, hasher.get(), name);
-	entity->registryOffset_ = entities_.size();
+	auto* entity = entityPool_.allocate(this, hasher.get());
+	entity->EntityRegistryOffset_ = entities_.size();
 	entities_.push_back(entity);
 	return entity;
 }
@@ -41,15 +44,20 @@ Entity* EntityRegistry::CreateEntity(const std::string& name)
 void EntityRegistry::DeleteEntity(Entity *entity)
 {
     // Delete all components of entity
-    auto& components = entity->GetComponentsMap();
-    for (auto& [key, value] : components)
-        UnRegister(entity, value);
+    {
+        auto& list = entity->componentMap_.inner_list();
+        auto itr = list.begin();
+        while (itr != list.end()) {
+            itr = list.erase(itr);
+            UnRegister(entity, itr.get()->get());
+        }
+    }
 
-	auto offset = entity->registryOffset_;
+	auto offset = entity->EntityRegistryOffset_;
 	CORE_DEBUG_ASSERT(offset < entities_.size());
 
 	entities_[offset] = entities_.back();
-	entities_[offset]->registryOffset_ = offset;
+	entities_[offset]->EntityRegistryOffset_ = offset;
 	entities_.pop_back();
 	entityPool_.free(entity);
 }
@@ -88,4 +96,5 @@ EntityRegistry::~EntityRegistry()
     }
 
 }
+
 }

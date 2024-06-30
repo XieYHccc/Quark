@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-#include "Scene/Component.h"
+#include "Scene/Ecs.h"
 #include "Scene/Components/TransformCmpt.h"
 
 namespace scene {

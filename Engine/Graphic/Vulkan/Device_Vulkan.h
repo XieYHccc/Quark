@@ -9,6 +9,7 @@
 
 namespace graphic {
 class Device_Vulkan final: public Device{
+    friend class Sampler_Vulkan;
     friend class Image_Vulkan;
     friend class Buffer_Vulkan;
     friend class PipeLine_Vulkan;
@@ -46,6 +47,7 @@ private:
         std::vector<VkPipeline> garbagePipelines;
         std::vector<VkImageView> grabageViews;
         std::vector<VkShaderModule> garbageShaderModules;
+        std::vector<VkSampler> garbageSamplers;
 
         void init(Device_Vulkan* device);
         void reset();   // Reset this frame
@@ -81,7 +83,8 @@ public:
     Ref<Shader> CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize) override final;
     Ref<Shader> CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) override final;
     Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) override final;
-    
+    Ref<Sampler> CreateSampler(const SamplerDesc& desc) override final;
+
 	/*** COMMANDS ***/
     CommandList* BeginCommandList(QueueType type = QueueType::QUEUE_TYPE_GRAPHICS) override final;
     void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) override final;

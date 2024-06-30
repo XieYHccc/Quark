@@ -1,12 +1,30 @@
 #include "pch.h"
+#include "Util/Hash.h"
 #include "Scene/NewScene.h"
-
+#include "Scene/Components/Common.h"
 namespace scene {
+
+Node::Node(Scene* scene, Node* parent, bool create_entity)
+    :scene_(scene), parent_(parent)
+{
+    if (parent) {
+        parent->AddChild(this);
+    }
+    
+    if (create_entity)
+        entity_ = scene_->registry_.CreateEntity();
+}
+
+Node::~Node()
+{
+    if (entity_)
+        scene_->registry_.DeleteEntity(entity_); 
+}
 
 Scene::Scene(const std::string& name)
     : name_(name)
 {
-    root_ = registry_.CreateEntity("Root");
+    root_ = CreateNode("Root");
 }
 
 Scene::~Scene()
@@ -14,26 +32,54 @@ Scene::~Scene()
 
 }
 
-Entity* Scene::AddEntity(const std::string &name, Entity* parent)
+Node* Scene::CreateNode(const std::string &name, Node* parent)
 {
-    Entity* newEntity = registry_.CreateEntity(name);
-    if (parent != nullptr) {
-        newEntity->SetParent(parent);
-        parent->AddChild(newEntity);
+    if (nodeMap_.find(name) != nodeMap_.end()) {
+        CORE_LOGW("You can't create a node with a name which has existed.")
+        return nullptr;;
     }
-    return newEntity;
+
+    Node* newNode = CreateNode(parent, true);
+    newNode->GetEntity()->AddComponent<NameCmpt>()->name = name;
+    nodeMap_.emplace(std::make_pair(name, newNode));
+    
+    return newNode;
+    
 }
 
-void Scene::DeleteEntity(Entity *entity)
+Node* Scene::CreateNode(Node* parent, bool create_entity)
 {
-    if (entity->GetParent()) {
-        entity->GetParent()->RemoveChild(entity);
-    }
-
-    for (auto& child : entity->children_) {
-        DeleteEntity(&child);
-    }
-
-    registry_.DeleteEntity(entity);
+   return nodePool_.allocate(this, parent, create_entity);
 }
+
+void Scene::DeleteNode(Node *node)
+{
+    // Iteratively delete children nodes
+    for (auto* child : node->children_) {
+        DeleteNode(child);
+    }
+
+    // If node's entity has name, erase it from map
+    if (node->HasEntity()) {
+        auto* name_cmpt = node->GetEntity()->GetComponent<NameCmpt>();
+        if (name_cmpt)
+            nodeMap_.erase(name_cmpt->name);
+    }
+
+    // free the node in pool
+    nodePool_.free(node);
+}
+
+Node* Scene::GetNodeFromName(const std::string &name)
+{
+    auto find = nodeMap_.find(name);
+
+    if (find != nodeMap_.end())
+        return find->second;
+    else {
+        CORE_LOGD("Node : {} doesn't exsit.")
+        return nullptr;
+    }
+}
+
 }

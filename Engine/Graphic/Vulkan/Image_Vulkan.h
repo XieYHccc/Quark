@@ -58,4 +58,17 @@ private:
 };
 
 CONVERT_TO_VULKAN_INTERNAL(Image)
+
+class Sampler_Vulkan : public Sampler {
+    friend class Device_Vulkan;
+    friend class CommandList_Vulkan;
+public:
+    Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc);
+    ~Sampler_Vulkan();
+private:
+    Device_Vulkan* device_;
+    VkSampler handle_;
+};
+
+CONVERT_TO_VULKAN_INTERNAL(Sampler)
 }

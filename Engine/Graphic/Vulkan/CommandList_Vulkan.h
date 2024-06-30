@@ -19,6 +19,7 @@ public:
     void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) override;
     void BindVertexBuffer(u32 binding, const Buffer& buffer, u64 offset) override;
     void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) override;
+    void BindSampler(u32 set, u32 binding, const Sampler& sampler) override;
     
     void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) override;
     void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) override;

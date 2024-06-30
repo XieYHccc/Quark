@@ -24,6 +24,7 @@ struct ImageDesc;
 struct ImageInitData;
 struct ComputePipeLineDesc;
 struct GraphicPipeLineDesc;
+struct SamplerDesc;
 
 class GpuResource {
 public:

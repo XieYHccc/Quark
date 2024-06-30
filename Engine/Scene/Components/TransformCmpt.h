@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "Scene/Component.h"
+#include "Scene/Ecs.h"
 
 namespace scene {
 

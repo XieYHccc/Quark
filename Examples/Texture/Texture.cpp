@@ -6,12 +6,12 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/glm.hpp>
 
-class TrangleApp : public Application {
+class TextureExample : public Application {
 public:
 	// Vertex layout used in this example
 	struct Vertex {
 		float position[3];
-		float color[3];
+		float texCoords[2];
 	};
 
 	struct uniformBufferData {
@@ -26,9 +26,10 @@ public:
     // Index buffer
     Ref<graphic::Buffer> index_buffer;
     
-    // Depth image : for depth test and write
-    Ref<graphic::Image> depth_image;
-    graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;
+    // texture image and sampler
+    Ref<graphic::Image> texture_image;
+    Ref<graphic::Sampler> linear_sampler;
+    graphic::DataFormat texture_format = graphic::DataFormat::R8G8B8A8_UNORM;
 
     // Shaders and pipeline
     Ref<graphic::Shader> vert_shader;
@@ -42,9 +43,10 @@ public:
 
         // Setup vertices data
 		std::vector<Vertex> vertexBufferData{
-			{ {  1.0f,  1.0f, -3.0f }, { 1.0f, 0.0f, 0.0f } },
-			{ { -1.0f,  1.0f, -3.0f }, { 0.0f, 1.0f, 0.0f } },
-			{ {  0.0f, -1.0f, -3.0f }, { 0.0f, 0.0f, 1.0f } }
+			{ {  -1.0f,  1.0f, -3.0f }, { -1.0f, 1.0f} },
+			{ { 1.0f,  1.0f, -3.0f }, { 1.0f, 1.0f } },
+			{ {  -1.f, -1.0f, -3.0f }, { -1.f, -1.f } },
+            { {1.f, -1.f, -3.f}, { 1.f, -1.f} }
 		};
 
         // Buffer create description
@@ -64,7 +66,7 @@ public:
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
         // Setup indices data
-        std::vector<uint32_t> indexBuffer{ 0, 1, 2 };
+        std::vector<uint32_t> indexBuffer{ 0, 2, 3, 0, 3, 1 };
 
         // Buffer create description
         graphic::BufferDesc buffer_desc = {
@@ -77,26 +79,55 @@ public:
         index_buffer = graphic_device->CreateBuffer(buffer_desc, indexBuffer.data());
     }
 
-    void CreateDepthImage()
+    void CreateTextureImage()
     {
         using namespace graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
+        // prepare data for 16x16 checkerboard texture
+        constexpr uint32_t black = __builtin_bswap32(0x000000FF);
+        constexpr uint32_t magenta = __builtin_bswap32(0xFF00FFFF);
+        std::array<uint32_t, 32 * 32 > pixels;
+        for (int x = 0; x < 32; x++) {
+            for (int y = 0; y < 32; y++) {
+                pixels[y * 32 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
+            }
+        }
+
         // Image create info
-        ImageDesc depth_image_desc = {
+        ImageDesc texture_desc = {
             .type = ImageType::TYPE_2D,
-            .width = graphic_device->GetResolutionWidth(),
-            .height = graphic_device->GetResolutionHeight(),
+            .width = 32,
+            .height = 32,
             .depth = 1,
-            .format = depth_format,
+            .format = texture_format,
             .arraySize = 1,
             .mipLevels = 1,
-            .initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+            .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT
+        };
+        std::vector<ImageInitData> init_data;
+        init_data.push_back({pixels.data(), 32, 32});
+
+        // Create gpu resource
+        texture_image = graphic_device->CreateImage(texture_desc, init_data.data());
+    }
+
+    void CreateSampler()
+    {
+        auto* graphic_device = Application::Instance().GetGraphicDevice();
+
+        // Sampler create description
+        graphic::SamplerDesc desc = {
+            .enableAnisotropy = false,
+            .minFilter = graphic::SamplerFilter::LINEAR,
+            .magFliter = graphic::SamplerFilter::LINEAR,
+            .addressModeU = graphic::SamplerAddressMode::REPEAT,
+            .addressModeV = graphic::SamplerAddressMode::REPEAT,
+            .addressModeW = graphic::SamplerAddressMode::REPEAT
         };
 
-        // Create depth image
-        depth_image = graphic_device->CreateImage(depth_image_desc);
+        linear_sampler = graphic_device->CreateSampler(desc);
     }
 
     void CreateGraphicPipeline()
@@ -106,9 +137,9 @@ public:
 
         // Create shader
         vert_shader = graphic_device->CreateShaderFromSpvFile(ShaderStage::STAGE_VERTEX,
-            "/Users/xieyhccc/develop/Quark/Assets/Shaders/triangle/triangle.vert.spv");
+            "/Users/xieyhccc/develop/Quark/Examples/Texture/texture.vert.spv");
         frag_shader = graphic_device->CreateShaderFromSpvFile(ShaderStage::STAGE_FRAGEMNT,
-            "/Users/xieyhccc/develop/Quark/Assets/Shaders/triangle/triangle.frag.spv");
+            "/Users/xieyhccc/develop/Quark/Examples/Texture/texture.frag.spv");
 
         // Graphic pipeline create info
         GraphicPipeLineDesc pipe_desc;
@@ -116,7 +147,6 @@ public:
         pipe_desc.fragShader = frag_shader;
         pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
         pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-        pipe_desc.depthAttachmentFormat = depth_format;
         pipe_desc.colorAttachmentFormats.push_back(graphic_device->GetSwapChainImageFormat());
 
         // Depth-stencil state
@@ -150,28 +180,29 @@ public:
             .offset = offsetof(Vertex, position)
         };
 
-        auto& color_attrib = pipe_desc.vertexAttribInfos.emplace_back();
-        color_attrib = {
+        auto& uv_attrib = pipe_desc.vertexAttribInfos.emplace_back();
+        uv_attrib = {
             .binding = 0,
             .format = VertexAttribInfo::ATTRIB_FORMAT_VEC3,
             .location = 1,
-            .offset = offsetof(Vertex, color)
+            .offset = offsetof(Vertex, texCoords)
         };
 
         graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc);
     }
 
 
-    TrangleApp(const std::string& title, const std::string& root, int width, int height)
+    TextureExample(const std::string& title, const std::string& root, int width, int height)
         :Application(title, root, width, height)
     {
         CreateGraphicPipeline();
         CreateVertexBuffer();
         CreateIndexBuffer();
-        CreateDepthImage();
+        CreateTextureImage();
+        CreateSampler();
     }
 
-    ~TrangleApp() {};
+    ~TextureExample() {};
 
     void Update(f32 deltaTime) override
     {
@@ -185,6 +216,7 @@ public:
         // auto start = std::chrono::system_clock::now();
 
         auto graphic_device = Application::Instance().GetGraphicDevice();
+
         if (graphic_device->BeiginFrame(deltaTime)) {
 
             // 1. Begin a graphic command list
@@ -214,9 +246,6 @@ public:
             render_pass_info.clearColors[0].color[1] = 0.f;
             render_pass_info.clearColors[0].color[2] = 0.4f;
             render_pass_info.clearColors[0].color[3] = 1.f;
-            render_pass_info.depthAttatchment = depth_image;
-            render_pass_info.depthAttachmentLoadOp = RenderPassInfo::AttachmentLoadOp::CLEAR;
-            render_pass_info.depthAttachmentStoreOp = RenderPassInfo::AttachmentStoreOp::STORE;
 
             cmd->BeginRenderPass(render_pass_info);
 
@@ -230,7 +259,7 @@ public:
             cmd->SetScissor(Scissor{.extent = {.width = drawWidth, .height = drawHeight},
                 .offset = {.x = 0, .y = 0}});
 
-            // 5.Create uniform buffer and bind
+            // 5.Create uniform buffer
             BufferDesc uniform_buffer_desc = {
                 .domain = BufferMemoryDomain::CPU,
                 .size = sizeof(uniformBufferData),
@@ -245,17 +274,21 @@ public:
             float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
             mapped_data.projectionMatrix = glm::perspective(glm::radians(45.f), aspect, 0.1f, 100.f);
             mapped_data.projectionMatrix[1] *= -1; // screen space's Y-axis is opposite of world space's Y-axis
-            cmd->BindUniformBuffer(0, 0, *uniform_buffer, 0, uniform_buffer->GetDesc().size);
 
-            // 6.Bind vertex buffer and index buffer
+            // 6. Bind uniform buffer, texture, and sampler
+            cmd->BindUniformBuffer(0, 0, *uniform_buffer, 0, uniform_buffer->GetDesc().size);
+            cmd->BindImage(0, 1, *texture_image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+            cmd->BindSampler(0, 1, *linear_sampler);
+            
+            // 7.Bind vertex buffer and index buffer
             cmd->BindVertexBuffer(0, *vert_buffer, 0);
             cmd->BindIndexBuffer(*index_buffer, 0, IndexBufferFormat::UINT32);
 
-            // 7. Draw call
+            // 8. Draw call
             cmd->DrawIndexed(index_buffer->GetDesc().size / sizeof(uint32_t), 1, 0, 0, 1);
             cmd->EndRenderPass();
 
-            // 8. Transit swapchain image to present layout for presenting
+            // 9. Transit swapchain image to present layout for presenting
             graphic::PipelineImageBarrier present_barrier {
                 .image = swap_chain_image,
                 .srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -267,7 +300,7 @@ public:
             };
             cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
 
-            // 9. Submit command list
+            // 10. Submit command list
             graphic_device->SubmitCommandList(cmd);
 
             // End this frame, submit Command list and pressent to screen
@@ -283,6 +316,6 @@ public:
 
 Application* CreateApplication()
 {
-    return new TrangleApp("Trangle"," ", 1200, 800);
+    return new TextureExample("Trangle"," ", 1200, 800);
     
 }

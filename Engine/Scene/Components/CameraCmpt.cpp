@@ -4,7 +4,6 @@
 
 #include "Core/Window.h"
 #include "Scene/Components/CameraCmpt.h"
-#include "Scene/Entity.h"
 
 namespace scene {
 
