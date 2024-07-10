@@ -46,6 +46,7 @@
     #define DEBUG_ASSERT(expr) ASSERT(expr)
 #else
     #define CORE_DEBUG_ASSERT(expr) 
+    #define CORE_DEBUG_ASSERT_MSG(expr, message) 
     #define DEBUG_ASSERT(expr) 
 #endif
 

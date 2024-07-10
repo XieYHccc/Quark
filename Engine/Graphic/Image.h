@@ -76,7 +76,9 @@ struct SamplerDesc
 {
     SamplerFilter minFilter;
     SamplerFilter magFliter;
-    SamplerAddressMode addressModeU, addressModeV, addressModeW;
+    SamplerAddressMode addressModeU = SamplerAddressMode::REPEAT;
+    SamplerAddressMode addressModeV = SamplerAddressMode::REPEAT;
+    SamplerAddressMode addressModeW = SamplerAddressMode::REPEAT;
     bool enableAnisotropy = false;
 
     uint32_t GetHash() const

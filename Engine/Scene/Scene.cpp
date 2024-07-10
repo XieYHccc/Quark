@@ -1,48 +1,126 @@
+#include "pch.h"
+#include "Util/Hash.h"
 #include "Scene/Scene.h"
+#include "Scene/Components/NameCmpt.h"
+#include "Scene/Components/TransformCmpt.h"
+#include "Scene/Components/CameraCmpt.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/transform.hpp>
+namespace scene {
+Node::Node(Scene* scene, Node* parent, const std::string& name)
+    :scene_(scene), parent_(parent)
+{
+    if (parent) {
+        parent->AddChild(this);
+    }
 
-#include "GameObject/Components/MeshCmpt.h"
-#include "Renderer/Renderer.h"
+    entity_ = scene_->registry_.CreateEntity();
+    transformCmpt_ = entity_->AddComponent<TransformCmpt>(this);
+
+    if (name != "Null") {
+        nameCmpt_ = entity_->AddComponent<NameCmpt>();
+        nameCmpt_->name = name;
+    }
+}
+
+Node::~Node()
+{
+    if (entity_)
+         scene_->registry_.DeleteEntity(entity_); 
+}
 
 Scene::Scene(const std::string& name)
+    : name_(name)
 {
-	this->name = name;
-	
-	root_ = std::make_unique<GameObject>("root");
 }
 
 Scene::~Scene()
+{   
+    // Free all nodes
+    for (auto node : nodes_) {
+        nodePool_.free(node);
+    }
+
+}
+
+Node* Scene::CreateNode(const std::string &name, Node* parent)
 {
-    auto& instance = Renderer::Instance();
+    if (nodeMap_.find(name) != nodeMap_.end()) {
+        CORE_LOGW("You can't create a node with a name which has existed.")
+        return nullptr;;
+    }
 
-	for (auto& obj : gameObjects_) {
-		obj.reset();
-	}
-	root_.reset();
-	
-}
+    Node* newNode = nodePool_.allocate(this, parent, name);
+    nodes_.push_back(newNode);
+    nodeMap_.emplace(std::make_pair(name, newNode));
+    
+    if (parent == nullptr)
+        rootNodes_.push_back(newNode);
+    else {
+        parent->AddChild(newNode);
+        newNode->SetParent(parent);
+    }
 
-GameObject* Scene::AddGameObject(const std::string& name, GameObject* parent) {
-	std::unique_ptr<GameObject> newObject = std::make_unique<GameObject>(name, parent);
-
-	if (parent != nullptr) {
-		newObject->parent = parent;
-		parent->childrens.push_back(newObject.get());
-	}
-	else {
-		newObject->parent = root_.get();
-		root_->childrens.push_back(newObject.get());
-	}
-
-	// move ownership
-	gameObjects_.push_back(std::move(newObject));
-
-	CORE_LOGD("Add Object \"{}\"", name);
-	
-	return gameObjects_.back().get();
+    return newNode;
+    
 }
 
 
+void Scene::DeleteNode(Node *node)
+{
 
+    // TODO: Support node deletion
+    
+    // Iteratively delete children nodes
+    for (auto* child : node->children_) {
+        DeleteNode(child);
+    }
+
+    // If node's entity has name, erase it from map
+    auto name_cmpt = node->GetNameCmpt();
+    if (name_cmpt)
+        nodeMap_.erase(name_cmpt->name);
+    
+
+    // free the node in pool
+    nodePool_.free(node);
+}
+
+Node* Scene::GetNodeByName(const std::string &name)
+{
+    auto find = nodeMap_.find(name);
+
+    if (find != nodeMap_.end())
+        return find->second;
+    else {
+        CORE_LOGD("Node named {} doesn't exsit.")
+        return nullptr;
+    }
+}
+
+void Scene::FlushRootNodes()
+{
+    rootNodes_.clear();
+    for (auto* node : nodes_) {
+        if (node->parent_ == nullptr) {
+            rootNodes_.push_back(node);
+        }
+    }
+}
+
+CameraCmpt* Scene::GetCamera()
+{
+    if (cameraNode_) {
+        return cameraNode_->GetEntity()->GetComponent<CameraCmpt>();
+    }
+    else {
+        CORE_LOGW("Scene doesn't have a camera, but you are requesting one.")
+        return nullptr;
+    }
+}
+
+void Scene::Update()
+{
+
+}
+
+}

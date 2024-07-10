@@ -279,10 +279,10 @@ void CommandList_Vulkan::BindPushConstant(const void *data, size_t offset, size_
     }
 #endif
 
-    auto& push_constant = currentPipeLine_->layout_->pushConstant;
+    auto& layout = *currentPipeLine_->layout_;
     vkCmdPushConstants(cmdBuffer_,
-        currentPipeLine_->layout_->handle,
-        push_constant.stageFlags,
+        layout.handle,
+        layout.pushConstant.stageFlags,
         offset,
         size,
         data);
@@ -500,8 +500,10 @@ void CommandList_Vulkan::Flush_DescriptorSet(u32 set)
             for (size_t i = 0; i < b.descriptorCount; ++i) {
                 h.pointer(bindings[b.binding + i].buffer.buffer);
                 h.u64(bindings[b.binding + i].buffer.range);
-                CORE_DEBUG_ASSERT(bindings[b.binding + i].buffer.buffer != VK_NULL_HANDLE)
-
+#ifdef QK_DEBUG_BUILD
+            if (bindings[b.binding + i].buffer.buffer == VK_NULL_HANDLE)
+                CORE_LOGW("Buffer at Set: {}, Binding {} is not bounded. Performance waring!", set, b.binding)
+#endif
                 CORE_DEBUG_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
                 dynamic_offsets[num_dynamic_offsets++] = bindings[b.binding + i].dynamicOffset;
             }

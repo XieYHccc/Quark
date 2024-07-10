@@ -7,16 +7,14 @@ add_library(Engine ${EngineSources})
 set(ENGINE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(ENGINE_INCLUDE_DIRS
 ${ENGINE_SOURCE_DIR}
-${EXTERNAL_PATH}/spdlog/include
-${EXTERNAL_PATH}/entt
 )
 
 target_compile_options(Engine PRIVATE -Wno-nullability-completeness)
-target_compile_definitions(Engine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
+# target_compile_definitions(Engine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 target_include_directories(Engine PUBLIC ${ENGINE_INCLUDE_DIRS} )
-target_link_libraries(Engine glm tiny_obj_loader stb_image glfw Vulkan::Vulkan vma imgui fastgltf::fastgltf spirv_reflect)
+target_link_libraries(Engine glm tinygltf tiny_obj_loader stb_image glfw Vulkan::Vulkan vma imgui fastgltf::fastgltf spirv_reflect spdlog::spdlog)
 
-add_dependencies(Engine Shaders)
+# add_dependencies(Engine Shaders)
 
 # pch header file path
 set(ENGINE_PRECOMPILED_HEADERS

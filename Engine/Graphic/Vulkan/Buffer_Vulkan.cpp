@@ -16,6 +16,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     : Buffer(desc), device_(device)
 {
     CORE_DEBUG_ASSERT(device_ != nullptr)
+    CORE_DEBUG_ASSERT(desc.size != 0)
     auto& vulkan_context = device_->context;
     auto& vmaAllocator = device->vmaAllocator;
     VkDevice vk_device = device_->vkDevice;
@@ -73,7 +74,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     if (vulkan_context->features12.bufferDeviceAddress) {
         VkBufferDeviceAddressInfo bda_info = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
         bda_info.buffer = handle_;
-        bufferDeviceAddress_ = vkGetBufferDeviceAddress(vk_device, &bda_info); 
+        gpuAddress_ = vkGetBufferDeviceAddress(vk_device, &bda_info); 
     }
 
     // Data Copy

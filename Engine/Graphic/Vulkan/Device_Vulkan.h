@@ -36,8 +36,10 @@ private:
         Device_Vulkan* device = nullptr;
         VmaAllocator vmaAllocator = nullptr;
         std::vector<CommandList_Vulkan*> cmdLists[QUEUE_TYPE_MAX_ENUM];
-        u32 cmdListCount[QUEUE_TYPE_MAX_ENUM] = {}; // cleared when a new frame begin
+        u32 cmdListCount[QUEUE_TYPE_MAX_ENUM] = {}; //  The count of cmd used in this frame. Cleared when a new frame begin
         VkFence queueFences[QUEUE_TYPE_MAX_ENUM];   // Per queue fence. Signled when all command list submitted from this frame completed.
+        std::vector<VkFence> waitedFences;
+        
         VkSemaphore imageAvailableSemaphore;
         VkSemaphore imageReleaseSemaphore;
         bool imageAvailableSemaphoreConsumed = false;

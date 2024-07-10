@@ -5,8 +5,6 @@
 #include "Core/Input.h"
 #include "Events/EventManager.h"
 #include "Events/ApplicationEvent.h"
-#include "Scene/SceneMngr.h"
-#include "Renderer/Renderer.h"
 #include "Asset/AssetManager.h"
 
 #ifdef  USE_VULKAN_DRIVER
@@ -34,9 +32,6 @@ Application::Application(const std::string& title, const std::string& root, int 
     // Init AssetManager
     AssetManager::Instance().Init();
 
-    // Init SceneManager
-    SceneMngr::Instance().Init();
-
     // Init Graphic Device
 #ifdef  USE_VULKAN_DRIVER
     m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
@@ -49,13 +44,6 @@ Application::Application(const std::string& title, const std::string& root, int 
 }
 
 Application::~Application() {
-    
-    SceneMngr::Instance().Finalize();
-
-    asset::Mesh::ClearPool();
-    asset::Sampler::ClearPool();
-    asset::Texture::ClearPool();
-    asset::Material::ClearPool();
 
     AssetManager::Instance().Finalize();
     
@@ -74,6 +62,8 @@ Application::~Application() {
 void Application::Run()
 {
     while (m_Status.isRunning) {
+        auto start = std::chrono::system_clock::now();
+
         m_Status.lastFrameTime = m_Timer.Elapsed();
         // Update each moudule (including processing inputs)
         Update(m_Timer.Elapsed() - m_Status.lastFrameTime);
@@ -85,6 +75,10 @@ void Application::Run()
         Window::Instance()->Update();
 
         EventManager::Instance().DispatchEvents();
+
+        auto end = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        // CORE_LOGI("Frame time : {} ms", elapsed.count() / 1000.f)
     }
 }
 

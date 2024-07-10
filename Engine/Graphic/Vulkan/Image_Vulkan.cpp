@@ -264,6 +264,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
         transferCmd.block_submit();
     }
+    CORE_LOGD("Vulkan image created")
 }
 
 Image_Vulkan::~Image_Vulkan()
@@ -280,6 +281,8 @@ Image_Vulkan::~Image_Vulkan()
     if (view_) {
         frame.grabageViews.push_back(view_);
     }
+
+    CORE_LOGD("Vulkan image destroyed")
 
 }
 
@@ -337,7 +340,7 @@ Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
 
     VK_CHECK(vkCreateSampler(device_->vkDevice, &info, nullptr, &handle_))
 
-    CORE_LOGD("Sampler Created")
+    CORE_LOGD("Vulkan sampler Created")
 }
 
 Sampler_Vulkan::~Sampler_Vulkan()
@@ -345,6 +348,7 @@ Sampler_Vulkan::~Sampler_Vulkan()
     if (handle_) {
         device_->GetCurrentFrame().garbageSamplers.push_back(handle_);
     }
+    CORE_LOGD("Vulkan sampler destroyed")
 }
 
 }

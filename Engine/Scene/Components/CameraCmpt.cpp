@@ -1,28 +1,16 @@
 #include "pch.h"
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
-
 #include "Core/Window.h"
 #include "Scene/Components/CameraCmpt.h"
 
 namespace scene {
 
-void CameraCmpt::Awake()
+CameraCmpt::CameraCmpt(Entity* entity, float _aspect, float _fov, float _zNear, float _zFar)
+    : Component(entity), aspect(_aspect), fov(_fov), zNear(_zNear), zFar(_zFar)
 {
-    transform_ = GetEntity()->GetComponent<TransformCmpt>();
-
-    int width = Window::Instance()->GetWidth();
-    int height = Window::Instance()->GetHeight();
-
-    // default camera properties
-    this->fov = 45.f;
-    this->zNear = 1000.f;
-    this->zFar = 0.1f;
-    this->aspect = (float)width / height;
-    this->movementSpeed = 20.f;
-
-
+    transform_ = entity->GetComponent<TransformCmpt>();
 }
+
 glm::mat4 CameraCmpt::GetViewMatrix() const 
 {
     // view matrix transform geometry from world space to eye/view space
@@ -32,7 +20,7 @@ glm::mat4 CameraCmpt::GetViewMatrix() const
 
 glm::mat4 CameraCmpt::GetProjectionMatrix() const
 {
-    return glm::perspective(glm::radians(70.f), aspect, zNear, zFar);
+    return glm::perspective(glm::radians(fov), aspect, zNear, zFar);
 }
 
 }

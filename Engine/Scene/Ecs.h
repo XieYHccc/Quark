@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Base.h"
 #include "Util/CompileTimeHash.h"
 #include "Util/IntrusiveHashMap.h"
 
@@ -11,10 +12,9 @@ using ComponentType = u64;
 class Entity;
 class Component {
 public:
-    Component(Entity* entity) : entity_(entity) { Awake();};
+    Component(Entity* entity) : entity_(entity) {};
     virtual ComponentType GetType() = 0;
     virtual ~Component() {};
-    virtual void Awake() {};
     Entity* GetEntity() { return entity_; }
 
 private:
@@ -37,7 +37,7 @@ using ComponentGroupVector = std::vector<ComponentGroup<Ts...>>;
 
 template <typename... Ts>
 constexpr u64 GetComponentGroupId(){
-    return util::compile_time_fnv1_merged(Ts::GetComponentTypeHash()...);
+    return util::compile_time_fnv1_merged(Ts::GetStaticComponentType()...);
 }
 
 class EntityRegistry;
@@ -50,16 +50,25 @@ public:
 
     util::Hash GetId() const { return hashId_;};
 
-    bool HasComponent(ComponentType id) {
+    bool HasComponent(ComponentType id) const {
         auto find = componentMap_.find(id);
         return find != nullptr;
     }
 
     template<typename T>
-    bool HasComponent() { HasComponent(T::GetStaticComponentType()); }
+    bool HasComponent() const { return HasComponent(T::GetStaticComponentType()); }
 
     template<typename T>
     T* GetComponent() {
+        auto* find = componentMap_.find(T::GetStaticComponentType());
+        if (find)
+            return static_cast<T*>(find->get());
+        else
+            return nullptr;;
+    }
+
+    template<typename T>
+    const T* GetComponent() const {
         auto* find = componentMap_.find(T::GetStaticComponentType());
         if (find)
             return static_cast<T*>(find->get());
@@ -74,9 +83,9 @@ public:
     void RemoveComponent();
     
 private:
-    Entity(EntityRegistry* EntityRegistry, util::Hash hash);
+    Entity(EntityRegistry* entityRegistry, util::Hash hash);
 
-    EntityRegistry* EntityRegistry_;
+    EntityRegistry* entityRegistry_;
     size_t EntityRegistryOffset_; // be allocated and used in EntityRegistry
     util::Hash hashId_;
     util::IntrusiveHashMapHolder<util::IntrusivePODWrapper<Component*>> componentMap_;
@@ -89,13 +98,14 @@ public:
     EntityGroupBase() = default;
 	virtual ~EntityGroupBase() = default;
 private:
-	virtual void AddEntity(const Entity* entity) = 0;
-	virtual void RemoveEntity(const Entity* entity) = 0;
+	virtual void AddEntity(Entity& entity) = 0;
+	virtual void RemoveEntity(const Entity& entity) = 0;
 	virtual void Reset() = 0;
 };
 
 template <typename... Ts>
 class EntityGroup final : public EntityGroupBase {
+    friend class EntityRegistry;
 public:
     const std::vector<Entity*>& GetEntities() const  { return entities_; }
     std::vector<Entity*>& GetEntities() { return entities_; }
@@ -103,21 +113,21 @@ public:
     ComponentGroupVector<Ts...>& GetComponentGroup() { return groups_; }
 
 private:
-    void AddEntity(const Entity* entity) override final {
+    void AddEntity(Entity& entity) override final {
 		if (has_all_components<Ts...>(entity)) {
-			entityToIndex_[entity->GetId()].get() = entities_.size();
-			groups_.push_back(std::make_tuple(entity->GetComponent<Ts>()...));
-			entities_.push_back(entity);
+			entityToIndex_[entity.GetId()].get() = entities_.size();
+			groups_.push_back(std::make_tuple(entity.GetComponent<Ts>()...));
+			entities_.push_back(&entity);
 		}
     }
-    void RemoveEntity(const Entity* entity) override final {
+    void RemoveEntity(const Entity& entity) override final {
         size_t offset = 0;
-        if (entityToIndex_.find_and_consume_pod(entity->GetId(), offset)) {
+        if (entityToIndex_.find_and_consume_pod(entity.GetId(), offset)) {
             entities_[offset] = entities_.back();
-            groups_[offset] = groups_.back;
+            groups_[offset] = groups_.back();
             entityToIndex_[entities_[offset]->GetId()].get() = offset;
 
-            entityToIndex_.erase(entity->GetId());
+            entityToIndex_.erase(entity.GetId());
             entities_.pop_back();
             groups_.pop_back();
         }
@@ -138,21 +148,21 @@ private:
 
 	template <typename U, typename... Us>
 	struct HasAllComponents<U, Us...> {
-		static bool has_component(const Entity &entity) {
-			return entity.HasComponent<U::GetComponentType>() &&
+		static bool has_component(const Entity& entity) {
+			return entity.HasComponent(U::GetStaticComponentType()) &&
 		           HasAllComponents<Us...>::has_component(entity);
 		}
 	};
 
 	template <typename U>
 	struct HasAllComponents<U>{
-		static bool has_component(const Entity &entity) {
-			return entity.HasComponent<U::GetComponentType>();
+		static bool has_component(const Entity& entity) {
+			return entity.HasComponent(U::GetStaticComponentType());
 		}
 	};
 
 	template <typename... Us>
-	bool has_all_components(const Entity &entity)
+	bool has_all_components(const Entity& entity)
 	{
 		return HasAllComponents<Us...>::has_component(entity);
 	}
@@ -183,7 +193,7 @@ public:
 			entityGroups_.insert_yield(t);
 
 			auto* group = static_cast<EntityGroup<Ts...> *>(t);
-			for (auto& entity : entities_)
+			for (auto entity : entities_)
 				group->AddEntity(*entity);
 		}
 
@@ -222,7 +232,7 @@ public:
 			auto* group_set = componentToGroups_.find(id);
 			if (group_set)
 				for (auto& group : *group_set)
-					entityGroups_.find(group.get_hash())->AddEntity(entity);
+					entityGroups_.find(group.get_hash())->AddEntity(*entity);
 
 			return comp;
 		}
@@ -317,13 +327,13 @@ private:
 template<typename T, typename... Ts>
 T* Entity::AddComponent(Ts&&... ts)
 {
-    return EntityRegistry_->Register<T>(this, ts...);
+    return entityRegistry_->Register<T>(this, ts...);
 }
 
 template<typename T>
 void Entity::RemoveComponent() 
 {
-    EntityRegistry_->UnRegister<T>(this);
+    entityRegistry_->UnRegister<T>(this);
 }
 
 }

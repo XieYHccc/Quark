@@ -44,7 +44,7 @@ struct RenderPassInfo {
 
     // Depth images
     Ref<Image> depthAttatchment = nullptr;
-    AttachmentLoadOp depthAttachmentLoadOp = AttachmentLoadOp::LOAD;
+    AttachmentLoadOp depthAttachmentLoadOp = AttachmentLoadOp::CLEAR;
     AttachmentStoreOp depthAttachmentStoreOp = AttachmentStoreOp::STORE;
     ClearValue ClearDepthStencil = {1.f, 0.f};
 };

@@ -27,6 +27,10 @@ layout( push_constant ) uniform constants
 {
 	mat4 render_matrix;
 	VertexBuffer vertexBuffer;
+
+	float metalicFactor;
+	float roughnessFactor;
+	vec4 colorFactors;
 } PushConstants;
 
 void main() 
@@ -38,7 +42,7 @@ void main()
 	gl_Position =  sceneData.viewproj * PushConstants.render_matrix * position;
 
 	outNormal = (PushConstants.render_matrix * vec4(v.normal, 0.f)).xyz;
-	outColor = v.color.xyz * materialData.colorFactors.xyz;	
+	outColor = v.color.xyz * PushConstants.colorFactors.xyz;	
 	outUV.x = v.uv_x;
 	outUV.y = v.uv_y;
 }

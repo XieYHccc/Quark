@@ -1,10 +1,10 @@
 #include "pch.h"
+#define VMA_IMPLEMENTATION
+#include "Graphic/Vulkan/Device_Vulkan.h"
 #include "Core/Window.h"
 #include "Events/EventManager.h"
 #include "Util/Hash.h"
 #include "Graphic/Vulkan/Shader_Vulkan.h"
-#include "Graphic/Vulkan/Device_Vulkan.h"
-
 
 namespace graphic {
 
@@ -25,11 +25,13 @@ void Device_Vulkan::CommandQueue::init(Device_Vulkan *device, QueueType type)
         break;
     default:
         CORE_DEBUG_ASSERT(0)
+        break;
     }
 }
 
 void Device_Vulkan::CommandQueue::submit(VkFence fence)
 {
+    CORE_DEBUG_ASSERT(!submissions.empty() || fence != VK_NULL_HANDLE)
 
     std::vector<VkSubmitInfo2> submit_infos(submissions.size());
     for (size_t i = 0; i < submissions.size(); ++i) {
@@ -44,7 +46,7 @@ void Device_Vulkan::CommandQueue::submit(VkFence fence)
         info.pWaitSemaphoreInfos = submission.waitSemaphoreInfos.data();
     }
 
-    device->context->extendFunction.pVkQueueSubmit2KHR(queue,submit_infos.size(), submit_infos.data(), fence);
+    device->context->extendFunction.pVkQueueSubmit2KHR(queue, submit_infos.size(), submit_infos.data(), fence);
     
     // Clear submissions
     for(auto& submission : submissions){
@@ -65,7 +67,7 @@ void Device_Vulkan::PerFrameData::init(Device_Vulkan *device)
     for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++) {
         // Create a fence per queue
         VkFenceCreateInfo fence_create_info = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-        fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        fence_create_info.flags = 0;
         fence_create_info.pNext = nullptr;
         vkCreateFence(device->vkDevice, &fence_create_info, nullptr, &queueFences[i]);
     }
@@ -110,11 +112,15 @@ void Device_Vulkan::PerFrameData::clear()
 
 void Device_Vulkan::PerFrameData::reset()
 {
-	vkResetFences(device->vkDevice, QUEUE_TYPE_MAX_ENUM, queueFences);
+    if (!waitedFences.empty()) {
+        vkResetFences(device->vkDevice, waitedFences.size(), waitedFences.data());
+        waitedFences.clear();
+    }
 
     for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++){
         cmdListCount[i] = 0;
     }
+
     imageAvailableSemaphoreConsumed = false;
 
     // Destroy deferred-destroyed resources
@@ -224,6 +230,9 @@ bool Device_Vulkan::Init()
     vkDevice = context->logicalDevice; // Borrow from context
     vmaAllocator = context->vmaAllocator;
 
+    // Store device properties in public interface
+    properties.limits.minUniformBufferOffsetAlignment = context->properties2.properties.limits.minUniformBufferOffsetAlignment;
+
     // Create frame data
     for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++) {
         frames[i].init(this);
@@ -282,13 +291,16 @@ bool Device_Vulkan::BeiginFrame(f32 deltaTime)
     }
 
     auto& frame = frames[currentFrame];
-
-    vkWaitForFences(vkDevice, QUEUE_TYPE_MAX_ENUM, frame.queueFences, true, 1000000000);
     
-    // Reset frame status
+    // Wait for in-flight fences
+    if (!frame.waitedFences.empty()) {
+        vkWaitForFences(vkDevice, frame.waitedFences.size(), frame.waitedFences.data(), true, 1000000000);
+    }
+    
+    // Reset per frame data
     frame.reset();
 
-    // put unused (more than 8 frames) descriptor set back to vacant pool
+    // Put unused (more than 8 frames) descriptor set back to vacant pool
     for (auto& [k, value] : cached_descriptorSetAllocator) {
         value.begin_frame();   
     }
@@ -317,13 +329,16 @@ bool Device_Vulkan::BeiginFrame(f32 deltaTime)
 bool Device_Vulkan::EndFrame(f32 deltaTime)
 {
     auto& frame = GetCurrentFrame();
-    
+
     // Submit queued command lists with fence which would block the next next frame
     for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; ++i) {
-        queues[i].submit(frame.queueFences[i]);
+        if (frame.cmdListCount[i] > 0) { // This queue is in use in this frame
+            queues[i].submit(frame.queueFences[i]);
+            frame.waitedFences.push_back(frame.queueFences[i]);
+        }
     }
 
-    // prepare present
+    // Prepare present
     VkSwapchainKHR swapchain = context->swapChain;
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -337,7 +352,7 @@ bool Device_Vulkan::EndFrame(f32 deltaTime)
 
     if (presentResult != VK_SUCCESS && presentResult != VK_ERROR_OUT_OF_DATE_KHR
 		&& presentResult != VK_SUBOPTIMAL_KHR) {
-        CORE_ASSERT_MSG(false, "failed to present swap chain image!")
+        CORE_DEBUG_ASSERT(0)
     }
     return true;
 }

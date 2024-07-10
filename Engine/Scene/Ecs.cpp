@@ -3,8 +3,8 @@
 
 namespace scene {
 
-Entity::Entity(EntityRegistry* EntityRegistry, util::Hash hash)
-    : EntityRegistry_(EntityRegistry), hashId_(hash)
+Entity::Entity(EntityRegistry* entityRegistry, util::Hash hash)
+    : entityRegistry_(entityRegistry), hashId_(hash)
 {
 }
 
@@ -12,20 +12,22 @@ void EntityRegistry::UnRegister(Entity* entity, Component* component)
 {
     if (component == nullptr)
         return;
+
     CORE_DEBUG_ASSERT(component->GetEntity() == entity) // Double check
 
-    entity->componentMap_.erase(component->GetType());
+    auto id = component->GetType();
+    entity->componentMap_.erase(id);
 
-    auto* group_key_set = componentToGroups_.find(component->GetType());
+    auto* group_key_set = componentToGroups_.find(id);
     if (group_key_set) {
         for (auto &group_key : *group_key_set) {
             auto* group = entityGroups_.find(group_key.get_hash());
             if (group)
-                group->RemoveEntity(entity);
+                group->RemoveEntity(*entity);
         }
     }  
 
-    auto* allocator = componentAllocators_.find(component->GetType());
+    auto* allocator = componentAllocators_.find(id);
     CORE_DEBUG_ASSERT(allocator)
 
     allocator->FreeComponent(component);
@@ -48,8 +50,8 @@ void EntityRegistry::DeleteEntity(Entity *entity)
         auto& list = entity->componentMap_.inner_list();
         auto itr = list.begin();
         while (itr != list.end()) {
-            itr = list.erase(itr);
             UnRegister(entity, itr.get()->get());
+            itr = list.erase(itr);
         }
     }
 
@@ -69,7 +71,12 @@ void EntityRegistry::GroupKeySet::insert(ComponentType type)
 
 EntityRegistry::~EntityRegistry()
 {
-    // delete manually allocated component allocator
+    // Delete all entities
+    for (auto e : entities_) {
+        DeleteEntity(e);
+    }
+    
+    // Delete manually allocated component allocator
     {
 		auto &list = componentAllocators_.inner_list();
 		auto itr = list.begin();
@@ -82,7 +89,7 @@ EntityRegistry::~EntityRegistry()
         componentAllocators_.clear();
 	}
 
-    // delete manully allocated entity group
+    // Delete manully allocated entity group
     {
         auto &list = entityGroups_.inner_list();
         auto itr = list.begin();

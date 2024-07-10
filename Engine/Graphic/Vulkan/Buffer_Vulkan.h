@@ -16,7 +16,6 @@ private:
     VkBuffer handle_ = VK_NULL_HANDLE;
     VmaAllocation allocation_ = VK_NULL_HANDLE;
     VmaAllocationInfo allocInfo_ = {};
-    VkDeviceAddress bufferDeviceAddress_ = UINT64_MAX;
 
 };
 

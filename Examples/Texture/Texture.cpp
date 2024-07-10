@@ -2,7 +2,6 @@
 #include <Engine/Core/Application.h>
 #include <Core/Window.h>
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
 #include <glm/glm.hpp>
 
@@ -206,7 +205,7 @@ public:
 
     void Update(f32 deltaTime) override
     {
-
+        
     }
 
     void Render(f32 deltaTime) override
@@ -285,7 +284,7 @@ public:
             cmd->BindIndexBuffer(*index_buffer, 0, IndexBufferFormat::UINT32);
 
             // 8. Draw call
-            cmd->DrawIndexed(index_buffer->GetDesc().size / sizeof(uint32_t), 1, 0, 0, 1);
+            cmd->DrawIndexed(index_buffer->GetDesc().size / sizeof(uint32_t), 1, 0, 0, 0);
             cmd->EndRenderPass();
 
             // 9. Transit swapchain image to present layout for presenting
