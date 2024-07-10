@@ -226,7 +226,7 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
         Ref<Texture> newTexture = CreateRef<Texture>();
 
         // Default values
-        newTexture->image = defaultCheckBoardImage_;
+        newTexture->image = defaultWhiteImage_;
         newTexture->sampler = defalutLinearSampler_;
 
         if (model_.textures[texture_index].source > -1) {
@@ -521,8 +521,10 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
             const float* buffer_pos = nullptr;
 			const float* buffer_normals = nullptr;
 			const float* buffer_texCoords = nullptr;
-			const float* buffer_colors = nullptr;
-            u32 num_colorComponents = 0;
+			const void* buffer_colors = nullptr;
+            
+            int colorComponentType;
+            u32 numColorComponents;
 
             // Position attribute is required
             CORE_ASSERT_MSG(p.attributes.find("POSITION") != p.attributes.end(), "Position attribute is required")
@@ -548,33 +550,58 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
             {
                 const tinygltf::Accessor& colorAccessor = model_.accessors[p.attributes.find("COLOR_0")->second];
                 const tinygltf::BufferView& colorView = model_.bufferViews[colorAccessor.bufferView];
-                // Color buffer are either of type vec3 or vec4
-                num_colorComponents= colorAccessor.type == TINYGLTF_PARAMETER_TYPE_FLOAT_VEC3 ? 3 : 4;
-                buffer_colors = reinterpret_cast<const float*>(&(model_.buffers[colorView.buffer].data[colorAccessor.byteOffset + colorView.byteOffset]));
+                buffer_colors = &(model_.buffers[colorView.buffer].data[colorAccessor.byteOffset + colorView.byteOffset]);
+                numColorComponents = colorAccessor.type == TINYGLTF_PARAMETER_TYPE_FLOAT_VEC3 ? 3 : 4;
+                colorComponentType = colorAccessor.componentType;
+                CORE_DEBUG_ASSERT(colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT
+                    || colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT)
+
             }
 
             // Create vertices
             for (size_t i = 0; i < posAccessor.count; i++) {
                 Vertex v = {};
                 v.position = glm::make_vec3(&buffer_pos[i * 3]);
-				v.normal = glm::normalize(glm::vec3(buffer_normals ? glm::make_vec3(&buffer_normals[i * 3]) : glm::vec3(0.0f)));
-				v.uv_x = buffer_texCoords? buffer_texCoords[i * 2] : 0.f;
+				v.normal = glm::normalize(buffer_normals ? glm::make_vec3(&buffer_normals[i * 3]) : glm::vec3(0.0f));
+				v.uv_x = buffer_texCoords? buffer_texCoords[i * 3] : 0.f;
                 v.uv_y = buffer_texCoords? buffer_texCoords[i * 2 + 1] : 0.f;
-            	if (buffer_colors) {
-                    switch (num_colorComponents) {
+                if (buffer_colors) {
+                    if (colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT) {
+                        const float NORMALIZATION_FACTOR = 65535.0f;
+                        const uint16_t* buf = static_cast<const uint16_t*>(buffer_colors);
+                        switch (numColorComponents) {
                         case 3: 
-                            v.color = glm::vec4(glm::make_vec3(&buffer_colors[i * 3]), 1.0f);
+                            v.color = glm::vec4(buf[i * 3] / NORMALIZATION_FACTOR,
+                                buf[i * 3 + 1] / NORMALIZATION_FACTOR,
+                                buf[i * 3 + 2] / NORMALIZATION_FACTOR,
+                                1.f);
                             break;
                         case 4:
-                            v.color = glm::make_vec4(&buffer_colors[i * 4]);
+                            v.color = glm::vec4(buf[i * 4] / NORMALIZATION_FACTOR,
+                                buf[i * 4 + 1] / NORMALIZATION_FACTOR,
+                                buf[i * 4 + 2] / NORMALIZATION_FACTOR,
+                                buf[i * 4 + 3] / NORMALIZATION_FACTOR);
                             break;
-                        default: 
-                            CORE_DEBUG_ASSERT_MSG(0, "Color component not handled!")
-                            break;
+                        default:
+                            CORE_ASSERT_MSG(0, "Invalid number of color components")
                     }
-                } else {
-                    v.color = glm::vec4(1.0f);
+                    }
+                    else {
+                        const uint32_t* buf = static_cast<const uint32_t*>(buffer_colors);
+                        switch (numColorComponents) {
+                        case 3: 
+                            v.color = glm::vec4(glm::make_vec3(&buf[i * 3]), 1.0f);
+                            break;
+                        case 4:
+                            v.color = glm::make_vec4(&buf[i * 4]);
+                            break;
+                        default:
+                            CORE_ASSERT_MSG(0, "Invalid number of color components")
+                    }
+                    }
                 }
+                else
+                    v.color = glm::vec4(1.0f);
 
                 vertices_.push_back(v);
             }

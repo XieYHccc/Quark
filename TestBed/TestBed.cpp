@@ -158,7 +158,7 @@ void TestBed::LoadAsset()
 {
     // load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
-    scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/structure.glb");
+    scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/house2.glb");
 
     scene_renderer = CreateScope<render::SceneRenderer>(m_GraphicDevice.get());
     scene_renderer->SetScene(scene.get());
