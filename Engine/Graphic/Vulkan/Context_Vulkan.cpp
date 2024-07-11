@@ -69,15 +69,9 @@ void VulkanContext::CreateInstance()
     const std::vector<const char*> required_extensions = GetRequiredExtensions();
     std::vector<const char*> required_layers;
 
-    // TODO:Try other layers if this is not available
-    required_layers.push_back("VK_LAYER_KHRONOS_validation");
-
 #ifdef QK_DEBUG_BUILD
     CORE_LOGD("Required vulkan instance extensions:")
     for(const auto& s : required_extensions)
-        CORE_LOGD("  {}", s);
-    CORE_LOGD("Required vulkan instance layers:")
-    for(const auto& s : required_layers)
         CORE_LOGD("  {}", s);
 #endif
 
@@ -101,9 +95,12 @@ void VulkanContext::CreateInstance()
     // Enable validation layers?
 #ifdef QK_DEBUG_BUILD
     CORE_LOGD("Validation layers enabled. Checking...")
-
+    
     // TODO: if this is not supported, try other layers
     required_layers.push_back("VK_LAYER_KHRONOS_validation");
+    CORE_LOGD("Required vulkan instance layers:")
+    for(const auto& s : required_layers)
+        CORE_LOGD("  {}", s);
 
     // checking
     for (auto layerName : required_layers) {

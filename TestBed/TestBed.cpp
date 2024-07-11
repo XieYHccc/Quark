@@ -146,7 +146,11 @@ void TestBed::Render(f32 deltaTime)
         graphic_device->SubmitCommandList(cmd);
 
         // End this frame, submit Command list and pressent to screen
+        auto startFrame = std::chrono::system_clock::now();
         graphic_device->EndFrame(deltaTime);
+        auto endFrame = std::chrono::system_clock::now();
+        auto elapsedFrame = std::chrono::duration_cast<std::chrono::microseconds>(endFrame - startFrame);
+        CORE_LOGI("End Frame time : {} ms", elapsedFrame.count() / 1000.f)
     }
 
     auto end = std::chrono::system_clock::now();
@@ -158,7 +162,7 @@ void TestBed::LoadAsset()
 {
     // load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
-    scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/house2.glb");
+    scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/structure.glb");
 
     scene_renderer = CreateScope<render::SceneRenderer>(m_GraphicDevice.get());
     scene_renderer->SetScene(scene.get());

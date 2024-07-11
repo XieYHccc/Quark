@@ -587,7 +587,7 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
                     }
                     }
                     else {
-                        const uint32_t* buf = static_cast<const uint32_t*>(buffer_colors);
+                        const float* buf = static_cast<const float*>(buffer_colors);
                         switch (numColorComponents) {
                         case 3: 
                             v.color = glm::vec4(glm::make_vec3(&buf[i * 3]), 1.0f);
