@@ -41,6 +41,37 @@ constexpr VkImageType ConvertImageType(ImageType type)
     }
 }
 
+// This class fills up texture(sampled image)'s mipmap layout and copy informations
+// Designed for texture data uploading
+class TextureFormatLayout {
+	struct MipInfo {
+		size_t offset = 0;
+		uint32_t width = 1;
+		uint32_t height = 1;
+		uint32_t depth = 1;
+
+		uint32_t num_block_x = 0;
+		uint32_t num_block_y = 0;
+		uint32_t total_block_size_x = 0; //  num_block_x * block_dim_x
+		uint32_t total_block_size_y = 0;
+	};
+
+    TextureFormatLayout() = default;
+    void SetUp1D();
+    void SetUp2D(VkFormat format, uint32_t width, uint32_t height, uint32_t array_layers, uint32_t mip_levels);
+
+private:
+    VkFormat format_;
+    VkImageType image_type_;
+    size_t required_size = 0; // required data source size
+    uint32_t block_stride_ = 1;
+	uint32_t mip_levels_ = 1;
+	uint32_t array_layers_ = 1;
+	uint32_t block_dim_x_ = 1;
+	uint32_t block_dim_y_ = 1;
+    MipInfo mips_[16];
+};
+
 class Image_Vulkan : public Image {
     friend class Device_Vulkan;
     friend class CommandList_Vulkan;
@@ -50,6 +81,7 @@ public:
     virtual ~Image_Vulkan();
     
 private:
+    
     Device_Vulkan* device_;
     VkImage handle_;
     VmaAllocation allocation_;

@@ -17,7 +17,7 @@ float Aabb::get_radius() const
 
 bool Aabb::is_valid() const 
 {
-    return (max_[0] > min_[0] && max_[1] > min_[1] && max_[2] > min_[2]);
+    return (max_[0] >= min_[0] && max_[1] >= min_[1] && max_[2] >= min_[2]);
 }
 
 Aabb Aabb::transform(const glm::mat4 &mat) const 
@@ -36,4 +36,22 @@ Aabb Aabb::transform(const glm::mat4 &mat) const
 
 	return Aabb(min, max);
 }
+
+Aabb& Aabb::operator+=(const glm::vec3& p)
+{
+	min_ = glm::min(min_, p);
+	max_ = glm::max(max_, p);
+	return *this;
+}
+
+Aabb& Aabb::operator+=(const Aabb& bb) {
+	for (int i = 0; i < 3; ++i) {
+		if (bb.min_[i] < min_[i])
+			min_[i] = bb.min_[i];
+		if (bb.max_[i] > max_[i])
+			max_[i] = bb.max_[i];
+	}
+	return *this;
+}
+
 }

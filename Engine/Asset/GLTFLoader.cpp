@@ -533,7 +533,8 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
             buffer_pos = reinterpret_cast<const float *>(&(model_.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
             min_pos = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
             max_pos = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
-
+            CORE_DEBUG_ASSERT(min_pos != max_pos)
+            
             if (p.attributes.find("NORMAL") != p.attributes.end()) {
                 const tinygltf::Accessor& normAccessor = model_.accessors[p.attributes.find("NORMAL")->second];
                 const tinygltf::BufferView& normView = model_.bufferViews[normAccessor.bufferView];
@@ -563,7 +564,7 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
                 Vertex v = {};
                 v.position = glm::make_vec3(&buffer_pos[i * 3]);
 				v.normal = glm::normalize(buffer_normals ? glm::make_vec3(&buffer_normals[i * 3]) : glm::vec3(0.0f));
-				v.uv_x = buffer_texCoords? buffer_texCoords[i * 3] : 0.f;
+				v.uv_x = buffer_texCoords? buffer_texCoords[i * 2] : 0.f;
                 v.uv_y = buffer_texCoords? buffer_texCoords[i * 2 + 1] : 0.f;
                 if (buffer_colors) {
                     if (colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT) {

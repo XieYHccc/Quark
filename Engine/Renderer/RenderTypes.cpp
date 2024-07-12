@@ -37,10 +37,12 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<u32> indices, 
 
         submesh.aabb = {};
         for (size_t i = 0; i < submesh.count; i ++) {
-            const Vertex& v = vertices[submesh.startIndex + i];
+            const Vertex& v = vertices[indices[submesh.startIndex + i]];
             submesh.aabb += v.position;
         }
         aabb += submesh.aabb;
+
+        CORE_DEBUG_ASSERT(submesh.aabb.min() != submesh.aabb.max())
     }
 
 }

@@ -6,6 +6,7 @@ bool Frustum::check_shpere(const Aabb &aabb)
 {
 	glm::vec4 center(aabb.get_center(), 1.0f);
 	float radius = aabb.get_radius();
+	CORE_DEBUG_ASSERT(radius > 0)
 
 	for (const auto& plane : planes)
 		if (dot(plane, center) < -radius)
@@ -13,6 +14,7 @@ bool Frustum::check_shpere(const Aabb &aabb)
 
 	return true;
 }
+
 void Frustum::build(const glm::mat4 &inv_view_proj_mat)
 {
 	inv_view_proj_matrix_ = inv_view_proj_mat;

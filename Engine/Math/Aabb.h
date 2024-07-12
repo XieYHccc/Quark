@@ -10,29 +10,12 @@ public:
 
 public:
     // Add point to the bounding box.
-    Aabb& operator+=(const glm::vec3& p){
-        for (int i = 0; i < 3; ++i) {
-            if (p[i] < min_[i])
-                min_[i] = p[i];
-            if (p[i] > max_[i])
-                max_[i] = p[i]; 
-        }
-        return *this;
-    }
-    
+    Aabb& operator+=(const glm::vec3& p);
     // Add two bounding boxes.
-    Aabb& operator+=(const Aabb& bb) {
-        for (int i = 0; i < 3; ++i) {
-            if (bb.min_[i] < min_[i])
-                min_[i] = bb.min_[i];
-            if (bb.max_[i] > max_[i])
-                max_[i] = bb.max_[i];
-        }
-        return *this;
-    }
+    Aabb& operator+=(const Aabb& bb);
 
-    glm::vec3& min() { return min_; }
-    glm::vec3& max() { return max_; }
+    glm::vec3 min() { return min_; }
+    glm::vec3 max() { return max_; }
     glm::vec3 get_center() const { return 0.5f * (min_ + max_); }
     glm::vec3 get_extents() const { return 0.5f * (max_ - min_); }
     glm::vec3 get_corner(uint32_t i) const;

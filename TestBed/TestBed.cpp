@@ -73,8 +73,6 @@ void TestBed::Update(f32 deltaTime)
 void TestBed::Render(f32 deltaTime)
 {
     auto graphic_device = Application::Instance().GetGraphicDevice();
-    
-    auto start = std::chrono::system_clock::now();
 
     if (graphic_device->BeiginFrame(deltaTime)) {
         // 1. Begin a graphic command list
@@ -146,16 +144,9 @@ void TestBed::Render(f32 deltaTime)
         graphic_device->SubmitCommandList(cmd);
 
         // End this frame, submit Command list and pressent to screen
-        auto startFrame = std::chrono::system_clock::now();
         graphic_device->EndFrame(deltaTime);
-        auto endFrame = std::chrono::system_clock::now();
-        auto elapsedFrame = std::chrono::duration_cast<std::chrono::microseconds>(endFrame - startFrame);
-        CORE_LOGI("End Frame time : {} ms", elapsedFrame.count() / 1000.f)
     }
 
-    auto end = std::chrono::system_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    CORE_LOGI("Darw time : {} ms", elapsed.count() / 1000.f)
 }
 
 void TestBed::LoadAsset()

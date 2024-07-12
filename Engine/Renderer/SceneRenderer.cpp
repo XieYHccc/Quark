@@ -28,7 +28,7 @@ void SceneRenderer::UpdateDrawContext()
     const auto& mesh_transform_cmpts = scene_->GetComponents<scene::MeshCmpt, scene::TransformCmpt>();
     for (const auto [mesh_cmpt, transform_cmpt] : mesh_transform_cmpts) {
         auto mesh = mesh_cmpt->mesh;
-        for (auto& submesh : mesh->subMeshes) {
+        for (const auto& submesh : mesh->subMeshes) {
             RenderObject new_renderObject;
             new_renderObject.aabb = submesh.aabb;
             new_renderObject.firstIndex = submesh.startIndex;
