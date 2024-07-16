@@ -106,7 +106,7 @@ void SceneRenderer::Render(graphic::CommandList* cmd_list)
     BufferDesc scene_buffer_desc = {
         .domain = BufferMemoryDomain::CPU,
         .size = sizeof(SceneUniformBufferBlock),
-        .type = BufferType::UNIFORM_BUFFER
+        .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
     };
     Ref<Buffer> scene_uniform_buffer = device_->CreateBuffer(scene_buffer_desc);
 

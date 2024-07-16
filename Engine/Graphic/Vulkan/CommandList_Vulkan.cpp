@@ -298,12 +298,12 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
     if (currentPipeLine_ == nullptr) {
         CORE_LOGE("You must bind a pipeline before binding a uniform buffer.")
     }
-    if (buffer.GetDesc().type != BufferType::UNIFORM_BUFFER) {
-        CORE_LOGE("Buffer you are binding is not a uniform buffer")
+    if ((buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0) {
+        CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : The bounded buffer doesn't has BUFFER_USAGE_UNIFORM_BUFFER_BIT")
     }
     if ((currentPipeLine_->layout_->setLayoutMask & (1u << set)) == 0 ||
         (currentPipeLine_->layout_->setLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
-        CORE_LOGE("Set: {}, binding: {} is not a uniforom buffer.", set, binding)
+        CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : Set: {}, binding: {} is not a uniforom buffer.", set, binding)
     }
 #endif
 
@@ -333,12 +333,12 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
     if (currentPipeLine_ == nullptr) {
         CORE_LOGE("You must bind a pipeline before binding a storage buffer.")
     }
-    if (buffer.GetDesc().type == BufferType::STORAGE_BUFFER) {
-        CORE_LOGE("Buffer you are binding is not a storage buffer")
+    if ((buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT) == 0) {
+        CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : The bounded buffer doesn't has BUFFER_USAGE_STORAGE_BUFFER_BIT")
     }
     if ((currentPipeLine_->layout_->setLayoutMask & (1u << set)) == 0 ||
         (currentPipeLine_->layout_->setLayouts[set].storage_buffer_mask & (1u << binding))== 0) {
-        CORE_LOGE("Set: {}, binding: {} is not a storage buffer.", set, binding)
+        CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : Set: {}, binding: {} is not a storage buffer.", set, binding)
     }
 #endif
 
@@ -427,7 +427,7 @@ void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const
 {
     auto& internal_buffer = ToInternal(&buffer);
     CORE_DEBUG_ASSERT(internal_buffer.handle_ != VK_NULL_HANDLE)
-    CORE_DEBUG_ASSERT(buffer.GetDesc().type == BufferType::INDEX_BUFFER)
+    CORE_DEBUG_ASSERT((buffer.GetDesc().usageBits & BUFFER_USAGE_INDEX_BUFFER_BIT) != 0)
     
     auto& index_buffer_binding_state = bindingState_.indexBufferBindingState;
     if (internal_buffer.handle_ == index_buffer_binding_state.buffer &&
@@ -448,7 +448,7 @@ void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64
     auto& internal_buffer = ToInternal(&buffer);
     // TODO: add some state track for debuging here
     CORE_DEBUG_ASSERT(binding < VERTEX_BUFFER_MAX_NUM)
-    CORE_DEBUG_ASSERT(buffer.GetDesc().type == BufferType::VERTEX_BUFFER)
+    CORE_DEBUG_ASSERT(buffer.GetDesc().usageBits & BUFFER_USAGE_VERTEX_BUFFER_BIT)
 
     auto& vertex_buffer_binding_state = bindingState_.vertexBufferBindingState;
     if (vertex_buffer_binding_state.buffers[binding] == internal_buffer.handle_ &&

@@ -16,13 +16,13 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<u32> indices, 
     graphic::BufferDesc vert_buffer_desc = {
         .domain = graphic::BufferMemoryDomain::GPU,
         .size = vertexBufferSize,
-        .type = graphic::BufferType::VERTEX_BUFFER
+        .usageBits = graphic::BUFFER_USAGE_VERTEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT
     };
 
     graphic::BufferDesc index_buffer_desc = {
         .domain = graphic::BufferMemoryDomain::GPU,
         .size = indexBufferSize,
-        .type = graphic::BufferType::INDEX_BUFFER
+        .usageBits = graphic::BUFFER_USAGE_INDEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT
     };
 
     vertexBuffer = graphic_device->CreateBuffer(vert_buffer_desc, vertices.data());

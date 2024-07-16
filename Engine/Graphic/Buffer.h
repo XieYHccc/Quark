@@ -4,6 +4,16 @@
 
 namespace graphic {
 
+enum BufferUsageBits {
+    BUFFER_USAGE_TRANSFER_FROM_BIT = (1 << 0),
+    BUFFER_USAGE_TRANSFER_TO_BIT = (1 << 1),
+    BUFFER_USAGE_UNIFORM_BUFFER_BIT = (1 << 4),
+    BUFFER_USAGE_STORAGE_BUFFER_BIT = (1 << 5),
+    BUFFER_USAGE_INDEX_BUFFER_BIT = (1 << 6),
+    BUFFER_USAGE_VERTEX_BUFFER_BIT = (1 << 7),
+    BUFFER_USAGE_INDIRECT_BIT = (1 << 8),
+};
+
 enum class BufferType {
     STORAGE_BUFFER,
     VERTEX_BUFFER,
@@ -22,9 +32,10 @@ enum class BufferMemoryDomain {
 };
 
 struct BufferDesc {
-    u64 size = 0;
+    uint64_t size = 0;
     BufferMemoryDomain domain = BufferMemoryDomain::GPU;
-    BufferType type = BufferType::STORAGE_BUFFER;
+    // BufferType type = BufferType::STORAGE_BUFFER;
+    uint32_t usageBits = 0;
 };
 
 

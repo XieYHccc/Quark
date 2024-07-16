@@ -42,8 +42,9 @@ constexpr VkImageType ConvertImageType(ImageType type)
 }
 
 // This class fills up texture(sampled image)'s mipmap layout and copy informations
-// Designed for texture data uploading
+// Basically for compressed format texture' data uploading
 class TextureFormatLayout {
+public:
 	struct MipInfo {
 		size_t offset = 0;
 		uint32_t width = 1;
@@ -52,21 +53,32 @@ class TextureFormatLayout {
 
 		uint32_t num_block_x = 0;
 		uint32_t num_block_y = 0;
-		uint32_t total_block_size_x = 0; //  num_block_x * block_dim_x
-		uint32_t total_block_size_y = 0;
+		uint32_t row_length = 0;
+		uint32_t image_height = 0;
 	};
 
     TextureFormatLayout() = default;
     void SetUp1D();
-    void SetUp2D(VkFormat format, uint32_t width, uint32_t height, uint32_t array_layers, uint32_t mip_levels);
 
+    // Miplevels = 0 means generate mipmaps automatically
+    void SetUp2D(DataFormat format, uint32_t width, uint32_t height, uint32_t array_size_, uint32_t mip_levels);
+
+    uint32_t GetBlockDimX() const { return block_dim_x_; }
+    uint32_t GetBlockDimY() const { return block_dim_y_; }
+    uint32_t GetBlockStride() const { return block_stride_; }
+    uint32_t GetRequiredSize() const { return required_size_;}
+    uint32_t GetMipLevels() const { return mip_levels_; }
+    uint32_t GetArraySize() const { return array_size_; }
+    const MipInfo& GetMipInfo(uint32_t mip_level) const { return mips_[mip_level];}
+    
 private:
-    VkFormat format_;
-    VkImageType image_type_;
-    size_t required_size = 0; // required data source size
+    void FillMipInfos(uint32_t width, uint32_t height, uint32_t depth);
+    DataFormat format_;
+    ImageType image_type_;
+    size_t required_size_ = 0; // required data source size
     uint32_t block_stride_ = 1;
 	uint32_t mip_levels_ = 1;
-	uint32_t array_layers_ = 1;
+	uint32_t array_size_ = 1;
 	uint32_t block_dim_x_ = 1;
 	uint32_t block_dim_y_ = 1;
     MipInfo mips_[16];
@@ -81,7 +93,8 @@ public:
     virtual ~Image_Vulkan();
     
 private:
-    
+    // For static data uploading
+    void PrepareCopy(const ImageDesc& desc, const TextureFormatLayout& layout, const ImageInitData* init_data, Ref<Buffer> stage_buffer, std::vector<VkBufferImageCopy>& copys);
     Device_Vulkan* device_;
     VkImage handle_;
     VmaAllocation allocation_;

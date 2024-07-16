@@ -54,12 +54,16 @@ struct ImageDesc {
     SampleCount samples = SampleCount::SAMPLES_1;
     ImageLayout initialLayout = ImageLayout::UNDEFINED;
     u32 usageBits  = 0;
+    bool generateMipMaps = false;
 };
 
 struct ImageInitData {
     const void* data = nullptr;
-    uint32_t image_width = 0;
-    uint32_t image_heigt = 0;
+    
+    // For uncompressed format, row_lenght = width.
+    // For compressed format, there are maybe paddings in row.
+    uint32_t row_length = UINT32_MAX;  // num of pixels per row
+    uint32_t image_height = UINT32_MAX; // size of rows
 };
 
 class Image : public GpuResource{

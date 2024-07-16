@@ -109,8 +109,8 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     };
     
     ImageInitData init_data = {
-        .image_width = 32,
-        .image_heigt = 32,
+        .row_length = 32,
+        .image_height = 32,
         .data = pixels.data()
     };
 
@@ -122,8 +122,8 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     texture_desc.height = 1;
     
     init_data = {
-        .image_width = 1,
-        .image_heigt = 1,
+        .row_length = 1,
+        .image_height = 1,
         .data = &white
     };
 
@@ -217,7 +217,8 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     // Load images
     images.resize(model_.images.size());
     for (size_t image_index = 0; image_index < model_.images.size(); image_index++) {
-        images[image_index] = ParseImage(model_.images[image_index]);
+        Ref<Image> newImage = ParseImage(model_.images[image_index]);
+        images[image_index] = newImage;
     }
 
     // Load textures
@@ -253,7 +254,7 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     BufferDesc uniform_buffer_desc = {
         .domain = BufferMemoryDomain::CPU,
         .size = buffer_size,
-        .type = BufferType::UNIFORM_BUFFER
+        .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
     };
 
     scene_->materialUniformBuffer_ = device_->CreateBuffer(uniform_buffer_desc);
@@ -386,10 +387,11 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
             .usageBits = IMAGE_USAGE_SAMPLING_BIT | graphic::IMAGE_USAGE_CAN_COPY_TO_BIT,
             .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL
         };
-
+        
+        
         ImageInitData init_data = {
-            .image_width = desc.width,
-            .image_heigt = desc.height,
+            .row_length = desc.width,
+            .image_height = desc.height,
             .data = gltf_image.image.data()
         };
 
@@ -427,8 +429,8 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
             };
 
             ImageInitData init_data = {
-                .image_width = desc.width,
-                .image_heigt = desc.height,
+                .row_length = desc.width,
+                .image_height = desc.height,
                 .data = data
             };
 

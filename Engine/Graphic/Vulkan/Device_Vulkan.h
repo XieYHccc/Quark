@@ -57,16 +57,27 @@ private:
         void clear();   // Deferred destroy of resources that gpu is already finished with
     };
 
-    struct TransferCmd {    // only used once for static data transfer
-        Device_Vulkan* device;
-        VkCommandPool cmdPool;
-        VkCommandBuffer cmdBuffer;
-        // VkFence fence;
+    // Mostly for static data uploading with dedicated transfer queue
+    class CopyCmdAllocator {
+    public:
+        struct CopyCmd {
+            VkCommandPool cmdPool = VK_NULL_HANDLE;
+            VkCommandBuffer cmdBuffer = VK_NULL_HANDLE;
+            Ref<Buffer> stageBuffer = nullptr;
+            VkFence fence = VK_NULL_HANDLE;
+
+            bool isValid() const { return cmdBuffer; }
+        };
 
         void init(Device_Vulkan* device);
         void destroy();
-        VkCommandBuffer begin_immediate_submit();
-        void block_submit();
+        CopyCmd allocate(VkDeviceSize required_buffer_size);
+        void submit(CopyCmd cmd);
+
+    private:
+        Device_Vulkan* device_;
+        std::vector<CopyCmd> freeList_;
+        std::mutex locker_;
     };
 
 public:
@@ -109,7 +120,7 @@ public:
     u32 currentSwapChainImageIdx;
     PerFrameData frames[MAX_FRAME_NUM_IN_FLIGHT];
     CommandQueue queues[QUEUE_TYPE_MAX_ENUM];
-    TransferCmd transferCmd;
+    CopyCmdAllocator copyAllocator;
     bool recreateSwapchain;
 
     // Cached object

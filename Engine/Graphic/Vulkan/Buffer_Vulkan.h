@@ -7,6 +7,7 @@ namespace graphic {
 class Buffer_Vulkan : public Buffer {
     friend class Device_Vulkan;
     friend class CommandList_Vulkan;
+    friend class Image_Vulkan;
 public:
     ~Buffer_Vulkan();
     Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, const void* init_data = nullptr);

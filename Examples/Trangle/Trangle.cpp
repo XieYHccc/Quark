@@ -50,7 +50,7 @@ public:
         graphic::BufferDesc buffer_desc = {
             .domain = BufferMemoryDomain::GPU,
             .size = sizeof(Vertex) * vertexBufferData.size(),
-            .type = BufferType::VERTEX_BUFFER
+            .usageBits = BUFFER_USAGE_VERTEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT
         };
 
         // Create vertex buffer
@@ -69,7 +69,7 @@ public:
         graphic::BufferDesc buffer_desc = {
             .domain = BufferMemoryDomain::GPU,
             .size = indexBuffer.size() * sizeof(uint32_t),
-            .type = BufferType::INDEX_BUFFER
+            .usageBits = BUFFER_USAGE_INDEX_BUFFER_BIT | BUFFER_USAGE_TRANSFER_TO_BIT
         };
 
         // Create index buffer
@@ -233,7 +233,7 @@ public:
             BufferDesc uniform_buffer_desc = {
                 .domain = BufferMemoryDomain::CPU,
                 .size = sizeof(uniformBufferData),
-                .type = BufferType::UNIFORM_BUFFER
+                .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
             };
             Ref<Buffer> uniform_buffer = graphic_device->CreateBuffer(uniform_buffer_desc);
 

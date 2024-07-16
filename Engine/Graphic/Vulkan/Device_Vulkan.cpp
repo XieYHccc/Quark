@@ -2,6 +2,7 @@
 #define VMA_IMPLEMENTATION
 #include "Graphic/Vulkan/Device_Vulkan.h"
 #include "Core/Window.h"
+#include "Math/Util.h"
 #include "Events/EventManager.h"
 #include "Util/Hash.h"
 #include "Graphic/Vulkan/Shader_Vulkan.h"
@@ -145,58 +146,93 @@ void Device_Vulkan::PerFrameData::destroy()
     clear();
 }
 
-void Device_Vulkan::TransferCmd::init(Device_Vulkan* device)
+
+void Device_Vulkan::CopyCmdAllocator::init(Device_Vulkan *device)
 {
-    this->device = device;
-    VkDevice vk_device = device->vkDevice;
-
-    VkCommandPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    poolInfo.queueFamilyIndex = device->context->transferQueueIndex;
-    VK_CHECK(vkCreateCommandPool(vk_device, &poolInfo, nullptr, &cmdPool))
-
-
-    VkCommandBufferAllocateInfo commandBufferInfo = {};
-    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    commandBufferInfo.commandBufferCount = 1;
-    commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferInfo.commandPool = cmdPool;
-    VK_CHECK(vkAllocateCommandBuffers(vk_device, &commandBufferInfo, &cmdBuffer))
-
-    // VkFenceCreateInfo fenceInfo = {};
-    // fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    // VK_CHECK(vkCreateFence(vk_device, &fenceInfo, nullptr, &fence))
+    device_ = device;
 }
 
-void Device_Vulkan::TransferCmd::destroy()
-{
-    VkDevice vk_device = device->vkDevice;
-    //vkDestroyFence(vk_device, fence, nullptr);
-    vkDestroyCommandPool(vk_device, cmdPool, nullptr);
+void Device_Vulkan::CopyCmdAllocator::destroy()
+{   
+    // Make sure all allocated cmd are in free list
+    vkQueueWaitIdle(device_->queues[QUEUE_TYPE_ASYNC_TRANSFER].queue);
+    for (auto& x : freeList_)
+    {
+        vkDestroyCommandPool(device_->vkDevice, x.cmdPool, nullptr);
+        vkDestroyFence(device_->vkDevice, x.fence, nullptr);
+    }
+
+    freeList_.clear();
 }
 
-VkCommandBuffer Device_Vulkan::TransferCmd::begin_immediate_submit()
+Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::allocate(VkDeviceSize required_buffer_size)
 {
-    vkResetCommandPool(device->vkDevice, cmdPool, 0);
+    CopyCmd newCmd;
 
-    VkCommandBufferBeginInfo cmd_begin_info;
-    cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    cmd_begin_info.pNext = nullptr;
-    VK_CHECK(vkBeginCommandBuffer(cmdBuffer, &cmd_begin_info))
+    // Try to find a suitable staging buffer in free list
+    locker_.lock();
+    for (size_t i = 0; i < freeList_.size(); ++i) {
+        if (freeList_[i].stageBuffer->GetDesc().size > required_buffer_size) {
+            newCmd = std::move(freeList_[i]);
+            std::swap(freeList_[i], freeList_.back());
+            freeList_.pop_back();
+            break;
+        }
+    }
+    locker_.unlock();
 
-    return cmdBuffer;
+    if (!newCmd.isValid()) {    // No suitable staging buffer founded
+        // Create command pool
+        VkCommandPoolCreateInfo poolInfo = {};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        poolInfo.queueFamilyIndex = device_->context->transferQueueIndex;
+        VK_CHECK(vkCreateCommandPool(device_->vkDevice, &poolInfo, nullptr, &newCmd.cmdPool))
+
+        // Allocate command buffer
+        VkCommandBufferAllocateInfo commandBufferInfo = {};
+        commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        commandBufferInfo.commandBufferCount = 1;
+        commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        commandBufferInfo.commandPool = newCmd.cmdPool;
+        VK_CHECK(vkAllocateCommandBuffers(device_->vkDevice, &commandBufferInfo, &newCmd.cmdBuffer))
+
+        // Create fence
+        VkFenceCreateInfo fenceInfo = {};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        VK_CHECK(vkCreateFence(device_->vkDevice, &fenceInfo, nullptr, &newCmd.fence))
+
+        // Create staging buffer
+        BufferDesc bufferDesc;
+        bufferDesc.domain = BufferMemoryDomain::CPU;
+        bufferDesc.size = math::GetNextPowerOfTwo(required_buffer_size);
+        bufferDesc.size = std::max(bufferDesc.size, uint64_t(65536));
+        bufferDesc.usageBits = BUFFER_USAGE_TRANSFER_FROM_BIT;
+        newCmd.stageBuffer = device_->CreateBuffer(bufferDesc);
+    }
+
+    // Reset fence
+    VK_CHECK(vkResetFences(device_->vkDevice, 1, &newCmd.fence))
+
+    // Begin command buffer in valid state:
+	VK_CHECK(vkResetCommandPool(device_->vkDevice, newCmd.cmdPool, 0))
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    beginInfo.pInheritanceInfo = nullptr;
+    VK_CHECK(vkBeginCommandBuffer(newCmd.cmdBuffer, &beginInfo))
+    
+    return newCmd;
 }
 
-void Device_Vulkan::TransferCmd::block_submit()
+void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
 {
-    auto& vk_context = device->context;
+    VK_CHECK(vkEndCommandBuffer(cmd.cmdBuffer))
 
-    VK_CHECK(vkEndCommandBuffer(cmdBuffer))
     VkCommandBufferSubmitInfo cmd_submit_info = {};
     cmd_submit_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-    cmd_submit_info.commandBuffer = cmdBuffer;
+    cmd_submit_info.commandBuffer = cmd.cmdBuffer;
+
     VkSubmitInfo2 submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
     submit_info.commandBufferInfoCount = 1;
@@ -205,10 +241,16 @@ void Device_Vulkan::TransferCmd::block_submit()
     submit_info.pWaitSemaphoreInfos = nullptr;
     submit_info.signalSemaphoreInfoCount = 0;
     submit_info.pSignalSemaphoreInfos = nullptr;
-    vk_context->extendFunction.pVkQueueSubmit2KHR(vk_context->transferQueue, 1, &submit_info, nullptr);
-    vkQueueWaitIdle(vk_context->transferQueue); //TODO: try to use semaphores and do not block CPU
+    device_->context->extendFunction.pVkQueueSubmit2KHR(device_->context->transferQueue, 1, &submit_info, cmd.fence);
 
+    // wait the fence and push cmd back to free list
+    vkWaitForFences(device_->vkDevice, 1, &cmd.fence, VK_TRUE, 9999999999); //TODO: try to use semaphores and do not block CPU
+
+    std::scoped_lock lock(locker_);
+    freeList_.push_back(cmd);
 }
+
+
 void Device_Vulkan::OnWindowResize(const WindowResizeEvent &event)
 {
     frameBufferWidth = event.width;
@@ -246,8 +288,8 @@ bool Device_Vulkan::Init()
     // Create Swapchain
     ResizeSwapchain();
 
-    // Setup static data transfer command structure
-    transferCmd.init(this);
+    // Init copy cmds allocator
+    copyAllocator.init(this);
 
     // Register callback functions
     EventManager::Instance().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event);});
@@ -266,8 +308,8 @@ void Device_Vulkan::ShutDown()
     // Destory cached descriptor allocator
     cached_descriptorSetAllocator.clear();
 
-    // Destroy transfer cmd structure
-    transferCmd.destroy();
+    // Destroy copy allocator
+    copyAllocator.destroy();
 
     // Destroy frames data
     for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++) {

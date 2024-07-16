@@ -53,6 +53,9 @@ enum class DataFormat {
     D32_SFLOAT,
     D32_SFLOAT_S8_UINT,
     D24_UNORM_S8_UINT,
+
+    // Compressed image format
+    ETC2_R8G8B8A8_UNORM_BLOCK
 };
 
 enum class LogicOperation {
@@ -125,7 +128,7 @@ struct Scissor
     Extent extent;
 };
 
-constexpr u32 GetFormatStride(DataFormat format)
+inline u32 GetFormatStride(DataFormat format)
 {
     switch (format) {
     case DataFormat::R8G8B8A8_UNORM:
@@ -144,7 +147,7 @@ constexpr u32 GetFormatStride(DataFormat format)
     }
 }
 
-constexpr bool IsFormatSupportDepth (DataFormat format)
+inline bool IsFormatSupportDepth (DataFormat format)
 {
     switch (format) {
     case DataFormat::D24_UNORM_S8_UINT:
@@ -155,4 +158,23 @@ constexpr bool IsFormatSupportDepth (DataFormat format)
         return false;
     }
 }
+
+inline void GetFormatBlockDim(DataFormat format, uint32_t& block_dim_x, uint32_t& block_dim_y)
+{
+#define fmt(x, w, h)     \
+    case DataFormat::x: \
+        block_dim_x = w; \
+        block_dim_y = h; \
+        break
+    
+    switch (format) {
+    fmt(ETC2_R8G8B8A8_UNORM_BLOCK, 4, 4);
+    // non-block
+    default:
+        block_dim_x = 1;
+        block_dim_y = 1;
+        break;
+    }
+}
+
 }

@@ -23,10 +23,114 @@ constexpr VkAccessFlags2 ParseImageLayoutToMemoryAccess(ImageLayout layout)
     }
 }
 
+void TextureFormatLayout::SetUp2D(DataFormat format, uint32_t width, uint32_t height, uint32_t array_size, uint32_t mip_levels)
+{
+    format_ = format;
+    image_type_ = ImageType::TYPE_2D;
+    array_size_ = array_size;
+    mip_levels_ = mip_levels;
+    
+    FillMipInfos(width, height, 1);
+    
+}
+
+void TextureFormatLayout::FillMipInfos(uint32_t width, uint32_t height, uint32_t depth)
+{
+	block_stride_ = GetFormatStride(format_);
+	GetFormatBlockDim(format_, block_dim_x_, block_dim_y_);
+
+    // generate mipmaps
+	if (mip_levels_ == 0){
+        uint32_t size = unsigned(std::max(std::max(width, height), depth));
+	    uint32_t levels = 0;
+        while (size) {
+            levels++;
+            size >>= 1;
+        }
+        mip_levels_ = levels;
+    }
+
+	size_t offset = 0;
+	for (uint32_t mip = 0; mip < mip_levels_; mip++)
+	{
+		offset = (offset + 15) & ~15;
+
+		uint32_t blocks_x = (width + block_dim_x_ - 1) / block_dim_x_;
+		uint32_t blocks_y = (height + block_dim_y_ - 1) / block_dim_y_;
+		size_t mip_size = blocks_x * blocks_y * array_size_ * depth * block_stride_;
+
+		mips_[mip].offset = offset;
+		mips_[mip].num_block_x = blocks_x;
+		mips_[mip].num_block_y = blocks_y;
+		mips_[mip].row_length = blocks_x * block_dim_x_;
+		mips_[mip].image_height = blocks_y * block_dim_y_;
+		mips_[mip].width = width;
+		mips_[mip].height = height;
+		mips_[mip].depth = depth;
+
+		offset += mip_size;
+		width = std::max((width >> 1u), 1u);
+		height = std::max((height >> 1u), 1u);
+		depth = std::max((depth >> 1u), 1u);
+	}
+
+	required_size_ = offset;
+}
+
 Image_Vulkan::Image_Vulkan(const ImageDesc& desc)
     : Image(desc)
 {
 
+}
+
+void Image_Vulkan::PrepareCopy(const ImageDesc& desc, const TextureFormatLayout& layout, const ImageInitData* init_data, Ref<Buffer> stage_buffer, std::vector<VkBufferImageCopy>& copys)
+{
+    CORE_DEBUG_ASSERT(copys.empty())
+    CORE_DEBUG_ASSERT(stage_buffer->GetDesc().size >= layout.GetRequiredSize())
+
+    // Get mapped data ptr
+    void* mapped = stage_buffer->GetMappedDataPtr();
+
+    size_t index = 0;
+    // loop per mipmap level to copy data into staging buffer
+    for (size_t level = 0; level < layout.GetMipLevels(); level++) {
+        const auto& mip_info = layout.GetMipInfo(level);
+        size_t dst_row_size = mip_info.num_block_x * layout.GetBlockStride();
+        size_t dst_slice_size = dst_row_size * mip_info.num_block_y;
+
+        for (size_t layer = 0; layer < desc.arraySize; layer++, index++) {
+            const ImageInitData& sub_resouce = init_data[index];
+            size_t src_row_length = (sub_resouce.row_length != UINT32_MAX? sub_resouce.row_length : mip_info.row_length);
+            size_t src_image_height = (sub_resouce.image_height != UINT32_MAX? sub_resouce.image_height : mip_info.image_height);
+            
+            size_t src_row_size = ((src_row_length + layout.GetBlockDimX() - 1) / layout.GetBlockDimX()) * layout.GetBlockStride();
+            size_t src_slice_size = ((src_image_height + layout.GetBlockDimY() - 1) / layout.GetBlockDimY()) * src_row_size;
+
+            uint8_t* dst = static_cast<uint8_t*>(mapped) + mip_info.offset + dst_slice_size * desc.depth * layer;
+            const uint8_t* src = static_cast<const uint8_t*>(sub_resouce.data);
+
+            for (size_t z = 0; z < desc.depth; ++z) {
+                for (size_t y = 0; y < mip_info.num_block_y; ++y)
+                    std::memcpy(dst + dst_slice_size * z + dst_row_size * y,
+                        src + src_slice_size * z + src_row_size * y, dst_row_size );
+            }
+
+        }
+
+        // Fill copy structs
+        VkBufferImageCopy copy;
+        copy.bufferOffset = mip_info.offset;
+        copy.bufferRowLength = mip_info.row_length;
+        copy.bufferImageHeight = mip_info.image_height;
+        copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy.imageSubresource.mipLevel = level;
+        copy.imageSubresource.baseArrayLayer = 0;
+        copy.imageSubresource.layerCount = desc.arraySize;
+        copy.imageOffset = {0, 0, 0};
+        copy.imageExtent = {mip_info.width, mip_info.height, mip_info.depth};
+        copys.push_back(copy);
+
+    }
 }
 
 Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data)
@@ -139,48 +243,20 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
 
     VK_CHECK(vkCreateImageView(vk_device, &image_view_create_info, nullptr, &view_))
 
-    // Static data copy
+    // Static data copy & layout transition
     if (init_data != nullptr && (desc.usageBits & IMAGE_USAGE_SAMPLING_BIT)) {
-        CORE_DEBUG_ASSERT(create_info.arrayLayers == 1 ||create_info.arrayLayers == 6)
-        VkDeviceSize size = (VkDeviceSize)desc.width * desc.height * 4 * create_info.arrayLayers;
-        VkDeviceSize layerSize = size / create_info.arrayLayers;
-        switch (desc.format) {
-        case DataFormat::R16G16B16A16_SFLOAT:
-            size *= 2;
-            break;
-        case DataFormat::R8G8B8A8_UNORM:
-            size *= 1;
-            break;
-        default:
-            CORE_ASSERT("Format not handled yet!")
-            break;
-        }
+        CORE_DEBUG_ASSERT(desc.type == ImageType::TYPE_2D)
 
-        // Create staging buffer
-        VkBufferCreateInfo stage_buffer_create_info{};
-		stage_buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		stage_buffer_create_info.pNext = nullptr;
-		stage_buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		stage_buffer_create_info.size = size;
-		stage_buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        // Prepare the mipmap infomation for copying
+        TextureFormatLayout layout;
+        layout.SetUp2D(desc.format, desc.width, desc.height, desc.arraySize, desc.generateMipMaps? 0 : desc.mipLevels);
 
-		VmaAllocationCreateInfo stage_alloc_create_info{};
-		stage_alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
-		stage_alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        // Allocate a copy cmd with staging buffer
+        Device_Vulkan::CopyCmdAllocator::CopyCmd copyCmd = device_->copyAllocator.allocate(layout.GetRequiredSize());
 
-        VkBuffer stage_buffer;
-        VmaAllocation stage_allocation;
-        VmaAllocationInfo stage_alloc_info;
-        VK_CHECK(vmaCreateBuffer(device_->vmaAllocator, &stage_buffer_create_info, &stage_alloc_create_info, &stage_buffer, &stage_allocation, &stage_alloc_info))
-
-        void* mapped_data = stage_alloc_info.pMappedData;
-        for (size_t layer = 0; layer < create_info.arrayLayers; layer++) { // TODO: Support multiple mip levels copy
-            std::memcpy((uint8_t*)mapped_data + layerSize * layer, init_data[layer].data, layerSize);
-        }
-        
-        // Begin copy cmd
-        auto& transferCmd = device_->transferCmd;
-        VkCommandBuffer copy_cmd = transferCmd.begin_immediate_submit();
+        // Fill staging buffer and copy structs
+        std::vector<VkBufferImageCopy> copys;
+        PrepareCopy(desc, layout, init_data, copyCmd.stageBuffer, copys);
 
         // Transit image to transfer dst format
         VkImageMemoryBarrier2 barrier{};
@@ -205,20 +281,10 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
-        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copy_cmd, &dependencyInfo);
+        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.cmdBuffer, &dependencyInfo);
 
-        // Copy info
-        VkBufferImageCopy copy;
-    	copy.bufferOffset = 0;
-        copy.bufferRowLength = 0;
-        copy.bufferImageHeight = 0;
-        copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        copy.imageSubresource.mipLevel = 0; //TODO: Support multiple mips copy
-        copy.imageSubresource.baseArrayLayer =0;
-        copy.imageSubresource.layerCount = create_info.arrayLayers;
-        copy.imageOffset = { 0, 0, 0 };
-        copy.imageExtent = { desc.width, desc.height , desc.depth }; 
-        vkCmdCopyBufferToImage(copy_cmd, stage_buffer, handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        // Copy to image
+        vkCmdCopyBufferToImage(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).handle_, handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copys.size(), copys.data());
 
         // Transit image layout to required init layout
         std::swap(barrier.srcStageMask, barrier.dstStageMask);
@@ -226,15 +292,13 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         barrier.newLayout = ConvertImageLayout(desc_.initialLayout);
         barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = ParseImageLayoutToMemoryAccess(desc.initialLayout);
-        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copy_cmd, &dependencyInfo);
+        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.cmdBuffer, &dependencyInfo);
 
         // submit and block cpu
-        transferCmd.block_submit();
-        vmaDestroyBuffer(device->vmaAllocator, stage_buffer, stage_allocation);
+        device_->copyAllocator.submit(copyCmd);
     }
     else if (desc.initialLayout != ImageLayout::UNDEFINED) {    // Transit layout to required init layout
-        auto& transferCmd = device_->transferCmd;
-        VkCommandBuffer cmd = transferCmd.begin_immediate_submit();
+        Device_Vulkan::CopyCmdAllocator::CopyCmd transitCmd = device_->copyAllocator.allocate(0);
 
         VkImageMemoryBarrier2 barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -257,13 +321,16 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         else {
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         }
+
         VkDependencyInfo dependencyInfo = {};
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
-        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
-        transferCmd.block_submit();
+        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(transitCmd.cmdBuffer, &dependencyInfo);
+
+        device_->copyAllocator.submit(transitCmd);
     }
+    
     CORE_LOGD("Vulkan image created")
 }
 
