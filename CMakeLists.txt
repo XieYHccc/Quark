@@ -20,10 +20,8 @@ add_subdirectory(External)
 set(EXTERNAL_PATH ${CMAKE_SOURCE_DIR}/External) # path to dependencies
 
 set(GLAD_SOURCE_DIR ${EXTERNAL_PATH}/glad-4.6)
-set(FASTGLTF_SOURCE_DIR ${EXTERNAL_PATH}/fastgltf)
 
 # add_subdirectory(${GLAD_SOURCE_DIR})
-add_subdirectory(${FASTGLTF_SOURCE_DIR})
 
 # Find glslang
 find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)

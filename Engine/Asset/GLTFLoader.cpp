@@ -380,12 +380,13 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
             .width = static_cast<u32>(gltf_image.width),
             .height  = static_cast<u32>(gltf_image.height),
             .depth = 1u,
-            .arraySize = 1,     // only support 1 layer and 1 mipmap level for embedded image
+            .arraySize = 1,     // Only support 1 layer and 1 mipmap level for embedded image
             .mipLevels = 1,
             .format = DataFormat::R8G8B8A8_UNORM,
             .type = ImageType::TYPE_2D,
-            .usageBits = IMAGE_USAGE_SAMPLING_BIT | graphic::IMAGE_USAGE_CAN_COPY_TO_BIT,
-            .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL
+            .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT,
+            .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+            .generateMipMaps = true // Generate mipmaps for embedded image
         };
         
         
@@ -398,6 +399,8 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
         return device_->CreateImage(desc, &init_data);
     }
     else { // Load image from uri //TODO: Support other image format like ktx...
+        CORE_DEBUG_ASSERT(0);
+
         std::string image_uri = filePath_ + "/" +gltf_image.uri;
         bool is_ktx = false;
         if (image_uri.find_last_of(".") != std::string::npos) {

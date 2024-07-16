@@ -34,21 +34,25 @@ void TextureFormatLayout::SetUp2D(DataFormat format, uint32_t width, uint32_t he
     
 }
 
+uint32_t TextureFormatLayout::GeneratedMipCount(uint32_t width, uint32_t height, uint32_t depth)
+{
+    uint32_t size = unsigned(std::max(std::max(width, height), depth));
+    uint32_t levels = 0;
+    while (size) {
+        levels++;
+        size >>= 1;
+    }
+    return levels;
+}
+
 void TextureFormatLayout::FillMipInfos(uint32_t width, uint32_t height, uint32_t depth)
 {
 	block_stride_ = GetFormatStride(format_);
 	GetFormatBlockDim(format_, block_dim_x_, block_dim_y_);
 
     // generate mipmaps
-	if (mip_levels_ == 0){
-        uint32_t size = unsigned(std::max(std::max(width, height), depth));
-	    uint32_t levels = 0;
-        while (size) {
-            levels++;
-            size >>= 1;
-        }
-        mip_levels_ = levels;
-    }
+	if (mip_levels_ == 0)
+        mip_levels_ = GeneratedMipCount(width, height, depth);
 
 	size_t offset = 0;
 	for (uint32_t mip = 0; mip < mip_levels_; mip++)
@@ -133,6 +137,97 @@ void Image_Vulkan::PrepareCopy(const ImageDesc& desc, const TextureFormatLayout&
     }
 }
 
+void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
+{
+
+    // Generate mipmap layout
+    TextureFormatLayout layout;
+    layout.SetUp2D(desc.format, desc.width, desc.height, desc.arraySize, 0);
+
+    // Transit the base mip level to transfer src layout
+    {
+        VkImageMemoryBarrier2 barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        barrier.pNext = nullptr;
+        barrier.image = handle_;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier.srcAccessMask = 0;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer =0;
+        barrier.subresourceRange.layerCount = desc.arraySize;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        VkDependencyInfo dependencyInfo = {};
+        dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dependencyInfo.imageMemoryBarrierCount = 1;
+        dependencyInfo.pImageMemoryBarriers = &barrier;
+        device_->context->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+    }
+
+    // Generate mipmaps
+    for (size_t level = 1; level < layout.GetMipLevels(); ++level) {
+        VkImageBlit blit = {};
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.layerCount = desc.arraySize;
+        blit.srcSubresource.mipLevel = level - 1;
+        blit.srcOffsets[1].x = layout.GetMipInfo(level - 1).width;
+        blit.srcOffsets[1].y = layout.GetMipInfo(level - 1).height;
+        blit.srcOffsets[1].z = desc.depth;
+
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.layerCount = desc.arraySize;
+        blit.dstSubresource.mipLevel = level;
+        blit.dstOffsets[1].x = layout.GetMipInfo(level).width;
+        blit.dstOffsets[1].y = layout.GetMipInfo(level).height;
+        blit.dstOffsets[1].z = desc.depth;
+
+        // Transit the dst mip level to transfer dst layout
+        VkImageMemoryBarrier2 barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        barrier.pNext = nullptr;
+        barrier.image = handle_;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+        barrier.srcAccessMask = 0;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = level;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = desc.arraySize;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        VkDependencyInfo dependencyInfo = {};
+        dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dependencyInfo.imageMemoryBarrierCount = 1;
+        dependencyInfo.pImageMemoryBarriers = &barrier;
+
+        device_->context->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+
+        // Blit image
+        vkCmdBlitImage(cmd, handle_, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+
+        // Transit the dst mip level to transfer src layout
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+        device_->context->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+    }
+}
+
 Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data)
     : Image(desc), device_(device)
 {
@@ -152,7 +247,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
     create_info.extent.width = desc.width;
     create_info.extent.height = desc.height;
     create_info.extent.depth = desc.depth;
-    create_info.mipLevels = desc.mipLevels;
+    create_info.mipLevels = desc.generateMipMaps? TextureFormatLayout::GeneratedMipCount(desc.width, desc.height, desc.depth) : desc.mipLevels;
     create_info.arrayLayers = desc.arraySize;
     create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -249,7 +344,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
 
         // Prepare the mipmap infomation for copying
         TextureFormatLayout layout;
-        layout.SetUp2D(desc.format, desc.width, desc.height, desc.arraySize, desc.generateMipMaps? 0 : desc.mipLevels);
+        layout.SetUp2D(desc.format, desc.width, desc.height, desc.arraySize, desc.generateMipMaps? 1 : desc.mipLevels);
 
         // Allocate a copy cmd with staging buffer
         Device_Vulkan::CopyCmdAllocator::CopyCmd copyCmd = device_->copyAllocator.allocate(layout.GetRequiredSize());
@@ -271,8 +366,8 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = create_info.mipLevels;
-        barrier.subresourceRange.baseArrayLayer =0;
+        barrier.subresourceRange.levelCount = layout.GetMipLevels();
+        barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = create_info.arrayLayers;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -285,13 +380,21 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
 
         // Copy to image
         vkCmdCopyBufferToImage(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).handle_, handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copys.size(), copys.data());
+        
+        // Generate mipmaps?
+        if (desc.generateMipMaps) {
+            GenerateMipMap(desc, copyCmd.cmdBuffer); // After generating, image is in the layout of VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        }
 
         // Transit image layout to required init layout
-        std::swap(barrier.srcStageMask, barrier.dstStageMask);
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = ConvertImageLayout(desc_.initialLayout);
-        barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; //TODO: Parse to correct stage
         barrier.dstAccessMask = ParseImageLayoutToMemoryAccess(desc.initialLayout);
+        barrier.subresourceRange.levelCount = create_info.mipLevels;
+        barrier.oldLayout = desc.generateMipMaps? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = ConvertImageLayout(desc_.initialLayout);
+
         vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.cmdBuffer, &dependencyInfo);
 
         // submit and block cpu

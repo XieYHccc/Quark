@@ -123,7 +123,7 @@ void TestBed::Render(f32 deltaTime)
         scene_renderer->Render(cmd);
         auto geometry_end = std::chrono::system_clock::now();
         auto geometry_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(geometry_end - geometry_start);
-        CORE_LOGI("Geometry time : {} ms", geometry_elapsed.count() / 1000.f)
+        LOGI("Geometry time : {} ms", geometry_elapsed.count() / 1000.f)
 
         cmd->EndRenderPass();
 

@@ -42,7 +42,7 @@ constexpr VkImageType ConvertImageType(ImageType type)
 }
 
 // This class fills up texture(sampled image)'s mipmap layout and copy informations
-// Basically for compressed format texture' data uploading
+// Designed for copy and blit operations
 class TextureFormatLayout {
 public:
 	struct MipInfo {
@@ -71,6 +71,7 @@ public:
     uint32_t GetArraySize() const { return array_size_; }
     const MipInfo& GetMipInfo(uint32_t mip_level) const { return mips_[mip_level];}
     
+    static uint32_t GeneratedMipCount(uint32_t width, uint32_t height, uint32_t depth);
 private:
     void FillMipInfos(uint32_t width, uint32_t height, uint32_t depth);
     DataFormat format_;
@@ -93,8 +94,9 @@ public:
     virtual ~Image_Vulkan();
     
 private:
-    // For static data uploading
     void PrepareCopy(const ImageDesc& desc, const TextureFormatLayout& layout, const ImageInitData* init_data, Ref<Buffer> stage_buffer, std::vector<VkBufferImageCopy>& copys);
+    void GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd);
+
     Device_Vulkan* device_;
     VkImage handle_;
     VmaAllocation allocation_;
