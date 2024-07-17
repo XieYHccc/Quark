@@ -49,18 +49,18 @@ template<typename T>
 class MakeSingletonPtr
 {
 public:
-	QK_FORCE_INLINE static T& Singleton()
+	QK_FORCE_INLINE static T* Singleton()
 	{
-		return *m_global;
+		return m_global;
 	}
 
 	template<typename... TArgs>
-	static T& CreateSingleton(TArgs... args)
+	static T* CreateSingleton(TArgs... args)
 	{
-		QK_ASSERT(m_global == nullptr);
+		CORE_ASSERT(m_global == nullptr);
 		m_global = new T(args...);
 
-		return *m_global;
+		return m_global;
 	}
 
 	static void FreeSingleton()

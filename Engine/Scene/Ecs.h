@@ -17,7 +17,7 @@ public:
     virtual ~Component() {};
     Entity* GetEntity() { return entity_; }
 
-private:
+protected:
     Entity* entity_;
 };
 

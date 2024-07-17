@@ -1,6 +1,6 @@
 #include "Core/Application.h"
 
-#include "Core/KeyCodes.h"
+#include "Core/KeyMouseCodes.h"
 #include "Core/Window.h"
 #include "Core/Input.h"
 #include "Events/EventManager.h"
@@ -22,17 +22,21 @@ Application::Application(const std::string& title, const std::string& root, int 
     // Init logger
     Logger::Init();
 
-    // Init run time modules
+    // Init event manager
     EventManager::Instance().Init();
 
-    // Init window
+    // Init window 
     Window::Create();
     Window::Instance()->Init(title,false,  width, height);
+    
+    // Init input manager
+    InputManager::CreateSingleton();
+    InputManager::Singleton()->Init();
 
-    // Init AssetManager
+    // Init asset manager
     AssetManager::Instance().Init();
 
-    // Init Graphic Device
+    // Init graphic device
 #ifdef  USE_VULKAN_DRIVER
     m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
     m_GraphicDevice->Init();
@@ -51,7 +55,11 @@ Application::~Application() {
     m_GraphicDevice->ShutDown();
 #endif
 
-    // destroy window
+    // Destroy InputManager
+    InputManager::Singleton()->Finalize();
+    InputManager::FreeSingleton();
+
+    // Destroy window
     Window::Instance()->Finalize();
     Window::Destroy();
 
@@ -62,23 +70,18 @@ Application::~Application() {
 void Application::Run()
 {
     while (m_Status.isRunning) {
-        auto start = std::chrono::system_clock::now();
+        f64 start_frame = m_Timer.ElapsedMillis();
 
-        m_Status.lastFrameTime = m_Timer.Elapsed();
         // Update each moudule (including processing inputs)
-        Update(m_Timer.Elapsed() - m_Status.lastFrameTime);
+        Update(m_Status.lastFrameDuration);
 
         // Render Scene
-        Render(m_Timer.Elapsed() - m_Status.lastFrameTime);
+        Render(m_Status.lastFrameDuration);
 
-        // Swap buffers
-        Window::Instance()->Update();
-
+        // Dispatch events
         EventManager::Instance().DispatchEvents();
 
-        auto end = std::chrono::system_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        // CORE_LOGI("Frame time : {} ms", elapsed.count() / 1000.f)
+        m_Status.lastFrameDuration = m_Timer.ElapsedMillis() - start_frame;
     }
 }
 

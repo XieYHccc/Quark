@@ -1,6 +1,7 @@
 #pragma once
 #include <GLFW/glfw3.h>
 #include "Core/Window.h"
+#include "Platform/MacOS/InputManagerGLFW.h"
 
 class WindowGLFW : public Window {
 public:
@@ -10,8 +11,6 @@ public:
     virtual void Init(const std::string& title, bool is_fullscreen, u32 width, u32 height) override final;
     virtual void Finalize() override final;
 
-    virtual void Update() override final;
-
     virtual u32 GetWidth() const override final { return width_; }
     virtual u32 GetHeight() const override final { return height_; }
     virtual u32 GetFrambufferWidth() const override final;
@@ -19,8 +18,9 @@ public:
     virtual void* GetNativeWindow() override final { return window_; }
     
 private:
-    GLFWwindow* window_;
-    GLFWmonitor* monitor_;
+    GLFWwindow* window_ = nullptr;
+    GLFWmonitor* monitor_ = nullptr;
+
     bool isFullscreen_;
     std::string title_;
     u32 width_;

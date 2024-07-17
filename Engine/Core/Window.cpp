@@ -2,7 +2,7 @@
 #include "Core/Window.h"
 
 #ifdef QK_PLATFORM_MACOS
-#include "Platform/MacOS//WindowGLFW.h"
+#include "Platform/MacOS/WindowGLFW.h"
 #endif
 
 Window* Window::singleton_ = nullptr;

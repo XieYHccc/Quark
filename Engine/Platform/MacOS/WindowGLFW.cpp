@@ -3,11 +3,12 @@
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
+#include "Platform/MacOS/InputManagerGLFW.h"
 
 WindowGLFW::WindowGLFW()
 {
-}
 
+}
 
 void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u32 height)
 {
@@ -62,7 +63,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     // Set GLFW callbacks
     glfwSetWindowSizeCallback(window_, [](GLFWwindow* window, int width, int height) 
     {
-        auto owner = *(WindowGLFW*)glfwGetWindowUserPointer(window);
+        auto& owner = *(WindowGLFW*)glfwGetWindowUserPointer(window);
         owner.width_ = width;
         owner.height_ = height;
         int frame_width = 0;
@@ -79,6 +80,9 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     
     glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode, int action, int mods)
     {
+        // Record Key status
+        ((InputManagerGLFW*)InputManager::Singleton())->RecordKey(key, action);
+
         switch (action) {
         case GLFW_PRESS: {
             EventManager::Instance().ImmediateTrigger(KeyPressedEvent(key, 0));
@@ -96,22 +100,16 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     });
 
     glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos)
-    {
+    {   
+        // Record Mouse position
+        ((InputManagerGLFW*)InputManager::Singleton())->RecordMousePosition(xpos, ypos);
+
         EventManager::Instance().ImmediateTrigger(MouseMovedEvent((float)xpos, (float)ypos));
     });
 
     glfwSetScrollCallback(window_, [](GLFWwindow* window, double xOffset, double yOffset) {
         EventManager::Instance().ImmediateTrigger(MouseScrolledEvent((float)xOffset, (float)yOffset));
     });
-
-    glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xPos, double yPos) {
-        EventManager::Instance().ImmediateTrigger(MouseMovedEvent((float)xPos, (float)yPos));
-    });
-
-#ifdef USE_OPENGL_DRIVER
-    // Configure global OpenGl state
-    glEnable(GL_DEPTH_TEST);
-#endif
 
 }
 
@@ -120,13 +118,6 @@ void WindowGLFW::Finalize()
     glfwTerminate();
 }
 
-void WindowGLFW::Update()
-{
-    // swap buffers
-    glfwSwapBuffers(window_);
-    // handle events
-    glfwPollEvents();
-}
 
 u32 WindowGLFW::GetFrambufferWidth() const
 {   

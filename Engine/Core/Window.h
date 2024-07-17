@@ -14,8 +14,6 @@ public:
 
     virtual void Init(const std::string& title, bool is_fullscreen, u32 width, u32 height) = 0;
     virtual void Finalize() = 0;
-    // update per frame
-    virtual void Update() = 0;
 
     virtual u32 GetWidth() const = 0;
 	virtual u32 GetHeight() const = 0;

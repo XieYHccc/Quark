@@ -1,6 +1,6 @@
 #pragma once
-#include "Core/KeyCodes.h"
-#include "Core/MouseCodes.h"
+#include "Core/KeyMouseCodes.h"
+#include "Util/Singleton.h"
 
 // TODO: Design a efficient input system
 struct MousePosition 
@@ -9,20 +9,54 @@ struct MousePosition
     float y_pos;
 };
 
-class Input {
-public:
-
-    static bool IsKeyPressed(Keycode key);
-    static bool IsKeyReleased(Keycode key);
-    static bool IsMousePressed(MouseCode button);
-
-    static float GetMouseX();
-    static float GetMouseY();
-
-public:
-    static MousePosition GetMousePosition();
-
-    static bool first_mouse;
-    static MousePosition last_position;
-
+enum class KeyAction {
+    KEY_RELEASED = 0,
+    KEY_PRESSED = 1,
+    KEY_KEEP_PRESSED = 2,
 };
+
+// class Input {
+// public:
+
+//     static bool IsKeyPressed(Keycode key);
+//     static bool IsKeyReleased(Keycode key);
+//     static bool IsMousePressed(MouseCode button);
+
+//     static float GetMouseX();
+//     static float GetMouseY();
+
+// public:
+//     static MousePosition GetMousePosition();
+
+//     static bool first_mouse;
+//     static MousePosition last_position;
+
+// };
+
+class InputManager :public MakeSingletonPtr<InputManager> {
+public:
+    InputManager() = default;
+    virtual ~InputManager() = default;
+    
+    virtual void Init() = 0; // Init mouse position
+    virtual void Update() = 0;  // pool input event
+    virtual void Finalize() = 0;
+
+    bool IsKeyPressed(Keycode key, bool repeat) const;
+    bool IsKeyReleased(Keycode key) const;
+    bool IsKeyKeepPressed(Keycode key) const;
+
+    bool IsMousePressed(MouseCode button) const;
+    bool IsMouseReleased(MouseCode button) const;
+    bool IsMouseKeepPressed(MouseCode button) const;
+
+    MousePosition GetMousePosition() const;
+protected:
+    KeyAction keyMouseStatus_[512] = {};
+    MousePosition mousePosition_ = {};
+};
+
+// Implemmented in platform specific code
+template <>
+template <>
+InputManager* MakeSingletonPtr<InputManager>::CreateSingleton();

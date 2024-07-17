@@ -6,9 +6,9 @@
 namespace scene {
 
 CameraCmpt::CameraCmpt(Entity* entity, float _aspect, float _fov, float _zNear, float _zFar)
-    : Component(entity), aspect(_aspect), fov(_fov), zNear(_zNear), zFar(_zFar)
+    : Component(entity), aspect(_aspect), fov(_fov), zNear(_zNear), zFar(_zFar), transform_(nullptr)
 {
-    transform_ = entity->GetComponent<TransformCmpt>();
+    transform_ = entity_->GetComponent<TransformCmpt>();
 }
 
 glm::mat4 CameraCmpt::GetViewMatrix() const 

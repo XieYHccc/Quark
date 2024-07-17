@@ -1,4 +1,5 @@
 #include "TestBed/TestBed.h"
+#include "Scene/Components/MoveControlCmpt.h"
 #include <glm/gtx/quaternion.hpp>
 #include <Engine/Asset/GLTFLoader.h>
 #include <Engine/Scene/Components/TransformCmpt.h>
@@ -28,45 +29,15 @@ TestBed::~TestBed()
 
 void TestBed::Update(f32 deltaTime)
 {
+    // Poll Inputs
+    InputManager::Singleton()->Update();
+    
+    // Update camera movement
     auto* cam = scene->GetCamera();
-    auto* camTrans = (cam->GetEntity()->GetComponent<scene::TransformCmpt>());
-    float moveSpeed = 30;
-    float mouseSensitivity = 0.3;
+    auto* camMoveCmpt = cam->GetEntity()->GetComponent<scene::MoveControlCmpt>();
+    camMoveCmpt->Update(deltaTime);
 
-    // 1. process mouse inputs
-    MousePosition pos = Input::GetMousePosition();
-
-    if (Input::first_mouse) {
-        Input::last_position = pos;
-        Input::first_mouse = false;
-    }
-
-    float xoffset = pos.x_pos - Input::last_position.x_pos;
-    float yoffset = pos.y_pos - Input::last_position.y_pos;
-
-    pitch -= (glm::radians(yoffset) * mouseSensitivity);
-    yaw -= (glm::radians(xoffset) * mouseSensitivity);
-    // make sure that when pitch is out of bounds, screen doesn't get flipped
-    pitch = std::clamp(pitch, -1.5f, 1.5f);
-
-    Input::last_position = pos;
-
-    // 2. process keyboard inputs
-    glm::vec3 move {0.f};
-    if (Input::IsKeyPressed(W))
-        move.z = -1;
-    if (Input::IsKeyPressed(S))
-        move.z = 1;
-    if (Input::IsKeyPressed(A))
-        move.x = -1;
-    if (Input::IsKeyPressed(D))
-        move.x = 1;
-    move = move * moveSpeed * 0.01f;
-
-    // 3.update camera's transform
-    camTrans->SetEuler(glm::vec3(pitch, yaw, 0));
-    glm::mat4 rotationMatrix = glm::toMat4(camTrans->GetQuat());
-    camTrans->SetPosition(camTrans->GetPosition() + glm::vec3(rotationMatrix * glm::vec4(move, 0.f)));
+    // Update scene
     scene->Update();
 }   
 
@@ -220,6 +191,7 @@ void TestBed::SetUpCamera()
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
     auto* cam_node = scene->CreateNode("Main camera", nullptr);
     cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    cam_node->GetEntity()->AddComponent<scene::MoveControlCmpt>(50, 0.3);
 
     // Default position
     auto* transform_cmpt = cam_node->GetEntity()->GetComponent<scene::TransformCmpt>();

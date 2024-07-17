@@ -32,8 +32,7 @@ protected:
     {
         f32 fps { 0 };
         bool isRunning { true };
-        f64 lastFrameTime {0};
-
+        f64 lastFrameDuration { 0 };
     };
 
     Timer m_Timer;

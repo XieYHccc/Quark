@@ -17,14 +17,24 @@ public:
         m_Start = std::chrono::high_resolution_clock::now();
     }
 
-    f64 Elapsed()
+    QK_FORCE_INLINE f64 Elapsed()
     {
-        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - m_Start).count() * 0.001f * 0.001f * 0.001f;
+        return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - m_Start).count();
+    }
+    
+    QK_FORCE_INLINE f64 ElapsedMicros()
+    {
+        return Elapsed() / 1000.0f;
     }
 
-    f64 ElapsedMillis()
+    QK_FORCE_INLINE f64 ElapsedMillis()
     {
-        return Elapsed() * 1000.0f;
+        return ElapsedMicros() / 1000.0f;
+    }
+
+    QK_FORCE_INLINE f64 ElapsedSeconds()
+    {
+        return ElapsedMillis() / 1000.0f;
     }
 
 private:
