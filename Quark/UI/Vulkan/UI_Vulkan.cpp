@@ -75,6 +75,7 @@ void UI_Vulkan::Init(graphic::Device *device)
 
 void UI_Vulkan::Finalize()
 {
+    vkDeviceWaitIdle(device_->vkDevice);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
