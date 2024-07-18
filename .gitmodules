@@ -1,12 +1,12 @@
-[submodule "external/glfw"]
-	path = external/glfw
+[submodule "ThirdParty/glfw"]
+	path = ThirdParty/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "external/glm"]
-	path = external/glm
+[submodule "ThirdParty/glm"]
+	path = ThirdParty/glm
 	url = git@github.com:g-truc/glm.git
-[submodule "external/spdlog"]
-	path = external/spdlog
+[submodule "ThirdParty/spdlog"]
+	path = ThirdParty/spdlog
 	url = https://github.com/gabime/spdlog.git
-[submodule "external/vma"]
-	path = external/vma
+[submodule "ThirdParty/vma"]
+	path = ThirdParty/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
