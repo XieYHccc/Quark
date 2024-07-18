@@ -15,9 +15,9 @@ find_package(Vulkan REQUIRED)
 ################################################################################
 # Third Party                                                                  #
 ################################################################################
-add_subdirectory(External)
+add_subdirectory(ThirdParty)
 
-set(EXTERNAL_PATH ${CMAKE_SOURCE_DIR}/External) # path to dependencies
+set(EXTERNAL_PATH ${CMAKE_SOURCE_DIR}/ThirdParty) # path to dependencies
 
 set(GLAD_SOURCE_DIR ${EXTERNAL_PATH}/glad-4.6)
 
@@ -42,7 +42,7 @@ endif()
 ################################################################################
 # Quark                                                                        #
 ################################################################################
-add_subdirectory(./Engine)
+add_subdirectory(./Quark)
 #add_subdirectory(./SandBox)
 add_subdirectory(./TestBed)
 add_subdirectory(./Examples)

@@ -30,7 +30,7 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<u32> indices, 
 
     // Calculate mesh's aabb from submesh's aabb
     for (auto& submesh : subMeshes) {
-        if (submesh.aabb.is_valid()) {
+        if (submesh.aabb.IsValid()) {
             aabb += submesh.aabb;
             continue;
         }
@@ -42,7 +42,7 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<u32> indices, 
         }
         aabb += submesh.aabb;
 
-        CORE_DEBUG_ASSERT(submesh.aabb.min() != submesh.aabb.max())
+        CORE_DEBUG_ASSERT(submesh.aabb.Min() != submesh.aabb.Max())
     }
 
 }

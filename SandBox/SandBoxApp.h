@@ -1,7 +1,7 @@
 #pragma once
-#include <Engine/Core/Application.h>
-#include <Engine/Graphics/Vulkan/Image.h>
-#include <Engine/Renderer/Passes/GeometryPass.h>
+#include <Quark/Core/Application.h>
+#include <Quark/Graphics/Vulkan/Image.h>
+#include <Quark/Renderer/Passes/GeometryPass.h>
 
 class Scene;
 

@@ -1,7 +1,7 @@
 #pragma once
-#include <Engine/Core/Application.h>
-#include <Engine/Scene/Scene.h>
-#include <Engine/Renderer/SceneRenderer.h>
+#include <Quark/Core/Application.h>
+#include <Quark/Scene/Scene.h>
+#include <Quark/Renderer/SceneRenderer.h>
 
 class TestBed : public Application  {  
 public:

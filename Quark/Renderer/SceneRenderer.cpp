@@ -58,7 +58,7 @@ void SceneRenderer::UpdateDrawContext()
 	sceneData.viewproj = sceneData.proj * sceneData.view;
 
     // Update frustum
-    frustum_.build(glm::inverse(sceneData.viewproj));
+    frustum_.Build(glm::inverse(sceneData.viewproj));
 }
 
 void SceneRenderer::Render(graphic::CommandList* cmd_list)
@@ -78,8 +78,8 @@ void SceneRenderer::Render(graphic::CommandList* cmd_list)
 
     // Frustum culling
     auto is_visible = [&](const RenderObject& obj) {
-        math::Aabb transformed_aabb = obj.aabb.transform(obj.transform);
-        if (frustum_.check_shpere(transformed_aabb))
+        math::Aabb transformed_aabb = obj.aabb.Transform(obj.transform);
+        if (frustum_.CheckSphere(transformed_aabb))
             return true;
         else
             return false;
