@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Scene/Ecs.h"
 #include "Scene/Components/TransformCmpt.h"
 

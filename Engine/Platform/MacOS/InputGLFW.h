@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include <GLFW/glfw3.h>
 
-class InputManagerGLFW : public InputManager {
+class InputGLFW : public Input {
 public:
     void Init() override;
     void Update() override;
@@ -10,9 +10,9 @@ public:
 
 private:
     friend class WindowGLFW;
-    friend class MakeSingletonPtr<InputManager>;
+    friend class MakeSingletonPtr<Input>;
 
-    InputManagerGLFW() = default;
+    InputGLFW() = default;
 
     void RecordKey(int key, int action);
     void RecordMousePosition(float xpos, float ypos);

@@ -222,7 +222,7 @@ public:
             auto cmd = graphic_device->BeginCommandList();
 
             // 2. Query swapchain image and add layout transition barrier
-            auto swap_chain_image = graphic_device->GetSwapChainImage();
+            auto swap_chain_image = graphic_device->GetPresentImage();
 
             graphic::PipelineImageBarrier swapchain_image_barrier{
                 .image = swap_chain_image,

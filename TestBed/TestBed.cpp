@@ -5,6 +5,8 @@
 #include <Engine/Scene/Components/TransformCmpt.h>
 #include <Engine/Scene/Components/CameraCmpt.h>
 #include <Engine/Core/Window.h>
+#include <Engine/UI/UI.h>
+#include <imgui.h>
 
 TestBed::TestBed(const std::string& title, const std::string& root, int width, int height)
     : Application(title, root, width, height)
@@ -29,7 +31,7 @@ TestBed::~TestBed()
 void TestBed::Update(f32 deltaTime)
 {
     // Poll Inputs
-    InputManager::Singleton()->Update();
+    Input::Singleton()->Update();
     
     // Update camera movement
     auto* cam = scene->GetCamera();
@@ -42,14 +44,27 @@ void TestBed::Update(f32 deltaTime)
 
 void TestBed::Render(f32 deltaTime)
 {
-    auto graphic_device = Application::Instance().GetGraphicDevice();
+    // Prepare UI data
+    UI::Singleton()->BeginFrame();
+    // some imgui UI to test
+    if (ImGui::Begin("background")) {
+    
+        ImGui::Text("FPS: %f", m_Status.fps);
+        ImGui::Text("Frame Time: %f ms", m_Status.lastFrameDuration);
+        ImGui::Text("CmdList Record Time: %f ms", cmdListRecordTime);
+        ImGui::End();
+    }
 
+    UI::Singleton()->EndFrame();
+
+    // Fill command list
+    auto graphic_device = Application::Instance().GetGraphicDevice();
     if (graphic_device->BeiginFrame(deltaTime)) {
         // 1. Begin a graphic command list
         auto cmd = graphic_device->BeginCommandList();
 
         // 2. Query swapchain image and add layout transition barrier
-        auto swap_chain_image = graphic_device->GetSwapChainImage();
+        auto swap_chain_image = graphic_device->GetPresentImage();
         
         graphic::PipelineImageBarrier swapchain_image_barrier{
             .image = swap_chain_image,
@@ -72,7 +87,7 @@ void TestBed::Render(f32 deltaTime)
         render_pass_info.clearColors[0].color[1] = 0.f;
         render_pass_info.clearColors[0].color[2] = 0.3f;
         render_pass_info.clearColors[0].color[3] = 1.f;
-        render_pass_info.depthAttatchment = depth_image;
+        render_pass_info.depthAttachment = depth_image.get();
         render_pass_info.depthAttachmentLoadOp = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
         render_pass_info.depthAttachmentStoreOp = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
         render_pass_info.ClearDepthStencil.depth_stencil = {1.f, 0};
@@ -89,15 +104,24 @@ void TestBed::Render(f32 deltaTime)
         // 5. draw geometry
         cmd->BindPipeLine(*graphic_pipeline);
 
-        auto geometry_start = std::chrono::system_clock::now();
+        auto geometry_start = m_Timer.ElapsedMillis();
         scene_renderer->Render(cmd);
-        auto geometry_end = std::chrono::system_clock::now();
-        auto geometry_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(geometry_end - geometry_start);
-        LOGI("Geometry time : {} ms", geometry_elapsed.count() / 1000.f)
+        cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
         cmd->EndRenderPass();
 
-        // 4. Transit swapchain image to present layout for presenting
+        // 4. Draw UI
+        graphic::RenderPassInfo ui_render_pass_info = {
+            .numColorAttachments = 1,
+            .colorAttachments[0] = swap_chain_image,
+            .colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::LOAD,
+            .colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE,
+        };
+        cmd->BeginRenderPass(ui_render_pass_info);
+        UI::Singleton()->Render(cmd);
+        cmd->EndRenderPass();
+
+        // 5. Transit swapchain image to present layout for presenting
         graphic::PipelineImageBarrier present_barrier {
             .image = swap_chain_image,
             .srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -110,7 +134,7 @@ void TestBed::Render(f32 deltaTime)
         cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
 
 
-        // 5. Submit command list
+        // 6. Submit command list
         graphic_device->SubmitCommandList(cmd);
 
         // End this frame, submit Command list and pressent to screen

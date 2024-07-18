@@ -190,7 +190,7 @@ public:
             auto cmd = graphic_device->BeginCommandList();
 
             // 2. Query swapchain image and add layout transition barrier
-            auto swap_chain_image = graphic_device->GetSwapChainImage();
+            auto swap_chain_image = graphic_device->GetPresentImage();
 
             graphic::PipelineImageBarrier swapchain_image_barrier{
                 .image = swap_chain_image,
@@ -213,7 +213,7 @@ public:
             render_pass_info.clearColors[0].color[1] = 0.f;
             render_pass_info.clearColors[0].color[2] = 0.4f;
             render_pass_info.clearColors[0].color[3] = 1.f;
-            render_pass_info.depthAttatchment = depth_image;
+            render_pass_info.depthAttachment = depth_image.get();
             render_pass_info.depthAttachmentLoadOp = RenderPassInfo::AttachmentLoadOp::CLEAR;
             render_pass_info.depthAttachmentStoreOp = RenderPassInfo::AttachmentStoreOp::STORE;
 

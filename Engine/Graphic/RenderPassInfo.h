@@ -30,7 +30,7 @@ struct RenderPassInfo {
     };
 
     // Color images
-    Ref<Image> colorAttachments[MAX_COLOR_ATTHACHEMNT_NUM];
+    Image* colorAttachments[MAX_COLOR_ATTHACHEMNT_NUM];
     ClearValue clearColors[MAX_COLOR_ATTHACHEMNT_NUM] = {};
     AttachmentLoadOp colorAttatchemtsLoadOp[MAX_COLOR_ATTHACHEMNT_NUM];
     AttachmentStoreOp colorAttatchemtsStoreOp[MAX_COLOR_ATTHACHEMNT_NUM];
@@ -43,7 +43,7 @@ struct RenderPassInfo {
     u32 numResolveAttachments = 0;
 
     // Depth images
-    Ref<Image> depthAttatchment = nullptr;
+    Image* depthAttachment = nullptr;
     AttachmentLoadOp depthAttachmentLoadOp = AttachmentLoadOp::CLEAR;
     AttachmentStoreOp depthAttachmentStoreOp = AttachmentStoreOp::STORE;
     ClearValue ClearDepthStencil = {1.f, 0.f};

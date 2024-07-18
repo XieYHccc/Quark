@@ -1,7 +1,7 @@
 #pragma once
 #include <GLFW/glfw3.h>
 #include "Core/Window.h"
-#include "Platform/MacOS/InputManagerGLFW.h"
+#include "Platform/MacOS/InputGLFW.h"
 
 class WindowGLFW : public Window {
 public:

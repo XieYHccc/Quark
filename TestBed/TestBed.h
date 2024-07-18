@@ -29,4 +29,7 @@ public:
     // Camera control
     float yaw = 0;
     float pitch = 0;
+
+    // Debug
+    float cmdListRecordTime = 0;
 };

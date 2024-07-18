@@ -101,7 +101,7 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
     // Image Barriers
     for (size_t i = 0; i < iamgeBarriersCount; ++i) {
         const PipelineImageBarrier& image_barrier = imageBarriers[i];
-        auto& internal_image = ToInternal(image_barrier.image.get());
+        auto& internal_image = ToInternal(image_barrier.image);
         auto& image_desc = image_barrier.image->GetDesc();
         auto image_format = image_desc.format;
         VkImageMemoryBarrier2 vk_image_barrier = {};
@@ -212,7 +212,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     for (size_t i = 0; i < info.numColorAttachments; ++i) {
         const auto image = info.colorAttachments[i];
         const ImageDesc& image_desc = image->GetDesc();
-        auto& internal_image = ToInternal(image.get());
+        auto& internal_image = ToInternal(image);
 
         rendering_info.renderArea.extent.width = std::max(rendering_info.renderArea.extent.width, image_desc.width);
 		rendering_info.renderArea.extent.height = std::max(rendering_info.renderArea.extent.height, image_desc.height);
@@ -242,9 +242,9 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     }
 
     // Depth attatchment
-    if (info.depthAttatchment != nullptr) {
+    if (info.depthAttachment != nullptr) {
         depth_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        depth_attachment.imageView = ToInternal(info.depthAttatchment.get()).view_;
+        depth_attachment.imageView = ToInternal(info.depthAttachment).view_;
         depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depth_attachment.loadOp = convertLoadOp(info.depthAttachmentLoadOp);
         depth_attachment.storeOp = convertStoreOp(info.depthAttachmentStoreOp);
@@ -253,7 +253,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     }
 
     rendering_info.pColorAttachments = info.numColorAttachments > 0? color_attachments : nullptr;
-    rendering_info.pDepthAttachment = info.depthAttatchment ? &depth_attachment : nullptr;
+    rendering_info.pDepthAttachment = info.depthAttachment ? &depth_attachment : nullptr;
     //TODO: Support stencil test
     rendering_info.pStencilAttachment = nullptr;
     rendering_info.pNext = nullptr;

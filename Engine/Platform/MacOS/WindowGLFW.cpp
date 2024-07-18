@@ -3,7 +3,7 @@
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
-#include "Platform/MacOS/InputManagerGLFW.h"
+#include "Platform/MacOS/InputGLFW.h"
 
 WindowGLFW::WindowGLFW()
 {
@@ -81,7 +81,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         // Record Key status
-        ((InputManagerGLFW*)InputManager::Singleton())->RecordKey(key, action);
+        ((InputGLFW*)Input::Singleton())->RecordKey(key, action);
 
         switch (action) {
         case GLFW_PRESS: {
@@ -102,7 +102,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos)
     {   
         // Record Mouse position
-        ((InputManagerGLFW*)InputManager::Singleton())->RecordMousePosition(xpos, ypos);
+        ((InputGLFW*)Input::Singleton())->RecordMousePosition(xpos, ypos);
 
         EventManager::Instance().ImmediateTrigger(MouseMovedEvent((float)xpos, (float)ypos));
     });

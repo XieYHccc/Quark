@@ -1,18 +1,18 @@
 #include "pch.h"
-#include "Platform/MacOS/InputManagerGLFW.h"
+#include "Platform/MacOS/InputGLFW.h"
 #include "Core/Window.h"
 
 template <>
 template <>
-InputManager* MakeSingletonPtr<InputManager>::CreateSingleton()
+Input* util::MakeSingletonPtr<Input>::CreateSingleton()
 {
     CORE_DEBUG_ASSERT(m_global == nullptr);
 
-    m_global = new InputManagerGLFW();
+    m_global = new InputGLFW();
     return m_global;
 }
 
-void InputManagerGLFW::Init()
+void InputGLFW::Init()
 {
     window_ = static_cast<GLFWwindow*>(Window::Instance()->GetNativeWindow());
     CORE_DEBUG_ASSERT(window_ != nullptr);
@@ -23,25 +23,25 @@ void InputManagerGLFW::Init()
     mousePosition_ = {(float)xpos, (float)ypos};
 }
 
-void InputManagerGLFW::Update()
+void InputGLFW::Update()
 {
     // handle events
     glfwPollEvents();
 
 }
 
-void InputManagerGLFW::Finalize()
+void InputGLFW::Finalize()
 {
 
 }
 
-void InputManagerGLFW::RecordKey(int key, int action)
+void InputGLFW::RecordKey(int key, int action)
 { 
     CORE_DEBUG_ASSERT(key > 0)
     keyMouseStatus_[key] = (KeyAction)action;
 }
 
-void InputManagerGLFW::RecordMousePosition(float xpos, float ypos)
+void InputGLFW::RecordMousePosition(float xpos, float ypos)
 {
     mousePosition_ = {xpos, ypos};
 }

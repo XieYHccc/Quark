@@ -49,7 +49,7 @@ public:
     virtual void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) = 0;
 
 	/*** SWAPCHAIN ***/
-    virtual Ref<Image> GetSwapChainImage() = 0; // Owned by device.
+    virtual Image* GetPresentImage() = 0; // Owned by device.
     virtual DataFormat GetSwapChainImageFormat() = 0;
 };
 

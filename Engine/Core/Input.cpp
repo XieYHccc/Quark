@@ -1,8 +1,8 @@
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include <GLFW/glfw3.h>
 #include "Core/Window.h"
 
-bool InputManager::IsKeyPressed(Keycode key, bool repeat) const
+bool Input::IsKeyPressed(Keycode key, bool repeat) const
 {
     if (repeat) {
         return keyMouseStatus_[key] == KeyAction::KEY_PRESSED
@@ -13,29 +13,29 @@ bool InputManager::IsKeyPressed(Keycode key, bool repeat) const
 }
 
 
-bool InputManager::IsKeyReleased(Keycode key) const
+bool Input::IsKeyReleased(Keycode key) const
 {
     return keyMouseStatus_[key] == KeyAction::KEY_RELEASED;
 }
 
-bool InputManager::IsKeyKeepPressed(Keycode key) const
+bool Input::IsKeyKeepPressed(Keycode key) const
 {
     return keyMouseStatus_[key] == KeyAction::KEY_KEEP_PRESSED;
 }
 
-bool InputManager::IsMousePressed(MouseCode button) const
+bool Input::IsMousePressed(MouseCode button) const
 {
     return keyMouseStatus_[button] == KeyAction::KEY_PRESSED;
 }
 
-bool InputManager::IsMouseReleased(MouseCode button) const
+bool Input::IsMouseReleased(MouseCode button) const
 {
     return keyMouseStatus_[button] == KeyAction::KEY_RELEASED;
 }
 
 
 
-MousePosition InputManager::GetMousePosition() const
+MousePosition Input::GetMousePosition() const
 {
     return mousePosition_;
 }

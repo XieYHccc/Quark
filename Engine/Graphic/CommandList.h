@@ -55,7 +55,7 @@ struct PipelineMemoryBarrier
 // we don't actually use this...
 struct PipelineBufferBarrier
 {
-    Ref<Buffer> buffer;
+    Buffer* buffer;
     u32 srcStageBits = 0;
     u32 dstStageBits = 0;
     u32 srcMemoryAccessBits = 0;
@@ -65,7 +65,7 @@ struct PipelineBufferBarrier
 // In addition to memory barrier, we need to convert the layout(a state) of a image
 struct PipelineImageBarrier
 {
-    Ref<Image> image;
+    Image* image;
     u32 srcStageBits = 0;
     u32 dstStageBits = 0;
     u32 srcMemoryAccessBits = 0;

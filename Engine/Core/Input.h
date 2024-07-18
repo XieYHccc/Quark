@@ -15,10 +15,10 @@ enum class KeyAction {
     KEY_KEEP_PRESSED = 2,
 };
 
-class InputManager :public MakeSingletonPtr<InputManager> {
+class Input :public util::MakeSingletonPtr<Input> {
 public:
-    InputManager() = default;
-    virtual ~InputManager() = default;
+    Input() = default;
+    virtual ~Input() = default;
     
     virtual void Init() = 0; // Init mouse position
     virtual void Update() = 0;  // pool input event
@@ -41,4 +41,4 @@ protected:
 // Implemmented in platform specific code
 template <>
 template <>
-InputManager* MakeSingletonPtr<InputManager>::CreateSingleton();
+Input* util::MakeSingletonPtr<Input>::CreateSingleton();

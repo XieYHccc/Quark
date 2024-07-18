@@ -4,10 +4,12 @@
 #include "Graphic/RenderPassInfo.h"
 #include "Graphic/Vulkan/PipeLine_Vulkan.h"
 
-namespace graphic {
+class UI_Vulkan;
 
+namespace graphic {
 class CommandList_Vulkan : public CommandList {
     friend class Device_Vulkan;
+    friend class ::UI_Vulkan;
 public:
     CommandList_Vulkan(Device_Vulkan* device, QueueType type_);
     ~CommandList_Vulkan();

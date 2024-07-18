@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/Base.h"
 
+namespace util {
+
 // If class inherits that it will become a singleton.
 template<typename T>
 class MakeSingleton
@@ -80,3 +82,5 @@ public:
 private:
 	static inline T* m_global = nullptr;
 };
+
+}
