@@ -14,13 +14,6 @@ enum BufferUsageBits {
     BUFFER_USAGE_INDIRECT_BIT = (1 << 8),
 };
 
-enum class BufferType {
-    STORAGE_BUFFER,
-    VERTEX_BUFFER,
-    INDEX_BUFFER,
-    UNIFORM_BUFFER
-};
-
 enum class IndexBufferFormat{
     UINT16,
     UINT32

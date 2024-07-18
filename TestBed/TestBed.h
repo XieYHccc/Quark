@@ -26,10 +26,6 @@ public:
     Scope<scene::Scene> scene;
     Scope<render::SceneRenderer> scene_renderer;
 
-    // Camera control
-    float yaw = 0;
-    float pitch = 0;
-
     // Debug
     float cmdListRecordTime = 0;
 };
