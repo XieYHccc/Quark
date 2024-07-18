@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Scene/Components/MoveControlCmpt.h"
 #include <glm/gtx/quaternion.hpp>
-#include "Core/Input.h"
 namespace scene {
 MoveControlCmpt::MoveControlCmpt(Entity* entity, float moveSpeed, float mouseSensitivity)
     : Component(entity), moveSpeed_(moveSpeed), mouseSensitivity_(mouseSensitivity)

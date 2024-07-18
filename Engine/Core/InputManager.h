@@ -15,24 +15,6 @@ enum class KeyAction {
     KEY_KEEP_PRESSED = 2,
 };
 
-// class Input {
-// public:
-
-//     static bool IsKeyPressed(Keycode key);
-//     static bool IsKeyReleased(Keycode key);
-//     static bool IsMousePressed(MouseCode button);
-
-//     static float GetMouseX();
-//     static float GetMouseY();
-
-// public:
-//     static MousePosition GetMousePosition();
-
-//     static bool first_mouse;
-//     static MousePosition last_position;
-
-// };
-
 class InputManager :public MakeSingletonPtr<InputManager> {
 public:
     InputManager() = default;

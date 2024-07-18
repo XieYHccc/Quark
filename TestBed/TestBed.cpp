@@ -5,7 +5,6 @@
 #include <Engine/Scene/Components/TransformCmpt.h>
 #include <Engine/Scene/Components/CameraCmpt.h>
 #include <Engine/Core/Window.h>
-#include <Engine/Core/Input.h>
 
 TestBed::TestBed(const std::string& title, const std::string& root, int width, int height)
     : Application(title, root, width, height)
