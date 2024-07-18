@@ -9,8 +9,8 @@ public:
 	
     Frustum() = default;
 
-    void build(const glm::mat4& inv_view_proj_mat);
-    bool check_shpere(const Aabb& aabb);
+    void Build(const glm::mat4& inv_view_proj_mat);
+    bool CheckSphere(const Aabb& aabb);
 private:
     glm::mat4 inv_view_proj_matrix_;
     std::array<glm::vec4, 6> planes;

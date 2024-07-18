@@ -14,15 +14,15 @@ public:
     // Add two bounding boxes.
     Aabb& operator+=(const Aabb& bb);
 
-    glm::vec3 min() { return min_; }
-    glm::vec3 max() { return max_; }
-    glm::vec3 get_center() const { return 0.5f * (min_ + max_); }
-    glm::vec3 get_extents() const { return 0.5f * (max_ - min_); }
-    glm::vec3 get_corner(uint32_t i) const;
+    glm::vec3 Min() { return min_; }
+    glm::vec3 Max() { return max_; }
+    glm::vec3 GetCenter() const { return 0.5f * (min_ + max_); }
+    glm::vec3 GetExtents() const { return 0.5f * (max_ - min_); }
+    glm::vec3 GetCorner(uint32_t i) const;
 
-    float get_radius() const;
-    bool is_valid() const;
-    Aabb transform(const glm::mat4& mat) const;
+    float GetRadius() const;
+    bool IsValid() const;
+    Aabb Transform(const glm::mat4& mat) const;
 
 private:
     glm::vec3 min_, max_;
