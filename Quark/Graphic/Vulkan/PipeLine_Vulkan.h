@@ -87,6 +87,7 @@ private:
     Device_Vulkan* device_;
     VkPipeline handle_ = VK_NULL_HANDLE;
     PipeLineLayout* layout_;
+    const RenderPassInfo* renderPassInfo_;
 };
 
 CONVERT_TO_VULKAN_INTERNAL(PipeLine)

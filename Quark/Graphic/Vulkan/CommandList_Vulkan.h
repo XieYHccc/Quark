@@ -60,6 +60,7 @@ private:
     CommandListState state_ = CommandListState::READY_FOR_RECORDING;
 
     // Rendering state 
+    const RenderPassInfo* currentRenderPassInfo_ = nullptr;
     const PipeLine_Vulkan* currentPipeLine_ = nullptr;
     VkDescriptorSet currentSets[DESCRIPTOR_SET_MAX_NUM] = {};
     VkViewport viewport_ = {};

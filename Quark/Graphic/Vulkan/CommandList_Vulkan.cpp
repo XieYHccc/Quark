@@ -184,6 +184,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
 
     // Change state
     state_ = CommandListState::IN_RENDERPASS;
+    currentRenderPassInfo_ = &info;
 
     VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
     rendering_info.layerCount = 1;
@@ -406,6 +407,18 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
 {
     auto& internal_pipeline = ToInternal(&pipeline);
     CORE_DEBUG_ASSERT(internal_pipeline.handle_ != VK_NULL_HANDLE)
+
+#ifdef QK_DEBUG_BUILD
+    if (currentRenderPassInfo_ == nullptr) {
+        CORE_LOGE("BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.")
+        return;
+    }
+
+    if (currentRenderPassInfo_ != internal_pipeline.renderPassInfo_) {
+        CORE_LOGE("BindPipeLine()::The pipeline's render pass info is not match with current render pass info.")
+        return;
+    }
+#endif
 
     if (currentPipeLine_ == &internal_pipeline) {
         return;

@@ -102,30 +102,29 @@ void TestBed::Render(f32 deltaTime)
         };
         cmd->PipeLineBarriers(nullptr, 0, &swapchain_image_barrier, 1, nullptr, 0);
 
-        // 3. Begin geometry render pass
+        // 3. Geometry pass
         geometry_pass_info.colorAttachments[0] = swap_chain_image;
         geometry_pass_info.clearColors[0] = {0.f, 0.f, 0.3f, 1.f};
         geometry_pass_info.depthAttachment = depth_image.get();
         cmd->BeginRenderPass(geometry_pass_info);
 
-        // 4. Bind Pipeline, set viewport and scissor
+        // Bind Pipeline, set viewport and scissor
         cmd->BindPipeLine(*graphic_pipeline);
-        
-        u32 drawWidth = swap_chain_image->GetDesc().width;
-        u32 drawHeight = swap_chain_image->GetDesc().height;
-        cmd->SetViewPort(graphic::Viewport{.x = 0, .y = 0, .width = (float)drawWidth,
-            .height = (float)drawHeight, .minDepth = 0, .maxDepth = 1});
-        cmd->SetScissor(graphic::Scissor{.extent = {.width = drawWidth, .height = drawHeight},
-            .offset = {.x = 0, .y = 0}});
 
-        // 5. draw geometry
+        cmd->SetViewPort(graphic::Viewport{.x = 0, .y = 0, .width = (float)swap_chain_image->GetDesc().width,
+            .height = (float)swap_chain_image->GetDesc().height, .minDepth = 0, .maxDepth = 1});
+
+        cmd->SetScissor(graphic::Scissor{.extent = {.width = swap_chain_image->GetDesc().width, .height = swap_chain_image->GetDesc().height},
+            .offset = {.x = 0, .y = 0}});
+        
+        // Draw scene
         auto geometry_start = m_Timer.ElapsedMillis();
         scene_renderer->Render(cmd);
         cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
         cmd->EndRenderPass();
 
-        // 6. Beigin UI render pass
+        // 4. Beigin UI pass
         ui_pass_info.colorAttachments[0] = swap_chain_image;
         cmd->BeginRenderPass(ui_pass_info);
         UI::Singleton()->Render(cmd);
