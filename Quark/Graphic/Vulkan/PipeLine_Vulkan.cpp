@@ -304,7 +304,7 @@ PipeLineLayout::~PipeLineLayout()
     CORE_LOGD("Pipeline layout destroyed")
 }
 
-PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
+PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc, const RenderPassInfo& info)
     :PipeLine(PipeLineType::GRAPHIC), device_(device)
 {
     CORE_DEBUG_ASSERT(device_)
@@ -524,16 +524,19 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     dynamic_state_create_info.pDynamicStates = dynamic_states;
 
     // Rendering info : we are using dynamic rendering instead of renderpass and framebuffer
+    std::vector<VkFormat> vk_color_attachment_format;
+    vk_color_attachment_format.resize(info.numColorAttachments);
+    for (size_t i = 0; i < info.numColorAttachments; i++) {
+        vk_color_attachment_format[i] = ConvertDataFormat(info.colorAttachmentFormats[i]);
+    }
+    
     VkPipelineRenderingCreateInfo renderingInfo = {};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-    std::vector<VkFormat> vk_color_attachment_format;
-    vk_color_attachment_format.resize(desc.colorAttachmentFormats.size());
-    for (size_t i = 0; i < desc.colorAttachmentFormats.size(); i++) {
-        vk_color_attachment_format[i] = ConvertDataFormat(desc.colorAttachmentFormats[i]);
-    }
     renderingInfo.colorAttachmentCount = vk_color_attachment_format.size();
     renderingInfo.pColorAttachmentFormats = vk_color_attachment_format.data();
-    renderingInfo.depthAttachmentFormat = ConvertDataFormat(desc.depthAttachmentFormat);
+    if (info.useDepthAttachment) {
+        renderingInfo.depthAttachmentFormat = ConvertDataFormat(info.depthAttachmentFormat);
+    }
 
     // Finally, fill pipeline create info
     VkGraphicsPipelineCreateInfo pipeline_create_info = {};

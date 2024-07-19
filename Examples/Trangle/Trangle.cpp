@@ -1,7 +1,7 @@
 #include <chrono>
 #include <Quark/Core/Application.h>
 #include <Core/Window.h>
-
+#include <Core/Input.h>
 #include <glm/gtx/transform.hpp>
 #include <glm/glm.hpp>
 
@@ -28,6 +28,9 @@ public:
     // Depth image : for depth test and write
     Ref<graphic::Image> depth_image;
     graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;
+
+    // Render pass info
+    graphic::RenderPassInfo render_pass_info;
 
     // Shaders and pipeline
     Ref<graphic::Shader> vert_shader;
@@ -98,6 +101,18 @@ public:
         depth_image = graphic_device->CreateImage(depth_image_desc);
     }
 
+    void SetUpRenderPass()
+    {
+        render_pass_info.numColorAttachments = 1;
+        render_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;  
+        render_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+        render_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
+        render_pass_info.useDepthAttachment = true;
+        render_pass_info.depthAttachmentLoadOp = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
+        render_pass_info.depthAttachmentStoreOp = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+        render_pass_info.depthAttachmentFormat = depth_format;
+    }   
+
     void CreateGraphicPipeline()
     {
         using namespace graphic;
@@ -115,8 +130,6 @@ public:
         pipe_desc.fragShader = frag_shader;
         pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
         pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-        pipe_desc.depthAttachmentFormat = depth_format;
-        pipe_desc.colorAttachmentFormats.push_back(graphic_device->GetSwapChainImageFormat());
 
         // Depth-stencil state
         pipe_desc.depthStencilState = {
@@ -157,13 +170,14 @@ public:
             .offset = offsetof(Vertex, color)
         };
 
-        graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc);
+        graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc, render_pass_info);
     }
 
 
     TrangleApp(const std::string& title, const std::string& root, int width, int height)
         :Application(title, root, width, height)
     {
+        SetUpRenderPass();
         CreateGraphicPipeline();
         CreateVertexBuffer();
         CreateIndexBuffer();
@@ -174,7 +188,7 @@ public:
 
     void Update(f32 deltaTime) override
     {
-
+        
     }
 
     void Render(f32 deltaTime) override
@@ -204,18 +218,9 @@ public:
             cmd->PipeLineBarriers(nullptr, 0, &swapchain_image_barrier, 1, nullptr, 0);
 
             // 3. Begin a render pass
-            graphic::RenderPassInfo render_pass_info;
-            render_pass_info.numColorAttachments = 1;
             render_pass_info.colorAttachments[0] = swap_chain_image;
-            render_pass_info.colorAttatchemtsLoadOp[0] = RenderPassInfo::AttachmentLoadOp::CLEAR;
-            render_pass_info.colorAttatchemtsStoreOp[0] = RenderPassInfo::AttachmentStoreOp::STORE;
-            render_pass_info.clearColors[0].color[0] = 0.f;
-            render_pass_info.clearColors[0].color[1] = 0.f;
-            render_pass_info.clearColors[0].color[2] = 0.4f;
-            render_pass_info.clearColors[0].color[3] = 1.f;
+            render_pass_info.clearColors[0] = {0.f, 0.f, 0.4f, 1.f};
             render_pass_info.depthAttachment = depth_image.get();
-            render_pass_info.depthAttachmentLoadOp = RenderPassInfo::AttachmentLoadOp::CLEAR;
-            render_pass_info.depthAttachmentStoreOp = RenderPassInfo::AttachmentStoreOp::STORE;
 
             cmd->BeginRenderPass(render_pass_info);
 

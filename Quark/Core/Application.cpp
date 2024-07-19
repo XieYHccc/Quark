@@ -80,8 +80,15 @@ void Application::Run()
     while (m_Status.isRunning) {
         f64 start_frame = m_Timer.ElapsedMillis();
 
+        // Poll events
+        Input::Singleton()->Update();
+        
+        // TODO: Multithreading
         // Update each moudule (including processing inputs)
         Update(m_Status.lastFrameDuration);
+
+        // Update UI
+        UpdateUI();
 
         // Render Scene
         Render(m_Status.lastFrameDuration);

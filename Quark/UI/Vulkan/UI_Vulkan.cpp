@@ -101,3 +101,22 @@ void UI_Vulkan::Render(graphic::CommandList* cmd)
     auto& internal = graphic::ToInternal(cmd);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), internal.cmdBuffer_);
 }
+
+bool UI_Vulkan::BeginBlock(const char *name, WindowFlags flags)
+{
+    return ImGui::Begin(name, nullptr, flags);
+}
+
+void UI_Vulkan::EndBlock()
+{
+    ImGui::End();
+}
+
+void UI_Vulkan::Text(const char* formatstr, ...)
+{
+    va_list args;
+    va_start(args, formatstr);
+    ImGui::TextV(formatstr, args);
+    va_end(args);
+}
+

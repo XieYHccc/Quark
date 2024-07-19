@@ -11,8 +11,10 @@
 TestBed::TestBed(const std::string& title, const std::string& root, int width, int height)
     : Application(title, root, width, height)
 {
+    SetUpRenderPass();
     CreatePipeline();
     CreateDepthImage();
+
     LoadAsset();
     SetUpCamera();
     scene_renderer->PrepareForRender();
@@ -29,10 +31,7 @@ TestBed::~TestBed()
 }
 
 void TestBed::Update(f32 deltaTime)
-{
-    // Poll Inputs
-    Input::Singleton()->Update();
-    
+{    
     // Update camera movement
     auto* cam = scene->GetCamera();
     auto* camMoveCmpt = cam->GetEntity()->GetComponent<scene::MoveControlCmpt>();
@@ -42,21 +41,47 @@ void TestBed::Update(f32 deltaTime)
     scene->Update();
 }   
 
-void TestBed::Render(f32 deltaTime)
+void TestBed::UpdateUI()
 {
     // Prepare UI data
     UI::Singleton()->BeginFrame();
     // some imgui UI to test
-    if (ImGui::Begin("background")) {
+    if (UI::Singleton()->BeginBlock("background")) {
     
-        ImGui::Text("FPS: %f", m_Status.fps);
-        ImGui::Text("Frame Time: %f ms", m_Status.lastFrameDuration);
-        ImGui::Text("CmdList Record Time: %f ms", cmdListRecordTime);
-        ImGui::End();
+        UI::Singleton()->Text("FPS: %f", m_Status.fps);
+        UI::Singleton()->Text("Frame Time: %f ms", m_Status.lastFrameDuration);
+        UI::Singleton()->Text("CmdList Record Time: %f ms", cmdListRecordTime);
+        UI::Singleton()->EndBlock();
     }
 
     UI::Singleton()->EndFrame();
+}
 
+void TestBed::SetUpRenderPass()
+{   
+    // First pass : geometry pass
+    geometry_pass_info = {};
+    geometry_pass_info.numColorAttachments = 1;
+    geometry_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
+    geometry_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+    geometry_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
+    geometry_pass_info.useDepthAttachment = true;
+    geometry_pass_info.depthAttachment = depth_image.get();
+    geometry_pass_info.depthAttachmentLoadOp = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
+    geometry_pass_info.depthAttachmentStoreOp = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+    geometry_pass_info.ClearDepthStencil.depth_stencil = {1.f, 0};
+    geometry_pass_info.depthAttachmentFormat = depth_format;
+
+    // Second pass : UI pass
+    ui_pass_info = {};
+    ui_pass_info.numColorAttachments = 1;
+    ui_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::LOAD;
+    ui_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+    ui_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
+
+}
+void TestBed::Render(f32 deltaTime)
+{
     // Fill command list
     auto graphic_device = Application::Instance().GetGraphicDevice();
     if (graphic_device->BeiginFrame(deltaTime)) {
@@ -78,22 +103,14 @@ void TestBed::Render(f32 deltaTime)
         cmd->PipeLineBarriers(nullptr, 0, &swapchain_image_barrier, 1, nullptr, 0);
 
         // 3. Begin geometry render pass
-        graphic::RenderPassInfo render_pass_info;
-        render_pass_info.numColorAttachments = 1;
-        render_pass_info.colorAttachments[0] = swap_chain_image;
-        render_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-        render_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
-        render_pass_info.clearColors[0].color[0] = 0.f;
-        render_pass_info.clearColors[0].color[1] = 0.f;
-        render_pass_info.clearColors[0].color[2] = 0.3f;
-        render_pass_info.clearColors[0].color[3] = 1.f;
-        render_pass_info.depthAttachment = depth_image.get();
-        render_pass_info.depthAttachmentLoadOp = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-        render_pass_info.depthAttachmentStoreOp = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
-        render_pass_info.ClearDepthStencil.depth_stencil = {1.f, 0};
-        cmd->BeginRenderPass(render_pass_info);
+        geometry_pass_info.colorAttachments[0] = swap_chain_image;
+        geometry_pass_info.clearColors[0] = {0.f, 0.f, 0.3f, 1.f};
+        geometry_pass_info.depthAttachment = depth_image.get();
+        cmd->BeginRenderPass(geometry_pass_info);
 
-        // 4. Set viewport and scissor
+        // 4. Bind Pipeline, set viewport and scissor
+        cmd->BindPipeLine(*graphic_pipeline);
+        
         u32 drawWidth = swap_chain_image->GetDesc().width;
         u32 drawHeight = swap_chain_image->GetDesc().height;
         cmd->SetViewPort(graphic::Viewport{.x = 0, .y = 0, .width = (float)drawWidth,
@@ -102,26 +119,19 @@ void TestBed::Render(f32 deltaTime)
             .offset = {.x = 0, .y = 0}});
 
         // 5. draw geometry
-        cmd->BindPipeLine(*graphic_pipeline);
-
         auto geometry_start = m_Timer.ElapsedMillis();
         scene_renderer->Render(cmd);
         cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
         cmd->EndRenderPass();
 
-        // 4. Draw UI
-        graphic::RenderPassInfo ui_render_pass_info = {
-            .numColorAttachments = 1,
-            .colorAttachments[0] = swap_chain_image,
-            .colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::LOAD,
-            .colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE,
-        };
-        cmd->BeginRenderPass(ui_render_pass_info);
+        // 6. Beigin UI render pass
+        ui_pass_info.colorAttachments[0] = swap_chain_image;
+        cmd->BeginRenderPass(ui_pass_info);
         UI::Singleton()->Render(cmd);
         cmd->EndRenderPass();
 
-        // 5. Transit swapchain image to present layout for presenting
+        // 7. Transit swapchain image to present layout for presenting
         graphic::PipelineImageBarrier present_barrier {
             .image = swap_chain_image,
             .srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -133,8 +143,7 @@ void TestBed::Render(f32 deltaTime)
         };
         cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
 
-
-        // 6. Submit command list
+        // 8. Submit command list
         graphic_device->SubmitCommandList(cmd);
 
         // End this frame, submit Command list and pressent to screen
@@ -170,8 +179,6 @@ void TestBed::CreatePipeline()
     pipe_desc.fragShader = frag_shader;
     pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
     pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-    pipe_desc.depthAttachmentFormat = depth_format;
-    pipe_desc.colorAttachmentFormats.push_back(graphic_device->GetSwapChainImageFormat());
     pipe_desc.depthStencilState = {
         .enableDepthTest = true,
         .enableDepthWrite = true,
@@ -183,7 +190,7 @@ void TestBed::CreatePipeline()
         .frontFaceType = FrontFaceType::COUNTER_CLOCKWISE
     };
 
-    graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc);
+    graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc, geometry_pass_info);
 }
 
 void TestBed::CreateDepthImage()

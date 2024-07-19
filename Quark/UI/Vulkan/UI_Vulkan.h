@@ -2,18 +2,22 @@
 #include "UI/UI.h"
 #include "Graphic/Vulkan/Device_Vulkan.h"
 
-class UI_Vulkan : public UI {
+class UI_Vulkan final : public UI {
 public:
     UI_Vulkan() = default;
-    virtual ~UI_Vulkan() = default;
+    ~UI_Vulkan() = default;
 
-    virtual void Init(graphic::Device* device) override;
-    virtual void Finalize() override;
+    void Init(graphic::Device* device) override;
+    void Finalize() override;
 
-    virtual void BeginFrame() override;
-    virtual void EndFrame() override;
-    virtual void Render(graphic::CommandList* cmd) override;
+    void BeginFrame() override;
+    void EndFrame() override;
+    void Render(graphic::CommandList* cmd) override;
 
+    bool BeginBlock(const char* name, WindowFlags flags = 0) override;
+    void EndBlock() override;
+
+    void Text(const char* formatstr, ...) override;
 private:
     graphic::Device_Vulkan* device_;
     VkDescriptorPool descriptorPool_;

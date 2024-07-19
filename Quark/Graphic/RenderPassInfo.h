@@ -34,6 +34,7 @@ struct RenderPassInfo {
     ClearValue clearColors[MAX_COLOR_ATTHACHEMNT_NUM] = {};
     AttachmentLoadOp colorAttatchemtsLoadOp[MAX_COLOR_ATTHACHEMNT_NUM];
     AttachmentStoreOp colorAttatchemtsStoreOp[MAX_COLOR_ATTHACHEMNT_NUM];
+    DataFormat colorAttachmentFormats[MAX_COLOR_ATTHACHEMNT_NUM];
     u32 numColorAttachments = 0;
 
     // Resolve image. The declaration of color 
@@ -43,9 +44,11 @@ struct RenderPassInfo {
     u32 numResolveAttachments = 0;
 
     // Depth images
+    bool useDepthAttachment = false;
     Image* depthAttachment = nullptr;
     AttachmentLoadOp depthAttachmentLoadOp = AttachmentLoadOp::CLEAR;
     AttachmentStoreOp depthAttachmentStoreOp = AttachmentStoreOp::STORE;
+    DataFormat depthAttachmentFormat;
     ClearValue ClearDepthStencil = {1.f, 0.f};
 };
 }

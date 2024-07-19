@@ -444,9 +444,9 @@ Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std:
     return new_shader;
 }
 
-Ref<PipeLine> Device_Vulkan::CreateGraphicPipeLine(const GraphicPipeLineDesc &desc)
+Ref<PipeLine> Device_Vulkan::CreateGraphicPipeLine(const GraphicPipeLineDesc &desc, const RenderPassInfo& info)
 {
-    return CreateRef<PipeLine_Vulkan>(this, desc);
+    return CreateRef<PipeLine_Vulkan>(this, desc, info);
 }
 
 Ref<Sampler> Device_Vulkan::CreateSampler(const SamplerDesc &desc)
@@ -476,6 +476,7 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     auto& queue = queues[internal_cmdList.type_];
 
     vkEndCommandBuffer(internal_cmdList.cmdBuffer_);
+    internal_cmdList.state_ = CommandListState::READY_FOR_SUBMIT;
     
     if (queue.submissions.empty()) {
         queue.submissions.emplace_back();

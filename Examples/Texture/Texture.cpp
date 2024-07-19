@@ -30,6 +30,9 @@ public:
     Ref<graphic::Sampler> linear_sampler;
     graphic::DataFormat texture_format = graphic::DataFormat::R8G8B8A8_UNORM;
 
+    // Render Pass Info
+    graphic::RenderPassInfo render_pass_info;
+
     // Shaders and pipeline
     Ref<graphic::Shader> vert_shader;
     Ref<graphic::Shader> frag_shader;
@@ -129,6 +132,15 @@ public:
         linear_sampler = graphic_device->CreateSampler(desc);
     }
 
+    void SetUpRenderPass()
+    {
+        render_pass_info = {};
+        render_pass_info.numColorAttachments = 1;
+        render_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
+        render_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+        render_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
+    }
+
     void CreateGraphicPipeline()
     {
         using namespace graphic;
@@ -146,12 +158,11 @@ public:
         pipe_desc.fragShader = frag_shader;
         pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
         pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-        pipe_desc.colorAttachmentFormats.push_back(graphic_device->GetSwapChainImageFormat());
 
         // Depth-stencil state
         pipe_desc.depthStencilState = {
-            .enableDepthTest = true,
-            .enableDepthWrite = true,
+            .enableDepthTest = false,
+            .enableDepthWrite = false,
             .depthCompareOp = CompareOperation::LESS_OR_EQUAL
         };
 
@@ -187,13 +198,14 @@ public:
             .offset = offsetof(Vertex, texCoords)
         };
 
-        graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc);
+        graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc, render_pass_info);
     }
 
 
     TextureExample(const std::string& title, const std::string& root, int width, int height)
         :Application(title, root, width, height)
     {
+        SetUpRenderPass();
         CreateGraphicPipeline();
         CreateVertexBuffer();
         CreateIndexBuffer();
@@ -236,16 +248,8 @@ public:
             cmd->PipeLineBarriers(nullptr, 0, &swapchain_image_barrier, 1, nullptr, 0);
 
             // 3. Begin a render pass
-            graphic::RenderPassInfo render_pass_info;
-            render_pass_info.numColorAttachments = 1;
             render_pass_info.colorAttachments[0] = swap_chain_image;
-            render_pass_info.colorAttatchemtsLoadOp[0] = RenderPassInfo::AttachmentLoadOp::CLEAR;
-            render_pass_info.colorAttatchemtsStoreOp[0] = RenderPassInfo::AttachmentStoreOp::STORE;
-            render_pass_info.clearColors[0].color[0] = 0.f;
-            render_pass_info.clearColors[0].color[1] = 0.f;
-            render_pass_info.clearColors[0].color[2] = 0.4f;
-            render_pass_info.clearColors[0].color[3] = 1.f;
-
+            render_pass_info.clearColors[0] = {0.f, 0.f, 0.4f, 1.f};
             cmd->BeginRenderPass(render_pass_info);
 
             // 4. Bind pipeline and set viewport and scissor

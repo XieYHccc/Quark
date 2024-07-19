@@ -80,7 +80,7 @@ class PipeLine_Vulkan : public PipeLine {
     friend class Device_Vulkan;
     friend class CommandList_Vulkan;
 public:
-    PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc);
+    PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc, const RenderPassInfo& info);
     PipeLine_Vulkan(Device_Vulkan* device, Ref<Shader> computeShader_);
     ~PipeLine_Vulkan();
 private:

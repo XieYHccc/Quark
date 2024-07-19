@@ -10,15 +10,20 @@ public:
 
     virtual void Update(f32 deltaTime) override final;
     virtual void Render(f32 deltaTime) override final;
-
+    virtual void UpdateUI() override final;
+    
     void CreateDepthImage();
     void CreatePipeline();
+    void SetUpRenderPass();
     void LoadAsset();
     void SetUpCamera();
 
     Ref<graphic::Shader> vert_shader;
     Ref<graphic::Shader> frag_shader;
     Ref<graphic::PipeLine> graphic_pipeline;
+
+    graphic::RenderPassInfo geometry_pass_info; // First pass
+    graphic::RenderPassInfo ui_pass_info;   // Second pass
 
     Ref<graphic::Image> depth_image;
     graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;

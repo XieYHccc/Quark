@@ -7,6 +7,14 @@
 class UI_Vulkan;
 
 namespace graphic {
+
+enum class CommandListState {
+    READY_FOR_RECORDING,
+    IN_RECORDING,
+    IN_RENDERPASS,
+    READY_FOR_SUBMIT,
+};
+
 class CommandList_Vulkan : public CommandList {
     friend class Device_Vulkan;
     friend class ::UI_Vulkan;
@@ -49,6 +57,7 @@ private:
     std::vector<VkBufferMemoryBarrier2> bufferBarriers_;
     bool waitForSwapchainImage_ = false;
     u32 swapChainWaitStages_ = 0;
+    CommandListState state_ = CommandListState::READY_FOR_RECORDING;
 
     // Rendering state 
     const PipeLine_Vulkan* currentPipeLine_ = nullptr;

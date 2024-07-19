@@ -64,6 +64,7 @@ void CommandList_Vulkan::ResetAndBeginCmdBuffer()
     imageBarriers_.clear();
     bufferBarriers_.clear();
     memoryBarriers_.clear();
+    state_ = CommandListState::IN_RECORDING;
 
     dirty_SetBits_ = 0;
     ditry_SetDynamicBits_ = 0;
@@ -175,6 +176,15 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     CORE_DEBUG_ASSERT(info.numColorAttachments < RenderPassInfo::MAX_COLOR_ATTHACHEMNT_NUM)
     CORE_DEBUG_ASSERT(info.numResolveAttachments < RenderPassInfo::MAX_COLOR_ATTHACHEMNT_NUM)
 
+#if QK_DEBUG_BUILD
+    if (state_ != CommandListState::IN_RECORDING) {
+        CORE_LOGE("You must call BeginRenderPass() in recording state.")
+    }
+#endif
+
+    // Change state
+    state_ = CommandListState::IN_RENDERPASS;
+
     VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
     rendering_info.layerCount = 1;
     rendering_info.renderArea.offset.x = 0;
@@ -262,7 +272,14 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
 }
 
 void CommandList_Vulkan::EndRenderPass()
-{
+{   
+#if QK_DEBUG_BUILD
+    if (state_ != CommandListState::IN_RENDERPASS) {
+        CORE_LOGE("You must call BeginRenderPass() before calling EndRenderPass()")
+    }
+#endif
+    // Set state back to in recording
+    state_ = CommandListState::IN_RECORDING;
     device_->context->extendFunction.pVkCmdEndRenderingKHR(cmdBuffer_);
 }
 

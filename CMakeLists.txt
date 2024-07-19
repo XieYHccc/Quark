@@ -45,7 +45,7 @@ endif()
 add_subdirectory(./Quark)
 #add_subdirectory(./SandBox)
 add_subdirectory(./TestBed)
-add_subdirectory(./Examples)
+#add_subdirectory(./Examples)
 
 ################################################################################
 # Shaders Compilation                                                           #
