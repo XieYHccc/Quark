@@ -1,14 +1,14 @@
-#include "TestBed/TestBed.h"
-#include "Scene/Components/MoveControlCmpt.h"
+#include "Editor/EditorApp.h"
 #include <glm/gtx/quaternion.hpp>
 #include <Quark/Asset/GLTFLoader.h>
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Core/Window.h>
 #include <Quark/UI/UI.h>
+#include <Quark/Scene/Components/MoveControlCmpt.h>
 #include <imgui.h>
 
-TestBed::TestBed(const std::string& title, const std::string& root, int width, int height)
+EditorApp::EditorApp(const std::string& title, const std::string& root, int width, int height)
     : Application(title, root, width, height)
 {
     SetUpRenderPass();
@@ -22,15 +22,15 @@ TestBed::TestBed(const std::string& title, const std::string& root, int width, i
 
 Application* CreateApplication()
 {
-    return new TestBed("TestBed"," ", 1200, 800);
+    return new EditorApp("EditorApp"," ", 1200, 800);
     
 }
 
-TestBed::~TestBed()
+EditorApp::~EditorApp()
 {
 }
 
-void TestBed::Update(f32 deltaTime)
+void EditorApp::Update(f32 deltaTime)
 {    
     // Update camera movement
     auto* cam = scene->GetCamera();
@@ -41,12 +41,12 @@ void TestBed::Update(f32 deltaTime)
     scene->Update();
 }   
 
-void TestBed::UpdateUI()
+void EditorApp::UpdateUI()
 {
     // Prepare UI data
     UI::Singleton()->BeginFrame();
     // some imgui UI to test
-    if (UI::Singleton()->BeginBlock("background")) {
+    if (UI::Singleton()->BeginBlock("Background")) {
     
         UI::Singleton()->Text("FPS: %f", m_Status.fps);
         UI::Singleton()->Text("Frame Time: %f ms", m_Status.lastFrameDuration);
@@ -57,7 +57,7 @@ void TestBed::UpdateUI()
     UI::Singleton()->EndFrame();
 }
 
-void TestBed::SetUpRenderPass()
+void EditorApp::SetUpRenderPass()
 {   
     // First pass : geometry pass
     geometry_pass_info = {};
@@ -81,7 +81,7 @@ void TestBed::SetUpRenderPass()
 
 }
 
-void TestBed::Render(f32 deltaTime)
+void EditorApp::Render(f32 deltaTime)
 {
     // Fill command list
     auto graphic_device = Application::Instance().GetGraphicDevice();
@@ -152,7 +152,7 @@ void TestBed::Render(f32 deltaTime)
 
 }
 
-void TestBed::LoadAsset()
+void EditorApp::LoadAsset()
 {
     // load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
@@ -162,7 +162,7 @@ void TestBed::LoadAsset()
     scene_renderer->SetScene(scene.get());
 }
 
-void TestBed::CreatePipeline()
+void EditorApp::CreatePipeline()
 {
     using namespace graphic;
     auto graphic_device = Application::Instance().GetGraphicDevice();
@@ -193,7 +193,7 @@ void TestBed::CreatePipeline()
     graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc, geometry_pass_info);
 }
 
-void TestBed::CreateDepthImage()
+void EditorApp::CreateDepthImage()
 {
         using namespace graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
@@ -201,8 +201,8 @@ void TestBed::CreateDepthImage()
         // Image create info
         ImageDesc depth_image_desc = {
             .type = ImageType::TYPE_2D,
-            .width = graphic_device->GetResolutionWidth(),
-            .height = graphic_device->GetResolutionHeight(),
+            .width = u32(Window::Instance()->GetMonitorWidth() * Window::Instance()->GetRatio()),
+            .height = u32(Window::Instance()->GetMonitorHeight() * Window::Instance()->GetRatio()),
             .depth = 1,
             .format = depth_format,
             .arraySize = 1,
@@ -215,7 +215,7 @@ void TestBed::CreateDepthImage()
         depth_image = graphic_device->CreateImage(depth_image_desc);
 }
 
-void TestBed::SetUpCamera()
+void EditorApp::SetUpCamera()
 {   
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();

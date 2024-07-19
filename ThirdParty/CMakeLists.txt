@@ -37,7 +37,7 @@ target_include_directories(spirv_reflect SYSTEM PUBLIC ${SPIRV_REFLECT_DIR})
 set_target_properties(spirv_reflect PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
 
 # imgui
-set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
+set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui_docking")
 set(IMGUI_FILES
     "${IMGUI_DIR}/imgui.cpp"
     "${IMGUI_DIR}/imgui_demo.cpp"
@@ -50,10 +50,11 @@ set(IMGUI_FILES
     "${IMGUI_DIR}/imstb_rectpack.h"
     "${IMGUI_DIR}/imstb_textedit.h"
     "${IMGUI_DIR}/imstb_truetype.h"
-    "${IMGUI_DIR}/imgui_impl_glfw.h"
-    "${IMGUI_DIR}/imgui_impl_glfw.cpp"
-    "${IMGUI_DIR}/imgui_impl_vulkan.h"
-    "${IMGUI_DIR}/imgui_impl_vulkan.cpp")
+    "${IMGUI_DIR}/backends/imgui_impl_glfw.h"
+    "${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
+    "${IMGUI_DIR}/backends/imgui_impl_vulkan.h"
+    "${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp")
+
 add_library(imgui STATIC ${IMGUI_FILES})
 target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR})
 target_link_libraries(imgui glfw Vulkan::Vulkan)

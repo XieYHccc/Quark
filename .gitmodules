@@ -10,3 +10,7 @@
 [submodule "ThirdParty/vma"]
 	path = ThirdParty/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "ThirdParty/imgui_docking"]
+	path = ThirdParty/imgui_docking
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

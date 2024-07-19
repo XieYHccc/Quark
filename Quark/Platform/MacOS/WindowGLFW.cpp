@@ -32,9 +32,11 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
 
     // Create GLFW window
     monitor_ = glfwGetPrimaryMonitor();
-    if (is_fullscreen) 
-    {
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor_);
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor_);
+    monitorWidth_ = mode->width;
+    monitorHeight_ = mode->height;
+
+    if (is_fullscreen) {
         width_ = mode->width;
         height_ = mode->height;
     }

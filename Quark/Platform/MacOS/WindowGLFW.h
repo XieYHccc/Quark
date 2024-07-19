@@ -3,19 +3,22 @@
 #include "Core/Window.h"
 #include "Platform/MacOS/InputGLFW.h"
 
-class WindowGLFW : public Window {
+class WindowGLFW final: public Window {
 public:
     WindowGLFW();
     ~WindowGLFW() {};
 
-    virtual void Init(const std::string& title, bool is_fullscreen, u32 width, u32 height) override final;
-    virtual void Finalize() override final;
+    void Init(const std::string& title, bool is_fullscreen, u32 width, u32 height) override final;
+    void Finalize() override final;
 
-    virtual u32 GetWidth() const override final { return width_; }
-    virtual u32 GetHeight() const override final { return height_; }
-    virtual u32 GetFrambufferWidth() const override final;
-    virtual u32 GetFrambufferHeight() const override final;
-    virtual void* GetNativeWindow() override final { return window_; }
+    u32 GetWidth() const override final { return width_; }
+    u32 GetHeight() const override final { return height_; }
+    u32 GetFrambufferWidth() const override final;
+    u32 GetFrambufferHeight() const override final;
+    u32 GetMonitorWidth() const override final { return monitorWidth_; }
+    u32 GetMonitorHeight() const override final { return monitorHeight_; }
+
+    void* GetNativeWindow() override final { return window_; }
     
 private:
     GLFWwindow* window_ = nullptr;
@@ -25,4 +28,6 @@ private:
     std::string title_;
     u32 width_;
     u32 height_;
+    u32 monitorWidth_;
+    u32 monitorHeight_;
 };

@@ -19,6 +19,9 @@ public:
 	virtual u32 GetHeight() const = 0;
     virtual u32 GetFrambufferWidth() const = 0;
     virtual u32 GetFrambufferHeight() const = 0;
+    virtual u32 GetMonitorWidth() const = 0;
+    virtual u32 GetMonitorHeight() const = 0;
+    float GetRatio() const { return (float)GetFrambufferWidth() / GetWidth(); }
 
     virtual void* GetNativeWindow() = 0;
 
