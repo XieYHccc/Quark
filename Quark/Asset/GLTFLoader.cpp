@@ -206,7 +206,7 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     std::vector<Ref<Texture>>& textures = newScene->textures_;
     std::vector<Ref<Material>>& materials = newScene->materials_;
     std::vector<Ref<Mesh>>& meshes = newScene->meshes_;
-    std::vector<scene::Node*>& nodes = newScene->nodes_;
+    std::vector<scene::Node*> nodes;
 
     // Load samplers
     samplers.resize(model_.samplers.size());
@@ -300,39 +300,37 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     // TODO: Support gltf file with multiple scenes
     // CORE_ASSERT(model_.scenes.size() == 1)
     const tinygltf::Scene& gltf_scene = model_.scenes[model_.defaultScene > -1 ? model_.defaultScene : 0];
-    scene_->name_ = gltf_scene.name;
+    scene_->SetName(gltf_scene.name);
 
     // Load nodes
     nodes.reserve(model_.nodes.size());
     for (const auto& gltf_node : model_.nodes) {
         auto* newNode = ParseNode(gltf_node);
         nodes.push_back(newNode);
-        scene_->nodeMap_.emplace(std::make_pair(gltf_node.name, newNode));
     }
 
     // Loop node to again to establish hierachy
     for (size_t i = 0; i < model_.nodes.size(); i++) {
-        for (const auto& child : model_.nodes[i].children) {
+        for (const auto& child : model_.nodes[i].children)
             nodes[i]->AddChild(nodes[child]);
-            nodes[child]->SetParent(nodes[i]);
-        }
     }
 
-    // Find all root nodes
+    // Add root nodes manually
+    scene_->rootNode_->ClearChildren();
     for (const auto& node : gltf_scene.nodes) {
-        scene_->rootNodes_.push_back(nodes[node]);
+        scene_->rootNode_->AddChild(nodes[node]);
     }
-    
+
     return newScene;
 }
 
 scene::Node* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
 {
-    scene::Node* newNode = scene_->nodePool_.allocate(scene_, nullptr, gltf_node.name);
+    scene::Node* newNode = scene_->CreateNode(gltf_node.name);
     scene::Entity* entity = newNode->GetEntity();
 
 	// Parse transform component
-    scene::TransformCmpt* transform = newNode->GetTransformCmpt();
+    scene::TransformCmpt* transform = newNode->GetEntity()->GetComponent<scene::TransformCmpt>();
 
 	if (gltf_node.translation.size() == 3) {
 		glm::vec3 translation = glm::make_vec3(gltf_node.translation.data());

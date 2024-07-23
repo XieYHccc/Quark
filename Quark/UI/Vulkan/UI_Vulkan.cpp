@@ -2,6 +2,8 @@
 #include "UI/Vulkan/UI_Vulkan.h"
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
+#define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
+#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 #include <backends/imgui_impl_vulkan.h>
 #include "Core/Window.h"
 #include "Graphic/Vulkan/CommandList_Vulkan.h"
@@ -22,7 +24,7 @@ void UI_Vulkan::Init(graphic::Device *device)
 	io.ConfigViewportsNoTaskBarIcon = true;
 
     io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Bold.ttf", 22.f);
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 20.f);
+	io.FontDefault = io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 18.f);
 
     // Style
     {
@@ -37,34 +39,34 @@ void UI_Vulkan::Init(graphic::Device *device)
     	auto& colors = style.Colors;
 
         // Windows
-		colors[ImGuiCol_WindowBg] = ImVec4{ 0.09f, 0.09f, 0.09f, 1.0f };
+		// colors[ImGuiCol_WindowBg] = ImVec4{ 0.09f, 0.09f, 0.09f, 1.0f };
 
 		// Headers
-		colors[ImGuiCol_Header] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
-		colors[ImGuiCol_HeaderHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		colors[ImGuiCol_HeaderActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// colors[ImGuiCol_Header] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+		// colors[ImGuiCol_HeaderHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+		// colors[ImGuiCol_HeaderActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 
 		// Buttons
-		colors[ImGuiCol_Button] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
-		colors[ImGuiCol_ButtonHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		colors[ImGuiCol_ButtonActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// colors[ImGuiCol_Button] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+		// colors[ImGuiCol_ButtonHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+		// colors[ImGuiCol_ButtonActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 
-		// Frame BG
-		colors[ImGuiCol_FrameBg] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
-		colors[ImGuiCol_FrameBgHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		colors[ImGuiCol_FrameBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// // Frame BG
+		// colors[ImGuiCol_FrameBg] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+		// colors[ImGuiCol_FrameBgHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+		// colors[ImGuiCol_FrameBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 
-		// Tabs
-		colors[ImGuiCol_Tab] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		colors[ImGuiCol_TabHovered] = ImVec4{ 0.38f, 0.3805f, 0.381f, 1.0f };
-		colors[ImGuiCol_TabActive] = ImVec4{ 0.28f, 0.2805f, 0.281f, 1.0f };
-		colors[ImGuiCol_TabUnfocused] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		colors[ImGuiCol_TabUnfocusedActive] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+		// // Tabs
+		// colors[ImGuiCol_Tab] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// colors[ImGuiCol_TabHovered] = ImVec4{ 0.38f, 0.3805f, 0.381f, 1.0f };
+		// colors[ImGuiCol_TabActive] = ImVec4{ 0.28f, 0.2805f, 0.281f, 1.0f };
+		// colors[ImGuiCol_TabUnfocused] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// colors[ImGuiCol_TabUnfocusedActive] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
 
-		// Title
-		colors[ImGuiCol_TitleBg] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		colors[ImGuiCol_TitleBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// // Title
+		// colors[ImGuiCol_TitleBg] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// colors[ImGuiCol_TitleBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
     }
 
     // Descripto pool
@@ -107,8 +109,8 @@ void UI_Vulkan::Init(graphic::Device *device)
         init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT; // TODO: MSAA
         init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        VkFormat swapChainFormat = graphic::ConvertDataFormat(device_->GetSwapChainImageFormat());
-        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapChainFormat;
+        swapChainFormat_ = graphic::ConvertDataFormat(device_->GetSwapChainImageFormat());
+        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapChainFormat_;
         ImGui_ImplVulkan_Init(&init_info);
     }
 
@@ -129,24 +131,26 @@ void UI_Vulkan::BeginFrame()
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    // ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
 }
 
 void UI_Vulkan::EndFrame()
 {
     // Make imgui calculate internal draw structures
     ImGui::Render();
-
-    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-	{
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
-	}
 }
 
 void UI_Vulkan::Render(graphic::CommandList* cmd)
 {
     auto& internal = graphic::ToInternal(cmd);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), internal.cmdBuffer_);
+
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+	}
 }
 
 bool UI_Vulkan::BeginBlock(const char *name, WindowFlags flags)

@@ -17,6 +17,9 @@
     #define LOG_TRACE_ENABLED 0
 #endif
 
+// #undef LOG_TRACE_ENABLED
+// #define LOG_TRACE_ENABLED 0
+
 class Logger {
 public:
     static void Init();
@@ -31,30 +34,28 @@ private:
 
 
 // Engine logging
-#ifdef QK_DEBUG_BUILD
+#if LOG_DEBUG_ENABLED == 1
     #define CORE_LOGD(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
-    #define CORE_LOGT(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
+    #define LOGD(...) Logger::GetClientLogger()->debug(__VA_ARGS__);
 #else
     #define CORE_LOGD(...)
-    #define CORE_LOGT(...)
+    #define LOGD(...)
 #endif
+
+#if LOG_TRACE_ENABLED == 1
+    #define CORE_LOGT(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
+    #define LOGT(...) Logger::GetClientLogger()->trace(__VA_ARGS__);
+#else
+    #define CORE_LOGT(...)
+    #define LOGT(...)
+#endif
+
 #define CORE_LOGI(...) Logger::GetCoreLogger()->info(__VA_ARGS__);
 #define CORE_LOGW(...) Logger::GetCoreLogger()->warn(__VA_ARGS__);
 #define CORE_LOGE(...) Logger::GetCoreLogger()->error(__VA_ARGS__);
 #define CORE_LOGC(...) Logger::GetCoreLogger()->critical(__VA_ARGS__);
 
-// Client logging
-#ifdef QK_DEBUG_BUILD
-    #define LOGT(...) Logger::GetClientLogger()->trace(__VA_ARGS__);
-    #define LOGD(...) Logger::GetClientLogger()->debug(__VA_ARGS__);
-#else
-    #define LOGT(...)
-    #define LOGD(...)
-#endif
-
 #define LOGI(...) Logger::GetClientLogger()->info(__VA_ARGS__);
 #define LOGW(...) Logger::GetClientLogger()->warn(__VA_ARGS__);
 #define LOGE(...) Logger::GetClientLogger()->error(__VA_ARGS__);
 #define LOGC(...) Logger::GetClientLogger()->critical(__VA_ARGS__);
-
-#define DASH_SECTION(x) fmt::format("----------------{}----------------", x)

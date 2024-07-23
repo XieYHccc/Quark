@@ -23,9 +23,9 @@ bool Input::IsKeyKeepPressed(Keycode key) const
     return keyMouseStatus_[key] == KeyAction::KEY_KEEP_PRESSED;
 }
 
-bool Input::IsMousePressed(MouseCode button) const
+bool Input::IsMousePressed(MouseCode button, bool repeat) const
 {
-    return keyMouseStatus_[button] == KeyAction::KEY_PRESSED;
+    return IsKeyPressed(button, repeat);
 }
 
 bool Input::IsMouseReleased(MouseCode button) const

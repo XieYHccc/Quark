@@ -10,11 +10,11 @@ public:
 
     MoveControlCmpt(Entity* entity, float moveSpeed = 20, float mouseSensitivity = 0.3);
 
-    void Update(float deltaTime);
+    virtual void Update(float deltaTime);
     void SetMoveSpeed(float moveSpeed) { moveSpeed_ = moveSpeed; }
     void SetMouseSensitivity(float mouseSensitivity) { mouseSensitivity_ = mouseSensitivity; }
 
-private:
+protected:
     void ProcessKeyInput(float deltaTime);
     void ProcessMouseMove(float xoffset, float yoffset);
 

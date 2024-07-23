@@ -6,31 +6,17 @@
 #include "Scene/Components/CameraCmpt.h"
 
 namespace scene {
-Node::Node(Scene* scene, Node* parent, const std::string& name)
-    :scene_(scene), parent_(parent)
-{
-    if (parent) {
-        parent->AddChild(this);
-    }
-
-    entity_ = scene_->registry_.CreateEntity();
-    transformCmpt_ = entity_->AddComponent<TransformCmpt>(this);
-
-    if (name != "Null") {
-        nameCmpt_ = entity_->AddComponent<NameCmpt>();
-        nameCmpt_->name = name;
-    }
-}
-
-Node::~Node()
-{
-    if (entity_)
-         scene_->registry_.DeleteEntity(entity_); 
-}
 
 Scene::Scene(const std::string& name)
-    : name_(name)
 {
+    // Create root node
+    Entity* rootEntity = registry_.CreateEntity();
+    rootNode_ = nodePool_.allocate(this, rootEntity, 0);
+
+    rootEntity->AddComponent<NameCmpt>(name);
+    rootEntity->AddComponent<TransformCmpt>(rootNode_);
+
+    nodes_.push_back(rootNode_);
 }
 
 Scene::~Scene()
@@ -44,67 +30,58 @@ Scene::~Scene()
 
 Node* Scene::CreateNode(const std::string &name, Node* parent)
 {
-    if (nodeMap_.find(name) != nodeMap_.end()) {
-        CORE_LOGW("You can't create a node with a name which has existed.")
-        return nullptr;;
+    // Create entity
+    Entity* newEntity = registry_.CreateEntity();
+
+    // Has name?
+    if (name != "Null") {
+        newEntity->AddComponent<NameCmpt>(name);
     }
 
-    Node* newNode = nodePool_.allocate(this, parent, name);
+    // Create node
+    size_t offset = nodes_.size();
+    Node* newNode = nodePool_.allocate(this, newEntity, offset);
     nodes_.push_back(newNode);
-    nodeMap_.emplace(std::make_pair(name, newNode));
-    
-    if (parent == nullptr)
-        rootNodes_.push_back(newNode);
-    else {
+
+    // Create transform component
+    newEntity->AddComponent<TransformCmpt>(newNode);
+
+    // Node's hierarchy 
+    if (parent != nullptr)
         parent->AddChild(newNode);
-        newNode->SetParent(parent);
-    }
 
     return newNode;
     
 }
 
+void Scene::SetName(const std::string &name)
+{
+    rootNode_->GetEntity()->GetComponent<NameCmpt>()->name = name;
+}
 
 void Scene::DeleteNode(Node *node)
 {
 
-    // TODO: Support node deletion
-    
-    // Iteratively delete children nodes
-    for (auto* child : node->children_) {
-        DeleteNode(child);
+    // Remove from parent
+    if (node->GetParent()) {
+        node->GetParent()->RemoveChild(node);
+        node->parent_ = nullptr;
     }
 
-    // If node's entity has name, erase it from map
-    auto name_cmpt = node->GetNameCmpt();
-    if (name_cmpt)
-        nodeMap_.erase(name_cmpt->name);
-    
+    // Delete entity
+    registry_.DeleteEntity(node->GetEntity());
+
+    // Delete children
+    for (auto* c: node->GetChildren()) {
+        c->parent_ = nullptr; // So, the children vector will not be modified
+        DeleteNode(c);
+    }
 
     // free the node in pool
+    nodes_[node->poolOffset_] = nodes_.back();
+    nodes_[node->poolOffset_]->poolOffset_ = node->poolOffset_;
+    nodes_.pop_back();
     nodePool_.free(node);
-}
-
-Node* Scene::GetNodeByName(const std::string &name)
-{
-    auto find = nodeMap_.find(name);
-
-    if (find != nodeMap_.end())
-        return find->second;
-    else {
-        CORE_LOGD("Node named {} doesn't exsit.")
-        return nullptr;
-    }
-}
-
-void Scene::FlushRootNodes()
-{
-    rootNodes_.clear();
-    for (auto* node : nodes_) {
-        if (node->parent_ == nullptr) {
-            rootNodes_.push_back(node);
-        }
-    }
 }
 
 CameraCmpt* Scene::GetCamera()

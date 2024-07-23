@@ -73,7 +73,7 @@ glm::mat4 TransformCmpt::GetWorldMatrix()
         return GetTRSMatrix();
     }
     else {
-        auto* parent_transform = parent_node->GetTransformCmpt();
+        auto* parent_transform = parent_node->GetEntity()->GetComponent<TransformCmpt>();
         return parent_transform->GetWorldMatrix() * GetTRSMatrix();
     }
 }

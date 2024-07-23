@@ -42,7 +42,7 @@ public:
 
 class MouseButtonPressedEvent : public Event {
 public:
-    MouseButtonPressedEvent(int button) : button(button) {}
+    MouseButtonPressedEvent(MouseCode button) : button(button) {}
 
     std::string ToString() const override
     {

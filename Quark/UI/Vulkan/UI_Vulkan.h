@@ -21,6 +21,7 @@ public:
 private:
     graphic::Device_Vulkan* device_;
     VkDescriptorPool descriptorPool_;
+    VkFormat swapChainFormat_;
     // VkPipelineLayout pipelineLayout_;
     // VkPipeline pipeline_;
 

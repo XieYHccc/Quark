@@ -71,7 +71,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         int frame_width = 0;
         int frame_height = 0;
         glfwGetFramebufferSize(window, &frame_width, &frame_height);
-        EventManager::Instance().ImmediateTrigger(WindowResizeEvent(frame_width, frame_height));
+        EventManager::Instance().TriggerEvent(WindowResizeEvent(frame_width, frame_height));
     });
 
     glfwSetWindowCloseCallback(window_, [](GLFWwindow* window)
@@ -87,15 +87,15 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
 
         switch (action) {
         case GLFW_PRESS: {
-            EventManager::Instance().ImmediateTrigger(KeyPressedEvent(key, 0));
+            EventManager::Instance().TriggerEvent(KeyPressedEvent(key, 0));
             break;
         }
         case GLFW_RELEASE: {
-            EventManager::Instance().ImmediateTrigger(KeyReleasedEvent(key));
+            EventManager::Instance().TriggerEvent(KeyReleasedEvent(key));
             break;
         }
         case GLFW_REPEAT: {
-            EventManager::Instance().ImmediateTrigger(KeyPressedEvent(key, 1));
+            EventManager::Instance().TriggerEvent(KeyPressedEvent(key, 1));
             break;
         }
         }
@@ -106,13 +106,24 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         // Record Mouse position
         ((InputGLFW*)Input::Singleton())->RecordMousePosition(xpos, ypos);
 
-        EventManager::Instance().ImmediateTrigger(MouseMovedEvent((float)xpos, (float)ypos));
+        EventManager::Instance().TriggerEvent(MouseMovedEvent((float)xpos, (float)ypos));
     });
 
     glfwSetScrollCallback(window_, [](GLFWwindow* window, double xOffset, double yOffset) {
-        EventManager::Instance().ImmediateTrigger(MouseScrolledEvent((float)xOffset, (float)yOffset));
+        EventManager::Instance().TriggerEvent(MouseScrolledEvent((float)xOffset, (float)yOffset));
     });
 
+    glfwSetMouseButtonCallback(window_, [](GLFWwindow* window, int button, int action, int mods) {
+        // Record Mouse button status
+        ((InputGLFW*)Input::Singleton())->RecordKey(button, action);
+
+        if (action == GLFW_PRESS) {
+            EventManager::Instance().TriggerEvent(MouseButtonPressedEvent(button));
+        }
+        else if (action == GLFW_RELEASE) {
+            EventManager::Instance().TriggerEvent(MouseButtonReleasedEvent(button));   
+        }
+    });
 }
 
 void WindowGLFW::Finalize()

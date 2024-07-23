@@ -27,13 +27,10 @@ public:
     void QueueEvent(std::unique_ptr<T>&& event);
 
     void DispatchEvents();
-
-    void ImmediateTrigger(const Event& evnet);
+    void TriggerEvent(const Event& evnet);
 
 private:
     EventManager() = default;
-
-    void TriggerEvent(const Event& evnet);
 
     std::vector<std::unique_ptr<Event>> event_queue_;
     std::unordered_map<EventType, std::vector<std::unique_ptr<BaseEventHandler>>> subscribers_;

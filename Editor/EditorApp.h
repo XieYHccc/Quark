@@ -2,6 +2,10 @@
 #include <Quark/Core/Application.h>
 #include <Quark/Scene/Scene.h>
 #include <Quark/Renderer/SceneRenderer.h>
+#include "Editor/UI/SceneHeirarchy.h"
+#include "Editor/UI/Inspector.h"
+
+namespace editor {
 
 class EditorApp : public Application  {  
 public:
@@ -28,9 +32,16 @@ public:
     Ref<graphic::Image> depth_image;
     graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;
 
-    Scope<scene::Scene> scene;
-    Scope<render::SceneRenderer> scene_renderer;
+    Scope<scene::Scene> scene_;
+    Scope<render::SceneRenderer> scene_renderer_;
+
+    // UI window
+    ui::SceneHeirarchy heirarchyWindow_;
+    ui::Inspector inspector_;
+    
 
     // Debug
     float cmdListRecordTime = 0;
 };
+
+}

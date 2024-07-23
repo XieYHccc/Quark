@@ -28,7 +28,7 @@ public:
     bool IsKeyReleased(Keycode key) const;
     bool IsKeyKeepPressed(Keycode key) const;
 
-    bool IsMousePressed(MouseCode button) const;
+    bool IsMousePressed(MouseCode button, bool repeat) const;
     bool IsMouseReleased(MouseCode button) const;
     bool IsMouseKeepPressed(MouseCode button) const;
 

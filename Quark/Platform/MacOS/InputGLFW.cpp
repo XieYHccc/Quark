@@ -37,7 +37,7 @@ void InputGLFW::Finalize()
 
 void InputGLFW::RecordKey(int key, int action)
 { 
-    CORE_DEBUG_ASSERT(key > 0)
+    CORE_DEBUG_ASSERT(key >= 0)
     keyMouseStatus_[key] = (KeyAction)action;
 }
 

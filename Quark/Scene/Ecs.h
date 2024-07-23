@@ -22,10 +22,10 @@ protected:
 };
 
 #define QK_COMPONENT_TYPE_DECL(x) \
-static inline constexpr ComponentType GetStaticComponentType() { \
-    return ComponentType(util::compile_time_fnv1(#x)); \
+static inline constexpr scene::ComponentType GetStaticComponentType() { \
+    return scene::ComponentType(util::compile_time_fnv1(#x)); \
 }\
-ComponentType GetType() override {\
+scene::ComponentType GetType() override {\
     return GetStaticComponentType();\
 }
 

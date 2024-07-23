@@ -8,6 +8,15 @@
 #include <Quark/Scene/Components/MoveControlCmpt.h>
 #include <imgui.h>
 
+#include "Editor/CameraControlCmpt.h"
+
+Application* CreateApplication()
+{
+    return new editor::EditorApp("EditorApp"," ", 1200, 800);
+}
+
+namespace editor {
+
 EditorApp::EditorApp(const std::string& title, const std::string& root, int width, int height)
     : Application(title, root, width, height)
 {
@@ -17,13 +26,10 @@ EditorApp::EditorApp(const std::string& title, const std::string& root, int widt
 
     LoadAsset();
     SetUpCamera();
-    scene_renderer->PrepareForRender();
-}
+    scene_renderer_->PrepareForRender();
 
-Application* CreateApplication()
-{
-    return new EditorApp("EditorApp"," ", 1200, 800);
-    
+    // Init UI windows
+    heirarchyWindow_.SetScene(scene_.get());
 }
 
 EditorApp::~EditorApp()
@@ -33,26 +39,34 @@ EditorApp::~EditorApp()
 void EditorApp::Update(f32 deltaTime)
 {    
     // Update camera movement
-    auto* cam = scene->GetCamera();
-    auto* camMoveCmpt = cam->GetEntity()->GetComponent<scene::MoveControlCmpt>();
-    camMoveCmpt->Update(deltaTime);
+    auto* editorCameraCmpt = scene_->GetCamera();
+    auto* cameraMoveCmpt = editorCameraCmpt->GetEntity()->GetComponent<component::EditorCameraControlCmpt>();
+    cameraMoveCmpt->Update(deltaTime);
 
     // Update scene
-    scene->Update();
+    scene_->Update();
 }   
 
 void EditorApp::UpdateUI()
 {
     // Prepare UI data
     UI::Singleton()->BeginFrame();
+
     // some imgui UI to test
     if (UI::Singleton()->BeginBlock("Background")) {
     
         UI::Singleton()->Text("FPS: %f", m_Status.fps);
         UI::Singleton()->Text("Frame Time: %f ms", m_Status.lastFrameDuration);
         UI::Singleton()->Text("CmdList Record Time: %f ms", cmdListRecordTime);
-        UI::Singleton()->EndBlock();
     }
+    UI::Singleton()->EndBlock();
+
+    // Draw Scene Heirarchy
+    heirarchyWindow_.Render();
+    
+    // Draw Inspector
+    inspector_.SetNode(heirarchyWindow_.GetSelectedNode());
+    inspector_.Render();
 
     UI::Singleton()->EndFrame();
 }
@@ -120,7 +134,7 @@ void EditorApp::Render(f32 deltaTime)
         
         // Draw scene
         auto geometry_start = m_Timer.ElapsedMillis();
-        scene_renderer->Render(cmd);
+        scene_renderer_->Render(cmd);
         cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
         cmd->EndRenderPass();
@@ -128,7 +142,9 @@ void EditorApp::Render(f32 deltaTime)
         // 4. Beigin UI pass
         ui_pass_info.colorAttachments[0] = swap_chain_image;
         cmd->BeginRenderPass(ui_pass_info);
+
         UI::Singleton()->Render(cmd);
+
         cmd->EndRenderPass();
 
         // 7. Transit swapchain image to present layout for presenting
@@ -145,21 +161,22 @@ void EditorApp::Render(f32 deltaTime)
 
         // 8. Submit command list
         graphic_device->SubmitCommandList(cmd);
-
+    
         // End this frame, submit Command list and pressent to screen
         graphic_device->EndFrame(deltaTime);
     }
 
+    CORE_LOGD("TEST")
 }
 
 void EditorApp::LoadAsset()
 {
     // load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
-    scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/structure.glb");
+    scene_ = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/teapot.gltf");
 
-    scene_renderer = CreateScope<render::SceneRenderer>(m_GraphicDevice.get());
-    scene_renderer->SetScene(scene.get());
+    scene_renderer_ = CreateScope<render::SceneRenderer>(m_GraphicDevice.get());
+    scene_renderer_->SetScene(scene_.get());
 }
 
 void EditorApp::CreatePipeline()
@@ -219,14 +236,17 @@ void EditorApp::SetUpCamera()
 {   
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    auto* cam_node = scene->CreateNode("Main camera", nullptr);
+    auto* cam_node = scene_->CreateNode("Editor Camera", nullptr);
     cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    cam_node->GetEntity()->AddComponent<component::EditorCameraControlCmpt>(50, 0.3);
     cam_node->GetEntity()->AddComponent<scene::MoveControlCmpt>(50, 0.3);
 
     // Default position
     auto* transform_cmpt = cam_node->GetEntity()->GetComponent<scene::TransformCmpt>();
     transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
 
-    scene->SetCamera(cam_node);
+    scene_->SetCamera(cam_node);
     
+}
+
 }
