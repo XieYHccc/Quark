@@ -1,28 +1,55 @@
 #include "Editor/CameraControlCmpt.h"
+#include <Quark/Events/EventManager.h>
 
 namespace editor::component {
 
-void EditorCameraControlCmpt::Update(float deltaTime)
-{   
-    // 1. Process mouse movement
-    MousePosition pos = Input::Singleton()->GetMousePosition();
+EditorCameraControlCmpt::EditorCameraControlCmpt(scene::Entity* entity, float moveSpeed, float mouseSensitivity)
+    : scene::MoveControlCmpt(entity, moveSpeed, mouseSensitivity), isViewPortTouching_(false)
+{
+    // Register event callback
+    // EventManager::Instance().Subscribe<MouseMovedEvent>([&](const MouseMovedEvent& e) {
+    //     OnMouseMoveEvent(e);
+    // });
+
+    EventManager::Instance().Subscribe<ui::SceneViewPortTouchedEvent>([&](const ui::SceneViewPortTouchedEvent& e) {
+        OnViewPortTouchedEvent(e);
+    });
+}
+
+void EditorCameraControlCmpt::OnMouseMoveEvent(const MouseMovedEvent& e)
+{
     if (isFirstMouse_) {
-        lastPosition_ = pos;
+        lastPosition_ = {e.mouseX, e.mouseY};
         isFirstMouse_ = false;
     }
 
     if (Input::Singleton()->IsMousePressed(MOUSE_CODE_BUTTON0, true)) {
-
-        float xoffset = pos.x_pos - lastPosition_.x_pos;
-        float yoffset = pos.y_pos - lastPosition_.y_pos;
+        float xoffset = e.mouseX - lastPosition_.x_pos;
+        float yoffset = e.mouseY - lastPosition_.y_pos;
         ProcessMouseMove(xoffset, yoffset);
     }
 
-    lastPosition_ = pos;
+    lastPosition_ = {e.mouseX, e.mouseY};
+}
 
-    // 2. Process key inputs
-    ProcessKeyInput(deltaTime);
 
+void EditorCameraControlCmpt::Update(float deltaTime)
+{   
+    // // Only need to process key input in fixed update
+    // ProcessKeyInput(deltaTime);
+
+    if (isViewPortTouching_) {
+        scene::MoveControlCmpt::Update(deltaTime);
+        isViewPortTouching_ = false;
+    }
+
+    lastPosition_ = Input::Singleton()->GetMousePosition();
+
+}
+
+void EditorCameraControlCmpt::OnViewPortTouchedEvent(const ui::SceneViewPortTouchedEvent& e)
+{
+    isViewPortTouching_ = true;
 }
 
 }

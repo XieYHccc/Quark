@@ -3,6 +3,13 @@
 
 namespace editor::ui {
 
+void Inspector::Init()
+{
+    selectedNode_ = nullptr;
+    rename_ = false;
+    buf_[0] = '\0';
+}
+
 void Inspector::Render()
 {
     if (ImGui::Begin("Inspector"))
@@ -20,14 +27,11 @@ void Inspector::Render()
         char buffer[256];
         strncpy(buffer, nameCmpt->name.c_str(), sizeof(buffer));
 
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Node name:");
+        ImGui::SameLine();
         if (ImGui::InputText("##Name", buffer, sizeof(buffer)))
             nameCmpt->name = buffer;
-        
-        // Button : add component
-		ImGui::SameLine();
-		ImGui::PushItemWidth(-1);
-        if (ImGui::Button("Add Component"))
-			ImGui::OpenPopup("AddComponent");
         
         // Transform component
         auto* transformCmpt = entity->GetComponent<scene::TransformCmpt>();

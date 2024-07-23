@@ -3,13 +3,22 @@
 #include "Events/ApplicationEvent.h"
 #include "Graphic/Device.h"
 
+
+struct AppInitSpecs {
+    std::string title = "Quark Application";
+    std::uint32_t width = 1200;
+    std::uint32_t height = 800;
+    std::uint32_t uiInitFlags = 0;
+    bool isFullScreen = false;
+};  
+
 class Application {
 public:
     static Application& Instance() { return *singleton_; }
 private:
     static Application* singleton_;
 public:
-    Application(const std::string& title, const std::string& root, int width, int height);
+    Application(const AppInitSpecs& specs);
     virtual ~Application();
     Application(const Application&) = delete;
     const Application& operator=(const Application&) = delete;
@@ -41,7 +50,6 @@ protected:
 
     Timer m_Timer;
     AppStatus m_Status;
-    std::string m_Root; //TODO: Support file system
     Scope<graphic::Device> m_GraphicDevice;
 };
 

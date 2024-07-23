@@ -7,19 +7,19 @@
 #include <backends/imgui_impl_vulkan.h>
 #include "Core/Window.h"
 #include "Graphic/Vulkan/CommandList_Vulkan.h"
+#include "Events/EventManager.h"
 
-void UI_Vulkan::Init(graphic::Device *device)
+void UI_Vulkan::Init(graphic::Device *device, const std::uint32_t flags)
 {
     CORE_DEBUG_ASSERT(device)
     device_ = static_cast<graphic::Device_Vulkan*>(device);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui::GetIO().IniFilename = "bin/log/imgui.ini";
 
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigFlags |= flags & UI_INIT_FLAG_DOCKING? ImGuiConfigFlags_DockingEnable : 0;
+    io.ConfigFlags |= flags & UI_INIT_FLAG_VIEWPORTS? ImGuiConfigFlags_ViewportsEnable : 0;
 	io.ConfigViewportsNoAutoMerge = false;
 	io.ConfigViewportsNoTaskBarIcon = true;
 
@@ -39,34 +39,34 @@ void UI_Vulkan::Init(graphic::Device *device)
     	auto& colors = style.Colors;
 
         // Windows
-		// colors[ImGuiCol_WindowBg] = ImVec4{ 0.09f, 0.09f, 0.09f, 1.0f };
+		colors[ImGuiCol_WindowBg] = ImVec4{ 0.09f, 0.09f, 0.09f, 1.0f };
 
 		// Headers
-		// colors[ImGuiCol_Header] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
-		// colors[ImGuiCol_HeaderHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		// colors[ImGuiCol_HeaderActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		colors[ImGuiCol_Header] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+		colors[ImGuiCol_HeaderHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+		colors[ImGuiCol_HeaderActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 
 		// Buttons
-		// colors[ImGuiCol_Button] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
-		// colors[ImGuiCol_ButtonHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		// colors[ImGuiCol_ButtonActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		colors[ImGuiCol_Button] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+		colors[ImGuiCol_ButtonHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+		colors[ImGuiCol_ButtonActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 
-		// // Frame BG
-		// colors[ImGuiCol_FrameBg] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
-		// colors[ImGuiCol_FrameBgHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
-		// colors[ImGuiCol_FrameBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// Frame BG
+		colors[ImGuiCol_FrameBg] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+		colors[ImGuiCol_FrameBgHovered] = ImVec4{ 0.3f, 0.305f, 0.31f, 1.0f };
+		colors[ImGuiCol_FrameBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
 
-		// // Tabs
-		// colors[ImGuiCol_Tab] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		// colors[ImGuiCol_TabHovered] = ImVec4{ 0.38f, 0.3805f, 0.381f, 1.0f };
-		// colors[ImGuiCol_TabActive] = ImVec4{ 0.28f, 0.2805f, 0.281f, 1.0f };
-		// colors[ImGuiCol_TabUnfocused] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		// colors[ImGuiCol_TabUnfocusedActive] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
+		// Tabs
+		colors[ImGuiCol_Tab] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		colors[ImGuiCol_TabHovered] = ImVec4{ 0.38f, 0.3805f, 0.381f, 1.0f };
+		colors[ImGuiCol_TabActive] = ImVec4{ 0.28f, 0.2805f, 0.281f, 1.0f };
+		colors[ImGuiCol_TabUnfocused] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		colors[ImGuiCol_TabUnfocusedActive] = ImVec4{ 0.2f, 0.205f, 0.21f, 1.0f };
 
-		// // Title
-		// colors[ImGuiCol_TitleBg] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		// colors[ImGuiCol_TitleBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
-		// colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		// Title
+		colors[ImGuiCol_TitleBg] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		colors[ImGuiCol_TitleBgActive] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
+		colors[ImGuiCol_TitleBgCollapsed] = ImVec4{ 0.15f, 0.1505f, 0.151f, 1.0f };
     }
 
     // Descripto pool
@@ -114,6 +114,7 @@ void UI_Vulkan::Init(graphic::Device *device)
         ImGui_ImplVulkan_Init(&init_info);
     }
 
+    CORE_LOGI("UI system initialized in vulkan backend")
 }
 
 void UI_Vulkan::Finalize()
@@ -132,7 +133,8 @@ void UI_Vulkan::BeginFrame()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
 }
 
 void UI_Vulkan::EndFrame()
@@ -153,21 +155,11 @@ void UI_Vulkan::Render(graphic::CommandList* cmd)
 	}
 }
 
-bool UI_Vulkan::BeginBlock(const char *name, WindowFlags flags)
+ImTextureID UI_Vulkan::CreateTextureId(const graphic::Image& image, const graphic::Sampler& sampler)
 {
-    return ImGui::Begin(name, nullptr, flags);
-}
+    VkSampler samp = graphic::ToInternal(&sampler).GetHandle();
+    VkImageView view = graphic::ToInternal(&image).GetView();
 
-void UI_Vulkan::EndBlock()
-{
-    ImGui::End();
-}
-
-void UI_Vulkan::Text(const char* formatstr, ...)
-{
-    va_list args;
-    va_start(args, formatstr);
-    ImGui::TextV(formatstr, args);
-    va_end(args);
+    return (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 

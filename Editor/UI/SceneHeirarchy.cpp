@@ -15,6 +15,12 @@ SceneHeirarchy::SceneHeirarchy(scene::Scene* scene) : scene_(scene), selectedNod
 
 }
 
+void SceneHeirarchy::Init()
+{
+    scene_ = nullptr;
+    selectedNode_ = nullptr;
+}
+
 void SceneHeirarchy::SetScene(scene::Scene *scene)
 {
     scene_ = scene;

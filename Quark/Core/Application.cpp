@@ -14,11 +14,9 @@
 
 Application* Application::singleton_ = nullptr;
 
-Application::Application(const std::string& title, const std::string& root, int width, int height) 
+Application::Application(const AppInitSpecs& specs) 
 {
     singleton_ = this;
-    m_Root = root;
-    
     
     // Init logger
     Logger::Init();
@@ -28,7 +26,7 @@ Application::Application(const std::string& title, const std::string& root, int 
 
     // Init window 
     Window::Create();
-    Window::Instance()->Init(title,false,  width, height);
+    Window::Instance()->Init(specs.title,specs.isFullScreen,  specs.width, specs.height);
     
     // Init input system
     Input::CreateSingleton();
@@ -45,7 +43,7 @@ Application::Application(const std::string& title, const std::string& root, int 
 
     // Init UI system
     UI::CreateSingleton();
-    UI::Singleton()->Init(m_GraphicDevice.get());
+    UI::Singleton()->Init(m_GraphicDevice.get(), specs.uiInitFlags);
 
     // Register application callback functions
     EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
@@ -86,9 +84,6 @@ void Application::Run()
         // TODO: Multithreading
         // Update each moudule (including processing inputs)
         Update(m_Status.lastFrameDuration);
-
-        // Update UI
-        UpdateUI();
 
         // Render Scene
         Render(m_Status.lastFrameDuration);

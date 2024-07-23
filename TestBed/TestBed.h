@@ -5,7 +5,7 @@
 
 class TestBed : public Application  {  
 public:
-    TestBed(const std::string& title, const std::string& root, int width, int height);
+    TestBed(const AppInitSpecs& specs);
     ~TestBed();
 
     virtual void Update(f32 deltaTime) override final;

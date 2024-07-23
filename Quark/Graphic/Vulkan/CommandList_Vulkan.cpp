@@ -112,7 +112,7 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
         vk_image_barrier.srcAccessMask = (VkAccessFlagBits2)image_barrier.srcMemoryAccessBits;
         vk_image_barrier.dstStageMask = (VkPipelineStageFlagBits2)image_barrier.dstStageBits;
         vk_image_barrier.dstAccessMask = (VkAccessFlagBits2)image_barrier.dstMemoryAccessBits;
-        vk_image_barrier.image = internal_image.handle_;
+        vk_image_barrier.image = internal_image.GetHandle();
         vk_image_barrier.oldLayout = ConvertImageLayout(image_barrier.layoutBefore);
         vk_image_barrier.newLayout = ConvertImageLayout(image_barrier.layoutAfter);
         vk_image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -229,7 +229,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
 		rendering_info.renderArea.extent.height = std::max(rendering_info.renderArea.extent.height, image_desc.height);
 
         color_attachments[i].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        color_attachments[i].imageView = internal_image.view_;
+        color_attachments[i].imageView = internal_image.GetView();
         color_attachments[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_attachments[i].loadOp = convertLoadOp(info.colorAttatchemtsLoadOp[i]);
         color_attachments[i].storeOp = convertStoreOp(info.colorAttatchemtsStoreOp[i]);
@@ -239,7 +239,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
         color_attachments[i].clearValue.color.float32[3] = info.clearColors[i].color[3];
 
         // internal swapchain image state tracking
-        if (internal_image.isSwapChainImage_) {
+        if (internal_image.IsSwapChainImage()) {
             waitForSwapchainImage_ = true;
             swapChainWaitStages_ |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
         }
@@ -247,7 +247,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
 
     // Resolve attatchments
     for (size_t i = 0; i < info.numResolveAttachments; ++i) {
-        color_attachments[i].resolveImageView = ToInternal(info.resolveAttatchments[i]).view_;
+        color_attachments[i].resolveImageView = ToInternal(info.resolveAttatchments[i]).GetView();
         color_attachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_attachments[i].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
     }
@@ -255,7 +255,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     // Depth attatchment
     if (info.depthAttachment != nullptr) {
         depth_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        depth_attachment.imageView = ToInternal(info.depthAttachment).view_;
+        depth_attachment.imageView = ToInternal(info.depthAttachment).GetView();
         depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depth_attachment.loadOp = convertLoadOp(info.depthAttachmentLoadOp);
         depth_attachment.storeOp = convertStoreOp(info.depthAttachmentStoreOp);
@@ -394,10 +394,10 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
     auto& internal_image = ToInternal(&image);
     auto& b = bindingState_.descriptorBindings[set][binding];
 
-    if (b.image.imageView == internal_image.view_ && b.image.imageLayout == ConvertImageLayout(layout))
+    if (b.image.imageView == internal_image.GetView() && b.image.imageLayout == ConvertImageLayout(layout))
         return;
 
-    b.image.imageView = internal_image.view_;
+    b.image.imageView = internal_image.GetView();
     b.image.imageLayout = ConvertImageLayout(layout);
     dirty_SetBits_ |= 1u << set;
     
@@ -446,10 +446,10 @@ void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sample
     auto& internal_sampler = ToInternal(&sampler);
     auto& b = bindingState_.descriptorBindings[set][binding];
 
-    if (b.image.sampler == internal_sampler.handle_)
+    if (b.image.sampler == internal_sampler.GetHandle())
         return;
 
-    b.image.sampler = internal_sampler.handle_;
+    b.image.sampler = internal_sampler.GetHandle();
     dirty_SetBits_ |= 1u << set;
 }
 

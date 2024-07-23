@@ -8,8 +8,8 @@
 #include <Quark/UI/UI.h>
 #include <imgui.h>
 
-TestBed::TestBed(const std::string& title, const std::string& root, int width, int height)
-    : Application(title, root, width, height)
+TestBed::TestBed(const AppInitSpecs& specs)
+    : Application(specs)
 {
     SetUpRenderPass();
     CreatePipeline();
@@ -22,7 +22,15 @@ TestBed::TestBed(const std::string& title, const std::string& root, int width, i
 
 Application* CreateApplication()
 {
-    return new TestBed("TestBed"," ", 1200, 800);
+    AppInitSpecs specs = {
+        .uiInitFlags = 0,
+        .title = "TestBed",
+        .width = 1200,
+        .height = 800,
+        .isFullScreen = false
+    };
+
+    return new TestBed(specs);
     
 }
 
@@ -39,20 +47,23 @@ void TestBed::Update(f32 deltaTime)
 
     // Update scene
     scene->Update();
+
+    // Update UI
+    UpdateUI();
 }   
 
 void TestBed::UpdateUI()
 {
     // Prepare UI data
     UI::Singleton()->BeginFrame();
-    // some imgui UI to test
-    if (UI::Singleton()->BeginBlock("background")) {
     
-        UI::Singleton()->Text("FPS: %f", m_Status.fps);
-        UI::Singleton()->Text("Frame Time: %f ms", m_Status.lastFrameDuration);
-        UI::Singleton()->Text("CmdList Record Time: %f ms", cmdListRecordTime);
-        UI::Singleton()->EndBlock();
+    if (ImGui::Begin("Background")) {
+    
+        ImGui::Text("FPS: %f", m_Status.fps);
+        ImGui::Text("Frame Time: %f ms", m_Status.lastFrameDuration);
+        ImGui::Text("CmdList Record Time: %f ms", cmdListRecordTime);
     }
+    ImGui::End();
 
     UI::Singleton()->EndFrame();
 }

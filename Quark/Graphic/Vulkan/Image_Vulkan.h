@@ -87,11 +87,15 @@ private:
 
 class Image_Vulkan : public Image {
     friend class Device_Vulkan;
-    friend class CommandList_Vulkan;
 public:
     Image_Vulkan(const ImageDesc& desc); // only used for fill swapchain image infomation
     Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data);
     virtual ~Image_Vulkan();
+    
+    VkImage GetHandle() const { return handle_; }
+    VkImageView GetView() const { return view_; }
+    
+    bool IsSwapChainImage() const { return isSwapChainImage_; }
     
 private:
     void PrepareCopy(const ImageDesc& desc, const TextureFormatLayout& layout, const ImageInitData* init_data, Ref<Buffer> stage_buffer, std::vector<VkBufferImageCopy>& copys);
@@ -107,11 +111,10 @@ private:
 CONVERT_TO_VULKAN_INTERNAL(Image)
 
 class Sampler_Vulkan : public Sampler {
-    friend class Device_Vulkan;
-    friend class CommandList_Vulkan;
 public:
     Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc);
     ~Sampler_Vulkan();
+    VkSampler GetHandle() const { return handle_; }
 private:
     Device_Vulkan* device_;
     VkSampler handle_;

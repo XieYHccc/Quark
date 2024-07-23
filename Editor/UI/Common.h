@@ -3,10 +3,11 @@
 
 namespace editor::ui {
 
-class Window {
+class UIWindowBase {
 public:
-    Window() = default;
-    virtual ~Window() = default;
+    UIWindowBase() = default;
+    virtual ~UIWindowBase() = default;
+    virtual void Init()  = 0;
     virtual void Render() = 0;
     
 };
