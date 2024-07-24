@@ -9,9 +9,7 @@ namespace editor::ui {
 class SceneViewPortTouchedEvent : public Event {
 public:
     SceneViewPortTouchedEvent() = default;
-    ~SceneViewPortTouchedEvent() = default;
     EVENT_TYPE("SceneViewPortTouchedEvent")
-
 };
 
 class SceneViewPort : public UIWindowBase
@@ -24,12 +22,10 @@ public:
     void SetColorAttachment(const graphic::Image* colorAttachment);
 
 private:
-    graphic::Viewport viewPort_ = {};
     Ref<graphic::Sampler> sampler_;
     ImTextureID currentId_;
     std::unordered_map<const graphic::Image*, ImTextureID> idMap_;
     graphic::Device* device_;
-
     ImVec2 panelsize_;
 };
 

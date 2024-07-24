@@ -15,8 +15,7 @@ public:
     void CreateDepthImage();
     void CreatePipeline();
     void SetUpRenderPass();
-    void LoadAsset();
-    void SetUpCamera();
+    void LoadScene();
 
     Ref<graphic::Shader> vert_shader;
     Ref<graphic::Shader> frag_shader;

@@ -2,6 +2,7 @@
 #include <glm/gtx/transform.hpp>
 #include "Core/Window.h"
 #include "Scene/Components/CameraCmpt.h"
+#include "Events/EventManager.h"
 
 namespace scene {
 
@@ -9,6 +10,11 @@ CameraCmpt::CameraCmpt(Entity* entity, float _aspect, float _fov, float _zNear, 
     : Component(entity), aspect(_aspect), fov(_fov), zNear(_zNear), zFar(_zFar), transform_(nullptr)
 {
     transform_ = entity_->GetComponent<TransformCmpt>();
+
+    EventManager::Instance().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& e) {
+        aspect = static_cast<float>(e.width) / e.height;
+    });
+
 }
 
 glm::mat4 CameraCmpt::GetViewMatrix() const 

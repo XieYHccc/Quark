@@ -15,7 +15,7 @@ Application* CreateApplication()
     AppInitSpecs specs = {
         .uiInitFlags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS,
         .title = "Quark Editor",
-        .width = 1200,
+        .width = 1300,
         .height = 800,
         .isFullScreen = false
     };
@@ -28,13 +28,15 @@ namespace editor {
 EditorApp::EditorApp(const AppInitSpecs& specs)
     : Application(specs)
 {
+    color_format = m_GraphicDevice->GetSwapChainImageFormat();
+
+    // Render structures
     SetUpRenderPass();
     CreatePipeline();
     CreateColorDepthAttachments();
 
-    LoadAsset();
-    SetUpCamera();
-    scene_renderer_->PrepareForRender();
+    // Load scene
+    LoadScene();
 
     // Init UI windows
     heirarchyWindow_.Init();
@@ -67,7 +69,7 @@ void EditorApp::UpdateUI()
     UI::Singleton()->BeginFrame();
 
     // Debug Ui
-    if (ImGui::Begin("Background")) {
+    if (ImGui::Begin("Debug")) {
     
         ImGui::Text("FPS: %f", m_Status.fps);
         ImGui::Text("Frame Time: %f ms", m_Status.lastFrameDuration);
@@ -92,37 +94,13 @@ void EditorApp::UpdateUI()
     UI::Singleton()->EndFrame();
 }
 
-void EditorApp::SetUpRenderPass()
-{   
-    // First pass : geometry pass
-    geometry_pass_info = {};
-    geometry_pass_info.numColorAttachments = 1;
-    geometry_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-    geometry_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
-    geometry_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
-    geometry_pass_info.useDepthAttachment = true;
-    geometry_pass_info.depthAttachment = depth_image.get();
-    geometry_pass_info.depthAttachmentLoadOp = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-    geometry_pass_info.depthAttachmentStoreOp = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
-    geometry_pass_info.ClearDepthStencil.depth_stencil = {1.f, 0};
-    geometry_pass_info.depthAttachmentFormat = depth_format;
-
-    // Second pass : UI pass
-    ui_pass_info = {};
-    ui_pass_info.numColorAttachments = 1;
-    ui_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-    ui_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
-    ui_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
-
-}
-
 void EditorApp::Render(f32 deltaTime)
 {
-    // Fill command list
     auto graphic_device = Application::Instance().GetGraphicDevice();
+
     if (graphic_device->BeiginFrame(deltaTime)) {
         auto cmd = graphic_device->BeginCommandList();
-        auto swap_chain_image = graphic_device->GetPresentImage();
+        auto* swap_chain_image = graphic_device->GetPresentImage();
 
         // Geometry pass
         {
@@ -139,17 +117,17 @@ void EditorApp::Render(f32 deltaTime)
             cmd->PipeLineBarriers(nullptr, 0, &image_barrier, 1, nullptr, 0);
 
             geometry_pass_info.colorAttachments[0] = color_image.get();
-            geometry_pass_info.clearColors[0] = {0.f, 0.f, 0.3f, 1.f};
+            geometry_pass_info.clearColors[0] = {0.5f, 0.5f, 0.5f, 1.f};
             geometry_pass_info.depthAttachment = depth_image.get();
             cmd->BeginRenderPass(geometry_pass_info);
 
             // Bind Pipeline, set viewport and scissor
             cmd->BindPipeLine(*graphic_pipeline);
 
-            cmd->SetViewPort(graphic::Viewport{.x = 0, .y = 0, .width = (float)swap_chain_image->GetDesc().width,
-                .height = (float)swap_chain_image->GetDesc().height, .minDepth = 0, .maxDepth = 1});
+            cmd->SetViewPort(graphic::Viewport{.x = 0, .y = 0, .width = (float)color_image->GetDesc().width,
+                .height = (float)color_image->GetDesc().height, .minDepth = 0, .maxDepth = 1});
 
-            cmd->SetScissor(graphic::Scissor{.extent = {.width = swap_chain_image->GetDesc().width, .height = swap_chain_image->GetDesc().height},
+            cmd->SetScissor(graphic::Scissor{.extent = {.width = color_image->GetDesc().width, .height = color_image->GetDesc().height},
                 .offset = {.x = 0, .y = 0}});
             
             // Draw scene
@@ -204,20 +182,32 @@ void EditorApp::Render(f32 deltaTime)
         };
         cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
 
-        // 8. Submit command list
+        // Submit command list
         graphic_device->SubmitCommandList(cmd);
     
-        // End this frame, submit Command list and pressent to screen
         graphic_device->EndFrame(deltaTime);
     }
 }
 
-void EditorApp::LoadAsset()
+void EditorApp::LoadScene()
 {
     // load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
     scene_ = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/teapot.gltf");
 
+    // Create camera node
+    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
+    auto* cam_node = scene_->CreateNode("Editor Camera", nullptr);
+    cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    cam_node->GetEntity()->AddComponent<component::EditorCameraControlCmpt>(50, 0.3);
+
+    // Default position
+    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<scene::TransformCmpt>();
+    transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
+
+    scene_->SetCamera(cam_node);
+
+    // Set scene to renderer
     scene_renderer_ = CreateScope<render::SceneRenderer>(m_GraphicDevice.get());
     scene_renderer_->SetScene(scene_.get());
 }
@@ -289,29 +279,34 @@ void EditorApp::CreateColorDepthAttachments()
         depth_image = graphic_device->CreateImage(image_desc);
 
         // Create color image
-        color_format = graphic_device->GetSwapChainImageFormat();
         image_desc.format = color_format;
         image_desc.initialLayout = ImageLayout::UNDEFINED;
         image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
-
         color_image = graphic_device->CreateImage(image_desc);
 }
 
-void EditorApp::SetUpCamera()
+
+void EditorApp::SetUpRenderPass()
 {   
-    // Create camera node
-    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    auto* cam_node = scene_->CreateNode("Editor Camera", nullptr);
-    cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
-    cam_node->GetEntity()->AddComponent<component::EditorCameraControlCmpt>(50, 0.3);
-    // cam_node->GetEntity()->AddComponent<scene::MoveControlCmpt>(50, 0.3);
+    // First pass : geometry pass
+    geometry_pass_info = {};
+    geometry_pass_info.numColorAttachments = 1;
+    geometry_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
+    geometry_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+    geometry_pass_info.colorAttachmentFormats[0] = color_format;
+    geometry_pass_info.useDepthAttachment = true;
+    geometry_pass_info.depthAttachment = depth_image.get();
+    geometry_pass_info.depthAttachmentLoadOp = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
+    geometry_pass_info.depthAttachmentStoreOp = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+    geometry_pass_info.ClearDepthStencil.depth_stencil = {1.f, 0};
+    geometry_pass_info.depthAttachmentFormat = depth_format;
 
-    // Default position
-    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<scene::TransformCmpt>();
-    transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
+    // Second pass : UI pass
+    ui_pass_info = {};
+    ui_pass_info.numColorAttachments = 1;
+    ui_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
+    ui_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
+    ui_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
 
-    scene_->SetCamera(cam_node);
-    
 }
-
 }

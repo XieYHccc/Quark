@@ -24,7 +24,7 @@ void UI_Vulkan::Init(graphic::Device *device, const std::uint32_t flags)
 	io.ConfigViewportsNoTaskBarIcon = true;
 
     io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Bold.ttf", 22.f);
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 18.f);
+	io.FontDefault = io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 19.f);
 
     // Style
     {
@@ -146,7 +146,11 @@ void UI_Vulkan::EndFrame()
 void UI_Vulkan::Render(graphic::CommandList* cmd)
 {
     auto& internal = graphic::ToInternal(cmd);
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), internal.cmdBuffer_);
+
+    auto* data = ImGui::GetDrawData();
+    if (data) {
+        ImGui_ImplVulkan_RenderDrawData(data, internal.cmdBuffer_);
+    }
 
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 	{

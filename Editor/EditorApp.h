@@ -13,15 +13,15 @@ public:
     EditorApp(const AppInitSpecs& specs);
     ~EditorApp();
 
-    virtual void Update(f32 deltaTime) override final;
-    virtual void Render(f32 deltaTime) override final;
-    virtual void UpdateUI() override final;
+    void Update(f32 deltaTime) override final;
+    void Render(f32 deltaTime) override final;
+    void UpdateUI() override final;
     
     void CreateColorDepthAttachments();
     void CreatePipeline();
     void SetUpRenderPass();
-    void LoadAsset();
-    void SetUpCamera();
+    void LoadScene();
+    void UpdateMainMenuUI();
 
     Ref<graphic::Shader> vert_shader;
     Ref<graphic::Shader> frag_shader;
@@ -33,7 +33,8 @@ public:
     Ref<graphic::Image> depth_image;
     Ref<graphic::Image> color_image;
     graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;
-    graphic::DataFormat color_format;
+    graphic::DataFormat color_format; // Same with swapchain format
+    
     Scope<scene::Scene> scene_;
     Scope<render::SceneRenderer> scene_renderer_;
 
@@ -42,11 +43,8 @@ public:
     ui::Inspector inspector_;
     ui::SceneViewPort sceneViewPort_;
     
-
     // Debug
     float cmdListRecordTime = 0;
-private:
-    void UpdateMainMenuUI();
 };
 
 }

@@ -14,10 +14,9 @@ public:
     ~EditorCameraControlCmpt() = default;
 
     void Update(float deltaTime) override;
-
-    void OnMouseMoveEvent(const MouseMovedEvent& e);
-
     void OnViewPortTouchedEvent(const ui::SceneViewPortTouchedEvent& e);
+
+private:
     bool isViewPortTouching_;
 };
 }

@@ -53,12 +53,11 @@ public:
 
     }
 
-    void SetScene(scene::Scene* scene) { scene_ = scene; }
-
-    void PrepareForRender();
+    void SetScene(scene::Scene* scene);
     void Render(graphic::CommandList* cmd_list);
 
 private:
+    void PrepareForRender();
     void UpdateDrawContext();
     graphic::Device* device_;
     scene::Scene* scene_;

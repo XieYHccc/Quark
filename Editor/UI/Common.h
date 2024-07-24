@@ -13,5 +13,5 @@ public:
 };
 
 bool DrawVec3Control(const char* label, glm::vec3& vector, float reset = 0.f, float columnWidth = 100.f);
-
+bool DrawVec3Input(const char* label, glm::vec3& vector);
 }

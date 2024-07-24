@@ -18,6 +18,12 @@ void SceneRenderer::PrepareForRender()
     UpdateDrawContext();
 }
 
+void SceneRenderer::SetScene(scene::Scene* scene)
+{
+    scene_ = scene;
+    PrepareForRender();
+}
+
 void SceneRenderer::UpdateDrawContext()
 {
     // Clear render objects

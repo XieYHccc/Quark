@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include "Events/ApplicationEvent.h"
 #include "Scene/Components/TransformCmpt.h"
 
 namespace scene {
@@ -18,6 +19,7 @@ public:
     glm::mat4 GetViewMatrix() const ;
     glm::mat4 GetProjectionMatrix() const ;
 
+    void OnWindowResize(const WindowResizeEvent& e);
 private:
     TransformCmpt* transform_;
 };

@@ -15,9 +15,7 @@ TestBed::TestBed(const AppInitSpecs& specs)
     CreatePipeline();
     CreateDepthImage();
 
-    LoadAsset();
-    SetUpCamera();
-    scene_renderer->PrepareForRender();
+    LoadScene();
 }
 
 Application* CreateApplication()
@@ -163,12 +161,23 @@ void TestBed::Render(f32 deltaTime)
 
 }
 
-void TestBed::LoadAsset()
+void TestBed::LoadScene()
 {
     // load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
     scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/structure.glb");
+    
+    // Create camera node
+    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
+    auto* cam_node = scene->CreateNode("Main camera", nullptr);
+    cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    cam_node->GetEntity()->AddComponent<scene::MoveControlCmpt>(50, 0.3);
 
+    // Default position
+    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<scene::TransformCmpt>();
+    transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
+
+    scene->SetCamera(cam_node);
     scene_renderer = CreateScope<render::SceneRenderer>(m_GraphicDevice.get());
     scene_renderer->SetScene(scene.get());
 }
@@ -224,20 +233,4 @@ void TestBed::CreateDepthImage()
 
         // Create depth image
         depth_image = graphic_device->CreateImage(depth_image_desc);
-}
-
-void TestBed::SetUpCamera()
-{   
-    // Create camera node
-    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    auto* cam_node = scene->CreateNode("Main camera", nullptr);
-    cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
-    cam_node->GetEntity()->AddComponent<scene::MoveControlCmpt>(50, 0.3);
-
-    // Default position
-    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<scene::TransformCmpt>();
-    transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
-
-    scene->SetCamera(cam_node);
-    
 }

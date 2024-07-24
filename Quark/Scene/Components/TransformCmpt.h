@@ -12,9 +12,9 @@ public:
     
     QK_COMPONENT_TYPE_DECL(TransformCmpt)
 
-    glm::vec3& GetPosition() { return position_; }
-    glm::quat& GetQuat() { return quaternion_; }
-    glm::vec3& GetScale()  { return scale_; }
+    glm::vec3 GetPosition() { return position_; }
+    glm::quat GetQuat() { return quaternion_; }
+    glm::vec3 GetScale()  { return scale_; }
     glm::mat4& GetTRSMatrix();
     glm::mat4 GetWorldMatrix();
 
