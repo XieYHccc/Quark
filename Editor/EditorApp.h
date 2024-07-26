@@ -25,11 +25,16 @@ public:
 
     Ref<graphic::Shader> vert_shader;
     Ref<graphic::Shader> frag_shader;
+    Ref<graphic::Shader> skybox_vert_shader;
+    Ref<graphic::Shader> skybox_frag_shader;
+    
     Ref<graphic::PipeLine> graphic_pipeline;
+    Ref<graphic::PipeLine> skybox_pipeline;
 
-    graphic::RenderPassInfo geometry_pass_info; // First pass
+    graphic::RenderPassInfo forward_pass_info; // First pass
     graphic::RenderPassInfo ui_pass_info;   // Second pass
 
+    Ref<graphic::Image> cubeMap_image;
     Ref<graphic::Image> depth_image;
     Ref<graphic::Image> color_image;
     graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;

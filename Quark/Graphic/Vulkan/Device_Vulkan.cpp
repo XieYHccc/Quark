@@ -413,7 +413,7 @@ Ref<Image> Device_Vulkan::CreateImage(const ImageDesc &desc, const ImageInitData
 Ref<Shader> Device_Vulkan::CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize)
 {
     auto new_shader =  CreateRef<Shader_Vulkan>(this, stage, byteCode, codeSize);
-    if (new_shader->shaderModule_ == VK_NULL_HANDLE)
+    if (new_shader->GetShaderMoudule() == VK_NULL_HANDLE)
         return nullptr;
 
     return new_shader;
@@ -444,9 +444,9 @@ Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std:
     return new_shader;
 }
 
-Ref<PipeLine> Device_Vulkan::CreateGraphicPipeLine(const GraphicPipeLineDesc &desc, const RenderPassInfo& info)
+Ref<PipeLine> Device_Vulkan::CreateGraphicPipeLine(const GraphicPipeLineDesc &desc)
 {
-    return CreateRef<PipeLine_Vulkan>(this, desc, info);
+    return CreateRef<PipeLine_Vulkan>(this, desc);
 }
 
 Ref<Sampler> Device_Vulkan::CreateSampler(const SamplerDesc &desc)
@@ -473,10 +473,10 @@ CommandList* Device_Vulkan::BeginCommandList(QueueType type)
 void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds, uint32_t waitedCmdCounts, bool signal)
 {
     auto& internal_cmdList = ToInternal(cmd);
-    auto& queue = queues[internal_cmdList.type_];
+    auto& queue = queues[internal_cmdList.GetType()];
 
-    vkEndCommandBuffer(internal_cmdList.cmdBuffer_);
-    internal_cmdList.state_ = CommandListState::READY_FOR_SUBMIT;
+    vkEndCommandBuffer(internal_cmdList.GetHandle());
+    internal_cmdList.state = CommandListState::READY_FOR_SUBMIT;
     
     if (queue.submissions.empty()) {
         queue.submissions.emplace_back();
@@ -490,7 +490,7 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     auto& submission = queue.submissions.back();
     VkCommandBufferSubmitInfo& cmd_submit_info = submission.cmdInfos.emplace_back();
     cmd_submit_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-    cmd_submit_info.commandBuffer = internal_cmdList.cmdBuffer_;
+    cmd_submit_info.commandBuffer = internal_cmdList.GetHandle();
     cmd_submit_info.pNext = nullptr;
 
     if (waitedCmdCounts > 0) {
@@ -498,7 +498,7 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
             auto& internal = ToInternal(&waitedCmds[i]);
             auto& semaphore_info = submission.waitSemaphoreInfos.emplace_back();
             semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-            semaphore_info.semaphore = internal.cmdCompleteSemaphore_;
+            semaphore_info.semaphore = internal.GetCmdCompleteSemaphore();
             semaphore_info.value = 0; // not a timeline semaphore
             semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; // Perfomance trade off here for abstracting away semaphore
 
@@ -506,12 +506,12 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     }
 
     auto& frame = frames[currentFrame];
-    if (internal_cmdList.waitForSwapchainImage_ && !frame.imageAvailableSemaphoreConsumed) {
+    if (internal_cmdList.IsWaitingForSwapChainImage() && !frame.imageAvailableSemaphoreConsumed) {
         auto& wait_semaphore_info = submission.waitSemaphoreInfos.emplace_back();
         wait_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
         wait_semaphore_info.semaphore = frame.imageAvailableSemaphore;
         wait_semaphore_info.value = 0;
-        wait_semaphore_info.stageMask = internal_cmdList.swapChainWaitStages_;
+        wait_semaphore_info.stageMask = internal_cmdList.GetSwapChainWaitStages();
 
         // TODO: This indicates there is only one command buffer in a frame can manipulate swapchain images. Not flexible enough
         auto& submit_semaphore_info = submission.signalSemaphoreInfos.emplace_back();
@@ -525,7 +525,7 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     if (signal) {
         auto& semaphore_info = submission.signalSemaphoreInfos.emplace_back();
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-        semaphore_info.semaphore = internal_cmdList.cmdCompleteSemaphore_;
+        semaphore_info.semaphore = internal_cmdList.GetCmdCompleteSemaphore();
         semaphore_info.value = 0; // not a timeline semaphore
         semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 

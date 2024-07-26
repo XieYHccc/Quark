@@ -92,8 +92,8 @@ public:
     Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data);
     virtual ~Image_Vulkan();
     
-    VkImage GetHandle() const { return handle_; }
-    VkImageView GetView() const { return view_; }
+    const VkImage GetHandle() const { return handle_; }
+    const VkImageView GetView() const { return view_; }
     
     bool IsSwapChainImage() const { return isSwapChainImage_; }
     

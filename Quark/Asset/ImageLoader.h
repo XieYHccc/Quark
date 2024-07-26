@@ -5,7 +5,7 @@ namespace asset {
 
 class ImageLoader {
 public:
-    ImageLoader(graphic::Device* device);
+    ImageLoader(graphic::Device* device) : graphicDevice_(device) {}
 
     Ref<graphic::Image> LoadKtx(const std::string& file_path);
     

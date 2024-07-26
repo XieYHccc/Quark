@@ -64,7 +64,7 @@ void CommandList_Vulkan::ResetAndBeginCmdBuffer()
     imageBarriers_.clear();
     bufferBarriers_.clear();
     memoryBarriers_.clear();
-    state_ = CommandListState::IN_RECORDING;
+    state = CommandListState::IN_RECORDING;
 
     dirty_SetBits_ = 0;
     ditry_SetDynamicBits_ = 0;
@@ -171,20 +171,35 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
     }
 }
 
+void CommandList_Vulkan::ResetBindingStatus()
+{
+    bindingState_ = {};
+
+    for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++) {
+        currentSets[i] = VK_NULL_HANDLE;
+    }
+
+    dirty_SetBits_ = 0;
+    dirty_VertexBufferBits_ = 0;
+    ditry_SetDynamicBits_ = 0;
+}
+
 void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
 {
     CORE_DEBUG_ASSERT(info.numColorAttachments < RenderPassInfo::MAX_COLOR_ATTHACHEMNT_NUM)
     CORE_DEBUG_ASSERT(info.numResolveAttachments < RenderPassInfo::MAX_COLOR_ATTHACHEMNT_NUM)
 
 #if QK_DEBUG_BUILD
-    if (state_ != CommandListState::IN_RECORDING) {
+    if (state != CommandListState::IN_RECORDING) {
         CORE_LOGE("You must call BeginRenderPass() in recording state.")
     }
 #endif
 
     // Change state
-    state_ = CommandListState::IN_RENDERPASS;
+    state = CommandListState::IN_RENDERPASS;
     currentRenderPassInfo_ = &info;
+    currentPipeLine_ = nullptr;
+    ResetBindingStatus();
 
     VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
     rendering_info.layerCount = 1;
@@ -275,12 +290,12 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
 void CommandList_Vulkan::EndRenderPass()
 {   
 #if QK_DEBUG_BUILD
-    if (state_ != CommandListState::IN_RENDERPASS) {
+    if (state != CommandListState::IN_RENDERPASS) {
         CORE_LOGE("You must call BeginRenderPass() before calling EndRenderPass()")
     }
 #endif
     // Set state back to in recording
-    state_ = CommandListState::IN_RECORDING;
+    state = CommandListState::IN_RECORDING;
     device_->context->extendFunction.pVkCmdEndRenderingKHR(cmdBuffer_);
 }
 
@@ -292,12 +307,12 @@ void CommandList_Vulkan::BindPushConstant(const void *data, size_t offset, size_
     if (currentPipeLine_ == nullptr) {
         CORE_LOGE("You can not bind a push constant before binding a pipeline.")
     }
-    if (currentPipeLine_->layout_->pushConstant.size == 0) {
+    if (currentPipeLine_->GetLayout()->pushConstant.size == 0) {
         CORE_LOGE("Current pipeline's layout do not have a push constant")
     }
 #endif
 
-    auto& layout = *currentPipeLine_->layout_;
+    auto& layout = *currentPipeLine_->GetLayout();
     vkCmdPushConstants(cmdBuffer_,
         layout.handle,
         layout.pushConstant.stageFlags,
@@ -319,8 +334,8 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0) {
         CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : The bounded buffer doesn't has BUFFER_USAGE_UNIFORM_BUFFER_BIT")
     }
-    if ((currentPipeLine_->layout_->setLayoutMask & (1u << set)) == 0 ||
-        (currentPipeLine_->layout_->setLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
+    if ((currentPipeLine_->GetLayout()->setLayoutMask & (1u << set)) == 0 ||
+        (currentPipeLine_->GetLayout()->setLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
         CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : Set: {}, binding: {} is not a uniforom buffer.", set, binding)
     }
 #endif
@@ -328,14 +343,14 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
     auto& internal_buffer = ToInternal(&buffer);
     auto& b = bindingState_.descriptorBindings[set][binding];
 
-    if (b.buffer.buffer == internal_buffer.handle_ && b.buffer.range == size) {
+    if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size) {
         if (b.dynamicOffset != offset) {
             ditry_SetDynamicBits_ |= 1u << set;
             b.dynamicOffset = offset;
         }
     }
     else {
-        b.buffer = {internal_buffer.handle_, 0, size};
+        b.buffer = {internal_buffer.GetHandle(), 0, size};
         b.dynamicOffset = offset;
         dirty_SetBits_ |= 1u << set;
     }
@@ -354,8 +369,8 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT) == 0) {
         CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : The bounded buffer doesn't has BUFFER_USAGE_STORAGE_BUFFER_BIT")
     }
-    if ((currentPipeLine_->layout_->setLayoutMask & (1u << set)) == 0 ||
-        (currentPipeLine_->layout_->setLayouts[set].storage_buffer_mask & (1u << binding))== 0) {
+    if ((currentPipeLine_->GetLayout()->setLayoutMask & (1u << set)) == 0 ||
+        (currentPipeLine_->GetLayout()->setLayouts[set].storage_buffer_mask & (1u << binding))== 0) {
         CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : Set: {}, binding: {} is not a storage buffer.", set, binding)
     }
 #endif
@@ -363,10 +378,10 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
     auto& internal_buffer = ToInternal(&buffer);
     auto& b = bindingState_.descriptorBindings[set][binding];
 
-    if (b.buffer.buffer == internal_buffer.handle_ && b.buffer.range == size) 
+    if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size) 
         return;
 
-    b.buffer = {internal_buffer.handle_, offset, size};
+    b.buffer = {internal_buffer.GetHandle(), offset, size};
     b.dynamicOffset = 0;
     dirty_SetBits_ |= 1u << set;
 
@@ -406,17 +421,30 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
 void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
 {
     auto& internal_pipeline = ToInternal(&pipeline);
-    CORE_DEBUG_ASSERT(internal_pipeline.handle_ != VK_NULL_HANDLE)
+    CORE_DEBUG_ASSERT(internal_pipeline.GetHandle() != VK_NULL_HANDLE)
 
 #ifdef QK_DEBUG_BUILD
     if (currentRenderPassInfo_ == nullptr) {
         CORE_LOGE("BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.")
         return;
     }
-
-    if (currentRenderPassInfo_ != internal_pipeline.renderPassInfo_) {
-        CORE_LOGE("BindPipeLine()::The pipeline's render pass info is not match with current render pass info.")
+    const auto& render_pass_info = internal_pipeline.GetRenderPassInfo();
+    if (render_pass_info.numColorAttachments != currentRenderPassInfo_->numColorAttachments) {
+        CORE_LOGE("BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.")
         return;
+    }
+
+    if (render_pass_info.depthAttachmentFormat != currentRenderPassInfo_->depthAttachmentFormat) {
+        CORE_LOGE("BindPipeLine()::The pipeline's depth attachment is not equal to the current render pass.")
+        return;
+    }
+
+    for (size_t i = 0; i < render_pass_info.numColorAttachments; i++) {
+        if (render_pass_info.colorAttachmentFormats[i] != currentRenderPassInfo_->colorAttachments[i]->GetDesc().format) {
+            CORE_LOGE("BindPipeLine()::The pipeline's color attachment format[{}] is not equal to the current render pass.", i)
+            return;
+        
+        }
     }
 #endif
 
@@ -424,12 +452,14 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
         return;
     }
     
-    if (internal_pipeline.type_ == PipeLineType::GRAPHIC)
-        vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, internal_pipeline.handle_);
+    if (internal_pipeline.GetType() == PipeLineType::GRAPHIC)
+        vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, internal_pipeline.GetHandle());
     else
-        vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.handle_);
+        vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.GetHandle());
 
+    // Reset status
     currentPipeLine_ = &internal_pipeline;
+    ResetBindingStatus();
 }
 
 void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sampler)
@@ -456,21 +486,21 @@ void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sample
 void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const IndexBufferFormat format)
 {
     auto& internal_buffer = ToInternal(&buffer);
-    CORE_DEBUG_ASSERT(internal_buffer.handle_ != VK_NULL_HANDLE)
+    CORE_DEBUG_ASSERT(internal_buffer.GetHandle() != VK_NULL_HANDLE)
     CORE_DEBUG_ASSERT((buffer.GetDesc().usageBits & BUFFER_USAGE_INDEX_BUFFER_BIT) != 0)
     
     auto& index_buffer_binding_state = bindingState_.indexBufferBindingState;
-    if (internal_buffer.handle_ == index_buffer_binding_state.buffer &&
+    if (internal_buffer.GetHandle() == index_buffer_binding_state.buffer &&
         offset == index_buffer_binding_state.offset &&
         format == index_buffer_binding_state.format) {
         return;
     }
 
-    index_buffer_binding_state.buffer = internal_buffer.handle_;
+    index_buffer_binding_state.buffer = internal_buffer.GetHandle();
     index_buffer_binding_state.offset = offset;
     index_buffer_binding_state.format = format;
 
-    vkCmdBindIndexBuffer(cmdBuffer_, internal_buffer.handle_, offset, (format == IndexBufferFormat::UINT16? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32));
+    vkCmdBindIndexBuffer(cmdBuffer_, internal_buffer.GetHandle(), offset, (format == IndexBufferFormat::UINT16? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32));
 }
 
 void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64 offset)
@@ -481,12 +511,12 @@ void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64
     CORE_DEBUG_ASSERT(buffer.GetDesc().usageBits & BUFFER_USAGE_VERTEX_BUFFER_BIT)
 
     auto& vertex_buffer_binding_state = bindingState_.vertexBufferBindingState;
-    if (vertex_buffer_binding_state.buffers[binding] == internal_buffer.handle_ &&
+    if (vertex_buffer_binding_state.buffers[binding] == internal_buffer.GetHandle() &&
         vertex_buffer_binding_state.offsets[binding] == offset) {
         return;
     }
 
-    vertex_buffer_binding_state.buffers[binding] = internal_buffer.handle_;
+    vertex_buffer_binding_state.buffers[binding] = internal_buffer.GetHandle();
     vertex_buffer_binding_state.offsets[binding] = offset;
     dirty_VertexBufferBits_ |= 1u << binding;
 
@@ -514,9 +544,9 @@ void CommandList_Vulkan::SetViewPort(const Viewport &viewport)
 
 void CommandList_Vulkan::Flush_DescriptorSet(u32 set)
 {
-    CORE_DEBUG_ASSERT((currentPipeLine_->layout_->setLayoutMask & (1u << set)) != 0)
+    CORE_DEBUG_ASSERT((currentPipeLine_->GetLayout()->setLayoutMask & (1u << set)) != 0)
 
-    auto& set_layout = currentPipeLine_->layout_->setLayouts[set];
+    auto& set_layout = currentPipeLine_->GetLayout()->setLayouts[set];
     auto& bindings = bindingState_.descriptorBindings[set];
 
 	u32 num_dynamic_offsets = 0;
@@ -592,27 +622,27 @@ void CommandList_Vulkan::Flush_DescriptorSet(u32 set)
         }
     }
     util::Hash hash = h.get();
-    auto allocated = currentPipeLine_->layout_->setAllocators[set]->find(hash);
+    auto allocated = currentPipeLine_->GetLayout()->setAllocators[set]->find(hash);
 
     // The descriptor set was not successfully cached, rebuild
     if (!allocated.second) {
-        auto updata_template = currentPipeLine_->layout_->updateTemplate[set];
+        auto updata_template = currentPipeLine_->GetLayout()->updateTemplate[set];
         CORE_DEBUG_ASSERT(updata_template)
         vkUpdateDescriptorSetWithTemplate(device_->vkDevice, allocated.first, updata_template, bindings);
     }
 
-    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->type_ == PipeLineType::GRAPHIC? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
-        currentPipeLine_->layout_->handle, set, 1, &allocated.first, num_dynamic_offsets, dynamic_offsets);
+    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->GetType() == PipeLineType::GRAPHIC? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
+        currentPipeLine_->GetLayout()->handle, set, 1, &allocated.first, num_dynamic_offsets, dynamic_offsets);
 
     currentSets[set] = allocated.first;
 }  
 
 void CommandList_Vulkan::Rebind_DescriptorSet(u32 set)
 {
-    CORE_DEBUG_ASSERT((currentPipeLine_->layout_->setLayoutMask & (1u << set)) != 0)
+    CORE_DEBUG_ASSERT((currentPipeLine_->GetLayout()->setLayoutMask & (1u << set)) != 0)
     CORE_DEBUG_ASSERT(currentSets[set] != nullptr)
 
-    auto& set_layout = currentPipeLine_->layout_->setLayouts[set];
+    auto& set_layout = currentPipeLine_->GetLayout()->setLayouts[set];
     auto& bindings = bindingState_.descriptorBindings[set];
 
 	u32 num_dynamic_offsets = 0;
@@ -625,8 +655,8 @@ void CommandList_Vulkan::Rebind_DescriptorSet(u32 set)
         }
     });
 
-    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->type_ == PipeLineType::GRAPHIC? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
-        currentPipeLine_->layout_->handle, set, 1, &currentSets[set], num_dynamic_offsets, dynamic_offsets);
+    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->GetType() == PipeLineType::GRAPHIC? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
+        currentPipeLine_->GetLayout()->handle, set, 1, &currentSets[set], num_dynamic_offsets, dynamic_offsets);
 }
 
 void CommandList_Vulkan::DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance)
@@ -649,7 +679,7 @@ void CommandList_Vulkan::Draw(u32 vertex_count, u32 instance_count, u32 first_ve
 
 void CommandList_Vulkan::Flush_RenderState()
 {
-    auto* pipeline_layout = currentPipeLine_->layout_;
+    auto* pipeline_layout = currentPipeLine_->GetLayout();
 
     // 1. Flush dirty descriptor set
     u32 sets_need_update = pipeline_layout->setLayoutMask & dirty_SetBits_;

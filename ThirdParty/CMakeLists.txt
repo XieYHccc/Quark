@@ -92,3 +92,25 @@ add_library(tinygltf STATIC "${TINYGLTF_DIR}/tiny_gltf.cpp"
     "${TINYGLTF_DIR}/stb_image_write.h")
 target_include_directories(tinygltf SYSTEM PUBLIC ${TINYGLTF_DIR})
 set_target_properties(tinygltf PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+
+# libktx
+set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ktx)
+set(KTX_SOURCES
+    ${KTX_DIR}/lib/texture.c
+    ${KTX_DIR}/lib/hashlist.c
+    ${KTX_DIR}/lib/checkheader.c
+    ${KTX_DIR}/lib/swap.c
+    ${KTX_DIR}/lib/memstream.c
+    ${KTX_DIR}/lib/filestream.c
+)
+
+set(KTX_INCLUDE_DIRS
+    ${KTX_DIR}/include
+    ${KTX_DIR}/other_include
+)
+
+add_library(ktx STATIC ${KTX_SOURCES})
+
+target_include_directories(ktx SYSTEM PUBLIC ${KTX_INCLUDE_DIRS})
+target_link_libraries(ktx PUBLIC Vulkan::Vulkan)
+set_target_properties(ktx PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)

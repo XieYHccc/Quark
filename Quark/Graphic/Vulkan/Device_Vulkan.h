@@ -95,7 +95,7 @@ public:
     Ref<Image> CreateImage(const ImageDesc& desc, const ImageInitData* init_data = nullptr) override final;
     Ref<Shader> CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize) override final;
     Ref<Shader> CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) override final;
-    Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc, const RenderPassInfo& info) override final;
+    Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) override final;
     Ref<Sampler> CreateSampler(const SamplerDesc& desc) override final;
 
 	/*** COMMANDS ***/

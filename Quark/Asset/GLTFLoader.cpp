@@ -8,7 +8,7 @@
 #include "Scene/Components/TransformCmpt.h"
 #include "Scene/Components/MeshCmpt.h"
 #include "Scene/Components/CameraCmpt.h"
-
+#include "Asset/ImageLoader.h"
 namespace asset {
 using namespace graphic;
 using namespace render;
@@ -396,8 +396,7 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
 
         return device_->CreateImage(desc, &init_data);
     }
-    else { // Load image from uri //TODO: Support other image format like ktx...
-        CORE_DEBUG_ASSERT(0);
+    else { // Image loaded from external file
 
         std::string image_uri = filePath_ + "/" +gltf_image.uri;
         bool is_ktx = false;
@@ -406,41 +405,15 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
                 is_ktx = true;
             }
         }
-
-        CORE_DEBUG_ASSERT(is_ktx)
-
-        if (!is_ktx) {      // load image using stb
-            int width, height, nrChannels;
-            unsigned char* data = stbi_load(image_uri.c_str(), &width, &height, &nrChannels, 4);
-            if (!data) {
-                CORE_LOGE("stb Failed to load image: {}", image_uri)
-                return defaultCheckBoardImage_;
-            }
-            
-            ImageDesc desc = {
-                .width = static_cast<u32>(width),
-                .height = static_cast<u32>(height),
-                .depth = 1u,
-                .mipLevels = 1, // TODO:Backend has not supported multiple mipmap copy and mipmap generation
-                .arraySize = 1,
-                .format = DataFormat::R8G8B8A8_UNORM,
-                .type = ImageType::TYPE_2D,
-                .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT,
-                .samples = SampleCount::SAMPLES_1
-            };
-
-            ImageInitData init_data = {
-                .row_length = desc.width,
-                .image_height = desc.height,
-                .data = data
-            };
-
-            return device_->CreateImage(desc, &init_data);
+        
+        if (is_ktx) {
+            ImageLoader image_loader(device_);
+            return image_loader.LoadKtx(gltf_image.uri);
         }
-        else {
-            CORE_ASSERT_MSG(0, "ktx image not supported yet!")
-        }
+
+        CORE_DEBUG_ASSERT(0)
     }
+
 }
 
 Ref<render::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
@@ -649,6 +622,7 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
         new_submesh.count = index_num,
         new_submesh.startIndex = start_index,
         new_submesh.material = p.material > -1? scene_->materials_[p.material] : scene_->materials_.back();
+
     }
 
     // Create mesh

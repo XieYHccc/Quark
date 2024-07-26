@@ -98,7 +98,8 @@ public:
     virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) = 0;
     virtual void BeginRenderPass(const RenderPassInfo& info) = 0;
     virtual void EndRenderPass() = 0;
- 
+    
+    QueueType GetType() const { return type_; }
 protected:
     CommandList(QueueType type) : type_(type) {};
     QueueType type_;

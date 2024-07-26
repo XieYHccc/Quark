@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Base.h"
-#include "Common.h"
-
+#include "Graphic/Common.h"
+#include "Graphic/RenderPassInfo.h"
 namespace graphic {
 enum class PolygonMode
 {
@@ -162,6 +162,7 @@ struct GraphicPipeLineDesc {
     std::vector<VertexAttribInfo>vertexAttribInfos;
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
 
+    RenderPassInfo renderPassInfo;
     // For dynamic rendering (Deprecated)
     // std::vector<DataFormat> colorAttachmentFormats;
     // DataFormat depthAttachmentFormat = DataFormat::UNDEFINED; 
@@ -176,6 +177,8 @@ enum class PipeLineType {
 class PipeLine : public GpuResource{
 public:
     virtual ~PipeLine() = default;
+    PipeLineType GetType() const { return type_; }
+
 protected:
     PipeLine(PipeLineType type) : type_(type) {};
     Ref<Shader> vertShader_;

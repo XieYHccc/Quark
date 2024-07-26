@@ -304,8 +304,8 @@ PipeLineLayout::~PipeLineLayout()
     CORE_LOGD("Pipeline layout destroyed")
 }
 
-PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc, const RenderPassInfo& info)
-    :PipeLine(PipeLineType::GRAPHIC), device_(device), renderPassInfo_(&info)
+PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
+    :PipeLine(PipeLineType::GRAPHIC), device_(device), renderPassInfo_(desc.renderPassInfo)
 {
     CORE_DEBUG_ASSERT(device_)
     CORE_DEBUG_ASSERT(desc.vertShader != nullptr && desc.fragShader != nullptr)
@@ -320,13 +320,13 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
             auto& internal_shader = ToInternal(shader.get());
             // loop each set of bindings
             for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i) {
-                if (internal_shader.bindings_[i].empty()) 
+                if (internal_shader.GetBindings(i).empty()) 
                     continue;
 
                 set_mask |= 1u << i;
                 auto& vk_set_layout_bindings = combined_layout[i].vk_bindings;
-                for (size_t j = 0; j < internal_shader.bindings_[i].size(); ++j) {
-                    auto& x = internal_shader.bindings_[i][j];
+                for (size_t j = 0; j < internal_shader.GetBindings(i).size(); ++j) {
+                    auto& x = internal_shader.GetBindings(i)[j];
                     auto& y = combined_layout[i].vk_bindings[j];
 
                     y.binding = x.binding;
@@ -377,11 +377,13 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
                     }
                 }
             }
+
             // push constant
-            if (internal_shader.pushConstant_.size > 0) {
-                combined_push_constant.offset = std::min(internal_shader.pushConstant_.offset, combined_push_constant.offset);
-				combined_push_constant.size = std::max(internal_shader.pushConstant_.size, combined_push_constant.size);
-				combined_push_constant.stageFlags |= internal_shader.pushConstant_.stageFlags;
+            auto& push_constant = internal_shader.GetPushConstant();
+            if (push_constant.size > 0) {
+                combined_push_constant.offset = std::min(push_constant.offset, combined_push_constant.offset);
+				combined_push_constant.size = std::max(push_constant.size, combined_push_constant.size);
+				combined_push_constant.stageFlags |= push_constant.stageFlags;
             }
 
         };
@@ -396,7 +398,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     // Shaderstage Info
     auto& vert_shader_internal = ToInternal(desc.vertShader.get());
     auto& frag_shader_internal = ToInternal(desc.fragShader.get());
-    VkPipelineShaderStageCreateInfo shader_stage_info[2] = { vert_shader_internal.stageInfo_, frag_shader_internal.stageInfo_};
+    VkPipelineShaderStageCreateInfo shader_stage_info[2] = { vert_shader_internal.GetStageInfo(), frag_shader_internal.GetStageInfo()};
 
     // Vertex Input
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info = {};
@@ -524,18 +526,19 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     dynamic_state_create_info.pDynamicStates = dynamic_states;
 
     // Rendering info : we are using dynamic rendering instead of renderpass and framebuffer
+    const auto& renderPassInfo = desc.renderPassInfo;
     std::vector<VkFormat> vk_color_attachment_format;
-    vk_color_attachment_format.resize(info.numColorAttachments);
-    for (size_t i = 0; i < info.numColorAttachments; i++) {
-        vk_color_attachment_format[i] = ConvertDataFormat(info.colorAttachmentFormats[i]);
+    vk_color_attachment_format.resize(renderPassInfo.numColorAttachments);
+    for (size_t i = 0; i < desc.renderPassInfo.numColorAttachments; i++) {
+        vk_color_attachment_format[i] = ConvertDataFormat(renderPassInfo.colorAttachmentFormats[i]);
     }
     
     VkPipelineRenderingCreateInfo renderingInfo = {};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     renderingInfo.colorAttachmentCount = vk_color_attachment_format.size();
     renderingInfo.pColorAttachmentFormats = vk_color_attachment_format.data();
-    if (info.useDepthAttachment) {
-        renderingInfo.depthAttachmentFormat = ConvertDataFormat(info.depthAttachmentFormat);
+    if (IsFormatSupportDepth(renderPassInfo.depthAttachmentFormat)) {
+        renderingInfo.depthAttachmentFormat = ConvertDataFormat(renderPassInfo.depthAttachmentFormat);
     }
 
     // Finally, fill pipeline create info

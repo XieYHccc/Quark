@@ -340,7 +340,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
 
     // Static data copy & layout transition
     if (init_data != nullptr && (desc.usageBits & IMAGE_USAGE_SAMPLING_BIT)) {
-        CORE_DEBUG_ASSERT(desc.type == ImageType::TYPE_2D)
+        CORE_DEBUG_ASSERT(desc.type == ImageType::TYPE_2D || desc.type == ImageType::TYPE_CUBE)
 
         // Prepare the mipmap infomation for copying
         TextureFormatLayout layout;
@@ -379,7 +379,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.cmdBuffer, &dependencyInfo);
 
         // Copy to image
-        vkCmdCopyBufferToImage(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).handle_, handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copys.size(), copys.data());
+        vkCmdCopyBufferToImage(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).GetHandle(), handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copys.size(), copys.data());
         
         // Generate mipmaps?
         if (desc.generateMipMaps) {

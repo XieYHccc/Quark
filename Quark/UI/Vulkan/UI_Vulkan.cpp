@@ -149,7 +149,7 @@ void UI_Vulkan::Render(graphic::CommandList* cmd)
 
     auto* data = ImGui::GetDrawData();
     if (data) {
-        ImGui_ImplVulkan_RenderDrawData(data, internal.cmdBuffer_);
+        ImGui_ImplVulkan_RenderDrawData(data, internal.GetHandle());
     }
 
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)

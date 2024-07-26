@@ -46,31 +46,31 @@ public:
     };
 
 public: 
-    SceneRenderer(graphic::Device* device) : device_(device) {};
-    SceneRenderer(scene::Scene* scene, graphic::Device* device)
-        : scene_(scene), device_(device)
-    {
-
-    }
+    SceneRenderer(graphic::Device* device);
 
     void SetScene(scene::Scene* scene);
+    void SetCubeMap(Ref<graphic::Image> cubeMap) { cubeMap_ = cubeMap; }
     void Render(graphic::CommandList* cmd_list);
-
+    void RenderSkybox(graphic::CommandList* cmd_list);
+    void UpdateDrawContext();
 private:
     void PrepareForRender();
-    void UpdateDrawContext();
+    
     graphic::Device* device_;
     scene::Scene* scene_;
-    graphic::PipeLine* pbrPipeline_;
+    Ref<graphic::Image> cubeMap_;
+    Ref<graphic::Sampler> cubeMapSampler_;
+    Ref<render::Mesh> cubeMesh_;
 
+    // Data need to be updated every frame
     struct DrawContext {
         std::vector<RenderObject> opaqueObjects;
         std::vector<RenderObject> transparentObjects;
         SceneUniformBufferBlock sceneData;
         std::vector<u32> opaqueDraws;   // indices point to  opaque render objects vector
         std::vector<u32> transparentDraws; // indices point to transparent render objects vector
+        Ref<graphic::Buffer> sceneUniformBuffer;
+        math::Frustum frustum_;
     } drawContext_;
-
-    math::Frustum frustum_;
 };
 }

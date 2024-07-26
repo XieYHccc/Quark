@@ -3,9 +3,9 @@
 #include "Graphic/Vulkan/Common_Vulkan.h"
 #include "Graphic/PipeLine.h"
 #include "Graphic/Shader.h"
+#include "Graphic/RenderPassInfo.h"
 
 namespace graphic {
-
 struct DescriptorBinding {
     union{
         VkDescriptorBufferInfo buffer;
@@ -77,17 +77,19 @@ struct PipeLineLayout {
 };
 
 class PipeLine_Vulkan : public PipeLine {
-    friend class Device_Vulkan;
-    friend class CommandList_Vulkan;
 public:
-    PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc, const RenderPassInfo& info);
+    PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc);
     PipeLine_Vulkan(Device_Vulkan* device, Ref<Shader> computeShader_);
     ~PipeLine_Vulkan();
+
+    VkPipeline GetHandle() const { return handle_; }
+    const PipeLineLayout* GetLayout() const { return layout_; }
+    const RenderPassInfo& GetRenderPassInfo() const { return renderPassInfo_; }
 private:
     Device_Vulkan* device_;
     VkPipeline handle_ = VK_NULL_HANDLE;
     PipeLineLayout* layout_;
-    const RenderPassInfo* renderPassInfo_;
+    RenderPassInfo renderPassInfo_;
 };
 
 CONVERT_TO_VULKAN_INTERNAL(PipeLine)

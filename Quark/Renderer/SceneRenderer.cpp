@@ -5,8 +5,37 @@
 #include "Scene/Components/TransformCmpt.h"
 #include "Scene/Components/CameraCmpt.h"
 #include "Graphic/Device.h"
+#include "Asset/MeshLoader.h"
 
 namespace render {
+
+using namespace graphic;
+SceneRenderer::SceneRenderer(graphic::Device* device)
+    : device_(device)
+{
+    // Load Cube mesh
+    asset::MeshLoader mesh_loader(device_);
+    cubeMesh_ = mesh_loader.LoadGLTF("/Users/xieyhccc/develop/Quark/Assets/Gltf/cube.gltf");
+
+    // Create cube map sampler
+    SamplerDesc sampler_desc = {
+        .minFilter = SamplerFilter::LINEAR,
+        .magFliter = SamplerFilter::LINEAR,
+        .addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE,
+        .addressModeV = SamplerAddressMode::CLAMPED_TO_EDGE,
+        .addressModeW = SamplerAddressMode::CLAMPED_TO_EDGE,
+    };
+    cubeMapSampler_ = device_->CreateSampler(sampler_desc);
+
+    // Create scene uniform buffer
+    BufferDesc scene_buffer_desc = {
+        .domain = BufferMemoryDomain::CPU,
+        .size = sizeof(SceneUniformBufferBlock),
+        .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
+    };
+
+    drawContext_.sceneUniformBuffer = device_->CreateBuffer(scene_buffer_desc);
+}
 
 void SceneRenderer::PrepareForRender()
 {
@@ -63,18 +92,31 @@ void SceneRenderer::UpdateDrawContext()
 	sceneData.proj[1][1] *= -1;
 	sceneData.viewproj = sceneData.proj * sceneData.view;
 
+    SceneUniformBufferBlock* mapped_data = (SceneUniformBufferBlock*)drawContext_.sceneUniformBuffer->GetMappedDataPtr();
+    *mapped_data = drawContext_.sceneData;
+
     // Update frustum
-    frustum_.Build(glm::inverse(sceneData.viewproj));
+    drawContext_.frustum_.Build(glm::inverse(sceneData.viewproj));
+
+    // 
+}
+
+void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
+{
+    CORE_DEBUG_ASSERT(cubeMap_)
+
+    cmd_list->BindUniformBuffer(0, 0, *drawContext_.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
+    cmd_list->BindImage(0, 1, *cubeMap_, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+    cmd_list->BindSampler(0, 1, *cubeMapSampler_);
+    cmd_list->BindVertexBuffer(0, *cubeMesh_->vertexBuffer, 0);
+    cmd_list->BindIndexBuffer(*cubeMesh_->indexBuffer, 0, IndexBufferFormat::UINT32);
+    cmd_list->DrawIndexed(cubeMesh_->indexCount, 1, 0, 0, 0);
 }
 
 void SceneRenderer::Render(graphic::CommandList* cmd_list)
 {
     CORE_DEBUG_ASSERT(device_)
-    using namespace graphic;
-
-    // Update draw context
-    UpdateDrawContext();
-
+    
     std::vector<u32>& opaque_draws = drawContext_.opaqueDraws;
     std::vector<u32>& transparent_draws = drawContext_.transparentDraws;
     opaque_draws.clear();
@@ -85,7 +127,7 @@ void SceneRenderer::Render(graphic::CommandList* cmd_list)
     // Frustum culling
     auto is_visible = [&](const RenderObject& obj) {
         math::Aabb transformed_aabb = obj.aabb.Transform(obj.transform);
-        if (frustum_.CheckSphere(transformed_aabb))
+        if (drawContext_.frustum_.CheckSphere(transformed_aabb))
             return true;
         else
             return false;
@@ -108,19 +150,8 @@ void SceneRenderer::Render(graphic::CommandList* cmd_list)
             return A.material < B.material;
     });
 
-    // allocate a new uniform buffer for the scene data
-    BufferDesc scene_buffer_desc = {
-        .domain = BufferMemoryDomain::CPU,
-        .size = sizeof(SceneUniformBufferBlock),
-        .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
-    };
-    Ref<Buffer> scene_uniform_buffer = device_->CreateBuffer(scene_buffer_desc);
-
-    SceneUniformBufferBlock* mapped_data = (SceneUniformBufferBlock*)scene_uniform_buffer->GetMappedDataPtr();
-    *mapped_data = drawContext_.sceneData;
-
     // Bind scene uniform buffer
-    cmd_list->BindUniformBuffer(0, 0, *scene_uniform_buffer, 0, sizeof(SceneUniformBufferBlock));
+    cmd_list->BindUniformBuffer(0, 0, *drawContext_.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
 
     render::Material* last_mat = nullptr;
     graphic::Buffer* last_indexBuffer = nullptr;

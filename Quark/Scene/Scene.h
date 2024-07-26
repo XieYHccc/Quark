@@ -9,6 +9,7 @@
 
 namespace asset {
 class GLTFLoader;
+class MeshLoader;
 }
 
 namespace scene {
@@ -16,6 +17,7 @@ namespace scene {
 class CameraCmpt;
 class Scene {
     friend class asset::GLTFLoader;
+    friend class asset::MeshLoader;
     friend class Node;
 public:
     Scene(const std::string& name);

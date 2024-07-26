@@ -44,7 +44,6 @@ struct RenderPassInfo {
     u32 numResolveAttachments = 0;
 
     // Depth images
-    bool useDepthAttachment = false;
     Image* depthAttachment = nullptr;
     AttachmentLoadOp depthAttachmentLoadOp = AttachmentLoadOp::CLEAR;
     AttachmentStoreOp depthAttachmentStoreOp = AttachmentStoreOp::STORE;

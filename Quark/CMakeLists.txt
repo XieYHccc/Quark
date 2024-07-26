@@ -12,7 +12,7 @@ ${ENGINE_SOURCE_DIR}
 target_compile_options(quark PRIVATE -Wno-nullability-completeness)
 # target_compile_definitions(Engine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
 target_include_directories(quark PUBLIC ${ENGINE_INCLUDE_DIRS} )
-target_link_libraries(quark glm tinygltf tiny_obj_loader stb_image glfw Vulkan::Vulkan vma imgui spirv_reflect spdlog::spdlog)
+target_link_libraries(quark glm tinygltf tiny_obj_loader stb_image glfw Vulkan::Vulkan vma imgui spirv_reflect spdlog::spdlog ktx)
 
 add_dependencies(quark Shaders)
 

@@ -9,6 +9,9 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<u32> indices, 
     CORE_DEBUG_ASSERT(!indices.empty()) //TODO: Support non-indexed mesh
     auto* graphic_device = Application::Instance().GetGraphicDevice();
 
+    vertexCount = vertices.size();
+    indexCount = indices.size();
+    
     // Create vertex buffer and index buffer
 	const size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
 	const size_t indexBufferSize = indices.size() * sizeof(uint32_t);

@@ -16,9 +16,9 @@ enum class CommandListState {
 };
 
 class CommandList_Vulkan : public CommandList {
-    friend class Device_Vulkan;
-    friend class ::UI_Vulkan;
 public:
+    CommandListState state = CommandListState::READY_FOR_RECORDING;
+
     CommandList_Vulkan(Device_Vulkan* device, QueueType type_);
     ~CommandList_Vulkan();
 
@@ -41,13 +41,19 @@ public:
     void BeginRenderPass(const RenderPassInfo& info) override;
     void EndRenderPass() override;
 
+public:
+    void ResetAndBeginCmdBuffer();
+    const VkCommandBuffer GetHandle() const { return cmdBuffer_; }
+    const VkSemaphore GetCmdCompleteSemaphore() const { return cmdCompleteSemaphore_; }
+    std::uint32_t GetSwapChainWaitStages() const { return swapChainWaitStages_; }
+    bool IsWaitingForSwapChainImage() const { return waitForSwapchainImage_; }
+    
 private:
     void Flush_DescriptorSet(u32 set);
     void Flush_RenderState();
     void Rebind_DescriptorSet(u32 set);
-    void ResetAndBeginCmdBuffer();
-    
-private:
+    void ResetBindingStatus();
+
     Device_Vulkan* device_;
     VkSemaphore cmdCompleteSemaphore_;
     VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
@@ -57,7 +63,6 @@ private:
     std::vector<VkBufferMemoryBarrier2> bufferBarriers_;
     bool waitForSwapchainImage_ = false;
     u32 swapChainWaitStages_ = 0;
-    CommandListState state_ = CommandListState::READY_FOR_RECORDING;
 
     // Rendering state 
     const RenderPassInfo* currentRenderPassInfo_ = nullptr;

@@ -74,7 +74,6 @@ void TestBed::SetUpRenderPass()
     geometry_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
     geometry_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
     geometry_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
-    geometry_pass_info.useDepthAttachment = true;
     geometry_pass_info.depthAttachment = depth_image.get();
     geometry_pass_info.depthAttachmentLoadOp = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
     geometry_pass_info.depthAttachmentStoreOp = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
@@ -199,6 +198,7 @@ void TestBed::CreatePipeline()
     pipe_desc.fragShader = frag_shader;
     pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
     pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
+    pipe_desc.renderPassInfo = geometry_pass_info;
     pipe_desc.depthStencilState = {
         .enableDepthTest = true,
         .enableDepthWrite = true,
@@ -210,7 +210,7 @@ void TestBed::CreatePipeline()
         .frontFaceType = FrontFaceType::COUNTER_CLOCKWISE
     };
 
-    graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc, geometry_pass_info);
+    graphic_pipeline = graphic_device->CreateGraphicPipeLine(pipe_desc);
 }
 
 void TestBed::CreateDepthImage()
