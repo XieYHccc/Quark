@@ -21,7 +21,9 @@ TestBed::TestBed(const AppInitSpecs& specs)
 Application* CreateApplication()
 {
     AppInitSpecs specs = {
-        .uiInitFlags = 0,
+        .uiSpecs = {
+            .flags = 0
+        },
         .title = "TestBed",
         .width = 1200,
         .height = 800,
@@ -128,7 +130,7 @@ void TestBed::Render(f32 deltaTime)
         
         // Draw scene
         auto geometry_start = m_Timer.ElapsedMillis();
-        scene_renderer->Render(cmd);
+        scene_renderer->RenderScene(cmd);
         cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
         cmd->EndRenderPass();
@@ -164,7 +166,7 @@ void TestBed::LoadScene()
 {
     // load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
-    scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/structure.glb");
+    scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/house2.glb");
     
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();

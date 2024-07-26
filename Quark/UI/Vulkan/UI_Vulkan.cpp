@@ -9,17 +9,18 @@
 #include "Graphic/Vulkan/CommandList_Vulkan.h"
 #include "Events/EventManager.h"
 
-void UI_Vulkan::Init(graphic::Device *device, const std::uint32_t flags)
+void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
 {
     CORE_DEBUG_ASSERT(device)
+
     device_ = static_cast<graphic::Device_Vulkan*>(device);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= flags & UI_INIT_FLAG_DOCKING? ImGuiConfigFlags_DockingEnable : 0;
-    io.ConfigFlags |= flags & UI_INIT_FLAG_VIEWPORTS? ImGuiConfigFlags_ViewportsEnable : 0;
+    io.ConfigFlags |= specs.flags & UI_INIT_FLAG_DOCKING? ImGuiConfigFlags_DockingEnable : 0;
+    io.ConfigFlags |= specs.flags & UI_INIT_FLAG_VIEWPORTS? ImGuiConfigFlags_ViewportsEnable : 0;
 	io.ConfigViewportsNoAutoMerge = false;
 	io.ConfigViewportsNoTaskBarIcon = true;
 
@@ -109,8 +110,8 @@ void UI_Vulkan::Init(graphic::Device *device, const std::uint32_t flags)
         init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT; // TODO: MSAA
         init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        swapChainFormat_ = graphic::ConvertDataFormat(device_->GetSwapChainImageFormat());
-        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &swapChainFormat_;
+        colorFormat_ = graphic::ConvertDataFormat(device_->GetSwapChainImageFormat());
+        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat_;
         ImGui_ImplVulkan_Init(&init_info);
     }
 

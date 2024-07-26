@@ -8,17 +8,17 @@ enum UiInitFlagBit{
     UI_INIT_FLAG_VIEWPORTS = 1 << 1,
 };  
 
+struct UiInitSpecs {
+    std::uint32_t flags;
+};
+
 class UI : public util::MakeSingletonPtr<UI>{
 public:
-    enum WindowFlagBit {
-
-    };
-    using WindowFlags = int;
     
     UI() = default;
     virtual ~UI() = default;
 
-    virtual void Init(graphic::Device* device, const std::uint32_t flags) = 0;
+    virtual void Init(graphic::Device* device, const UiInitSpecs& sepcs) = 0;
     virtual void Finalize() = 0;
 
     virtual void BeginFrame() = 0;

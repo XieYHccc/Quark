@@ -5,7 +5,6 @@
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Core/Window.h>
 #include <Quark/UI/UI.h>
-#include <Quark/Scene/Components/MoveControlCmpt.h>
 #include <Quark/Asset/ImageLoader.h>
 #include <imgui.h>
 
@@ -14,7 +13,9 @@
 Application* CreateApplication()
 {    
     AppInitSpecs specs = {
-        .uiInitFlags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS,
+        .uiSpecs = {
+            .flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS,
+        },
         .title = "Quark Editor",
         .width = 1300,
         .height = 800,
@@ -31,7 +32,7 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
 {
     color_format = m_GraphicDevice->GetSwapChainImageFormat();
 
-    // Render structures
+    // Create Render structures
     SetUpRenderPass();
     CreatePipeline();
     CreateColorDepthAttachments();
@@ -52,10 +53,12 @@ EditorApp::~EditorApp()
 
 void EditorApp::Update(f32 deltaTime)
 {    
-    // Update camera movement
+    // Update Editor camera's movement
     auto* editorCameraCmpt = scene_->GetCamera();
     auto* cameraMoveCmpt = editorCameraCmpt->GetEntity()->GetComponent<component::EditorCameraControlCmpt>();
     cameraMoveCmpt->Update(deltaTime);
+
+    // TODO: Update physics
 
     // Update scene
     scene_->Update();
@@ -140,7 +143,7 @@ void EditorApp::Render(f32 deltaTime)
             cmd->SetScissor(graphic::Scissor{.extent = {.width = color_image->GetDesc().width, .height = color_image->GetDesc().height},
                 .offset = {.x = 0, .y = 0}});
             auto geometry_start = m_Timer.ElapsedMillis();
-            scene_renderer_->Render(cmd);
+            scene_renderer_->RenderScene(cmd);
             cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
             cmd->EndRenderPass();
@@ -201,7 +204,7 @@ void EditorApp::LoadScene()
 {
     // Load cube map
     asset::ImageLoader image_loader(m_GraphicDevice.get());
-    cubeMap_image = image_loader.LoadKtx("/Users/xieyhccc/develop/Quark/Assets/Textures/cubemap_yokohama_rgba.ktx");
+    cubeMap_image = image_loader.LoadKtx("/Users/xieyhccc/develop/Quark/Assets/Textures/cubemap_space.ktx");
 
     // Load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());

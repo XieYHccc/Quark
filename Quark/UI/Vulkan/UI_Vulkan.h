@@ -8,7 +8,7 @@ public:
     UI_Vulkan() = default;
     ~UI_Vulkan() = default;
 
-    void Init(graphic::Device* device, const std::uint32_t flags) override;
+    void Init(graphic::Device* device, const UiInitSpecs& specs) override;
     void Finalize() override;
 
     void BeginFrame() override;
@@ -20,7 +20,7 @@ private:
     
     graphic::Device_Vulkan* device_;
     VkDescriptorPool descriptorPool_;
-    VkFormat swapChainFormat_;
+    VkFormat colorFormat_;
     // VkPipelineLayout pipelineLayout_;
     // VkPipeline pipeline_;
 

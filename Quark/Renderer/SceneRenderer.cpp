@@ -98,7 +98,6 @@ void SceneRenderer::UpdateDrawContext()
     // Update frustum
     drawContext_.frustum_.Build(glm::inverse(sceneData.viewproj));
 
-    // 
 }
 
 void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
@@ -113,7 +112,7 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
     cmd_list->DrawIndexed(cubeMesh_->indexCount, 1, 0, 0, 0);
 }
 
-void SceneRenderer::Render(graphic::CommandList* cmd_list)
+void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
 {
     CORE_DEBUG_ASSERT(device_)
     

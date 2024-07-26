@@ -6,7 +6,6 @@
 #include "Events/EventManager.h"
 #include "Events/ApplicationEvent.h"
 #include "Asset/AssetManager.h"
-#include "UI/UI.h"
 
 #ifdef  USE_VULKAN_DRIVER
 #include "Graphic/Vulkan/Device_Vulkan.h"
@@ -43,7 +42,7 @@ Application::Application(const AppInitSpecs& specs)
 
     // Init UI system
     UI::CreateSingleton();
-    UI::Singleton()->Init(m_GraphicDevice.get(), specs.uiInitFlags);
+    UI::Singleton()->Init(m_GraphicDevice.get(), specs.uiSpecs);
 
     // Register application callback functions
     EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});

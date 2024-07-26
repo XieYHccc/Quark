@@ -50,7 +50,7 @@ public:
 
     void SetScene(scene::Scene* scene);
     void SetCubeMap(Ref<graphic::Image> cubeMap) { cubeMap_ = cubeMap; }
-    void Render(graphic::CommandList* cmd_list);
+    void RenderScene(graphic::CommandList* cmd_list);
     void RenderSkybox(graphic::CommandList* cmd_list);
     void UpdateDrawContext();
 private:

@@ -2,14 +2,14 @@
 #include "Core/Timer.h"
 #include "Events/ApplicationEvent.h"
 #include "Graphic/Device.h"
-
+#include "UI/UI.h"
 
 struct AppInitSpecs {
     std::string title = "Quark Application";
     std::uint32_t width = 1200;
     std::uint32_t height = 800;
-    std::uint32_t uiInitFlags = 0;
     bool isFullScreen = false;
+    UiInitSpecs uiSpecs;
 };  
 
 class Application {
@@ -30,7 +30,7 @@ private:
     // Update Game Logic per frame
     virtual void Update(f32 deltaTime) = 0;
 
-    // Render per frame : All rendering cmd list recording in this func
+    // Render per frame : Sync draw data with scene & All rendering cmd list recording here
     virtual void Render(f32 deltaTime) = 0;
 
     // Prepare UI data

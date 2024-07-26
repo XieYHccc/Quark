@@ -14,3 +14,6 @@
 	path = ThirdParty/imgui_docking
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "ThirdParty/ktx"]
+	path = ThirdParty/ktx
+	url = https://github.com/KhronosGroup/KTX-Software.git
