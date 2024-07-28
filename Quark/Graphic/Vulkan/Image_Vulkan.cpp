@@ -96,27 +96,26 @@ void Image_Vulkan::PrepareCopy(const ImageDesc& desc, const TextureFormatLayout&
     void* mapped = stage_buffer->GetMappedDataPtr();
 
     size_t index = 0;
-    // loop per mipmap level to copy data into staging buffer
+    // Loop per mipmap level to copy data into staging buffer
+    // and remove padding if necessary
     for (size_t level = 0; level < layout.GetMipLevels(); level++) {
         const auto& mip_info = layout.GetMipInfo(level);
-        size_t dst_row_size = mip_info.num_block_x * layout.GetBlockStride();
-        size_t dst_slice_size = dst_row_size * mip_info.num_block_y;
+        size_t dst_row_pitch = mip_info.num_block_x * layout.GetBlockStride();
+        size_t dst_slice_pitch = dst_row_pitch * mip_info.num_block_y;
 
         for (size_t layer = 0; layer < desc.arraySize; layer++, index++) {
             const ImageInitData& sub_resouce = init_data[index];
-            size_t src_row_length = (sub_resouce.row_length != UINT32_MAX? sub_resouce.row_length : mip_info.row_length);
-            size_t src_image_height = (sub_resouce.image_height != UINT32_MAX? sub_resouce.image_height : mip_info.image_height);
-            
-            size_t src_row_size = ((src_row_length + layout.GetBlockDimX() - 1) / layout.GetBlockDimX()) * layout.GetBlockStride();
-            size_t src_slice_size = ((src_image_height + layout.GetBlockDimY() - 1) / layout.GetBlockDimY()) * src_row_size;
+            size_t src_row_size = sub_resouce.rowPitch;
+            size_t src_slice_size = sub_resouce.slicePitch;
 
-            uint8_t* dst = static_cast<uint8_t*>(mapped) + mip_info.offset + dst_slice_size * desc.depth * layer;
+            uint8_t* dst = static_cast<uint8_t*>(mapped) + mip_info.offset + dst_slice_pitch * desc.depth * layer;
             const uint8_t* src = static_cast<const uint8_t*>(sub_resouce.data);
 
+            // Remove padding
             for (size_t z = 0; z < desc.depth; ++z) {
                 for (size_t y = 0; y < mip_info.num_block_y; ++y)
-                    std::memcpy(dst + dst_slice_size * z + dst_row_size * y,
-                        src + src_slice_size * z + src_row_size * y, dst_row_size );
+                    std::memcpy(dst + dst_slice_pitch * z + dst_row_pitch * y,
+                        src + src_slice_size * z + src_row_size * y, dst_row_pitch );
             }
 
         }
@@ -124,8 +123,8 @@ void Image_Vulkan::PrepareCopy(const ImageDesc& desc, const TextureFormatLayout&
         // Fill copy structs
         VkBufferImageCopy copy;
         copy.bufferOffset = mip_info.offset;
-        copy.bufferRowLength = mip_info.row_length;
-        copy.bufferImageHeight = mip_info.image_height;
+        copy.bufferRowLength = 0;   // padding has been removed in the above loop
+        copy.bufferImageHeight = 0;
         copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         copy.imageSubresource.mipLevel = level;
         copy.imageSubresource.baseArrayLayer = 0;

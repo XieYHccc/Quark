@@ -204,7 +204,7 @@ void EditorApp::LoadScene()
 {
     // Load cube map
     asset::ImageLoader image_loader(m_GraphicDevice.get());
-    cubeMap_image = image_loader.LoadKtx("/Users/xieyhccc/develop/Quark/Assets/Textures/cubemap_space.ktx");
+    cubeMap_image = image_loader.LoadKtx("/Users/xieyhccc/develop/Quark/Assets/Textures/output.ktx");
 
     // Load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());

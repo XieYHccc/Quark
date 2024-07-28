@@ -1,6 +1,5 @@
 #include "Asset/ImageLoader.h"
 #include <ktx.h>
-#include <ktxvulkan.h>
 
 namespace asset {
 Ref<graphic::Image> ImageLoader::LoadKtx(const std::string& file_path) {
@@ -36,11 +35,13 @@ Ref<graphic::Image> ImageLoader::LoadKtx(const std::string& file_path) {
 	ktx_size_t ktxTextureSize = ktxTexture_GetSize(ktxTexture);
 
     // Cubemap?
+    bool isCubeMap = false;
     if (ktxTexture->numLayers == 1 && ktxTexture->numFaces == 6) {
         desc.type = graphic::ImageType::TYPE_CUBE;
         desc.arraySize = 6;
+        isCubeMap = true;
     }
-
+    
     //TODO: Support compressed format
     CORE_ASSERT(ktxTexture->isCompressed == KTX_FALSE);
 
@@ -49,16 +50,24 @@ Ref<graphic::Image> ImageLoader::LoadKtx(const std::string& file_path) {
     for (size_t level = 0; level < desc.mipLevels; level++) {
         for (size_t layer = 0; layer < desc.arraySize; layer++) {
             auto& newSubresource = initData.emplace_back();
-
             ktx_size_t offset;
-			KTX_error_code ret = ktxTexture_GetImageOffset(ktxTexture, level, 0, layer, &offset);
+            KTX_error_code result;
+            
+            if (isCubeMap)
+                result = ktxTexture_GetImageOffset(ktxTexture, level, 0, layer, &offset);
+            else 
+                result = ktxTexture_GetImageOffset(ktxTexture, level, layer, 0, &offset);
+
             newSubresource.data = ktxTextureData + offset;
-            newSubresource.row_length = ktxTexture->baseWidth >> level;
-            newSubresource.image_height = ktxTexture->baseHeight >> level;
+            newSubresource.rowPitch = ktxTexture_GetRowPitch(ktxTexture, level);
+            newSubresource.slicePitch = ktxTexture_GetImageSize(ktxTexture, level);
         }
     }
 
-    return graphicDevice_->CreateImage(desc, initData.data());
+    auto newKtxImage = graphicDevice_->CreateImage(desc, initData.data());
+    ktxTexture_Destroy(ktxTexture);
+
+    return newKtxImage;
 
 }
 

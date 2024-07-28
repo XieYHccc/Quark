@@ -59,11 +59,10 @@ struct ImageDesc {
 
 struct ImageInitData {
     const void* data = nullptr;
-    
-    // For uncompressed format, row_lenght = width.
-    // For compressed format, there are maybe paddings in row.
-    uint32_t row_length = UINT32_MAX;  // num of pixels per row
-    uint32_t image_height = UINT32_MAX; // size of rows
+    // For uncompressed textures the pitch is the number of bytes between rows of texels. 
+    // For compressed textures it is the number of bytes between rows of blocks.
+    std::uint32_t rowPitch = 0;
+    std::uint32_t slicePitch = 0;
 };
 
 class Image : public GpuResource{

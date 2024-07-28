@@ -109,8 +109,8 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     };
     
     ImageInitData init_data = {
-        .row_length = 32,
-        .image_height = 32,
+        .rowPitch = 32 * 4,
+        .slicePitch = 32 * 32 * 4,
         .data = pixels.data()
     };
 
@@ -122,8 +122,8 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     texture_desc.height = 1;
     
     init_data = {
-        .row_length = 1,
-        .image_height = 1,
+        .rowPitch = 1 * 4,
+        .slicePitch = 1 * 1 * 4,
         .data = &white
     };
 
@@ -389,8 +389,8 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
         
         
         ImageInitData init_data = {
-            .row_length = desc.width,
-            .image_height = desc.height,
+            .rowPitch = desc.width * 4,
+            .slicePitch = desc.width * desc.height * 4,
             .data = gltf_image.image.data()
         };
 
