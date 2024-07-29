@@ -201,10 +201,10 @@ void EditorApp::Render(f32 deltaTime)
 }
 
 void EditorApp::LoadScene()
-{
+{   
     // Load cube map
     asset::ImageLoader image_loader(m_GraphicDevice.get());
-    cubeMap_image = image_loader.LoadKtx("/Users/xieyhccc/develop/Quark/Assets/Textures/output.ktx");
+    cubeMap_image = image_loader.LoadKtx2("/Users/xieyhccc/develop/Quark/Assets/Textures/etc1s_cubemap_learnopengl.ktx2");
 
     // Load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());

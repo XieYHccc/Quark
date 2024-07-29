@@ -55,7 +55,9 @@ enum class DataFormat {
     D24_UNORM_S8_UINT,
 
     // Compressed image format
-    ETC2_R8G8B8A8_UNORM_BLOCK
+    ETC2_R8G8B8A8_UNORM_BLOCK,
+    BC7_UNORM_BLOCK,
+    BC3_UNORM_BLOCK,
 };
 
 enum class LogicOperation {
@@ -139,9 +141,11 @@ inline u32 GetFormatStride(DataFormat format)
         return 12u;
     case DataFormat::R16G16B16A16_SFLOAT:
         return 8u;
+    case DataFormat::BC7_UNORM_BLOCK:
+        return 16u;
     default:
     {
-        CORE_ASSERT("format not handled yet!")
+        CORE_ASSERT_MSG(0, "format not handled yet!")
         return 0u;
     }
     }
@@ -169,6 +173,9 @@ inline void GetFormatBlockDim(DataFormat format, uint32_t& block_dim_x, uint32_t
     
     switch (format) {
     fmt(ETC2_R8G8B8A8_UNORM_BLOCK, 4, 4);
+    fmt(BC7_UNORM_BLOCK, 4, 4);
+    fmt(BC3_UNORM_BLOCK, 4, 4);
+    
     // non-block
     default:
         block_dim_x = 1;

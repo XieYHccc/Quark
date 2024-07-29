@@ -73,10 +73,13 @@ constexpr VkFormat ConvertDataFormat(DataFormat value)
         return VK_FORMAT_D24_UNORM_S8_UINT;
     case DataFormat::R32G32B32_SFLOAT:
         return VK_FORMAT_R32G32B32_SFLOAT;
+    case DataFormat::BC7_UNORM_BLOCK:
+        return VK_FORMAT_BC7_UNORM_BLOCK;
+    case DataFormat::BC3_UNORM_BLOCK:
+        return VK_FORMAT_BC3_UNORM_BLOCK;
     default:
         CORE_ASSERT_MSG(0, "Data format not handled yet!")
     }
-
 }
 
 constexpr VkCompareOp ConvertCompareOp(CompareOperation op)

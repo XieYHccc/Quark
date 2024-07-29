@@ -410,10 +410,10 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
             ImageLoader image_loader(device_);
             return image_loader.LoadKtx(gltf_image.uri);
         }
-
-        CORE_DEBUG_ASSERT(0)
     }
-
+    
+    CORE_DEBUG_ASSERT(0)
+    return nullptr;
 }
 
 Ref<render::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)

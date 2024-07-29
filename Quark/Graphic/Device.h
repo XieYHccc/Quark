@@ -15,13 +15,22 @@ struct DeviceProperties {
     struct DeviceLimits {
         u64 minUniformBufferOffsetAlignment = 0;
     } limits;
+
 };
+struct DeviceFeatures {
+    bool textureCompressionBC = false;
+    bool textureCompressionASTC_LDR = false;
+    bool textureCompressionETC2 = false;
+};
+
 class Device {
 public:
     u32 currentFrame;
     u32 frameBufferWidth;
     u32 frameBufferHeight;
     DeviceProperties properties;
+    DeviceFeatures features;
+    
 public:
     Device() = default;
     virtual ~Device() = default;
@@ -51,6 +60,9 @@ public:
 	/*** SWAPCHAIN ***/
     virtual Image* GetPresentImage() = 0; // Owned by device.
     virtual DataFormat GetSwapChainImageFormat() = 0;
+
+    /*** PROPERTIES ***/
+    virtual bool isFormatSupported(DataFormat format) = 0;
 };
 
 }

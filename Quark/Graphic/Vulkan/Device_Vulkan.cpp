@@ -274,7 +274,10 @@ bool Device_Vulkan::Init()
 
     // Store device properties in public interface
     properties.limits.minUniformBufferOffsetAlignment = context->properties2.properties.limits.minUniformBufferOffsetAlignment;
-
+    features.textureCompressionBC = context->features2.features.textureCompressionBC;
+    features.textureCompressionASTC_LDR = context->features2.features.textureCompressionASTC_LDR;;
+    features.textureCompressionETC2 = context->features2.features.textureCompressionETC2;
+    
     // Create frame data
     for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++) {
         frames[i].init(this);
@@ -605,6 +608,13 @@ PipeLineLayout* Device_Vulkan::Request_PipeLineLayout(const std::array<Descripto
     else { 
         return &find->second;
     }
+}
+
+bool Device_Vulkan::isFormatSupported(DataFormat format)
+{
+    VkFormatProperties props;
+    vkGetPhysicalDeviceFormatProperties(context->physicalDevice, ConvertDataFormat(format), &props);
+    return ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) && (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT));
 }
 
 DescriptorSetAllocator* Device_Vulkan::Request_DescriptorSetAllocator(const DescriptorSetLayout& layout)

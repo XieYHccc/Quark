@@ -105,6 +105,10 @@ public:
 	/*** SWAPCHAIN ***/
     Image* GetPresentImage() override final { return swapChainImages[currentSwapChainImageIdx].get(); }
     DataFormat GetSwapChainImageFormat() override final;
+
+    /*** PROPERTIES ***/
+    bool isFormatSupported(DataFormat format) override final;
+    
 private:
     PerFrameData& GetCurrentFrame() { return frames[currentFrame]; }
     DescriptorSetAllocator* Request_DescriptorSetAllocator(const DescriptorSetLayout& layout);

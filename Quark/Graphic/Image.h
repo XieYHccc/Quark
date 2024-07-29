@@ -46,7 +46,7 @@ enum class SamplerAddressMode
 struct ImageDesc {
     u32 width = 0;
     u32 height = 0;
-    u32 depth = 0;  // for 3d image
+    u32 depth = 1;  // for 3d image
     u32 mipLevels = 1;
     u32 arraySize = 1;
     ImageType type = ImageType::TYPE_2D;

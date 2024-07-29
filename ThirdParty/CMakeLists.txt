@@ -110,7 +110,22 @@ set(KTX_INCLUDE_DIRS
 )
 
 add_library(ktx STATIC ${KTX_SOURCES})
-
 target_include_directories(ktx SYSTEM PUBLIC ${KTX_INCLUDE_DIRS})
 target_link_libraries(ktx PUBLIC Vulkan::Vulkan)
 set_target_properties(ktx PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+
+# basisu
+set(BASISU_DIR ${CMAKE_CURRENT_SOURCE_DIR}/basisu)
+set(BASISU_SOURCES
+    ${BASISU_DIR}/transcoder/basisu_transcoder.cpp
+    ${BASISU_DIR}/zstd/zstd.c)
+
+set(BASISU_INCLUDE_DIRS
+    ${BASISU_DIR}/transcoder
+    ${BASISU_DIR}/zstd)
+
+add_library(basisu STATIC ${BASISU_SOURCES})
+target_include_directories(basisu SYSTEM PUBLIC ${BASISU_INCLUDE_DIRS})
+target_compile_options(basisu PRIVATE -Wno-deprecated-builtins)
+target_compile_options(basisu PRIVATE -Wno-deprecated-declarations)
+set_target_properties(basisu PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
