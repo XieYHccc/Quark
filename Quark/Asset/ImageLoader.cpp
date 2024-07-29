@@ -73,7 +73,7 @@ Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
         const uint32_t faces = ktxTranscoder.get_faces();
         const uint32_t levels = ktxTranscoder.get_levels();
 
-        // Setup mip level infos : we use our own mipmap creation function to get offset
+        // Setup mip level infos : we use our own function to get mipmap infos for algning offset with 16 bytes
         graphic::TextureFormatLayout layout;
         layout.SetUp2D(desc.format, desc.width, desc.height, desc.arraySize, desc.mipLevels);
 
