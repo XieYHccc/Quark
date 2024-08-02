@@ -283,7 +283,7 @@ void EditorApp::CreatePipeline()
     // Vertex binding info
     VertexBindInfo vert_bind_info = {
         .binding = 0,
-        .stride = sizeof(render::Vertex),
+        .stride = sizeof(scene::resource::Mesh::Vertex),
         .inputRate = VertexBindInfo::INPUT_RATE_VERTEX
     };
     pipe_desc.vertexBindInfos.push_back(vert_bind_info);
@@ -294,7 +294,7 @@ void EditorApp::CreatePipeline()
         .binding = 0,
         .format = VertexAttribInfo::ATTRIB_FORMAT_VEC3,
         .location = 0,
-        .offset = offsetof(render::Vertex, position)
+        .offset = offsetof(scene::resource::Mesh::Vertex, position)
     };
     skybox_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 }   

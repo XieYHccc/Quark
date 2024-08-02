@@ -62,7 +62,7 @@ void SceneRenderer::UpdateDrawContext()
     // Fill render objects
     const auto& mesh_transform_cmpts = scene_->GetComponents<scene::MeshCmpt, scene::TransformCmpt>();
     for (const auto [mesh_cmpt, transform_cmpt] : mesh_transform_cmpts) {
-        auto mesh = mesh_cmpt->mesh;
+        auto* mesh = mesh_cmpt->mesh? mesh_cmpt->mesh.get() : mesh_cmpt->sharedMesh.get();
         for (const auto& submesh : mesh->subMeshes) {
             RenderObject new_renderObject;
             new_renderObject.aabb = submesh.aabb;
@@ -73,7 +73,7 @@ void SceneRenderer::UpdateDrawContext()
             new_renderObject.material = submesh.material.get();
             new_renderObject.transform = transform_cmpt->GetWorldMatrix();
 
-            if (new_renderObject.material->alphaMode == Material::AlphaMode::OPAQUE) {
+            if (new_renderObject.material->alphaMode == scene::resource::Material::AlphaMode::OPAQUE) {
                 drawContext_.opaqueObjects.push_back(new_renderObject);
             }
             else {
@@ -109,7 +109,7 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
     cmd_list->BindSampler(0, 1, *cubeMapSampler_);
     cmd_list->BindVertexBuffer(0, *cubeMesh_->vertexBuffer, 0);
     cmd_list->BindIndexBuffer(*cubeMesh_->indexBuffer, 0, IndexBufferFormat::UINT32);
-    cmd_list->DrawIndexed(cubeMesh_->indexCount, 1, 0, 0, 0);
+    cmd_list->DrawIndexed(cubeMesh_->indices.size(), 1, 0, 0, 0);
 }
 
 void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
@@ -152,14 +152,14 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
     // Bind scene uniform buffer
     cmd_list->BindUniformBuffer(0, 0, *drawContext_.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
 
-    render::Material* last_mat = nullptr;
+    scene::resource::Material* last_mat = nullptr;
     graphic::Buffer* last_indexBuffer = nullptr;
     auto draw = [&] (const RenderObject& obj) {
 
         // Bind material
         if (obj.material != last_mat) {
             last_mat = obj.material;
-            cmd_list->BindUniformBuffer(1, 0, *last_mat->uniformBuffer, last_mat->uniformBufferOffset, sizeof(render::Material::UniformBufferBlock));
+            cmd_list->BindUniformBuffer(1, 0, *last_mat->uniformBuffer, last_mat->uniformBufferOffset, sizeof(scene::resource::Material::UniformBufferBlock));
             cmd_list->BindImage(1, 1, *last_mat->baseColorTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
             cmd_list->BindSampler(1, 1, *last_mat->baseColorTexture->sampler);
             cmd_list->BindImage(1, 2, *last_mat->metallicRoughnessTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);

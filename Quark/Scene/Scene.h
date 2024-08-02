@@ -5,7 +5,9 @@
 #include "Graphic/Common.h"
 #include "Scene/Ecs.h"
 #include "Scene/Node.h"
-#include "Renderer/RenderTypes.h"
+#include "Scene/Resources/Texture.h"
+#include "Scene/Resources/Material.h"
+#include "Scene/Resources/Mesh.h"
 
 namespace asset {
 class GLTFLoader;
@@ -55,12 +57,5 @@ private:
     //std::unordered_map<std::string, Node*> nodeMap_; TODO: Support name search
     util::ObjectPool<Node> nodePool_;
 
-    // Resources : stored here mostly for deserilization
-    std::vector<Ref<graphic::Image>> images_;
-    std::vector<Ref<graphic::Sampler>> samplers_;
-    std::vector<Ref<render::Mesh>> meshes_;
-    std::vector<Ref<render::Material>> materials_;
-    std::vector<Ref<render::Texture>> textures_;
-    Ref<graphic::Buffer> materialUniformBuffer_;
 };
 }

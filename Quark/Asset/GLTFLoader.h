@@ -4,7 +4,8 @@
 // #define TINYGLTF_NO_EXTERNAL_IMAGE
 #include <tiny_gltf.h>
 #include "Graphic/Common.h"
-#include "Renderer/RenderTypes.h"
+#include "Scene/Resources/Material.h"
+#include "Scene/Resources/Mesh.h"
 
 namespace scene {
 class Scene;
@@ -25,8 +26,8 @@ public:
 private:
     Ref<graphic::Sampler> ParseSampler(const tinygltf::Sampler& gltf_sampler);
     Ref<graphic::Image> ParseImage(const tinygltf::Image& gltf_image);
-    Ref<render::Material> ParseMaterial(const tinygltf::Material& gltf_material);
-    Ref<render::Mesh> ParseMesh(const tinygltf::Mesh& gltf_mesh);
+    Ref<scene::resource::Material> ParseMaterial(const tinygltf::Material& gltf_material);
+    Ref<scene::resource::Mesh> ParseMesh(const tinygltf::Mesh& gltf_mesh);
     scene::Node* ParseNode(const tinygltf::Node& gltf_node);
 
     graphic::Device* device_;
@@ -37,16 +38,23 @@ private:
     Ref<graphic::Sampler> defalutLinearSampler_;
     Ref<graphic::Image> defaultCheckBoardImage_;
     Ref<graphic::Image> defaultWhiteImage_;
-    Ref<render::Texture> defaultColorTexture_;
-    Ref<render::Texture> defaultMetalTexture_;
-    Ref<render::Material> defaultMaterial_;
+    Ref<scene::resource::Texture> defaultColorTexture_;
+    Ref<scene::resource::Texture> defaultMetalTexture_;
+    Ref<scene::resource::Material> defaultMaterial_;
     
     // Supported extensions mapped to whether they are enabled
     static std::unordered_map<std::string, bool> supportedExtensions_;
 
-    // To avoid repeated creation
-    std::vector<render::Vertex> vertices_;
-    std::vector<u32> indices_;
+    // Temporary storage for indexing
+    std::vector<scene::resource::Mesh::Vertex> vertices_;
+    std::vector<uint32_t> indices_;
+    std::vector<Ref<graphic::Sampler>> samplers_;
+    std::vector<Ref<graphic::Image>> images_;
+    std::vector<Ref<scene::resource::Texture>> textures_;
+    std::vector<Ref<scene::resource::Material>> materials_;
+    std::vector<Ref<scene::resource::Mesh>> meshes_;
+    std::vector<scene::Node*> nodes_;
+
 };
 
 }

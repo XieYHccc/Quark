@@ -11,8 +11,7 @@
 #include "Asset/ImageLoader.h"
 namespace asset {
 using namespace graphic;
-using namespace render;
-
+using namespace scene::resource;
 std::unordered_map<std::string, bool> GLTFLoader::supportedExtensions_ = {
     {"KHR_lights_punctual", false}};
 
@@ -198,56 +197,46 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     Scope<scene::Scene> newScene = CreateScope<scene::Scene>("gltf scene"); // name would be overwritten later..
     scene_ = newScene.get();
 
-    // Resources to be loaded : The order of resource's loading is important.
-    // can't load mesh before load material
-    // can't load material before load texture...
-    std::vector<Ref<Sampler>>& samplers = newScene->samplers_;
-    std::vector<Ref<Image>>& images = newScene->images_;
-    std::vector<Ref<Texture>>& textures = newScene->textures_;
-    std::vector<Ref<Material>>& materials = newScene->materials_;
-    std::vector<Ref<Mesh>>& meshes = newScene->meshes_;
-    std::vector<scene::Node*> nodes;
-
     // Load samplers
-    samplers.resize(model_.samplers.size());
+    samplers_.resize(model_.samplers.size());
     for (size_t sampler_index = 0; sampler_index < model_.samplers.size(); sampler_index++) {
-        samplers[sampler_index] = ParseSampler(model_.samplers[sampler_index]);
+        samplers_[sampler_index] = ParseSampler(model_.samplers[sampler_index]);
     }
 
     // Load images
-    images.resize(model_.images.size());
+    images_.resize(model_.images.size());
     for (size_t image_index = 0; image_index < model_.images.size(); image_index++) {
         Ref<Image> newImage = ParseImage(model_.images[image_index]);
-        images[image_index] = newImage;
+        images_[image_index] = newImage;
     }
 
     // Load textures
-    textures.resize(model_.textures.size());
+    textures_.resize(model_.textures.size());
     for (size_t texture_index = 0; texture_index < model_.textures.size(); texture_index++) {
-        Ref<Texture> newTexture = CreateRef<Texture>();
+        auto newTexture = CreateRef<Texture>();
 
         // Default values
         newTexture->image = defaultWhiteImage_;
         newTexture->sampler = defalutLinearSampler_;
 
         if (model_.textures[texture_index].source > -1) {
-            newTexture->image = images[model_.textures[texture_index].source];
+            newTexture->image = images_[model_.textures[texture_index].source];
         }
         if (model_.textures[texture_index].sampler > -1) {
-            newTexture->sampler = samplers[model_.textures[texture_index].sampler];
+            newTexture->sampler = samplers_[model_.textures[texture_index].sampler];
         }
 
-        textures[texture_index] = newTexture;
+        textures_[texture_index] = newTexture;
     }
 
     // Using dynamic uniform buffer for material uniform data
     size_t min_ubo_alignment = device_->GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
-    size_t dynamic_alignment = sizeof(render::Material::UniformBufferBlock);
+    size_t dynamic_alignment = sizeof(Material::UniformBufferBlock);
 	if (min_ubo_alignment > 0)
 		dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
 
 	size_t buffer_size = (model_.materials.size() + 1) * dynamic_alignment; // additional 1 is for default material
-    Material::UniformBufferBlock* ubo_data = (Material::UniformBufferBlock*)util::memalign_alloc(dynamic_alignment, buffer_size);
+    auto* ubo_data = (Material::UniformBufferBlock*)util::memalign_alloc(dynamic_alignment, buffer_size);
     CORE_DEBUG_ASSERT(ubo_data)
 
     // Create uniform buffer for material's uniform data
@@ -257,18 +246,18 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
         .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
     };
 
-    scene_->materialUniformBuffer_ = device_->CreateBuffer(uniform_buffer_desc);
-    auto* mapped_data = (Material::UniformBufferBlock*)scene_->materialUniformBuffer_->GetMappedDataPtr();
+    Ref<graphic::Buffer> materialUniformBuffer = device_->CreateBuffer(uniform_buffer_desc);
+    auto* mapped_data = (Material::UniformBufferBlock*)materialUniformBuffer->GetMappedDataPtr();
 
     // Load materials
-    materials.reserve(model_.materials.size() + 1); // one more default material
+    materials_.reserve(model_.materials.size() + 1); // one more default material
     for (size_t material_index = 0; material_index < model_.materials.size(); material_index++) {
         auto newMaterial = ParseMaterial(model_.materials[material_index]);
-        Material::UniformBufferBlock* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (material_index * dynamic_alignment));
+        auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (material_index * dynamic_alignment));
         *ubo = newMaterial->uniformBufferData;
-        newMaterial->uniformBuffer = scene_->materialUniformBuffer_;
+        newMaterial->uniformBuffer = materialUniformBuffer;
         newMaterial->uniformBufferOffset = material_index * dynamic_alignment;
-        materials.push_back(newMaterial);
+        materials_.push_back(newMaterial);
     }
 
     // Create default material
@@ -277,13 +266,13 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
         defaultMaterial_->alphaMode = Material::AlphaMode::OPAQUE;
         defaultMaterial_->baseColorTexture = defaultColorTexture_;
         defaultMaterial_->metallicRoughnessTexture = defaultMetalTexture_;
-        defaultMaterial_->uniformBuffer = scene_->materialUniformBuffer_;
+        defaultMaterial_->uniformBuffer = materialUniformBuffer;
         defaultMaterial_->uniformBufferOffset = model_.materials.size() * dynamic_alignment;
         
-        Material::UniformBufferBlock* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (model_.materials.size() * dynamic_alignment));
+        auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (model_.materials.size() * dynamic_alignment));
         *ubo = defaultMaterial_->uniformBufferData;
 
-        materials.push_back(defaultMaterial_);
+        materials_.push_back(defaultMaterial_);
     }
 
     // data copy
@@ -291,9 +280,9 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     util::memalign_free(ubo_data);
 
     // Load meshes
-    meshes.reserve(model_.meshes.size());
+    meshes_.reserve(model_.meshes.size());
     for (const auto& gltf_mesh : model_.meshes) {
-        meshes.push_back(ParseMesh(gltf_mesh));
+        meshes_.push_back(ParseMesh(gltf_mesh));
     }
 
     // TODO: scene handling with no default scene
@@ -303,22 +292,22 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     scene_->SetName(gltf_scene.name);
 
     // Load nodes
-    nodes.reserve(model_.nodes.size());
+    nodes_.reserve(model_.nodes.size());
     for (const auto& gltf_node : model_.nodes) {
         auto* newNode = ParseNode(gltf_node);
-        nodes.push_back(newNode);
+        nodes_.push_back(newNode);
     }
 
     // Loop node to again to establish hierachy
     for (size_t i = 0; i < model_.nodes.size(); i++) {
         for (const auto& child : model_.nodes[i].children)
-            nodes[i]->AddChild(nodes[child]);
+            nodes_[i]->AddChild(nodes_[child]);
     }
 
     // Add root nodes manually
     scene_->rootNode_->ClearChildren();
     for (const auto& node : gltf_scene.nodes) {
-        scene_->rootNode_->AddChild(nodes[node]);
+        scene_->rootNode_->AddChild(nodes_[node]);
     }
 
     return newScene;
@@ -351,7 +340,7 @@ scene::Node* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
     // Parse mesh component
     if (gltf_node.mesh > -1) {
         scene::MeshCmpt* mesh_cmpt = entity->AddComponent<scene::MeshCmpt>();
-        mesh_cmpt->mesh = scene_->meshes_[gltf_node.mesh];
+        mesh_cmpt->sharedMesh = meshes_[gltf_node.mesh];
     }
 
     //TODO: Parse camera component
@@ -412,13 +401,13 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
         }
     }
     
-    CORE_DEBUG_ASSERT(0)
-    return nullptr;
+    CORE_LOGE("GLTFLoader::ParseImage::Failed to load image: {}", gltf_image.uri)
+    return defaultCheckBoardImage_;
 }
 
-Ref<render::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
+Ref<scene::resource::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
 {
-    Ref<Material> newMaterial = CreateRef<Material>();
+    auto newMaterial = CreateRef<Material>();
     newMaterial->SetName(mat.name);
 
     newMaterial->alphaMode = Material::AlphaMode::OPAQUE;
@@ -451,18 +440,18 @@ Ref<render::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
 
     find = mat.values.find("metallicRoughnessTexture");
     if (find != mat.values.end()) {
-        newMaterial->metallicRoughnessTexture = scene_->textures_[find->second.TextureIndex()];
+        newMaterial->metallicRoughnessTexture = textures_[find->second.TextureIndex()];
     }
 
     find = mat.values.find("baseColorTexture");
     if (find != mat.values.end()) {
-        newMaterial->baseColorTexture = scene_->textures_[find->second.TextureIndex()];
+        newMaterial->baseColorTexture = textures_[find->second.TextureIndex()];
     }
 
     return newMaterial;
 }
 
-Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
+Ref<scene::resource::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 {
 
     vertices_.clear();
@@ -481,7 +470,7 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
     vertices_.reserve(vertex_count);
     indices_.reserve(index_count);
 
-    std::vector<render::Mesh::SubMeshDescriptor> submeshes;
+    std::vector<Mesh::SubMeshDescriptor> submeshes;
     submeshes.reserve(gltf_mesh.primitives.size());
     
     // loop primitives
@@ -537,7 +526,7 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 
             // Create vertices
             for (size_t i = 0; i < posAccessor.count; i++) {
-                Vertex v = {};
+                Mesh::Vertex v = {};
                 v.position = glm::make_vec3(&buffer_pos[i * 3]);
 				v.normal = glm::normalize(buffer_normals ? glm::make_vec3(&buffer_normals[i * 3]) : glm::vec3(0.0f));
 				v.uv_x = buffer_texCoords? buffer_texCoords[i * 2] : 0.f;
@@ -621,12 +610,12 @@ Ref<render::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
         new_submesh.aabb = {min_pos, max_pos},
         new_submesh.count = index_num,
         new_submesh.startIndex = start_index,
-        new_submesh.material = p.material > -1? scene_->materials_[p.material] : scene_->materials_.back();
+        new_submesh.material = p.material > -1? materials_[p.material] : materials_.back();
 
     }
 
     // Create mesh
-    auto newMesh = CreateRef<render::Mesh>(vertices_, indices_, submeshes);
+    auto newMesh = CreateRef<Mesh>(vertices_, indices_, submeshes, false);
     newMesh->SetName(gltf_mesh.name);
 
     return newMesh;
