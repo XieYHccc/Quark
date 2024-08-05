@@ -18,7 +18,7 @@ add_dependencies(quark Shaders)
 
 # pch header file path
 set(ENGINE_PRECOMPILED_HEADERS
-    ${ENGINE_SOURCE_DIR}/pch.h
+    ${ENGINE_SOURCE_DIR}/qkpch.h
 )
 target_precompile_headers(quark PRIVATE ${ENGINE_PRECOMPILED_HEADERS})
 

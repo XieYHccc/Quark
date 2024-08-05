@@ -1,3 +1,4 @@
+#include "qkpch.h"
 #include "Scene/Components/TransformCmpt.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>

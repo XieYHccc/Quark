@@ -1,3 +1,4 @@
+#include "qkpch.h"
 #include "Platform/MacOS/WindowGLFW.h"
 #include "Events/EventManager.h"
 #include "Events/ApplicationEvent.h"

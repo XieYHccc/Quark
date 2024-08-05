@@ -212,7 +212,7 @@ void EditorApp::LoadScene()
 
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    auto* cam_node = scene_->CreateNode("Editor Camera", nullptr);
+    auto* cam_node = scene_->CreateNode("Editor Camera", scene_->GetRootNode());
     cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
     cam_node->GetEntity()->AddComponent<component::EditorCameraControlCmpt>(50, 0.3);
 

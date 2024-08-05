@@ -2,6 +2,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "Scene/Components/CameraCmpt.h"
 #include "Scene/Components/MeshCmpt.h"
 
 namespace editor::ui {
@@ -128,7 +129,21 @@ void Inspector::Render()
 				ImGui::OpenPopup("Set Mesh");
         });
 
-        
+
+        // Camera component
+        DrawComponent<scene::CameraCmpt>("Camera", entity, [&](auto& component) {
+            float perspectiveVerticalFov = component.fov;
+            if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
+                component.fov = perspectiveVerticalFov;
+
+            float perspectiveNear = component.zNear;
+            if (ImGui::DragFloat("Near", &perspectiveNear))
+                component.zNear = perspectiveNear;
+
+            float perspectiveFar = component.zFar;
+            if (ImGui::DragFloat("Far", &perspectiveFar))
+                component.zFar = perspectiveFar;
+        });
     }
     ImGui::End();
 }
