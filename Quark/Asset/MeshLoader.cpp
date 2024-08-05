@@ -7,8 +7,8 @@
 #include "Scene/Scene.h"
 
 namespace std {
-    template<> struct hash<scene::resource::Mesh::Vertex> {
-        size_t operator()(scene::resource::Mesh::Vertex const& vertex) const {
+    template<> struct hash<scene::Mesh::Vertex> {
+        size_t operator()(scene::Mesh::Vertex const& vertex) const {
             size_t pos_hash = hash<glm::vec3>()(vertex.position);
             size_t uv_x_hash = hash<float>()(vertex.uv_x);
             size_t normal_hash = hash<glm::vec3>()(vertex.normal);
@@ -21,7 +21,7 @@ namespace std {
 }
 
 namespace asset {
-Ref<scene::resource::Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
+Ref<scene::Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
     GLTFLoader gltf_loader(graphicDevice_);
 
     Scope<scene::Scene> gltf_scene = gltf_loader.LoadSceneFromFile(filepath);
@@ -42,7 +42,7 @@ Ref<scene::resource::Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
 
 }
 
-Ref<scene::resource::Mesh> MeshLoader::LoadOBJ(const std::string &filepath)
+Ref<scene::Mesh> MeshLoader::LoadOBJ(const std::string &filepath)
 {
     tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig config;

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Util/Hash.h"
+#include "Core/Util/Hash.h"
 #include "Scene/Scene.h"
 #include "Scene/Components/NameCmpt.h"
 #include "Scene/Components/TransformCmpt.h"

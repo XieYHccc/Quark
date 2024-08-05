@@ -24,8 +24,8 @@ void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
 	io.ConfigViewportsNoAutoMerge = false;
 	io.ConfigViewportsNoTaskBarIcon = true;
 
-    io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Bold.ttf", 22.f);
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 19.f);
+    io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Bold.ttf", 18.f);
+	io.FontDefault = io.Fonts->AddFontFromFileTTF("/Users/xieyhccc/develop/Quark/Assets/Fonts/OpenSans/OpenSans-Regular.ttf", 18.f);
 
     // Style
     {
@@ -134,8 +134,13 @@ void UI_Vulkan::BeginFrame()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+    float minWinSizeX = style.WindowMinSize.x;
+    style.WindowMinSize.x = 350.0f;
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable)
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
+    style.WindowMinSize.x = minWinSizeX;
 }
 
 void UI_Vulkan::EndFrame()

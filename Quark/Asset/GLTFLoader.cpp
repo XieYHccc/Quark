@@ -2,7 +2,7 @@
 #include "Asset/GLTFLoader.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <stb_image.h>
-#include "Util/AlignedAlloc.h"
+#include "Core/Util/AlignedAlloc.h"
 #include "Scene/Scene.h"
 #include "Graphic/Device.h"
 #include "Scene/Components/TransformCmpt.h"
@@ -11,7 +11,8 @@
 #include "Asset/ImageLoader.h"
 namespace asset {
 using namespace graphic;
-using namespace scene::resource;
+using namespace scene;
+
 std::unordered_map<std::string, bool> GLTFLoader::supportedExtensions_ = {
     {"KHR_lights_punctual", false}};
 
@@ -129,12 +130,12 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     defaultWhiteImage_ = device_->CreateImage(texture_desc, &init_data);
 
     // Create defalult texture
-    defaultColorTexture_ = CreateRef<Texture>();
+    defaultColorTexture_ = CreateRef<scene::Texture>();
     defaultColorTexture_->image = defaultWhiteImage_;
     defaultColorTexture_->sampler = defalutLinearSampler_;
     defaultColorTexture_->SetName("Default color texture");
 
-    defaultMetalTexture_ =CreateRef<Texture>();
+    defaultMetalTexture_ =CreateRef<scene::Texture>();
     defaultMetalTexture_->image = defaultWhiteImage_;
     defaultMetalTexture_->sampler = defalutLinearSampler_;
     defaultMetalTexture_->SetName("Default metalic roughness texture");
@@ -213,7 +214,7 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     // Load textures
     textures_.resize(model_.textures.size());
     for (size_t texture_index = 0; texture_index < model_.textures.size(); texture_index++) {
-        auto newTexture = CreateRef<Texture>();
+        auto newTexture = CreateRef<scene::Texture>();
 
         // Default values
         newTexture->image = defaultWhiteImage_;
@@ -405,7 +406,7 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
     return defaultCheckBoardImage_;
 }
 
-Ref<scene::resource::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
+Ref<scene::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
 {
     auto newMaterial = CreateRef<Material>();
     newMaterial->SetName(mat.name);
@@ -451,7 +452,7 @@ Ref<scene::resource::Material> GLTFLoader::ParseMaterial(const tinygltf::Materia
     return newMaterial;
 }
 
-Ref<scene::resource::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
+Ref<scene::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 {
 
     vertices_.clear();

@@ -2,9 +2,9 @@
 #define VMA_IMPLEMENTATION
 #include "Graphic/Vulkan/Device_Vulkan.h"
 #include "Core/Window.h"
-#include "Math/Util.h"
+#include "Core/Math/Util.h"
+#include "Core/Util/Hash.h"
 #include "Events/EventManager.h"
-#include "Util/Hash.h"
 #include "Graphic/Vulkan/Shader_Vulkan.h"
 
 namespace graphic {

@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "Math/Frustum.h"
+#include "Core/Math/Frustum.h"
 #include "Scene/Resources/Mesh.h"
 
 namespace scene {
@@ -40,7 +40,7 @@ public:
         uint32_t firstIndex = 0;
         graphic::Buffer* indexBuffer = nullptr;
         graphic::Buffer* vertexBuffer = nullptr;
-        scene::resource::Material* material = nullptr;
+        scene::Material* material = nullptr;
         math::Aabb aabb = {};
         glm::mat4 transform;
     };
@@ -60,7 +60,7 @@ private:
     scene::Scene* scene_;
     Ref<graphic::Image> cubeMap_;
     Ref<graphic::Sampler> cubeMapSampler_;
-    Ref<scene::resource::Mesh> cubeMesh_;
+    Ref<scene::Mesh> cubeMesh_;
 
     // Data need to be updated every frame
     struct DrawContext {

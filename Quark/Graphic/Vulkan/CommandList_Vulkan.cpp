@@ -2,8 +2,8 @@
 #include "Graphic/Vulkan/CommandList_Vulkan.h"
 #include "Graphic/Vulkan/Device_Vulkan.h"
 #include "Graphic/Vulkan/PipeLine_Vulkan.h"
-#include "Util/Hash.h"
-#include "Util/BitOperations.h"
+#include "Core/Util/Hash.h"
+#include "Core/Util/BitOperations.h"
 
 namespace graphic {
 CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)

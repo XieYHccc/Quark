@@ -31,9 +31,6 @@ Application::Application(const AppInitSpecs& specs)
     Input::CreateSingleton();
     Input::Singleton()->Init();
 
-    // Init asset manager
-    AssetManager::Instance().Init();
-
     // Init graphic device
 #ifdef  USE_VULKAN_DRIVER
     m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
@@ -50,8 +47,6 @@ Application::Application(const AppInitSpecs& specs)
 
 Application::~Application() {
 
-    AssetManager::Instance().Finalize();
-    
     // Destroy UI system
     UI::Singleton()->Finalize();
     UI::FreeSingleton();

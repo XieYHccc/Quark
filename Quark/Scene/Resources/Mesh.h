@@ -1,9 +1,9 @@
 #pragma once
+#include "Core/Math/Aabb.h"
 #include "Scene/Resources/Base.h"
 #include "Scene/Resources/Material.h"
-#include "Math/Aabb.h"
 
-namespace scene::resource {
+namespace scene {
 
 class Mesh : public Resource {
 public:
@@ -30,8 +30,8 @@ public:
     Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<SubMeshDescriptor>& subMeshes, bool isDynamic = false);
 
     void CreateRenderResources();
-    void RegenerateNormals();
-    void RegenerateAabbs();
+    void ReCalculateNormals();
+    void ReCalculateAabbs();
     
     std::vector<SubMeshDescriptor> subMeshes;
     std::vector<Vertex> vertices;

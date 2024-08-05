@@ -1,7 +1,6 @@
 #pragma once
 
-namespace scene::resource {
-
+namespace scene {
 class Resource {
 public:
     Resource() = default;

@@ -14,8 +14,6 @@ public:
     void SetNode(scene::Node* node) { selectedNode_ = node; }
 
 private:
-    void DrawComponents(scene::Entity* entity);
-
     scene::Node* selectedNode_;
     bool rename_;
     char buf_[128];

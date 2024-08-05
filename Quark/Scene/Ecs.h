@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Base.h"
-#include "Util/CompileTimeHash.h"
-#include "Util/IntrusiveHashMap.h"
+#include "Core/Util/CompileTimeHash.h"
+#include "Core/Util/IntrusiveHashMap.h"
 
 /*
 A simple Entity-component system immplementation
