@@ -126,6 +126,12 @@ set(BASISU_INCLUDE_DIRS
 
 add_library(basisu STATIC ${BASISU_SOURCES})
 target_include_directories(basisu SYSTEM PUBLIC ${BASISU_INCLUDE_DIRS})
-target_compile_options(basisu PRIVATE -Wno-deprecated-builtins)
-target_compile_options(basisu PRIVATE -Wno-deprecated-declarations)
+if(MSVC)
+    # 使用MSVC编译器的选项
+    target_compile_options(basisu PRIVATE /wd4996) # 用来忽略“已弃用”警告
+else()
+    # 对GCC或Clang使用的选项
+    target_compile_options(basisu PRIVATE -Wno-deprecated-declarations)
+    target_compile_options(basisu PRIVATE -Wno-deprecated-builtins)
+endif()
 set_target_properties(basisu PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)

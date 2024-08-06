@@ -87,8 +87,8 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
         .addressModeW = SamplerAddressMode::REPEAT});
 
     // defalut error check board image
-    constexpr uint32_t black = __builtin_bswap32(0x000000FF);
-    constexpr uint32_t magenta = __builtin_bswap32(0xFF00FFFF);
+    constexpr uint32_t black = 0x000000FF;
+    constexpr uint32_t magenta = 0xFF00FFFF;
     std::array<uint32_t, 32 * 32 > pixels;
     for (int x = 0; x < 32; x++) {
         for (int y = 0; y < 32; y++) {
@@ -107,7 +107,7 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
         .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL,
         .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT
     };
-    
+
     ImageInitData init_data = {
         .rowPitch = 32 * 4,
         .slicePitch = 32 * 32 * 4,
@@ -117,7 +117,7 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     defaultCheckBoardImage_ = device_->CreateImage(texture_desc, &init_data);
 
     // default White image
-    constexpr uint32_t white = __builtin_bswap32(0xFFFFFFFF);
+    constexpr uint32_t white = 0xFFFFFFFF;
     texture_desc.width = 1;
     texture_desc.height = 1;
     
