@@ -12,15 +12,12 @@
 
 Application* CreateApplication()
 {    
-    AppInitSpecs specs = {
-        .uiSpecs = {
-            .flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS,
-        },
-        .title = "Quark Editor",
-        .width = 1300,
-        .height = 800,
-        .isFullScreen = false
-    };
+    AppInitSpecs specs;
+    specs.uiSpecs.flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS;
+    specs.title = "Quark Editor";
+    specs.width = 1600;
+    specs.height = 1000;
+    specs.isFullScreen = false;
 
     return new editor::EditorApp(specs);
 }
@@ -111,16 +108,30 @@ void EditorApp::Render(f32 deltaTime)
 
         // Geometry pass
         {
-            graphic::PipelineImageBarrier image_barrier{
-                .image = color_image.get(),
-                .srcStageBits = graphic::PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-                .srcMemoryAccessBits = 0,
-                .dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                .dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                .layoutBefore = graphic::ImageLayout::UNDEFINED,
-                .layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL
-            };
+            graphic::PipelineImageBarrier image_barrier;
+            image_barrier.image = color_image.get();
+            image_barrier.srcStageBits = graphic::PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+            image_barrier.srcMemoryAccessBits = 0;
+            image_barrier.dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barrier.layoutBefore = graphic::ImageLayout::UNDEFINED;
+            image_barrier.layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
             cmd->PipeLineBarriers(nullptr, 0, &image_barrier, 1, nullptr, 0);
+
+            // Viewport and scissor
+            graphic::Viewport viewport;
+            viewport.x = 0;
+            viewport.y = 0;
+            viewport.width = (float)color_image->GetDesc().width;
+            viewport.height = (float)color_image->GetDesc().height;
+            viewport.minDepth = 0;
+            viewport.maxDepth = 1;
+
+            graphic::Scissor scissor;
+            scissor.extent.width = viewport.width;
+            scissor.extent.height = viewport.height;
+            scissor.offset.x = 0;
+            scissor.offset.y = 0;
 
             // Begin pass
             forward_pass_info.colorAttachments[0] = color_image.get();
@@ -130,18 +141,14 @@ void EditorApp::Render(f32 deltaTime)
 
             // Draw skybox
             cmd->BindPipeLine(*skybox_pipeline);
-            cmd->SetViewPort(graphic::Viewport{.x = 0, .y = 0, .width = (float)color_image->GetDesc().width,
-                .height = (float)color_image->GetDesc().height, .minDepth = 0, .maxDepth = 1});
-            cmd->SetScissor(graphic::Scissor{.extent = {.width = color_image->GetDesc().width, .height = color_image->GetDesc().height},
-                .offset = {.x = 0, .y = 0}});
+            cmd->SetViewPort(viewport);
+            cmd->SetScissor(scissor);
             scene_renderer_->RenderSkybox(cmd);
 
             // Draw scene
             cmd->BindPipeLine(*graphic_pipeline);
-            cmd->SetViewPort(graphic::Viewport{.x = 0, .y = 0, .width = (float)color_image->GetDesc().width,
-                .height = (float)color_image->GetDesc().height, .minDepth = 0, .maxDepth = 1});
-            cmd->SetScissor(graphic::Scissor{.extent = {.width = color_image->GetDesc().width, .height = color_image->GetDesc().height},
-                .offset = {.x = 0, .y = 0}});
+            cmd->SetViewPort(viewport);
+            cmd->SetScissor(scissor);
             auto geometry_start = m_Timer.ElapsedMillis();
             scene_renderer_->RenderScene(cmd);
             cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
@@ -151,26 +158,24 @@ void EditorApp::Render(f32 deltaTime)
 
         // UI pass
         {
-            graphic::PipelineImageBarrier swapchian_image_barrier{
-                .image = swap_chain_image,
-                .srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                .srcMemoryAccessBits = 0,
-                .dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                .dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                .layoutBefore = graphic::ImageLayout::UNDEFINED,
-                .layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL
-            };
+            graphic::PipelineImageBarrier swapchain_image_barrier;
+            swapchain_image_barrier.image = swap_chain_image;
+            swapchain_image_barrier.srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            swapchain_image_barrier.srcMemoryAccessBits = 0;
+            swapchain_image_barrier.dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            swapchain_image_barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            swapchain_image_barrier.layoutBefore = graphic::ImageLayout::UNDEFINED;
+            swapchain_image_barrier.layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            cmd->PipeLineBarriers(nullptr, 0, &swapchain_image_barrier, 1, nullptr, 0);
 
-            graphic::PipelineImageBarrier color_image_barrier{
-                .image = color_image.get(),
-                .srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                .srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                .dstStageBits = graphic::PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                .dstMemoryAccessBits = graphic::BARRIER_ACCESS_SHADER_READ_BIT,
-                .layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
-                .layoutAfter = graphic::ImageLayout::SHADER_READ_ONLY_OPTIMAL
-            };
-            cmd->PipeLineBarriers(nullptr, 0, &swapchian_image_barrier, 1, nullptr, 0);
+            graphic::PipelineImageBarrier color_image_barrier;
+            color_image_barrier.image = color_image.get();
+            color_image_barrier.srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            color_image_barrier.srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            color_image_barrier.dstStageBits = graphic::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            color_image_barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_SHADER_READ_BIT;
+            color_image_barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            color_image_barrier.layoutAfter = graphic::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
             cmd->PipeLineBarriers(nullptr, 0, &color_image_barrier, 1, nullptr, 0);
 
             ui_pass_info.colorAttachments[0] = swap_chain_image;
@@ -182,15 +187,14 @@ void EditorApp::Render(f32 deltaTime)
 
         // Transit swapchain image to present layout for presenting
         {
-            graphic::PipelineImageBarrier present_barrier {
-                .image = swap_chain_image,
-                .srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                .srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                .dstStageBits = graphic::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                .dstMemoryAccessBits = 0,
-                .layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
-                .layoutAfter = graphic::ImageLayout::PRESENT
-            };
+            graphic::PipelineImageBarrier present_barrier;
+            present_barrier.image = swap_chain_image;
+            present_barrier.srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            present_barrier.srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            present_barrier.dstStageBits = graphic::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+            present_barrier.dstMemoryAccessBits = 0;
+            present_barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            present_barrier.layoutAfter = graphic::ImageLayout::PRESENT;
             cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
         }
 
@@ -204,11 +208,11 @@ void EditorApp::LoadScene()
 {   
     // Load cube map
     asset::ImageLoader image_loader(m_GraphicDevice.get());
-    cubeMap_image = image_loader.LoadKtx2("/Users/xieyhccc/develop/Quark/Assets/Textures/etc1s_cubemap_learnopengl.ktx2");
+    cubeMap_image = image_loader.LoadKtx2("Assets/Textures/etc1s_cubemap_learnopengl.ktx2");
 
     // Load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
-    scene_ = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/teapot.gltf");
+    scene_ = gltf_loader.LoadSceneFromFile("Assets/Gltf/teapot.gltf");
 
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
@@ -247,14 +251,14 @@ void EditorApp::CreatePipeline()
     using namespace graphic;
 
     // Sky box shaders
-    skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "/Users/xieyhccc/develop/Quark/Assets/Shaders/Spirv/skybox.vert.spv");
-    skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "/Users/xieyhccc/develop/Quark/Assets/Shaders/Spirv/skybox.frag.spv");
+    skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "Assets/Shaders/Spirv/skybox.vert.spv");
+    skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "Assets/Shaders/Spirv/skybox.frag.spv");
 
     // Scene shaders
     vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(ShaderStage::STAGE_VERTEX,
-        "/Users/xieyhccc/develop/Quark/Assets/Shaders/Spirv/pbr.vert.spv");
+        "Assets/Shaders/Spirv/pbr.vert.spv");
     frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(ShaderStage::STAGE_FRAGEMNT,
-        "/Users/xieyhccc/develop/Quark/Assets/Shaders/Spirv/pbr.frag.spv");
+        "Assets/Shaders/Spirv/pbr.frag.spv");
     
     // Scene pipeline
     GraphicPipeLineDesc pipe_desc;
@@ -263,16 +267,12 @@ void EditorApp::CreatePipeline()
     pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
     pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
     pipe_desc.renderPassInfo = forward_pass_info;
-    pipe_desc.depthStencilState = {
-        .enableDepthTest = true,
-        .enableDepthWrite = true,
-        .depthCompareOp = CompareOperation::LESS_OR_EQUAL
-    };
-    pipe_desc.rasterState = {
-        .cullMode = CullMode::NONE,
-        .polygonMode = PolygonMode::Fill,
-        .frontFaceType = FrontFaceType::COUNTER_CLOCKWISE
-    };
+    pipe_desc.depthStencilState.enableDepthTest = true;
+    pipe_desc.depthStencilState.enableDepthWrite = true;
+    pipe_desc.depthStencilState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
+    pipe_desc.rasterState.cullMode = CullMode::NONE;
+    pipe_desc.rasterState.polygonMode = PolygonMode::Fill;
+    pipe_desc.rasterState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
     graphic_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 
     // Sky box pipeline
@@ -280,22 +280,20 @@ void EditorApp::CreatePipeline()
     pipe_desc.fragShader = skybox_frag_shader;
     pipe_desc.depthStencilState.enableDepthTest = false;
     pipe_desc.depthStencilState.enableDepthWrite = false;
-    // Vertex binding info
-    VertexBindInfo vert_bind_info = {
-        .binding = 0,
-        .stride = sizeof(scene::Mesh::Vertex),
-        .inputRate = VertexBindInfo::INPUT_RATE_VERTEX
-    };
+
+    VertexBindInfo vert_bind_info;
+    vert_bind_info.binding = 0;
+    vert_bind_info.stride = sizeof(scene::Mesh::Vertex);
+    vert_bind_info.inputRate = VertexBindInfo::INPUT_RATE_VERTEX;
     pipe_desc.vertexBindInfos.push_back(vert_bind_info);
 
-    // Vertex attributes info
-    auto& pos_attrib = pipe_desc.vertexAttribInfos.emplace_back();
-    pos_attrib = {
-        .binding = 0,
-        .format = VertexAttribInfo::ATTRIB_FORMAT_VEC3,
-        .location = 0,
-        .offset = offsetof(scene::Mesh::Vertex, position)
-    };
+    VertexAttribInfo pos_attrib;
+    pos_attrib.binding = 0;
+    pos_attrib.format = VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+    pos_attrib.location = 0;
+    pos_attrib.offset = offsetof(scene::Mesh::Vertex, position);
+    pipe_desc.vertexAttribInfos.push_back(pos_attrib);
+
     skybox_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 }   
 
@@ -304,20 +302,17 @@ void EditorApp::CreateColorDepthAttachments()
         using namespace graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
-        // Image create info
-        ImageDesc image_desc = {
-            .type = ImageType::TYPE_2D,
-            .width = u32(Window::Instance()->GetMonitorWidth() * Window::Instance()->GetRatio()),
-            .height = u32(Window::Instance()->GetMonitorHeight() * Window::Instance()->GetRatio()),
-            .depth = 1,
-            .format = depth_format,
-            .arraySize = 1,
-            .mipLevels = 1,
-            .initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-        };
-
         // Create depth image
+        ImageDesc image_desc;
+        image_desc.type = ImageType::TYPE_2D;
+        image_desc.width = uint32_t(Window::Instance()->GetMonitorWidth() * Window::Instance()->GetRatio());
+        image_desc.height = uint32_t(Window::Instance()->GetMonitorHeight() * Window::Instance()->GetRatio());
+        image_desc.depth = 1;
+        image_desc.format = depth_format;
+        image_desc.arraySize = 1;
+        image_desc.mipLevels = 1;
+        image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        image_desc.usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         depth_image = graphic_device->CreateImage(image_desc);
 
         // Create color image

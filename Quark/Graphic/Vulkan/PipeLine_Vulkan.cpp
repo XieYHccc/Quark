@@ -234,7 +234,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* device, const std::array<Descripto
         pipeline_layout_create_info.pPushConstantRanges = &this->pushConstant;
     }
     else {
-        pipeline_layout_create_info.pPushConstantRanges = 0;
+        pipeline_layout_create_info.pushConstantRangeCount = 0;
         pipeline_layout_create_info.pPushConstantRanges = nullptr;
     }
     VK_CHECK(vkCreatePipelineLayout(this->device->vkDevice, &pipeline_layout_create_info, nullptr, &handle))

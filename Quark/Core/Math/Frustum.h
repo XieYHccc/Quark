@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <array>
 #include "Core/Math/Aabb.h"
 
 namespace math {

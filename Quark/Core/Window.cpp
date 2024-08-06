@@ -1,7 +1,7 @@
 #include "qkpch.h"
 #include "Core/Window.h"
 
-#ifdef QK_PLATFORM_MACOS
+#if defined(QK_PLATFORM_WINDOWS) || defined(QK_PLATFORM_MACOS)
 #include "Platform/MacOS/WindowGLFW.h"
 #endif
 
@@ -14,7 +14,7 @@ Window* Window::Instance()
 
 void Window::Create()
 {
-#ifdef QK_PLATFORM_MACOS
+#if defined(QK_PLATFORM_WINDOWS) || defined(QK_PLATFORM_MACOS)
     Window::singleton_ = new WindowGLFW();
 #else
     #error "Platform doesn't support window"

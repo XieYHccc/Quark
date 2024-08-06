@@ -4,9 +4,10 @@
 #include "Scene/Resources/Texture.h"
 #include "Graphic/Common.h"
 
+
 namespace scene {
 struct Material : public Resource{
-    enum class AlphaMode {
+    enum AlphaMode {
         OPAQUE,
         TRANSPARENT
     } alphaMode = AlphaMode::OPAQUE;

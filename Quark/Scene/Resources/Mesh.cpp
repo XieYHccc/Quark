@@ -38,24 +38,22 @@ void Mesh::CreateRenderResources()
     if (indexBuffer)
         indexBuffer.reset();
 
-    // Create vertex buffer and index buffer
 	const size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
 	const size_t indexBufferSize = indices.size() * sizeof(uint32_t);
     auto* graphic_device = Application::Instance().GetGraphicDevice();
 
-    graphic::BufferDesc vert_buffer_desc = {
-        .domain = (isDynamic? graphic::BufferMemoryDomain::CPU : graphic::BufferMemoryDomain::GPU),
-        .size = vertexBufferSize,
-        .usageBits = graphic::BUFFER_USAGE_VERTEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT
-    };
-
-    graphic::BufferDesc index_buffer_desc = {
-        .domain = graphic::BufferMemoryDomain::GPU,
-        .size = indexBufferSize,
-        .usageBits = graphic::BUFFER_USAGE_INDEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT
-    };
-
+    // Create vertex buffer
+    graphic::BufferDesc vert_buffer_desc;
+    vert_buffer_desc.domain = (isDynamic ? graphic::BufferMemoryDomain::CPU : graphic::BufferMemoryDomain::GPU);
+    vert_buffer_desc.size = vertexBufferSize;
+    vert_buffer_desc.usageBits = graphic::BUFFER_USAGE_VERTEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT;
     vertexBuffer = graphic_device->CreateBuffer(vert_buffer_desc, vertices.data());
+
+    // Create index buffer
+    graphic::BufferDesc index_buffer_desc;
+    index_buffer_desc.domain = graphic::BufferMemoryDomain::GPU;
+    index_buffer_desc.size = indexBufferSize;
+    index_buffer_desc.usageBits = graphic::BUFFER_USAGE_INDEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT;
     indexBuffer = graphic_device->CreateBuffer(index_buffer_desc, indices.data());
 }
 

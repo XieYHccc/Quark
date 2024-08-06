@@ -166,7 +166,7 @@ void TestBed::LoadScene()
 {
     // load scene
     asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
-    scene = gltf_loader.LoadSceneFromFile("/Users/xieyhccc/develop/Quark/Assets/Gltf/house2.glb");
+    scene = gltf_loader.LoadSceneFromFile("Assets/Gltf/house2.glb");
     
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
@@ -189,10 +189,8 @@ void TestBed::CreatePipeline()
     auto graphic_device = Application::Instance().GetGraphicDevice();
 
     // Create shader
-    vert_shader = graphic_device->CreateShaderFromSpvFile(ShaderStage::STAGE_VERTEX,
-        "/Users/xieyhccc/develop/Quark/Assets/Shaders/Spirv/pbr.vert.spv");
-    frag_shader = graphic_device->CreateShaderFromSpvFile(ShaderStage::STAGE_FRAGEMNT,
-        "/Users/xieyhccc/develop/Quark/Assets/Shaders/Spirv/pbr.frag.spv");
+    vert_shader = graphic_device->CreateShaderFromSpvFile(ShaderStage::STAGE_VERTEX, "Assets/Shaders/Spirv/pbr.vert.spv");
+    frag_shader = graphic_device->CreateShaderFromSpvFile(ShaderStage::STAGE_FRAGEMNT, "Assets/Shaders/Spirv/pbr.frag.spv");
     
     // Create pipeline
     GraphicPipeLineDesc pipe_desc;

@@ -97,21 +97,21 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     }
 
     ImageDesc texture_desc = {
-        .type = ImageType::TYPE_2D,
         .width = 32,
         .height = 32,
         .depth = 1,
-        .format = DataFormat::R8G8B8A8_UNORM,
-        .arraySize = 1,
         .mipLevels = 1,
+        .arraySize = 1,
+        .type = ImageType::TYPE_2D,
+        .format = DataFormat::R8G8B8A8_UNORM,
         .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL,
         .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT
     };
 
     ImageInitData init_data = {
+        .data = pixels.data(),
         .rowPitch = 32 * 4,
-        .slicePitch = 32 * 32 * 4,
-        .data = pixels.data()
+        .slicePitch = 32 * 32 * 4
     };
 
     defaultCheckBoardImage_ = device_->CreateImage(texture_desc, &init_data);
@@ -122,9 +122,9 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     texture_desc.height = 1;
     
     init_data = {
+        .data = &white,
         .rowPitch = 1 * 4,
-        .slicePitch = 1 * 1 * 4,
-        .data = &white
+        .slicePitch = 1 * 1 * 4
     };
 
     defaultWhiteImage_ = device_->CreateImage(texture_desc, &init_data);
@@ -173,7 +173,7 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
 		CORE_LOGI("{}", warn);
 	}
     if (!importResult) {
-		CORE_LOGE("Failed to load gltf file {} for {}", filename);
+		CORE_LOGE("Failed to load gltf file {}", filename);
         return nullptr;
 	}
 	// Check extensions
@@ -242,8 +242,8 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
 
     // Create uniform buffer for material's uniform data
     BufferDesc uniform_buffer_desc = {
-        .domain = BufferMemoryDomain::CPU,
         .size = buffer_size,
+        .domain = BufferMemoryDomain::CPU,
         .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
     };
 
@@ -364,25 +364,23 @@ Ref<graphic::Sampler> GLTFLoader::ParseSampler(const tinygltf::Sampler &gltf_sam
 Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
 {
     if (!gltf_image.image.empty()) { // Image embedded in gltf file or loaded with stb
-        ImageDesc desc = {
-            .width = static_cast<u32>(gltf_image.width),
-            .height  = static_cast<u32>(gltf_image.height),
-            .depth = 1u,
-            .arraySize = 1,     // Only support 1 layer and 1 mipmap level for embedded image
-            .mipLevels = 1,
-            .format = DataFormat::R8G8B8A8_UNORM,
-            .type = ImageType::TYPE_2D,
-            .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT,
-            .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-            .generateMipMaps = true // Generate mipmaps for embedded image
-        };
+        ImageDesc desc;
+        desc.width = static_cast<u32>(gltf_image.width);
+        desc.height = static_cast<u32>(gltf_image.height);
+        desc.depth = 1u;
+        desc.arraySize = 1;     // Only support 1 layer and 1 mipmap level for embedded image
+        desc.mipLevels = 1;
+        desc.format = DataFormat::R8G8B8A8_UNORM;
+        desc.type = ImageType::TYPE_2D;
+        desc.usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
+        desc.initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+        desc.generateMipMaps = true;        // Generate mipmaps for embedded image
         
         
-        ImageInitData init_data = {
-            .rowPitch = desc.width * 4,
-            .slicePitch = desc.width * desc.height * 4,
-            .data = gltf_image.image.data()
-        };
+        ImageInitData init_data;
+        init_data.data = gltf_image.image.data();
+        init_data.rowPitch = desc.width * 4;
+        init_data.slicePitch = init_data.rowPitch * desc.height;
 
         return device_->CreateImage(desc, &init_data);
     }

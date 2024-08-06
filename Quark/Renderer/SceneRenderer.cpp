@@ -15,25 +15,22 @@ SceneRenderer::SceneRenderer(graphic::Device* device)
 {
     // Load Cube mesh
     asset::MeshLoader mesh_loader(device_);
-    cubeMesh_ = mesh_loader.LoadGLTF("/Users/xieyhccc/develop/Quark/Assets/Gltf/cube.gltf");
+    cubeMesh_ = mesh_loader.LoadGLTF("Assets/Gltf/cube.gltf");
 
     // Create cube map sampler
-    SamplerDesc sampler_desc = {
-        .minFilter = SamplerFilter::LINEAR,
-        .magFliter = SamplerFilter::LINEAR,
-        .addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE,
-        .addressModeV = SamplerAddressMode::CLAMPED_TO_EDGE,
-        .addressModeW = SamplerAddressMode::CLAMPED_TO_EDGE,
-    };
+    SamplerDesc sampler_desc;
+    sampler_desc.minFilter = SamplerFilter::LINEAR;
+    sampler_desc.magFliter = SamplerFilter::LINEAR;
+    sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
+    sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
+    sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
     cubeMapSampler_ = device_->CreateSampler(sampler_desc);
 
     // Create scene uniform buffer
-    BufferDesc scene_buffer_desc = {
-        .domain = BufferMemoryDomain::CPU,
-        .size = sizeof(SceneUniformBufferBlock),
-        .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
-    };
-
+    BufferDesc scene_buffer_desc;
+    scene_buffer_desc.domain = BufferMemoryDomain::CPU;
+    scene_buffer_desc.size = sizeof(SceneUniformBufferBlock);
+    scene_buffer_desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     drawContext_.sceneUniformBuffer = device_->CreateBuffer(scene_buffer_desc);
 }
 

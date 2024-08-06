@@ -29,14 +29,8 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{
 ################################################################################
 # Configuration                                                                #
 ################################################################################
-if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-    add_definitions(-DQK_DEBUG_BUILD)
-elseif(${CMAKE_BUILD_TYPE} MATCHES Release)
-    add_definitions(-DQK_RELEASE_BUILD)
-elseif(${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo)
-    add_definitions(-DQK_DEBUG_BUILD)
-else()
-    message( FATAL_ERROR "Unknown build type!" )
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
 
 ################################################################################
@@ -44,7 +38,7 @@ endif()
 ################################################################################
 add_subdirectory(./Quark)
 #add_subdirectory(./SandBox)
-add_subdirectory(./TestBed)
+#add_subdirectory(./TestBed)
 #add_subdirectory(./Examples)
 add_subdirectory(./Editor)
 

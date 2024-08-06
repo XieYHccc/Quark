@@ -23,9 +23,15 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     moduleInfo.pCode = (const uint32_t*)shaderCode;
     if (vkCreateShaderModule(vk_device, &moduleInfo, nullptr, &shaderModule_) != VK_SUCCESS)
         CORE_LOGE("Failed to create vulkan shader module.")
+
+
+    // Fill shader stage info
+    stageInfo_ = {};
     stageInfo_.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     stageInfo_.module = shaderModule_;
     stageInfo_.pName = "main";
+    stageInfo_.pNext = nullptr;
+    stageInfo_.flags = 0;
     switch (stage) 
     {
     case ShaderStage::STAGE_COMPUTE:
@@ -61,6 +67,8 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     std::vector<SpvReflectBlockVariable*> push_constants(push_constant_count);
     SPV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&spv_reflcet_module, &push_constant_count, push_constants.data()))
 
+    // Push constants
+    pushConstant_ = {};
     for (auto& x : push_constants)
     {
         CORE_ASSERT(x->size < PUSH_CONSTANT_DATA_SIZE)

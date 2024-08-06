@@ -9,13 +9,12 @@ void SceneViewPort::Init()
 {
     device_ = Application::Instance().GetGraphicDevice();
 
-    graphic::SamplerDesc samplerDesc = {
-        .addressModeU = graphic::SamplerAddressMode::REPEAT,
-        .addressModeV = graphic::SamplerAddressMode::REPEAT,
-        .addressModeW = graphic::SamplerAddressMode::REPEAT,
-        .minFilter = graphic::SamplerFilter::LINEAR,
-        .magFliter = graphic::SamplerFilter::LINEAR,
-    };
+    graphic::SamplerDesc samplerDesc;
+    samplerDesc.minFilter = graphic::SamplerFilter::LINEAR;
+    samplerDesc.magFliter = graphic::SamplerFilter::LINEAR;
+    samplerDesc.addressModeU = graphic::SamplerAddressMode::REPEAT;
+    samplerDesc.addressModeV = graphic::SamplerAddressMode::REPEAT;
+    samplerDesc.addressModeW = graphic::SamplerAddressMode::REPEAT;
     sampler_ = device_->CreateSampler(samplerDesc);
 
     panelsize_ = {0, 0};
