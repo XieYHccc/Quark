@@ -1,6 +1,6 @@
 #pragma once
 #include "Quark/Core/Base.h"
-
+#include <string>
 namespace quark {
 
 // Window Interface

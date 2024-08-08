@@ -159,7 +159,7 @@ struct GraphicPipeLineDesc {
     RasterizationState rasterState = {};
     PipelineDepthStencilState depthStencilState = {};
     std::vector<VertexBindInfo> vertexBindInfos;
-    std::vector<VertexAttribInfo>vertexAttribInfos;
+    std::vector<VertexAttribInfo> vertexAttribInfos;
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
 
     RenderPassInfo renderPassInfo;

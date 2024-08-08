@@ -1,5 +1,5 @@
 #pragma once
-#include "Quark/Core/Base.h"
+#include "Quark/Core/Logger.h"
 
 namespace quark {
 

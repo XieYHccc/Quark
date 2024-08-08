@@ -1,5 +1,7 @@
 #pragma once
+#include <array>
 #include <glm/glm.hpp>
+
 #include "Quark/Core/Math/Aabb.h"
 
 namespace quark::math {

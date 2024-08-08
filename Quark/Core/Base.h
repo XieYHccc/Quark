@@ -2,7 +2,6 @@
 #include <memory>
 #include "Quark/Platform/Detection.h"
 
-namespace quark {
 // Causes a debug breakpoint to be hit.
 #if defined(QK_PLATFORM_WINDOWS)
     #include <intrin.h>
@@ -16,6 +15,39 @@ namespace quark {
 // Properly define static assertions.
 #define QK_STATIC_ASSERT static_assert
 
+// Import/export qualifier
+#ifdef QK_EXPORT
+// Exports
+#ifdef _MSC_VER
+#define QK_API __declspec(dllexport)
+#else
+#define QK_API __attribute__((visibility("default")))
+#endif
+#else
+// Imports
+#ifdef _MSC_VER
+#define QK_API __declspec(dllimport)
+#else
+#define QK_API
+#endif
+#endif
+
+// Inlining
+#if defined(__clang__) || defined(__gcc__)
+#define QK_FORCE_INLINE __attribute__((always_inline)) inline
+#define QK_NOINLINE __attribute__((noinline))
+#elif defined(_MSC_VER)
+#define QK_FORCE_INLINE __forceinline
+#define QK_NOINLINE __declspec(noinline)
+#endif
+
+// Aligning
+#define QK_SAFE_ALIGNMENT 16
+
+
+#define USE_VULKAN_DRIVER
+
+namespace quark {
 // Unsigned int types.
 using u8 = std::uint8_t;
 using u16 = std::uint16_t;
@@ -45,36 +77,6 @@ QK_STATIC_ASSERT(sizeof(f32) == 4, "Expected f32 to be 4 bytes.");
 QK_STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 QK_STATIC_ASSERT(sizeof(bool) == 1, "Expected bool to be 1 byte.");
 
-// Import/export qualifier
-#ifdef QK_EXPORT
-// Exports
-    #ifdef _MSC_VER
-        #define QK_API __declspec(dllexport)
-    #else
-        #define QK_API __attribute__((visibility("default")))
-    #endif
-#else
-// Imports
-    #ifdef _MSC_VER
-        #define QK_API __declspec(dllimport)
-    #else
-        #define QK_API
-    #endif
-#endif
-
-// Inlining
-#if defined(__clang__) || defined(__gcc__)
-    #define QK_FORCE_INLINE __attribute__((always_inline)) inline
-    #define QK_NOINLINE __attribute__((noinline))
-#elif defined(_MSC_VER)
-    #define QK_FORCE_INLINE __forceinline
-    #define QK_NOINLINE __declspec(noinline)
-#endif
-
-
-// Aligning
-#define QK_SAFE_ALIGNMENT 16
-
 // Reference and Scope
 template<typename T>
 using Scope = std::unique_ptr<T>;
@@ -92,9 +94,4 @@ constexpr Ref<T> CreateRef(Args&& ... args)
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
-#define USE_VULKAN_DRIVER
-
 }
-
-#include "Quark/Core/Logger.h"
-#include "Quark/Core/Assert.h"

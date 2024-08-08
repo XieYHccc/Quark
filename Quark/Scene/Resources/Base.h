@@ -2,7 +2,6 @@
 #include "Quark/Core/Base.h"
 
 namespace quark {
-
 class Resource {
 public:
     Resource() = default;

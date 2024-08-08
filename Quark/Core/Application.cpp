@@ -1,3 +1,4 @@
+#include "Quark/QuarkPch.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Core/KeyMouseCodes.h"
 #include "Quark/Core/Window.h"

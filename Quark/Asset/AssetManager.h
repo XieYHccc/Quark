@@ -1,4 +1,5 @@
 #pragma once
+#include "Quark/Core/Base.h"
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Graphic/Common.h"
 

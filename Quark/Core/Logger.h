@@ -1,8 +1,8 @@
 #pragma once
+#include "Quark/Core/Base.h"
 
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
-#include "Quark/Core/Base.h"
 
 namespace quark {
 #define LOG_WARN_ENABLED 1

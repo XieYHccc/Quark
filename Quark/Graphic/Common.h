@@ -1,5 +1,6 @@
 #pragma once
 #include "Quark/Core/Base.h"
+#include "Quark/Core/Assert.h"
 
 namespace quark::graphic {
 

@@ -54,13 +54,13 @@ static inline uint32_t ctz64(uint64_t x)
 }
 }
 
-#define popcount32(x) ::util::Internal::popcount32(x)
-#define leading_zeroes(x) ::util::Internal::clz(x)
-#define trailing_zeroes(x) ::util::Internal::ctz(x)
-#define trailing_ones(x) ::util::Internal::ctz(~uint32_t(x))
-#define leading_zeroes64(x) ::util::Internal::clz64(x)
-#define trailing_zeroes64(x) ::util::Internal::ctz64(x)
-#define trailing_ones64(x) ::util::Internal::ctz64(~uint64_t(x))
+#define popcount32(x) ::quark::util::Internal::popcount32(x)
+#define leading_zeroes(x) ::quark::util::Internal::clz(x)
+#define trailing_zeroes(x) ::quark::util::Internal::ctz(x)
+#define trailing_ones(x) ::quark::util::Internal::ctz(~uint32_t(x))
+#define leading_zeroes64(x) ::quark::util::Internal::clz64(x)
+#define trailing_zeroes64(x) ::quark::util::Internal::ctz64(x)
+#define trailing_ones64(x) ::quark::util::Internal::ctz64(~uint64_t(x))
 #else
 #error "Implement me."
 #endif
