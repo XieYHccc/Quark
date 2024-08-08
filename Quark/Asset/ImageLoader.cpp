@@ -2,7 +2,7 @@
 #include "Quark/Asset/ImageLoader.h"
 #include <ktx.h>
 #include <basisu_transcoder.h>
-#include "Quark/Core/Util/FileSystem.h"
+#include "Quark/Core/FileSystem.h"
 #include "Quark/Graphic/TextureFormatLayout.h"
 
 namespace quark {
@@ -17,7 +17,7 @@ Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
 
     // Read in file's binary data
     std::vector<std::uint8_t> binary_data;
-    if (!util::FileRead(file_path, binary_data)) {
+    if (!FileRead(file_path, binary_data)) {
         CORE_LOGW("ImageLoader::LoadKtx2: Failed to read file {}", file_path);
         return nullptr;
     }

@@ -1,7 +1,7 @@
 #include "Quark/QuarkPch.h"
-#include "Quark/Core/Util/FileSystem.h"
+#include "Quark/Core/FileSystem.h"
 
-namespace quark::util {
+namespace quark {
 
 bool FileRead(const std::string& fileName, std::vector<uint8_t>& data, size_t readSize, size_t offset)
 {
