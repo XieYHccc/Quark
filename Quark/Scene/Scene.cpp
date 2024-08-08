@@ -55,7 +55,7 @@ void Scene::DeleteGameObject(GameObject *obj)
 {
     // Remove from parent
     if (obj->GetParent())
-        obj->GetParent()->RemoveChild(obj);
+        obj->GetParent()->AddChild(obj);
 
     // Iteratively delete children
     for (auto* c: obj->GetChildren())

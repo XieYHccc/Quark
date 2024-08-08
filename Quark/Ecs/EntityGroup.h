@@ -4,7 +4,6 @@
 namespace quark {
 
 class EntityGroupBase : public util::IntrusiveHashMapEnabled<EntityGroupBase> {
-    friend class EntityRegistry;
 public:
     EntityGroupBase() = default;
 	virtual ~EntityGroupBase() = default;
@@ -16,14 +15,12 @@ public:
 
 template <typename... Ts>
 class EntityGroup final : public EntityGroupBase {
-    friend class EntityRegistry;
 public:
     const std::vector<Entity*>& GetEntities() const  { return m_Entities; }
     std::vector<Entity*>& GetEntities() { return m_Entities; }
     const ComponentGroupVector<Ts...>& GetComponentGroup() const  { return m_ComponentGroups; }
     ComponentGroupVector<Ts...>& GetComponentGroup() { return m_ComponentGroups; }
 
-private:
     void EntityAdd(Entity& entity) override final {
 		if (has_all_components<Ts...>(entity)) {
 			m_EntityToIndexMap[entity.m_HashId].get() = m_Entities.size();
@@ -50,6 +47,7 @@ private:
         m_EntityToIndexMap.clear();
     }
 
+private:
     ComponentGroupVector<Ts...> m_ComponentGroups;
     std::vector<Entity*> m_Entities;
     util::IntrusiveHashMap<util::IntrusivePODWrapper<size_t>> m_EntityToIndexMap;
@@ -58,16 +56,20 @@ private:
 	struct HasAllComponents;
 
 	template <typename U, typename... Us>
-	struct HasAllComponents<U, Us...> {
-		static bool has_component(const Entity& entity) {
+	struct HasAllComponents<U, Us...> 
+	{
+		static bool has_component(const Entity& entity) 
+		{
 			return entity.HasComponent(U::GetStaticComponentType()) &&
 		           HasAllComponents<Us...>::has_component(entity);
 		}
 	};
 
 	template <typename U>
-	struct HasAllComponents<U>{
-		static bool has_component(const Entity& entity) {
+	struct HasAllComponents<U>
+	{
+		static bool has_component(const Entity& entity) 
+		{
 			return entity.HasComponent(U::GetStaticComponentType());
 		}
 	};

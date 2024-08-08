@@ -51,7 +51,8 @@ public:
 		auto* allocator = static_cast<ComponentAllocator<T>*>(t);
 		auto find = entity->m_ComponentMap.find(id);
 
-		if (find != nullptr) {
+		if (find != nullptr) 
+		{
 			auto* comp = static_cast<T*>(find->get());
 			// In-place modify. Destroy old data, and in-place construct.
 			// Do not need to fiddle with data structures internally.
@@ -60,7 +61,8 @@ public:
             comp->m_Entity = entity;
 			return comp;
 		}
-		else {
+		else 
+		{
 			auto* comp = allocator->pool.allocate(std::forward<Ts>(ts)...);
             comp->m_Entity = entity;
             auto* node = m_componentNodePool.allocate(comp);
@@ -129,7 +131,7 @@ private:
     util::IntrusiveHashMap<GroupKeySet> m_ComponentToGroups;
     util::ObjectPool<util::IntrusivePODWrapper<Component*>> m_componentNodePool;
     std::vector<Entity*> m_Entities;
-    u64 cookie_ = 0;
+    u64 m_Cookie = 0;
 
 	template <typename... Us>
 	struct GroupRegisters;

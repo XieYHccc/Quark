@@ -34,7 +34,7 @@ void EntityRegistry::UnRegister(Entity* entity, Component* component)
 Entity* EntityRegistry::CreateEntity()
 {
 	util::Hasher hasher;
-    hasher.u64(cookie_++);
+    hasher.u64(m_Cookie++);
 	auto* entity = m_EntityPool.allocate(this, hasher.get());
 	entity->m_OffsetInRegistry = m_Entities.size();
 	m_Entities.push_back(entity);

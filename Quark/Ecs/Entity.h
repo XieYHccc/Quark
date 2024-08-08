@@ -4,7 +4,7 @@
 #include "Quark/Core/Util/IntrusiveHashMap.h"
 #include "Quark/Ecs/Component.h"
 
-// Please include EntityRegistry.h file in you .cpp not this file
+// Please include EntityRegistry.h file in you .cpp not this file.
 namespace quark {
 class EntityRegistry;
 class Entity {
@@ -13,16 +13,13 @@ public:
     Entity() = delete;
     ~Entity() = default;
 
-    bool HasComponent(ComponentType id) const {
-        auto find = m_ComponentMap.find(id);
-        return find != nullptr;
-    }
-
     template<typename T>
     bool HasComponent() const { return HasComponent(T::GetStaticComponentType()); }
+    bool HasComponent(ComponentType id) const { return m_ComponentMap.find(id) != nullptr; }
 
     template<typename T>
-    T* GetComponent() {
+    T* GetComponent() 
+    {
         auto* find = m_ComponentMap.find(T::GetStaticComponentType());
         if (find)
             return static_cast<T*>(find->get());
@@ -31,7 +28,8 @@ public:
     }
 
     template<typename T>
-    const T* GetComponent() const {
+    const T* GetComponent() const 
+    {
         auto* find = m_ComponentMap.find(T::GetStaticComponentType());
         if (find)
             return static_cast<T*>(find->get());
@@ -48,7 +46,7 @@ public:
 private:
     EntityRegistry* m_Registry;
     size_t m_OffsetInRegistry; // be allocated and used in EntityRegistry
-    util::Hash m_HashId;
+    util::Hash m_HashId;    
     util::IntrusiveHashMapHolder<util::IntrusivePODWrapper<Component*>> m_ComponentMap;
 
     friend class EntityRegistry;

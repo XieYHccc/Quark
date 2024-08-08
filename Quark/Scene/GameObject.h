@@ -5,16 +5,14 @@ namespace quark {
 
 class Scene;
 
-// A wrapper around Entity to give an Entity some extra functionalities
-// and some default components
+// 1. A wrapper around Entity to give an entity some extra functionalities and some default components
+// 2. You can only create GameObject through scene
 class GameObject {
-    friend class Scene;
 public:
     GameObject(Scene* scene, Entity* entity, size_t poolOffset);
     ~GameObject() = default;
 
     GameObject* GetParent() const;
-
     void AddChild(GameObject* child);
     void RemoveChild(GameObject* child);
     void ClearChildren();
@@ -29,6 +27,8 @@ private:
     Scene* m_Scene;
     Entity* m_Entity;    //  life managemenet here
     size_t m_PoolOffset;
+
+    friend class Scene;
 
 };
 }

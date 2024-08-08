@@ -11,7 +11,6 @@ class Entity;
 // You can not create a component directly, you have to create a component by calling Entity::AddComponent<T>()
 // which will assign the entity to the component
 class Component {
-    friend class EntityRegistry;
 public:
     Component() = default;
     virtual ~Component() = default;
@@ -20,6 +19,7 @@ public:
 
 private:
     Entity* m_Entity;
+    friend class EntityRegistry;
 };
 
 #define QK_COMPONENT_TYPE_DECL(x) \
