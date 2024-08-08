@@ -8,9 +8,9 @@ class EntityGroupBase : public util::IntrusiveHashMapEnabled<EntityGroupBase> {
 public:
     EntityGroupBase() = default;
 	virtual ~EntityGroupBase() = default;
-private:
-	virtual void AddEntity(Entity& entity) = 0;
-	virtual void RemoveEntity(const Entity& entity) = 0;
+
+	virtual void EntityAdd(Entity& entity) = 0;
+	virtual void EntityRemove(const Entity& entity) = 0;
 	virtual void Reset() = 0;
 };
 
@@ -18,41 +18,41 @@ template <typename... Ts>
 class EntityGroup final : public EntityGroupBase {
     friend class EntityRegistry;
 public:
-    const std::vector<Entity*>& GetEntities() const  { return entities_; }
-    std::vector<Entity*>& GetEntities() { return entities_; }
-    const ComponentGroupVector<Ts...>& GetComponentGroup() const  { return groups_; }
-    ComponentGroupVector<Ts...>& GetComponentGroup() { return groups_; }
+    const std::vector<Entity*>& GetEntities() const  { return m_Entities; }
+    std::vector<Entity*>& GetEntities() { return m_Entities; }
+    const ComponentGroupVector<Ts...>& GetComponentGroup() const  { return m_ComponentGroups; }
+    ComponentGroupVector<Ts...>& GetComponentGroup() { return m_ComponentGroups; }
 
 private:
-    void AddEntity(Entity& entity) override final {
+    void EntityAdd(Entity& entity) override final {
 		if (has_all_components<Ts...>(entity)) {
-			entityToIndex_[entity.GetId()].get() = entities_.size();
-			groups_.push_back(std::make_tuple(entity.GetComponent<Ts>()...));
-			entities_.push_back(&entity);
+			m_EntityToIndexMap[entity.m_HashId].get() = m_Entities.size();
+			m_ComponentGroups.push_back(std::make_tuple(entity.GetComponent<Ts>()...));
+			m_Entities.push_back(&entity);
 		}
     }
-    void RemoveEntity(const Entity& entity) override final {
+    void EntityRemove(const Entity& entity) override final {
         size_t offset = 0;
-        if (entityToIndex_.find_and_consume_pod(entity.GetId(), offset)) {
-            entities_[offset] = entities_.back();
-            groups_[offset] = groups_.back();
-            entityToIndex_[entities_[offset]->GetId()].get() = offset;
+        if (m_EntityToIndexMap.find_and_consume_pod(entity.m_HashId, offset)) {
+            m_Entities[offset] = m_Entities.back();
+            m_ComponentGroups[offset] = m_ComponentGroups.back();
+            m_EntityToIndexMap[m_Entities[offset]->m_HashId].get() = offset;
 
-            entityToIndex_.erase(entity.GetId());
-            entities_.pop_back();
-            groups_.pop_back();
+            m_EntityToIndexMap.erase(entity.m_HashId);
+            m_Entities.pop_back();
+            m_ComponentGroups.pop_back();
         }
     }
 
     void Reset() override final {
-        entities_.clear();
-        groups_.clear();
-        entityToIndex_.clear();
+        m_Entities.clear();
+        m_ComponentGroups.clear();
+        m_EntityToIndexMap.clear();
     }
 
-    ComponentGroupVector<Ts...> groups_;
-    std::vector<Entity*> entities_;
-    util::IntrusiveHashMap<util::IntrusivePODWrapper<size_t>> entityToIndex_;
+    ComponentGroupVector<Ts...> m_ComponentGroups;
+    std::vector<Entity*> m_Entities;
+    util::IntrusiveHashMap<util::IntrusivePODWrapper<size_t>> m_EntityToIndexMap;
 
 	template <typename... Us>
 	struct HasAllComponents;

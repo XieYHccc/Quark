@@ -10,8 +10,8 @@ public:
     void operator=(const EntityRegistry &) = delete;
     EntityRegistry(const EntityRegistry &) = delete;
 
-    const std::vector<Entity*>& GetEntities() const { return entities_;}    
-    std::vector<Entity*>& GetEntities() { return entities_;}
+    const std::vector<Entity*>& GetEntities() const { return m_Entities;}    
+    std::vector<Entity*>& GetEntities() { return m_Entities;}
     
     Entity* CreateEntity();
     void DeleteEntity(Entity* entity);
@@ -19,17 +19,17 @@ public:
 	template <typename... Ts>
 	EntityGroup<Ts...>* GetEntityGroup() {
 		ComponentType group_id = GetComponentGroupId<Ts...>();
-		auto* t = entityGroups_.find(group_id);
+		auto* t = m_EntityGroups.find(group_id);
 		if (!t) {
 			register_group<Ts...>(group_id);
 
 			t = new EntityGroup<Ts...>();
 			t->set_hash(group_id);
-			entityGroups_.insert_yield(t);
+			m_EntityGroups.insert_yield(t);
 
 			auto* group = static_cast<EntityGroup<Ts...> *>(t);
-			for (auto entity : entities_)
-				group->AddEntity(*entity);
+			for (auto entity : m_Entities)
+				group->EntityAdd(*entity);
 		}
 
 		return static_cast<EntityGroup<Ts...> *>(t);
@@ -40,16 +40,16 @@ public:
     T* Register(Entity* entity, Ts&&... ts )
     {
         auto id = T::GetStaticComponentType();
-		auto* t = componentAllocators_.find(id);
+		auto* t = m_ComponentAllocators.find(id);
 		if (!t)
 		{
 			t = new ComponentAllocator<T>();
 			t->set_hash(id);
-			componentAllocators_.insert_yield(t);
+			m_ComponentAllocators.insert_yield(t);
 		}
 
 		auto* allocator = static_cast<ComponentAllocator<T>*>(t);
-		auto find = entity->componentMap_.find(id);
+		auto find = entity->m_ComponentMap.find(id);
 
 		if (find != nullptr) {
 			auto* comp = static_cast<T*>(find->get());
@@ -63,14 +63,14 @@ public:
 		else {
 			auto* comp = allocator->pool.allocate(std::forward<Ts>(ts)...);
             comp->m_Entity = entity;
-            auto* node = componentHashedNodePool_.allocate(comp);
+            auto* node = m_componentNodePool.allocate(comp);
             node->set_hash(id);
-			entity->componentMap_.insert_replace(node);
+			entity->m_ComponentMap.insert_replace(node);
 
-			auto* group_set = componentToGroups_.find(id);
+			auto* group_set = m_ComponentToGroups.find(id);
 			if (group_set)
 				for (auto& group : *group_set)
-					entityGroups_.find(group.get_hash())->AddEntity(*entity);
+					m_EntityGroups.find(group.get_hash())->EntityAdd(*entity);
 
 			return comp;
 		}
@@ -123,12 +123,12 @@ private:
         util::IntrusiveHashMap<GroupKey> set;
     };
 
-    util::ObjectPool<Entity> entityPool_;
-    util::IntrusiveHashMapHolder<ComponentAllocatorBase> componentAllocators_;
-    util::IntrusiveHashMapHolder<EntityGroupBase> entityGroups_;
-    util::IntrusiveHashMap<GroupKeySet> componentToGroups_;
-    util::ObjectPool<util::IntrusivePODWrapper<Component*>> componentHashedNodePool_;
-    std::vector<Entity*> entities_;
+    util::ObjectPool<Entity> m_EntityPool;
+    util::IntrusiveHashMapHolder<ComponentAllocatorBase> m_ComponentAllocators;
+    util::IntrusiveHashMapHolder<EntityGroupBase> m_EntityGroups;
+    util::IntrusiveHashMap<GroupKeySet> m_ComponentToGroups;
+    util::ObjectPool<util::IntrusivePODWrapper<Component*>> m_componentNodePool;
+    std::vector<Entity*> m_Entities;
     u64 cookie_ = 0;
 
 	template <typename... Us>
@@ -158,19 +158,19 @@ private:
 	template <typename U, typename... Us>
 	void register_group(ComponentType group_id)
 	{
-		GroupRegisters<U, Us...>::register_group(componentToGroups_, group_id);
+		GroupRegisters<U, Us...>::register_group(m_ComponentToGroups, group_id);
 	}
 };
 
 template<typename T, typename... Ts>
 T* Entity::AddComponent(Ts&&... ts)
 {
-    return entityRegistry_->Register<T>(this, std::forward<Ts>(ts)...);
+    return m_Registry->Register<T>(this, std::forward<Ts>(ts)...);
 }
 
 template<typename T>
 void Entity::RemoveComponent() 
 {
-    entityRegistry_->UnRegister<T>(this);
+    m_Registry->UnRegister<T>(this);
 }
 }

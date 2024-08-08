@@ -4,6 +4,9 @@
 namespace quark {
 
 class Scene;
+
+// A wrapper around Entity to give an Entity some extra functionalities
+// and some default components
 class GameObject {
     friend class Scene;
 public:

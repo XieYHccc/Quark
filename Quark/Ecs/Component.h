@@ -7,12 +7,15 @@ namespace quark {
 using ComponentType = uint64_t;
 
 class Entity;
+
+// You can not create a component directly, you have to create a component by calling Entity::AddComponent<T>()
+// which will assign the entity to the component
 class Component {
     friend class EntityRegistry;
 public:
     Component() = default;
+    virtual ~Component() = default;
     virtual ComponentType GetType() = 0;
-    virtual ~Component() {};
     Entity* GetEntity() { return m_Entity; }
 
 private:
