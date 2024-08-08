@@ -1,7 +1,7 @@
 #pragma once
-#include "Graphic/Common.h"
-#include "Graphic/Image.h"
-namespace graphic {
+#include "Quark/Graphic/Common.h"
+#include "Quark/Graphic/Image.h"
+namespace quark::graphic {
 // This class fills up texture(sampled image)'s mipmap layout and copy informations
 // Designed for copy and blit operations
 class TextureFormatLayout {

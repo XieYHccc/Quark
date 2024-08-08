@@ -1,7 +1,7 @@
 #pragma once
-#include "Graphic/Common.h"
+#include "Quark/Graphic/Common.h"
 
-namespace graphic {
+namespace quark::graphic {
 union ClearValue
 {
     float color[4];

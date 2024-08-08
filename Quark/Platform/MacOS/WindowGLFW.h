@@ -1,7 +1,9 @@
 #pragma once
 #include <GLFW/glfw3.h>
-#include "Core/Window.h"
-#include "Platform/MacOS/InputGLFW.h"
+#include "Quark/Core/Window.h"
+#include "Quark/Platform/MacOS/InputGLFW.h"
+
+namespace quark {
 
 class WindowGLFW final: public Window {
 public:
@@ -31,3 +33,5 @@ private:
     u32 monitorWidth_;
     u32 monitorHeight_;
 };
+
+}

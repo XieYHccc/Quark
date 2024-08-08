@@ -2,26 +2,26 @@
 #include <Quark/Scene/Scene.h>
 #include "Editor/UI/Common.h"
 
-namespace editor::ui {
+namespace quark {
 class SceneHeirarchy : public UIWindowBase {
-
 public:
     SceneHeirarchy();
-    SceneHeirarchy(scene::Scene* scene);
+    SceneHeirarchy(Scene* scene);
 
     virtual void Init() override;
     virtual void Render() override;
 
-    void SetScene(scene::Scene* scene);
+    void SetScene(Scene* scene);
 
-    scene::Node* GetSelectedNode() { return selectedNode_; }
+    GameObject* GetSelectedObject() { return selectedObject_; }
 
 private:
-    void DrawNode(scene::Node* node);
+    void DrawNode(GameObject* object);
     void DrawSceneSettings();
 
-    scene::Scene* scene_;
-    scene::Node* selectedNode_;
+    Scene* scene_;
+    GameObject* selectedObject_;
 
 };
+
 }

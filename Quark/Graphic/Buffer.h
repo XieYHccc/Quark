@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Base.h"
-#include "Graphic/Common.h"
+#include "Quark/Core/Base.h"
+#include "Quark/Graphic/Common.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 enum BufferUsageBits {
     BUFFER_USAGE_TRANSFER_FROM_BIT = (1 << 0),

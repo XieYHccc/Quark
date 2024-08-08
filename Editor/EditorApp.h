@@ -6,15 +6,14 @@
 #include "Editor/UI/Inspector.h"
 #include "Editor/UI/SceneViewPort.h"
 
-namespace editor {
-
-class EditorApp : public Application  {  
+namespace quark {
+class EditorApp : public quark::Application  {  
 public:
-    EditorApp(const AppInitSpecs& specs);
+    EditorApp(const quark::AppInitSpecs& specs);
     ~EditorApp();
 
-    void Update(f32 deltaTime) override final;
-    void Render(f32 deltaTime) override final;
+    void Update(float deltaTime) override final;
+    void Render(float deltaTime) override final;
     void UpdateUI() override final;
     
     void CreateColorDepthAttachments();
@@ -23,30 +22,30 @@ public:
     void LoadScene();
     void UpdateMainMenuUI();
 
-    Ref<graphic::Shader> vert_shader;
-    Ref<graphic::Shader> frag_shader;
-    Ref<graphic::Shader> skybox_vert_shader;
-    Ref<graphic::Shader> skybox_frag_shader;
+    quark::Ref<quark::graphic::Shader> vert_shader;
+    quark::Ref<quark::graphic::Shader> frag_shader;
+    quark::Ref<quark::graphic::Shader> skybox_vert_shader;
+    quark::Ref<quark::graphic::Shader> skybox_frag_shader;
     
-    Ref<graphic::PipeLine> graphic_pipeline;
-    Ref<graphic::PipeLine> skybox_pipeline;
+    quark::Ref<quark::graphic::PipeLine> graphic_pipeline;
+    quark::Ref<quark::graphic::PipeLine> skybox_pipeline;
 
-    graphic::RenderPassInfo forward_pass_info; // First pass
-    graphic::RenderPassInfo ui_pass_info;   // Second pass
+    quark::graphic::RenderPassInfo forward_pass_info; // First pass
+    quark::graphic::RenderPassInfo ui_pass_info;   // Second pass
 
-    Ref<graphic::Image> cubeMap_image;
-    Ref<graphic::Image> depth_image;
-    Ref<graphic::Image> color_image;
-    graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;
-    graphic::DataFormat color_format; // Same with swapchain format
+    quark::Ref<quark::graphic::Image> cubeMap_image;
+    quark::Ref<quark::graphic::Image> depth_image;
+    quark::Ref<quark::graphic::Image> color_image;
+    quark::graphic::DataFormat depth_format = quark::graphic::DataFormat::D32_SFLOAT;
+    quark::graphic::DataFormat color_format; // Same with swapchain format
     
-    Scope<scene::Scene> scene_;
-    Scope<render::SceneRenderer> scene_renderer_;
+    quark::Scope<quark::Scene> scene_;
+    quark::Scope<quark::SceneRenderer> scene_renderer_;
 
     // UI window
-    ui::SceneHeirarchy heirarchyWindow_;
-    ui::Inspector inspector_;
-    ui::SceneViewPort sceneViewPort_;
+    SceneHeirarchy heirarchyWindow_;
+    Inspector inspector_;
+    SceneViewPort sceneViewPort_;
     
     // Debug
     float cmdListRecordTime = 0;

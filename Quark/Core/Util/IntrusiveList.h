@@ -1,6 +1,6 @@
 #pragma once
 
-namespace util {
+namespace quark::util {
     
 template <typename T>
 struct IntrusiveListEnabled

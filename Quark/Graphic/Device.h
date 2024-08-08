@@ -1,15 +1,15 @@
 #pragma once
-#include "Core/Base.h"
-#include "Events/ApplicationEvent.h"
-#include "Graphic/Common.h"
-#include "Graphic/Buffer.h"
-#include "Graphic/Image.h"
-#include "Graphic/CommandList.h"
-#include "Graphic/Shader.h"
-#include "Graphic/PipeLine.h"
-#include "Graphic/RenderPassInfo.h"
+#include "Quark/Core/Base.h"
+#include "Quark/Events/ApplicationEvent.h"
+#include "Quark/Graphic/Common.h"
+#include "Quark/Graphic/Buffer.h"
+#include "Quark/Graphic/Image.h"
+#include "Quark/Graphic/CommandList.h"
+#include "Quark/Graphic/Shader.h"
+#include "Quark/Graphic/PipeLine.h"
+#include "Quark/Graphic/RenderPassInfo.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 struct DeviceProperties {
     struct DeviceLimits {

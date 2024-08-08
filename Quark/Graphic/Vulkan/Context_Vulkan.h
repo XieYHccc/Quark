@@ -1,7 +1,7 @@
 #pragma once
-#include "Graphic/Vulkan/Common_Vulkan.h"
+#include "Quark/Graphic/Vulkan/Common_Vulkan.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 struct SwapChainSupportDetail {
     VkSurfaceCapabilitiesKHR capabilities = {};

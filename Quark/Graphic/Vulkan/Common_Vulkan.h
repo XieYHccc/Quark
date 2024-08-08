@@ -4,9 +4,9 @@
 #include <vk_mem_alloc.h>
 #include <glm/glm.hpp>
 
-#include "Graphic/Common.h"
+#include "Quark/Graphic/Common.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 #define VK_CHECK(x)                                                             \
     do {                                                                         \

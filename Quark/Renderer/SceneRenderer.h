@@ -1,18 +1,16 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "Core/Math/Frustum.h"
-#include "Scene/Resources/Mesh.h"
+#include "Quark/Core/Math/Frustum.h"
+#include "Quark/Scene/Resources/Mesh.h"
 
-namespace scene {
-class Scene;
-}
+namespace quark {
 
 namespace graphic {
 class CommandList;
 class Device;
 }
 
-namespace render {
+class Scene;
 class SceneRenderer {
 public:
     struct GpuDrawPushConstants {
@@ -40,7 +38,7 @@ public:
         uint32_t firstIndex = 0;
         graphic::Buffer* indexBuffer = nullptr;
         graphic::Buffer* vertexBuffer = nullptr;
-        scene::Material* material = nullptr;
+        Material* material = nullptr;
         math::Aabb aabb = {};
         glm::mat4 transform;
     };
@@ -48,7 +46,7 @@ public:
 public: 
     SceneRenderer(graphic::Device* device);
 
-    void SetScene(scene::Scene* scene);
+    void SetScene(Scene* scene);
     void SetCubeMap(Ref<graphic::Image> cubeMap) { cubeMap_ = cubeMap; }
     void RenderScene(graphic::CommandList* cmd_list);
     void RenderSkybox(graphic::CommandList* cmd_list);
@@ -57,10 +55,10 @@ private:
     void PrepareForRender();
     
     graphic::Device* device_;
-    scene::Scene* scene_;
+    Scene* scene_;
     Ref<graphic::Image> cubeMap_;
     Ref<graphic::Sampler> cubeMapSampler_;
-    Ref<scene::Mesh> cubeMesh_;
+    Ref<Mesh> cubeMesh_;
 
     // Data need to be updated every frame
     struct DrawContext {

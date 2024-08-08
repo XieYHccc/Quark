@@ -6,7 +6,7 @@
 #include <emmintrin.h>
 #endif
 
-namespace util
+namespace quark::util
 {
 class RWSpinLock
 {

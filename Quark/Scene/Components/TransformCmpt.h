@@ -1,14 +1,13 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "Scene/Ecs.h"
+#include "Quark/Ecs/Entity.h"
 
-namespace scene {
+namespace quark {
 
-class Node;
 class TransformCmpt : public Component{
 public:
-    TransformCmpt(Entity* entity, Node* node);
+    TransformCmpt();
     
     QK_COMPONENT_TYPE_DECL(TransformCmpt)
 
@@ -34,7 +33,6 @@ private:
     glm::mat4 TRSMatrix_;
     bool TRSMatrixIsDirty;
 
-    Node* node_;
 };
 
-}
+} // namespace quark

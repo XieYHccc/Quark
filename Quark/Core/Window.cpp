@@ -1,10 +1,11 @@
-#include "qkpch.h"
-#include "Core/Window.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Core/Window.h"
 
 #if defined(QK_PLATFORM_WINDOWS) || defined(QK_PLATFORM_MACOS)
-#include "Platform/MacOS/WindowGLFW.h"
+#include "Quark/Platform/MacOS/WindowGLFW.h"
 #endif
 
+namespace quark {
 Window* Window::singleton_ = nullptr;
 
 Window* Window::Instance()
@@ -31,3 +32,4 @@ void Window::Destroy()
     }
 }
 
+}

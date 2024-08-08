@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Base.h"
+#include "Quark/Core/Base.h"
 
-namespace util {
+namespace quark::util {
 
 // If class inherits that it will become a singleton.
 template<typename T>

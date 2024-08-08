@@ -27,7 +27,7 @@ public:
     Ref<graphic::Image> depth_image;
     graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;
 
-    Scope<scene::Scene> scene;
+    Scope<Scene> scene;
     Scope<render::SceneRenderer> scene_renderer;
 
     // Debug

@@ -10,19 +10,18 @@
 
 #include "Editor/CameraControlCmpt.h"
 
+namespace quark {
 Application* CreateApplication()
 {    
     AppInitSpecs specs;
     specs.uiSpecs.flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS;
     specs.title = "Quark Editor";
-    specs.width = 1600;
+    specs.width = 1400;
     specs.height = 1000;
     specs.isFullScreen = false;
 
-    return new editor::EditorApp(specs);
+    return new EditorApp(specs);
 }
-
-namespace editor {
 
 EditorApp::EditorApp(const AppInitSpecs& specs)
     : Application(specs)
@@ -52,7 +51,7 @@ void EditorApp::Update(f32 deltaTime)
 {    
     // Update Editor camera's movement
     auto* editorCameraCmpt = scene_->GetCamera();
-    auto* cameraMoveCmpt = editorCameraCmpt->GetEntity()->GetComponent<component::EditorCameraControlCmpt>();
+    auto* cameraMoveCmpt = editorCameraCmpt->GetEntity()->GetComponent<EditorCameraControlCmpt>();
     cameraMoveCmpt->Update(deltaTime);
 
     // TODO: Update physics
@@ -82,7 +81,7 @@ void EditorApp::UpdateUI()
     heirarchyWindow_.Render();
     
     // Update Inspector
-    inspector_.SetNode(heirarchyWindow_.GetSelectedNode());
+    inspector_.SetNode(heirarchyWindow_.GetSelectedObject());
     inspector_.Render();
 
     // Update Scene view port
@@ -207,27 +206,27 @@ void EditorApp::Render(f32 deltaTime)
 void EditorApp::LoadScene()
 {   
     // Load cube map
-    asset::ImageLoader image_loader(m_GraphicDevice.get());
+    ImageLoader image_loader(m_GraphicDevice.get());
     cubeMap_image = image_loader.LoadKtx2("Assets/Textures/etc1s_cubemap_learnopengl.ktx2");
 
     // Load scene
-    asset::GLTFLoader gltf_loader(m_GraphicDevice.get());
+    GLTFLoader gltf_loader(m_GraphicDevice.get());
     scene_ = gltf_loader.LoadSceneFromFile("Assets/Gltf/teapot.gltf");
 
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    auto* cam_node = scene_->CreateNode("Editor Camera", scene_->GetRootNode());
-    cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
-    cam_node->GetEntity()->AddComponent<component::EditorCameraControlCmpt>(50, 0.3);
+    auto* cam_node = scene_->CreateGameObject("Editor Camera", scene_->GetRootGameObject());
+    cam_node->GetEntity()->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    cam_node->GetEntity()->AddComponent<EditorCameraControlCmpt>(50, 0.3);
 
     // Default position
-    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<scene::TransformCmpt>();
+    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<TransformCmpt>();
     transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
 
     scene_->SetCamera(cam_node);
 
     // SetUp Renderer
-    scene_renderer_ = CreateScope<render::SceneRenderer>(m_GraphicDevice.get());
+    scene_renderer_ = CreateScope<SceneRenderer>(m_GraphicDevice.get());
     scene_renderer_->SetScene(scene_.get());
     scene_renderer_->SetCubeMap(cubeMap_image);
 }
@@ -248,7 +247,7 @@ void EditorApp::UpdateMainMenuUI()
 
 void EditorApp::CreatePipeline()
 {
-    using namespace graphic;
+    using namespace quark::graphic;
 
     // Sky box shaders
     skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "Assets/Shaders/Spirv/skybox.vert.spv");
@@ -283,7 +282,7 @@ void EditorApp::CreatePipeline()
 
     VertexBindInfo vert_bind_info;
     vert_bind_info.binding = 0;
-    vert_bind_info.stride = sizeof(scene::Mesh::Vertex);
+    vert_bind_info.stride = sizeof(Mesh::Vertex);
     vert_bind_info.inputRate = VertexBindInfo::INPUT_RATE_VERTEX;
     pipe_desc.vertexBindInfos.push_back(vert_bind_info);
 
@@ -291,7 +290,7 @@ void EditorApp::CreatePipeline()
     pos_attrib.binding = 0;
     pos_attrib.format = VertexAttribInfo::ATTRIB_FORMAT_VEC3;
     pos_attrib.location = 0;
-    pos_attrib.offset = offsetof(scene::Mesh::Vertex, position);
+    pos_attrib.offset = offsetof(Mesh::Vertex, position);
     pipe_desc.vertexAttribInfos.push_back(pos_attrib);
 
     skybox_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
@@ -299,7 +298,7 @@ void EditorApp::CreatePipeline()
 
 void EditorApp::CreateColorDepthAttachments()
 {
-        using namespace graphic;
+        using namespace quark::graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
         // Create depth image
@@ -345,4 +344,5 @@ void EditorApp::SetUpRenderPass()
     ui_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
 
 }
+
 }

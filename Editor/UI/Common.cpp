@@ -1,7 +1,9 @@
 #include "Editor/UI/Common.h"
 #include <imgui.h>
 #include <imgui_internal.h>
-namespace editor::ui {
+
+namespace quark {
+
 bool DrawVec3Control(const char* label, glm::vec3& vector, float reset , float columnWidth )
 {
 	bool changed = false;

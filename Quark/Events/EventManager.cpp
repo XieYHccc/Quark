@@ -1,5 +1,7 @@
-#include "qkpch.h"
-#include "Events/EventManager.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Events/EventManager.h"
+
+namespace quark {
 
 void EventManager::TriggerEvent(const Event &event) 
 {
@@ -21,4 +23,6 @@ void EventManager::DispatchEvents()
         TriggerEvent(*(eventItr->get()));
         eventItr = event_queue_.erase(eventItr);
     }
+}
+
 }

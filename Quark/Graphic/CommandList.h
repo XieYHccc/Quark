@@ -1,10 +1,10 @@
 #pragma once
-#include "Graphic/Buffer.h"
-#include "Graphic/Common.h"
-#include "Graphic/Image.h"
-#include "Graphic/PipeLine.h"
+#include "Quark/Graphic/Buffer.h"
+#include "Quark/Graphic/Common.h"
+#include "Quark/Graphic/Image.h"
+#include "Quark/Graphic/PipeLine.h"
 
-namespace graphic {
+namespace quark::graphic {
 enum PipelineStageBits {
     PIPELINE_STAGE_TOP_OF_PIPE_BIT = (1 << 0),
     PIPELINE_STAGE_DRAW_INDIRECT_BIT = (1 << 1),

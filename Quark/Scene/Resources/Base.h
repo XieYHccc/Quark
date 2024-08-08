@@ -1,6 +1,8 @@
 #pragma once
+#include "Quark/Core/Base.h"
 
-namespace scene {
+namespace quark {
+
 class Resource {
 public:
     Resource() = default;

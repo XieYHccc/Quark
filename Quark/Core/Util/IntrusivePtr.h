@@ -6,7 +6,7 @@
 #include <atomic>
 #include <type_traits>
 
-namespace util
+namespace quark::util
 {
 class SingleThreadCounter
 {

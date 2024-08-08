@@ -1,9 +1,9 @@
 #pragma once
-#include "Core/Math/Aabb.h"
-#include "Scene/Resources/Base.h"
-#include "Scene/Resources/Material.h"
+#include "Quark/Core/Math/Aabb.h"
+#include "Quark/Scene/Resources/Base.h"
+#include "Quark/Scene/Resources/Material.h"
 
-namespace scene {
+namespace quark {
 
 class Mesh : public Resource {
 public:
@@ -43,4 +43,5 @@ public:
     Ref<graphic::Buffer> vertexBuffer = nullptr;
     Ref<graphic::Buffer> indexBuffer = nullptr;
 };
+
 }

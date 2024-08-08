@@ -1,10 +1,12 @@
-#include "qkpch.h"
-#include "Platform/MacOS/WindowGLFW.h"
-#include "Events/EventManager.h"
-#include "Events/ApplicationEvent.h"
-#include "Events/KeyEvent.h"
-#include "Events/MouseEvent.h"
-#include "Platform/MacOS/InputGLFW.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Platform/MacOS/WindowGLFW.h"
+#include "Quark/Events/EventManager.h"
+#include "Quark/Events/ApplicationEvent.h"
+#include "Quark/Events/KeyEvent.h"
+#include "Quark/Events/MouseEvent.h"
+#include "Quark/Platform/MacOS/InputGLFW.h"
+
+namespace quark {
 
 WindowGLFW::WindowGLFW()
 {
@@ -147,4 +149,6 @@ u32 WindowGLFW::GetFrambufferHeight() const
     glfwGetFramebufferSize(window_, &width, &height);
 
     return height;
+}
+
 }

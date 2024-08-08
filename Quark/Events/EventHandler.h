@@ -1,8 +1,9 @@
 #pragma once
-
-#include "Events/Event.h"
-
 #include <functional>
+#include "Quark/Events/Event.h"
+
+namespace quark {
+
 template<typename T, typename = std::enable_if_t<std::is_base_of_v<Event, T>>>
 using EventCallbackFn = std::function<void(const T& e)>;
 
@@ -38,3 +39,5 @@ private:
     
     EventCallbackFn<T> callbackfunc_;
 };
+
+}

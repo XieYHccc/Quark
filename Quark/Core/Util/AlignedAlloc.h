@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <new>
 
-namespace util
+namespace quark::util
 {
 void* memalign_alloc(size_t boundary, size_t size);
 void* memalign_calloc(size_t boundary, size_t size);

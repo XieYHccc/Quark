@@ -1,6 +1,8 @@
 #pragma once
-#include "Core/KeyMouseCodes.h"
-#include "Util/Singleton.h"
+#include "Quark/Core/KeyMouseCodes.h"
+#include "Quark/Core/Util/Singleton.h"
+
+namespace quark {
 
 // TODO: Design a efficient input system
 struct MousePosition 
@@ -42,3 +44,5 @@ protected:
 template <>
 template <>
 Input* util::MakeSingletonPtr<Input>::CreateSingleton();
+
+}

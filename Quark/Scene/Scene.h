@@ -1,40 +1,37 @@
 #pragma once
 #include <list>
 #include <glm/glm.hpp>
-#include "Core/Util/ObjectPool.h"
-#include "Graphic/Common.h"
-#include "Scene/Ecs.h"
-#include "Scene/Node.h"
-#include "Scene/Resources/Texture.h"
-#include "Scene/Resources/Material.h"
-#include "Scene/Resources/Mesh.h"
+#include "Quark/Core/Util/ObjectPool.h"
+#include "Quark/Graphic/Common.h"
+#include "Quark/Ecs/EntityRegistry.h"
+#include "Quark/Scene/GameObject.h"
+#include "Quark/Scene/Resources/Texture.h"
+#include "Quark/Scene/Resources/Material.h"
+#include "Quark/Scene/Resources/Mesh.h"
 
-namespace asset {
+namespace quark {
+
 class GLTFLoader;
 class MeshLoader;
-}
-
-namespace scene {
-
 class CameraCmpt;
 class Scene {
-    friend class asset::GLTFLoader;
-    friend class asset::MeshLoader;
-    friend class Node;
+    friend class GLTFLoader;
+    friend class MeshLoader;
+    friend class GameObject;
 public:
     Scene(const std::string& name);
     ~Scene();
 
     void Update();
 
-    /*** Node Hierachy ***/
-    Node* CreateNode(const std::string& name = "Null", Node* parent = nullptr);
-    // Node* GetNodeByName(const std::string& name);
-    Node* GetRootNode() { return rootNode_;}
-    void DeleteNode(Node* node);
+    /*** GameObject Hierachy ***/
+    GameObject* CreateGameObject(const std::string& name = "Null", GameObject* parent = nullptr);
+    // GameObject* GetGameObjectByName(const std::string& name);
+    GameObject* GetRootGameObject() { return m_Root;}
+    void DeleteGameObject(GameObject* GameObject);
 
     /*** Transform Tree ***/
-    void UpdateTransformTree(Node* node, const glm::mat4& mat);
+    void UpdateTransformTree(GameObject* GameObject, const glm::mat4& mat);
 
     /***   Components   ***/
     template<typename... Ts>
@@ -43,19 +40,20 @@ public:
     const ComponentGroupVector<Ts...>& GetComponents() const { return registry_.GetEntityGroup<Ts...>()->GetComponentGroup(); }
 
     /***    Cameras    ***/
-    void SetCamera(Node* cam) { cameraNode_ = cam; }
+    void SetCamera(GameObject* cam) { m_CameraObject = cam; }
     CameraCmpt* GetCamera();
 
     void SetName(const std::string& name);
 private:
     EntityRegistry registry_;
 
-    // Nodes
-    std::vector<Node*> nodes_;
-    Node* rootNode_;
-    Node* cameraNode_;
-    //std::unordered_map<std::string, Node*> nodeMap_; TODO: Support name search
-    util::ObjectPool<Node> nodePool_;
+    // GameObjects
+    std::vector<GameObject*> m_GameObjects;
+    GameObject* m_Root;
+    GameObject* m_CameraObject;
+    //std::unordered_map<std::string, GameObject*> GameObjectMap_; TODO: Support name search
+    util::ObjectPool<GameObject> m_GameObjectPool;
 
 };
+
 }

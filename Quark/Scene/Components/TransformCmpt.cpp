@@ -1,21 +1,20 @@
-#include "qkpch.h"
-#include "Scene/Components/TransformCmpt.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Scene/Scene.h"
+#include "Quark/Scene/Components/TransformCmpt.h"
+#include "Quark/Scene/Components/CommonCmpts.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include "Scene/Scene.h"
 
-namespace scene {
+namespace quark {
 
-TransformCmpt::TransformCmpt(Entity* entity, Node* node) :
+TransformCmpt::TransformCmpt() :
     quaternion_(1.f, 0.f, 0.f, 0.f),
     position_(0.f),
     scale_(1.f),
     TRSMatrix_(1.f),
-    TRSMatrixIsDirty(true),
-    node_(node),
-    Component(entity)
+    TRSMatrixIsDirty(true)
 {
-    CORE_DEBUG_ASSERT(entity == node->GetEntity())
+
 }
 
 glm::mat4& TransformCmpt::GetTRSMatrix()
@@ -68,13 +67,13 @@ void TransformCmpt::SetTRSMatrix(const glm::mat4 &trs)
 
 glm::mat4 TransformCmpt::GetWorldMatrix()
 {
-    Node* parent_node = node_->GetParent();
+    GameObject* parent = GetEntity()->GetComponent<RelationshipCmpt>()->parent;
 
-    if (parent_node == nullptr) {
+    if (parent == nullptr) {
         return GetTRSMatrix();
     }
     else {
-        auto* parent_transform = parent_node->GetEntity()->GetComponent<TransformCmpt>();
+        auto* parent_transform = parent->GetEntity()->GetComponent<TransformCmpt>();
         return parent_transform->GetWorldMatrix() * GetTRSMatrix();
     }
 }

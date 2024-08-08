@@ -3,7 +3,7 @@
 #include <Quark/UI/UI.h>
 #include <Quark/Events/EventManager.h>
 
-namespace editor::ui {
+namespace quark {
 
 void SceneViewPort::Init()
 {

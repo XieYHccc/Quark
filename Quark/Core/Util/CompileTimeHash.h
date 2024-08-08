@@ -1,6 +1,9 @@
 #pragma once
 
-namespace util{
+#include <stdint.h>
+#include <stddef.h>
+
+namespace quark::util{
 #ifdef _MSC_VER
 // MSVC generates bogus warnings here.
 #pragma warning(disable: 4307)

@@ -1,11 +1,9 @@
 #pragma once
-
+#include "Quark/Core/Base.h"
 #include <chrono>
 
-#include "Core/Base.h"
-
-class Timer
-{
+namespace quark {
+class Timer {
 public:
     Timer()
     {
@@ -40,3 +38,5 @@ public:
 private:
     std::chrono::time_point<std::chrono::high_resolution_clock> m_Start;
 };
+
+}

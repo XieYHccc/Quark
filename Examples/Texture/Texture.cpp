@@ -40,7 +40,7 @@ public:
 
     void CreateVertexBuffer()
     {
-        using namespace graphic;
+        using namespace quark::graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
         // Setup vertices data
@@ -64,7 +64,7 @@ public:
 
     void CreateIndexBuffer()
     {
-        using namespace graphic;
+        using namespace quark::graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
         // Setup indices data
@@ -83,7 +83,7 @@ public:
 
     void CreateTextureImage()
     {
-        using namespace graphic;
+        using namespace quark::graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
         // prepare data for 16x16 checkerboard texture
@@ -143,7 +143,7 @@ public:
 
     void CreateGraphicPipeline()
     {
-        using namespace graphic;
+        using namespace quark::graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
         // Create shader
@@ -222,7 +222,7 @@ public:
 
     void Render(f32 deltaTime) override
     {
-        using namespace graphic;
+        using namespace quark::graphic;
 
         // auto start = std::chrono::system_clock::now();
 

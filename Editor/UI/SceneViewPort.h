@@ -4,7 +4,7 @@
 #include <Quark/Events/Event.h>
 #include <imgui.h>
 
-namespace editor::ui {
+namespace quark {
 
 class SceneViewPortTouchedEvent : public Event {
 public:

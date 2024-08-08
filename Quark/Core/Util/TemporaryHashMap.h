@@ -6,8 +6,7 @@
 #include "IntrusiveHashMap.h"
 #include <vector>
 
-namespace util
-{
+namespace quark::util {
 template <typename T>
 class TemporaryHashmapEnabled
 {

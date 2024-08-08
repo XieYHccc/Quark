@@ -1,8 +1,8 @@
 #pragma once
-#include "Graphic/Vulkan/Common_Vulkan.h"
-#include "Graphic/Image.h"
-#include "Graphic/TextureFormatLayout.h"
-namespace graphic {
+#include "Quark/Graphic/Vulkan/Common_Vulkan.h"
+#include "Quark/Graphic/Image.h"
+#include "Quark/Graphic/TextureFormatLayout.h"
+namespace quark::graphic {
 
 constexpr VkImageLayout ConvertImageLayout(ImageLayout layout)
 {

@@ -2,10 +2,11 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "Scene/Components/CameraCmpt.h"
-#include "Scene/Components/MeshCmpt.h"
+#include <Quark/Scene/Components/CameraCmpt.h>
+#include <Quark/Scene/Components/MeshCmpt.h>
+#include <Quark/Scene/Components/CommonCmpts.h>
 
-namespace editor::ui {
+namespace quark {
 
 void Inspector::Init()
 {
@@ -15,7 +16,7 @@ void Inspector::Init()
 }
 
 template<typename T, typename UIFunction>
-static void DrawComponent(const std::string& name, scene::Entity& entity, UIFunction uiFunction)
+static void DrawComponent(const std::string& name, Entity& entity, UIFunction uiFunction)
 {
     const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
         ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
@@ -70,7 +71,7 @@ void Inspector::Render()
         
         // Name component
         {   
-            auto* nameCmpt = entity.GetComponent<scene::NameCmpt>();
+            auto* nameCmpt = entity.GetComponent<NameCmpt>();
             char buffer[256];
             strncpy(buffer, nameCmpt->name.c_str(), sizeof(buffer));
 
@@ -83,7 +84,7 @@ void Inspector::Render()
         
         // Transform component
         {
-            auto* transformCmpt = entity.GetComponent<scene::TransformCmpt>();
+            auto* transformCmpt = entity.GetComponent<TransformCmpt>();
             if (transformCmpt) {
                 glm::vec3 position = transformCmpt->GetPosition();
                 glm::vec3 scale = transformCmpt->GetScale();
@@ -92,7 +93,7 @@ void Inspector::Render()
                 const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding |
                     ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_SpanAvailWidth;
                 
-                if (ImGui::TreeNodeEx((void*)scene::TransformCmpt::GetStaticComponentType(), treeNodeFlags, "Transform"))
+                if (ImGui::TreeNodeEx((void*)TransformCmpt::GetStaticComponentType(), treeNodeFlags, "Transform"))
                 {
                     if (DrawVec3Control("Position", position))
                         transformCmpt->SetPosition(position);
@@ -117,8 +118,8 @@ void Inspector::Render()
         }
 
         // Mesh component
-        DrawComponent<scene::MeshCmpt>("Mesh", entity, [&](auto& component) {
-            scene::Mesh& mesh = *component.sharedMesh;
+        DrawComponent<MeshCmpt>("Mesh", entity, [&](auto& component) {
+            Mesh& mesh = *component.sharedMesh;
 
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 125.f);
 			ImGui::LabelText("##Name", "%s", mesh.GetName().c_str());
@@ -131,7 +132,7 @@ void Inspector::Render()
 
 
         // Camera component
-        DrawComponent<scene::CameraCmpt>("Camera", entity, [&](auto& component) {
+        DrawComponent<CameraCmpt>("Camera", entity, [&](auto& component) {
             float perspectiveVerticalFov = component.fov;
             if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
                 component.fov = perspectiveVerticalFov;

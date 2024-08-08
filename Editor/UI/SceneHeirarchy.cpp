@@ -1,16 +1,16 @@
 #include "Editor/UI/SceneHeirarchy.h"
 #include <Quark/UI/UI.h>
-#include "Quark/Scene/Components/NameCmpt.h"
+#include "Quark/Scene/Components/CommonCmpts.h"
 #include <imgui.h>
 
-namespace editor::ui {
+namespace quark {
 
-SceneHeirarchy::SceneHeirarchy() : scene_(nullptr), selectedNode_(nullptr)
+SceneHeirarchy::SceneHeirarchy() : scene_(nullptr), selectedObject_(nullptr)
 {
 
 }
 
-SceneHeirarchy::SceneHeirarchy(scene::Scene* scene) : scene_(scene), selectedNode_(nullptr)
+SceneHeirarchy::SceneHeirarchy(Scene* scene) : scene_(scene), selectedObject_(nullptr)
 {
 
 }
@@ -18,13 +18,13 @@ SceneHeirarchy::SceneHeirarchy(scene::Scene* scene) : scene_(scene), selectedNod
 void SceneHeirarchy::Init()
 {
     scene_ = nullptr;
-    selectedNode_ = nullptr;
+    selectedObject_ = nullptr;
 }
 
-void SceneHeirarchy::SetScene(scene::Scene *scene)
+void SceneHeirarchy::SetScene(Scene *scene)
 {
     scene_ = scene;
-    selectedNode_ = scene->GetRootNode();
+    selectedObject_ = scene->GetRootGameObject();
 }
 
 void SceneHeirarchy::Render()
@@ -33,17 +33,17 @@ void SceneHeirarchy::Render()
         return;
 
     if(ImGui::Begin("Scene Heirarchy")) {
-        DrawNode(scene_->GetRootNode());
+        DrawNode(scene_->GetRootGameObject());
 
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
         {
-            selectedNode_ = nullptr;
+            selectedObject_ = nullptr;
         }
 
-        if (selectedNode_ == nullptr && ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight))
+        if (selectedObject_ == nullptr && ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight))
         {
             if (ImGui::MenuItem("Create Node")) {
-                scene_->CreateNode("Not named", scene_->GetRootNode());
+                scene_->CreateGameObject("Not named", scene_->GetRootGameObject());
             }
             
             ImGui::EndPopup();
@@ -53,32 +53,32 @@ void SceneHeirarchy::Render()
     ImGui::End();
 }
 
-void SceneHeirarchy::DrawNode(scene::Node* node)
+void SceneHeirarchy::DrawNode(GameObject* obj)
 {
-    if (node == nullptr)
+    if (obj == nullptr)
         return;
     
-    const std::vector<scene::Node*> children = node->GetChildren();
+    const std::vector<GameObject*>& children = obj->GetChildren();
 
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
-    flags |= selectedNode_ == node ? ImGuiTreeNodeFlags_Selected : 0;
+    flags |= selectedObject_ == obj ? ImGuiTreeNodeFlags_Selected : 0;
     flags |= children.empty() ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : 0;
 
-    auto* nameCmpt = node->GetEntity()->GetComponent<scene::NameCmpt>();
+    auto* nameCmpt = obj->GetEntity()->GetComponent<NameCmpt>();
 
     bool should_delete = false;
-    bool opened = ImGui::TreeNodeEx((void*)(uint64_t)node, flags, "%s", nameCmpt? nameCmpt->name.c_str() : "");
+    bool opened = ImGui::TreeNodeEx((void*)(uint64_t)obj, flags, "%s", nameCmpt? nameCmpt->name.c_str() : "");
 
     if (ImGui::IsItemClicked())
-        selectedNode_ = node;
+        selectedObject_ = obj;
 
 	if (ImGui::BeginPopupContextItem()) {
         if (ImGui::MenuItem("Add child")) {
-            scene_->CreateNode("Not named", node);
+            scene_->CreateGameObject("Not named", obj);
         }
 
         if (ImGui::MenuItem("Remove")) {
-            node->GetParent()->RemoveChild(node);
+            obj->GetParent()->RemoveChild(obj);
         }
 
 		if (ImGui::MenuItem("Delete"))
@@ -88,7 +88,7 @@ void SceneHeirarchy::DrawNode(scene::Node* node)
 	}
 
     if (opened && !children.empty()) {
-        for (auto* child : node->GetChildren())
+        for (auto* child : obj->GetChildren())
             DrawNode(child);
     
         ImGui::TreePop();
@@ -96,10 +96,10 @@ void SceneHeirarchy::DrawNode(scene::Node* node)
     }
 
     if (should_delete) {
-        if (selectedNode_ == node)
-            selectedNode_ = nullptr;
+        if (selectedObject_ == obj)
+            selectedObject_ = nullptr;
         
-        scene_->DeleteNode(node);
+        scene_->DeleteGameObject(obj);
 
         return;
     }

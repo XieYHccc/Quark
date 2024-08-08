@@ -1,5 +1,7 @@
 #pragma once
-#include "Core/Base.h"
+#include "Quark/Core/Base.h"
+
+namespace quark {
 
 #define CORE_ASSERT(expr)                                                 \
     {                                                                        \
@@ -50,3 +52,4 @@
     #define DEBUG_ASSERT(expr) 
 #endif
 
+}

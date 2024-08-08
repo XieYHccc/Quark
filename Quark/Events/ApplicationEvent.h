@@ -2,8 +2,9 @@
 
 #include <format>
 #include <iostream>
+#include "Quark/Events/Event.h"
 
-#include "Events/Event.h"
+namespace quark {
 
 class WindowResizeEvent : public Event {
 public:
@@ -39,3 +40,4 @@ public:
     }
 };
 
+}

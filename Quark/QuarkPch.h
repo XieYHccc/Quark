@@ -23,6 +23,6 @@
 #include <list>
 #include <map>
 
-#include "Core/Base.h"
-#include "Core/Logger.h"
-#include "Core/Assert.h"
+#include "Quark/Core/Base.h"
+#include "Quark/Core/Logger.h"
+#include "Quark/Core/Assert.h"

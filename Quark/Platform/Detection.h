@@ -1,5 +1,7 @@
 #pragma once
 
+namespace quark {
+
 // Platform detection using predefined macros
 #ifdef _WIN32
 	/* Windows x64/x86 */
@@ -39,3 +41,5 @@
 	/* Unknown compiler/platform */
 	#error "Unknown platform!"
 #endif // End of platform detection
+
+}

@@ -1,5 +1,7 @@
 #pragma once
-#include "Core/Base.h"
+#include "Quark/Core/Base.h"
+
+namespace quark {
 
 // Window Interface
 class Window {
@@ -24,3 +26,5 @@ public:
     virtual void* GetNativeWindow() = 0;
     float GetRatio() const { return (float)GetFrambufferWidth() / GetWidth(); }
 };
+
+}

@@ -1,20 +1,20 @@
-#include "qkpch.h"
-#include "Renderer/SceneRenderer.h"
-#include "Scene/Scene.h"
-#include "Scene/Components/MeshCmpt.h"
-#include "Scene/Components/TransformCmpt.h"
-#include "Scene/Components/CameraCmpt.h"
-#include "Graphic/Device.h"
-#include "Asset/MeshLoader.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Renderer/SceneRenderer.h"
+#include "Quark/Scene/Scene.h"
+#include "Quark/Scene/Components/MeshCmpt.h"
+#include "Quark/Scene/Components/TransformCmpt.h"
+#include "Quark/Scene/Components/CameraCmpt.h"
+#include "Quark/Graphic/Device.h"
+#include "Quark/Asset/MeshLoader.h"
 
-namespace render {
+namespace quark {
 
 using namespace graphic;
 SceneRenderer::SceneRenderer(graphic::Device* device)
     : device_(device)
 {
     // Load Cube mesh
-    asset::MeshLoader mesh_loader(device_);
+    MeshLoader mesh_loader(device_);
     cubeMesh_ = mesh_loader.LoadGLTF("Assets/Gltf/cube.gltf");
 
     // Create cube map sampler
@@ -44,7 +44,7 @@ void SceneRenderer::PrepareForRender()
     UpdateDrawContext();
 }
 
-void SceneRenderer::SetScene(scene::Scene* scene)
+void SceneRenderer::SetScene(Scene* scene)
 {
     scene_ = scene;
     PrepareForRender();
@@ -57,7 +57,7 @@ void SceneRenderer::UpdateDrawContext()
     drawContext_.transparentObjects.clear();
 
     // Fill render objects
-    const auto& mesh_transform_cmpts = scene_->GetComponents<scene::MeshCmpt, scene::TransformCmpt>();
+    const auto& mesh_transform_cmpts = scene_->GetComponents<MeshCmpt, TransformCmpt>();
     for (const auto [mesh_cmpt, transform_cmpt] : mesh_transform_cmpts) {
         auto* mesh = mesh_cmpt->mesh? mesh_cmpt->mesh.get() : mesh_cmpt->sharedMesh.get();
         for (const auto& submesh : mesh->subMeshes) {
@@ -70,7 +70,7 @@ void SceneRenderer::UpdateDrawContext()
             new_renderObject.material = submesh.material.get();
             new_renderObject.transform = transform_cmpt->GetWorldMatrix();
 
-            if (new_renderObject.material->alphaMode == scene::Material::AlphaMode::OPAQUE) {
+            if (new_renderObject.material->alphaMode == Material::AlphaMode::OPAQUE) {
                 drawContext_.opaqueObjects.push_back(new_renderObject);
             }
             else {
@@ -149,14 +149,14 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
     // Bind scene uniform buffer
     cmd_list->BindUniformBuffer(0, 0, *drawContext_.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
 
-    scene::Material* last_mat = nullptr;
+    Material* last_mat = nullptr;
     graphic::Buffer* last_indexBuffer = nullptr;
     auto draw = [&] (const RenderObject& obj) {
 
         // Bind material
         if (obj.material != last_mat) {
             last_mat = obj.material;
-            cmd_list->BindUniformBuffer(1, 0, *last_mat->uniformBuffer, last_mat->uniformBufferOffset, sizeof(scene::Material::UniformBufferBlock));
+            cmd_list->BindUniformBuffer(1, 0, *last_mat->uniformBuffer, last_mat->uniformBufferOffset, sizeof(Material::UniformBufferBlock));
             cmd_list->BindImage(1, 1, *last_mat->baseColorTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
             cmd_list->BindSampler(1, 1, *last_mat->baseColorTexture->sampler);
             cmd_list->BindImage(1, 2, *last_mat->metallicRoughnessTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);

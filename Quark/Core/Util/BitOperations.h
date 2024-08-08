@@ -1,6 +1,6 @@
 #pragma once
 
-namespace util {
+namespace quark::util {
 
 #ifdef __GNUC__
 #define leading_zeroes(x) ((x) == 0 ? 32 : __builtin_clz(x))

@@ -1,15 +1,16 @@
-#include "Core/Application.h"
+#include "Quark/Core/Application.h"
+#include "Quark/Core/KeyMouseCodes.h"
+#include "Quark/Core/Window.h"
+#include "Quark/Core/Input.h"
+#include "Quark/Events/EventManager.h"
+#include "Quark/Events/ApplicationEvent.h"
+#include "Quark/Asset/AssetManager.h"
 
-#include "Core/KeyMouseCodes.h"
-#include "Core/Window.h"
-#include "Core/Input.h"
-#include "Events/EventManager.h"
-#include "Events/ApplicationEvent.h"
-#include "Asset/AssetManager.h"
-
-#ifdef  USE_VULKAN_DRIVER
-#include "Graphic/Vulkan/Device_Vulkan.h"
+#ifdef USE_VULKAN_DRIVER
+#include "Quark/Graphic/Vulkan/Device_Vulkan.h"
 #endif
+
+namespace quark {
 
 Application* Application::singleton_ = nullptr;
 
@@ -93,4 +94,6 @@ void Application::Run()
 void Application::OnWindowClose(const WindowCloseEvent& e)
 {
     m_Status.isRunning = false;
+}
+
 }

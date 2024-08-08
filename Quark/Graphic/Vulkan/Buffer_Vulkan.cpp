@@ -1,8 +1,8 @@
-#include "qkpch.h"
-#include "Buffer_Vulkan.h"
-#include "Device_Vulkan.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Graphic/Vulkan/Buffer_Vulkan.h"
+#include "Quark/Graphic/Vulkan/Device_Vulkan.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 Buffer_Vulkan::~Buffer_Vulkan()
 {

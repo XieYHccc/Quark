@@ -1,8 +1,8 @@
-#include "qkpch.h"
-#include "Scene/Resources/Mesh.h"
-#include "Core/Application.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Scene/Resources/Mesh.h"
+#include "Quark/Core/Application.h"
 
-namespace scene {
+namespace quark {
 
 Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<SubMeshDescriptor>& subMeshes, bool isDynamic)
     : vertices(vertices), indices(indices), subMeshes(subMeshes), isDynamic(isDynamic)
@@ -56,5 +56,4 @@ void Mesh::CreateRenderResources()
     index_buffer_desc.usageBits = graphic::BUFFER_USAGE_INDEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT;
     indexBuffer = graphic_device->CreateBuffer(index_buffer_desc, indices.data());
 }
-
 }

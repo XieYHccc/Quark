@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Core/KeyMouseCodes.h"
-#include "Events/Event.h"
+#include "Quark/Core/KeyMouseCodes.h"
+#include "Quark/Events/Event.h"
+
+namespace quark {
 
 class MouseMovedEvent : public Event {
 public:
@@ -73,3 +75,5 @@ public:
 public:
     MouseCode button;
 };
+
+}

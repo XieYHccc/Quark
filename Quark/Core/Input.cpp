@@ -1,6 +1,8 @@
-#include "Core/Input.h"
+#include "Quark/Core/Input.h"
 #include <GLFW/glfw3.h>
-#include "Core/Window.h"
+#include "Quark/Core/Window.h"
+
+namespace quark {
 
 bool Input::IsKeyPressed(Keycode key, bool repeat) const
 {
@@ -41,4 +43,4 @@ MousePosition Input::GetMousePosition() const
 }
 
 
-
+}

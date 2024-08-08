@@ -1,11 +1,14 @@
 set(CMAKE_CXX_STANDARD 20)
 
-FILE(GLOB_RECURSE EngineSources ${CMAKE_SOURCE_DIR}/src/Engine "*.cpp" "*.c" "*.h")
+set(QUARK_SOURCE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(QUARK_INCLUDE_DIRS ${QUARK_SOURCE_ROOT_DIR})
 
-add_library(quark ${EngineSources})
+FILE(GLOB_RECURSE QUARK_SOURCE_FILES ${QUARK_SOURCE_ROOT_DIR} "*.cpp" "*.c" "*.h")
 
-set(ENGINE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(ENGINE_INCLUDE_DIRS ${ENGINE_SOURCE_DIR})
+# Group source files
+source_group(TREE ${QUARK_SOURCE_ROOT_DIR} FILES ${QUARK_SOURCE_FILES})
+
+add_library(quark ${QUARK_SOURCE_FILES})
 
 if(MSVC)
 
@@ -22,16 +25,11 @@ else()
     message( FATAL_ERROR "Unknown build type!" )
 endif()
 
-target_include_directories(quark PUBLIC ${ENGINE_INCLUDE_DIRS} )
+target_include_directories(quark PUBLIC ${CMAKE_SOURCE_DIR} )
 target_link_libraries(quark glm tinygltf tiny_obj_loader stb_image glfw Vulkan::Vulkan vma imgui spirv_reflect spdlog::spdlog ktx basisu)
+target_precompile_headers(quark PRIVATE ${QUARK_SOURCE_ROOT_DIR/QuarkPch.h})
 
 add_dependencies(quark Shaders)
-
-# pch header file path
-set(ENGINE_PRECOMPILED_HEADERS
-    ${ENGINE_SOURCE_DIR}/qkpch.h
-)
-target_precompile_headers(quark PRIVATE ${ENGINE_PRECOMPILED_HEADERS})
 
 # copy shader to binary file directory
 set(SPIRV_SOURCE_DIR "${ASSETS_PATH}")

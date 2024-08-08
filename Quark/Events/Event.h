@@ -2,8 +2,9 @@
 
 #include <sstream>
 #include <string>
+#include "Quark/Core/Util/CRC32.h"
 
-#include "Core/Util/CRC32.h"
+namespace quark {
 
 class Event {
 public:
@@ -29,4 +30,6 @@ public:
 inline std::ostream& operator<<(std::ostream& os, const Event& e)
 {
     return os << e.ToString();
+}
+
 }

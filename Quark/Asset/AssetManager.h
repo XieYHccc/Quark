@@ -1,6 +1,8 @@
 #pragma once
-#include "Core/Util/Singleton.h"
-#include "Graphic/Common.h"
+#include "Quark/Core/Util/Singleton.h"
+#include "Quark/Graphic/Common.h"
+
+namespace quark {
 
 struct Asset {
     enum class Type {
@@ -20,3 +22,5 @@ struct Asset {
 class AssetManager {
 
 };
+
+}

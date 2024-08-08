@@ -1,12 +1,12 @@
 #include "Editor/CameraControlCmpt.h"
 #include <Quark/Events/EventManager.h>
 
-namespace editor::component {
+namespace quark {
 
-EditorCameraControlCmpt::EditorCameraControlCmpt(scene::Entity* entity, float moveSpeed, float mouseSensitivity)
-    : scene::MoveControlCmpt(entity, moveSpeed, mouseSensitivity), isViewPortTouching_(false)
+EditorCameraControlCmpt::EditorCameraControlCmpt(float moveSpeed, float mouseSensitivity)
+    : MoveControlCmpt(moveSpeed, mouseSensitivity), isViewPortTouching_(false)
 {
-    EventManager::Instance().Subscribe<ui::SceneViewPortTouchedEvent>([&](const ui::SceneViewPortTouchedEvent& e) {
+    EventManager::Instance().Subscribe<SceneViewPortTouchedEvent>([&](const SceneViewPortTouchedEvent& e) {
         OnViewPortTouchedEvent(e);
     });
 }
@@ -14,7 +14,7 @@ EditorCameraControlCmpt::EditorCameraControlCmpt(scene::Entity* entity, float mo
 void EditorCameraControlCmpt::Update(float deltaTime)
 {   
     if (isViewPortTouching_) {
-        scene::MoveControlCmpt::Update(deltaTime);
+        MoveControlCmpt::Update(deltaTime);
         isViewPortTouching_ = false;
     }
 
@@ -22,9 +22,8 @@ void EditorCameraControlCmpt::Update(float deltaTime)
 
 }
 
-void EditorCameraControlCmpt::OnViewPortTouchedEvent(const ui::SceneViewPortTouchedEvent& e)
+void EditorCameraControlCmpt::OnViewPortTouchedEvent(const SceneViewPortTouchedEvent& e)
 {
     isViewPortTouching_ = true;
 }
-
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 
+namespace quark {
+
 using Keycode = uint16_t;
 using MouseCode = uint16_t;
 
@@ -154,3 +156,5 @@ enum : MouseCode {
     MOUSE_CODE_BUTTONRIGHT = MOUSE_CODE_BUTTON1,
     MOUSE_CODE_BUTTONMIDDLE = MOUSE_CODE_BUTTON2
 };
+
+}

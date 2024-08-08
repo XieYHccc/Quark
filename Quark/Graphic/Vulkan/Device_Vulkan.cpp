@@ -1,13 +1,13 @@
-#include "qkpch.h"
+#include "Quark/QuarkPch.h"
 #define VMA_IMPLEMENTATION
-#include "Graphic/Vulkan/Device_Vulkan.h"
-#include "Core/Window.h"
-#include "Core/Math/Util.h"
-#include "Core/Util/Hash.h"
-#include "Events/EventManager.h"
-#include "Graphic/Vulkan/Shader_Vulkan.h"
+#include "Quark/Graphic/Vulkan/Device_Vulkan.h"
+#include "Quark/Core/Window.h"
+#include "Quark/Core/Math/Util.h"
+#include "Quark/Core/Util/Hash.h"
+#include "Quark/Events/EventManager.h"
+#include "Quark/Graphic/Vulkan/Shader_Vulkan.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 void Device_Vulkan::CommandQueue::init(Device_Vulkan *device, QueueType type)
 {

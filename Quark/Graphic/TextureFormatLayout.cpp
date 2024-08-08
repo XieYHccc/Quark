@@ -1,7 +1,7 @@
-#include "qkpch.h"
-#include "Graphic/TextureFormatLayout.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Graphic/TextureFormatLayout.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 void TextureFormatLayout::SetUp2D(DataFormat format, uint32_t width, uint32_t height, uint32_t array_size, uint32_t mip_levels)
 {

@@ -1,7 +1,7 @@
 #pragma once
-#include "Graphic/Device.h"
+#include "Quark/Graphic/Device.h"
 
-namespace asset {
+namespace quark {
 
 class ImageLoader {
 public:

@@ -1,8 +1,8 @@
 #pragma once
-#include "Common_Vulkan.h"
-#include "Graphic/Buffer.h"
+#include "Quark/Graphic/Vulkan/Common_Vulkan.h"
+#include "Quark/Graphic/Buffer.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 class Buffer_Vulkan : public Buffer {
 public:

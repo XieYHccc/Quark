@@ -1,10 +1,12 @@
 #pragma once
-#include "Scene/Resources/Base.h"
-#include "Graphic/Common.h"
+#include "Quark/Scene/Resources/Base.h"
+#include "Quark/Graphic/Common.h"
 
-namespace scene {
+namespace quark {
+
 struct Texture : public Resource{
     Ref<graphic::Image> image;
     Ref<graphic::Sampler> sampler;
 };
+
 }

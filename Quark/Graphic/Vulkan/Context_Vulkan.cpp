@@ -1,11 +1,11 @@
-#include "qkpch.h"
-#include "Graphic/Vulkan/Context_Vulkan.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Graphic/Vulkan/Context_Vulkan.h"
 #include <GLFW/glfw3.h>
-#include "Core/Window.h"
+#include "Quark/Core/Window.h"
 
 struct GLFWwindow;
 
-namespace graphic {
+namespace quark::graphic {
 
 VulkanContext::VulkanContext()
 {

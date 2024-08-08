@@ -1,10 +1,10 @@
 #pragma once
 
-#include <memory>
-
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
+#include "Quark/Core/Base.h"
 
+namespace quark {
 #define LOG_WARN_ENABLED 1
 #define LOG_INFO_ENABLED 1
 
@@ -59,3 +59,5 @@ private:
 #define LOGW(...) Logger::GetClientLogger()->warn(__VA_ARGS__);
 #define LOGE(...) Logger::GetClientLogger()->error(__VA_ARGS__);
 #define LOGC(...) Logger::GetClientLogger()->critical(__VA_ARGS__);
+
+}

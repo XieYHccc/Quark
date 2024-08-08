@@ -1,7 +1,7 @@
 #pragma once
-#include "Graphic/Common.h"
+#include "Quark/Graphic/Common.h"
 
-namespace graphic {
+namespace quark::graphic {
     
 // In order to keep descriptor set allocator hit rate high, we can make sure that static resources and transient resources
 // are kept in separate sets when writing shaders.

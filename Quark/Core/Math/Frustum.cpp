@@ -1,6 +1,7 @@
-#include "Core/Math/Frustum.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Core/Math/Frustum.h"
 
-namespace math {
+namespace quark::math {
 
 bool Frustum::CheckSphere(const Aabb &aabb)
 {

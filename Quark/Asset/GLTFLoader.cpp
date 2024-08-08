@@ -1,17 +1,16 @@
-#include "qkpch.h"
-#include "Asset/GLTFLoader.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Asset/GLTFLoader.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <stb_image.h>
-#include "Core/Util/AlignedAlloc.h"
-#include "Scene/Scene.h"
-#include "Graphic/Device.h"
-#include "Scene/Components/TransformCmpt.h"
-#include "Scene/Components/MeshCmpt.h"
-#include "Scene/Components/CameraCmpt.h"
-#include "Asset/ImageLoader.h"
-namespace asset {
-using namespace graphic;
-using namespace scene;
+#include "Quark/Core/Util/AlignedAlloc.h"
+#include "Quark/Scene/Scene.h"
+#include "Quark/Graphic/Device.h"
+#include "Quark/Scene/Components/TransformCmpt.h"
+#include "Quark/Scene/Components/MeshCmpt.h"
+#include "Quark/Scene/Components/CameraCmpt.h"
+#include "Quark/Asset/ImageLoader.h"
+namespace quark {
+using namespace quark::graphic;
 
 std::unordered_map<std::string, bool> GLTFLoader::supportedExtensions_ = {
     {"KHR_lights_punctual", false}};
@@ -130,18 +129,18 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     defaultWhiteImage_ = device_->CreateImage(texture_desc, &init_data);
 
     // Create defalult texture
-    defaultColorTexture_ = CreateRef<scene::Texture>();
+    defaultColorTexture_ = CreateRef<Texture>();
     defaultColorTexture_->image = defaultWhiteImage_;
     defaultColorTexture_->sampler = defalutLinearSampler_;
     defaultColorTexture_->SetName("Default color texture");
 
-    defaultMetalTexture_ =CreateRef<scene::Texture>();
+    defaultMetalTexture_ =CreateRef<Texture>();
     defaultMetalTexture_->image = defaultWhiteImage_;
     defaultMetalTexture_->sampler = defalutLinearSampler_;
     defaultMetalTexture_->SetName("Default metalic roughness texture");
 }
 
-Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
+Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
 {
     CORE_LOGI("Loading GLTF file: {}", filename)
     
@@ -195,7 +194,7 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
 		}
 	}
 
-    Scope<scene::Scene> newScene = CreateScope<scene::Scene>("gltf scene"); // name would be overwritten later..
+    Scope<Scene> newScene = CreateScope<Scene>("gltf scene"); // name would be overwritten later..
     scene_ = newScene.get();
 
     // Load samplers
@@ -214,7 +213,7 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     // Load textures
     textures_.resize(model_.textures.size());
     for (size_t texture_index = 0; texture_index < model_.textures.size(); texture_index++) {
-        auto newTexture = CreateRef<scene::Texture>();
+        auto newTexture = CreateRef<Texture>();
 
         // Default values
         newTexture->image = defaultWhiteImage_;
@@ -306,21 +305,21 @@ Scope<scene::Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     }
 
     // Add root nodes manually
-    scene_->rootNode_->ClearChildren();
+    scene_->GetRootGameObject()->ClearChildren();
     for (const auto& node : gltf_scene.nodes) {
-        scene_->rootNode_->AddChild(nodes_[node]);
+        scene_->GetRootGameObject()->AddChild(nodes_[node]);
     }
 
     return newScene;
 }
 
-scene::Node* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
+GameObject* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
 {
-    scene::Node* newNode = scene_->CreateNode(gltf_node.name);
-    scene::Entity* entity = newNode->GetEntity();
+    auto* newObj = scene_->CreateGameObject(gltf_node.name);
+    auto* entity = newObj->GetEntity();
 
 	// Parse transform component
-    scene::TransformCmpt* transform = newNode->GetEntity()->GetComponent<scene::TransformCmpt>();
+    TransformCmpt* transform = entity->GetComponent<TransformCmpt>();
 
 	if (gltf_node.translation.size() == 3) {
 		glm::vec3 translation = glm::make_vec3(gltf_node.translation.data());
@@ -340,13 +339,13 @@ scene::Node* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
 
     // Parse mesh component
     if (gltf_node.mesh > -1) {
-        scene::MeshCmpt* mesh_cmpt = entity->AddComponent<scene::MeshCmpt>();
+        MeshCmpt* mesh_cmpt = entity->AddComponent<MeshCmpt>();
         mesh_cmpt->sharedMesh = meshes_[gltf_node.mesh];
     }
 
     //TODO: Parse camera component
 
-    return newNode;
+    return newObj;
 }
 
 Ref<graphic::Sampler> GLTFLoader::ParseSampler(const tinygltf::Sampler &gltf_sampler)
@@ -404,7 +403,7 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
     return defaultCheckBoardImage_;
 }
 
-Ref<scene::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
+Ref<Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
 {
     auto newMaterial = CreateRef<Material>();
     newMaterial->SetName(mat.name);
@@ -450,7 +449,7 @@ Ref<scene::Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
     return newMaterial;
 }
 
-Ref<scene::Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
+Ref<Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 {
 
     vertices_.clear();

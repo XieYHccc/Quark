@@ -1,9 +1,10 @@
-#include "Asset/ImageLoader.h"
+#include "Quark/Asset/ImageLoader.h"
 #include <ktx.h>
 #include <basisu_transcoder.h>
-#include "Core/Util/FileSystem.h"
-#include "Graphic/TextureFormatLayout.h"
-namespace asset {
+#include "Quark/Core/Util/FileSystem.h"
+#include "Quark/Graphic/TextureFormatLayout.h"
+
+namespace quark {
 Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
 {
     if (file_path.find_last_of(".") != std::string::npos) {

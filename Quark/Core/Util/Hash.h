@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <string>
 
-namespace util {
+namespace quark::util {
 using Hash = uint64_t;
 
 class Hasher

@@ -1,11 +1,11 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "Scene/Resources/Base.h"
-#include "Scene/Resources/Texture.h"
-#include "Graphic/Common.h"
+#include "Quark/Scene/Resources/Base.h"
+#include "Quark/Scene/Resources/Texture.h"
+#include "Quark/Graphic/Common.h"
 
+namespace quark {
 
-namespace scene {
 struct Material : public Resource{
     enum AlphaMode {
         OPAQUE,

@@ -2,7 +2,7 @@
 #include <numeric>
 #include <glm/glm.hpp>
 
-namespace math {
+namespace quark::math {
 class Aabb {
 public:
     Aabb() : min_(std::numeric_limits<float>::max()), max_(-std::numeric_limits<float>::max()) {}

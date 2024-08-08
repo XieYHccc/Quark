@@ -1,8 +1,8 @@
 #pragma once
-
 #include <iostream>
+#include "Quark/Events/EventHandler.h"
 
-#include "EventHandler.h"
+namespace quark {
 
 class EventManager {
 public:
@@ -80,4 +80,6 @@ template<typename T, typename>
 void EventManager::QueueEvent(std::unique_ptr<T>&& event) 
 {
     event_queue_.push_back(std::move(event));
+}
+
 }

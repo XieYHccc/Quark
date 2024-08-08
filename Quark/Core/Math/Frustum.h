@@ -1,9 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
-#include <array>
-#include "Core/Math/Aabb.h"
+#include "Quark/Core/Math/Aabb.h"
 
-namespace math {
+namespace quark::math {
 class Frustum {
 public:
 	enum side { LEFT = 0, RIGHT = 1, NEAR = 2, FAR = 3, TOP = 4, BOTTOM = 5 };

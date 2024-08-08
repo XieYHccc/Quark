@@ -1,7 +1,8 @@
 #pragma once
 #include <memory>
-#include "Platform/Detection.h"
+#include "Quark/Platform/Detection.h"
 
+namespace quark {
 // Causes a debug breakpoint to be hit.
 #if defined(QK_PLATFORM_WINDOWS)
     #include <intrin.h>
@@ -93,5 +94,7 @@ constexpr Ref<T> CreateRef(Args&& ... args)
 
 #define USE_VULKAN_DRIVER
 
-#include "Core/Logger.h"
-#include "Core/Assert.h"
+}
+
+#include "Quark/Core/Logger.h"
+#include "Quark/Core/Assert.h"

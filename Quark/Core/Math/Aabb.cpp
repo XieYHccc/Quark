@@ -1,6 +1,7 @@
-#include "Core/Math/Aabb.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Core/Math/Aabb.h"
 
-namespace math {
+namespace quark::math {
 
 glm::vec3 Aabb::GetCorner(uint32_t i) const
 {

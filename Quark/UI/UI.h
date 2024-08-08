@@ -1,7 +1,9 @@
 #pragma once
 #include <imgui.h>
-#include "Core/Util/Singleton.h"
-#include "Graphic/Device.h"
+#include "Quark/Core/Util/Singleton.h"
+#include "Quark/Graphic/Device.h"
+
+namespace quark {
 
 enum UiInitFlagBit{
     UI_INIT_FLAG_DOCKING = 1 << 0,
@@ -32,3 +34,5 @@ public:
 template <>
 template <>
 UI* util::MakeSingletonPtr<UI>::CreateSingleton();
+
+}

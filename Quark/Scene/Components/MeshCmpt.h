@@ -1,8 +1,8 @@
 #pragma once
-#include "qkpch.h"
-#include "Scene/Ecs.h"
-#include "Scene/Resources/Mesh.h"
-namespace scene {
+#include "Quark/Ecs/Entity.h"
+#include "Quark/Scene/Resources/Mesh.h"
+
+namespace quark {
 struct MeshCmpt : public Component {
     // Use mesh if it exists, otherwise use sharedMesh
     Scope<Mesh> mesh;
@@ -10,4 +10,5 @@ struct MeshCmpt : public Component {
     QK_COMPONENT_TYPE_DECL(MeshCmpt)
     using Component::Component;
 };
+
 }

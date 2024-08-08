@@ -1,7 +1,7 @@
-#include "qkpch.h"
-#include "Scene/Ecs.h"
-
-namespace scene {
+#include "Quark/QuarkPch.h"
+#include "Quark/Ecs/Entity.h"
+#include "Quark/Ecs/EntityRegistry.h"
+namespace quark {
 
 Entity::Entity(EntityRegistry* entityRegistry, util::Hash hash)
     : entityRegistry_(entityRegistry), hashId_(hash)
@@ -12,8 +12,6 @@ void EntityRegistry::UnRegister(Entity* entity, Component* component)
 {
     if (component == nullptr)
         return;
-
-    CORE_DEBUG_ASSERT(component->GetEntity() == entity) // Double check
 
     auto id = component->GetType();
     entity->componentMap_.erase(id);
@@ -38,7 +36,7 @@ Entity* EntityRegistry::CreateEntity()
 	util::Hasher hasher;
     hasher.u64(cookie_++);
 	auto* entity = entityPool_.allocate(this, hasher.get());
-	entity->EntityRegistryOffset_ = entities_.size();
+	entity->entityRegistryOffset_ = entities_.size();
 	entities_.push_back(entity);
 	return entity;
 }
@@ -55,11 +53,11 @@ void EntityRegistry::DeleteEntity(Entity *entity)
         }
     }
 
-	auto offset = entity->EntityRegistryOffset_;
+	auto offset = entity->entityRegistryOffset_;
 	CORE_DEBUG_ASSERT(offset < entities_.size());
 
 	entities_[offset] = entities_.back();
-	entities_[offset]->EntityRegistryOffset_ = offset;
+	entities_[offset]->entityRegistryOffset_ = offset;
 	entities_.pop_back();
 	entityPool_.free(entity);
 }

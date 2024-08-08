@@ -1,9 +1,9 @@
-#include "qkpch.h"
-#include "Graphic/Vulkan/Shader_Vulkan.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Graphic/Vulkan/Shader_Vulkan.h"
 #include <spirv_reflect.h>
-#include "Graphic/Vulkan/Device_Vulkan.h"
+#include "Quark/Graphic/Vulkan/Device_Vulkan.h"
 
-namespace graphic {
+namespace quark::graphic {
     
 #define SPV_REFLECT_CHECK(x) CORE_ASSERT(x == SPV_REFLECT_RESULT_SUCCESS)
 

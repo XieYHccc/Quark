@@ -1,9 +1,11 @@
-#include "qkpch.h"
-#include "UI/UI.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/UI/UI.h"
 
 #ifdef USE_VULKAN_DRIVER
-#include "UI/Vulkan/UI_Vulkan.h"
+#include "Quark/UI/Vulkan/UI_Vulkan.h"
 #endif
+
+namespace quark {
 
 template <>
 template <>
@@ -16,4 +18,5 @@ UI* util::MakeSingletonPtr<UI>::CreateSingleton()
     CORE_ASSERT(0, "No UI driver is defined");
 #endif
 
+}
 }

@@ -1,7 +1,7 @@
 #pragma once
+#include <cstdint>
 
-namespace math {
-
+namespace quark::math {
 constexpr uint32_t GetNextPowerOfTwo(uint32_t x)
 {
     if (x == 0) {

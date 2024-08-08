@@ -1,13 +1,13 @@
 #pragma once
+#include <assert.h>
+#include <vector>
 
 #include "Hash.h"
 #include "IntrusiveList.h"
 #include "ObjectPool.h"
 #include "ReadWriteLock.h"
-#include <assert.h>
-#include <vector>
 
-namespace util
+namespace quark::util
 {
 template <typename T>
 class IntrusiveHashMapEnabled : public IntrusiveListEnabled<T>

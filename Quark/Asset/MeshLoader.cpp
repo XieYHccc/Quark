@@ -1,14 +1,14 @@
-#include "qkpch.h"
-#include "Asset/MeshLoader.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Asset/MeshLoader.h"
 #include <glm/gtx/hash.hpp>
 #include <tiny_obj_loader.h>
-#include "Asset/GLTFLoader.h"
-#include "Scene/Components/MeshCmpt.h"
-#include "Scene/Scene.h"
+#include "Quark/Asset/GLTFLoader.h"
+#include "Quark/Scene/Components/MeshCmpt.h"
+#include "Quark/Scene/Scene.h"
 
 namespace std {
-    template<> struct hash<scene::Mesh::Vertex> {
-        size_t operator()(scene::Mesh::Vertex const& vertex) const {
+    template<> struct hash<quark::Mesh::Vertex> {
+        size_t operator()(quark::Mesh::Vertex const& vertex) const {
             size_t pos_hash = hash<glm::vec3>()(vertex.position);
             size_t uv_x_hash = hash<float>()(vertex.uv_x);
             size_t normal_hash = hash<glm::vec3>()(vertex.normal);
@@ -20,18 +20,18 @@ namespace std {
     };
 }
 
-namespace asset {
-Ref<scene::Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
+namespace quark {
+Ref<Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
     GLTFLoader gltf_loader(graphicDevice_);
 
-    Scope<scene::Scene> gltf_scene = gltf_loader.LoadSceneFromFile(filepath);
+    Scope<Scene> gltf_scene = gltf_loader.LoadSceneFromFile(filepath);
     if (!gltf_scene) {
         CORE_LOGE("Failed to load gltf scene from file: {}", filepath);
         return nullptr;
     }
 
     // Assume there is only one mesh in the scene
-	auto& meshCmpts = gltf_scene->GetComponents<scene::MeshCmpt>();
+	auto& meshCmpts = gltf_scene->GetComponents<MeshCmpt>();
 	if (meshCmpts.empty()) {
 		CORE_LOGE("No mesh component found in gltf scene: {}", filepath);
 		return nullptr;
@@ -42,7 +42,7 @@ Ref<scene::Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
 
 }
 
-Ref<scene::Mesh> MeshLoader::LoadOBJ(const std::string &filepath)
+Ref<Mesh> MeshLoader::LoadOBJ(const std::string &filepath)
 {
     tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig config;

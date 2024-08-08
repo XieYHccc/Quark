@@ -1,6 +1,8 @@
 #pragma once
-#include "Core/Input.h"
+#include "Quark/Core/Input.h"
 #include <GLFW/glfw3.h>
+
+namespace quark {
 
 class InputGLFW : public Input {
 public:
@@ -19,3 +21,5 @@ private:
 
     GLFWwindow* window_ = nullptr;
 };
+
+}

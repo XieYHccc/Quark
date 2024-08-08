@@ -42,7 +42,7 @@ void TestBed::Update(f32 deltaTime)
 {    
     // Update camera movement
     auto* cam = scene->GetCamera();
-    auto* camMoveCmpt = cam->GetEntity()->GetComponent<scene::MoveControlCmpt>();
+    auto* camMoveCmpt = cam->GetEntity()->GetComponent<MoveControlCmpt>();
     camMoveCmpt->Update(deltaTime);
 
     // Update scene
@@ -171,11 +171,11 @@ void TestBed::LoadScene()
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
     auto* cam_node = scene->CreateNode("Main camera", nullptr);
-    cam_node->GetEntity()->AddComponent<scene::CameraCmpt>(aspect, 60.f, 0.1f, 256);
-    cam_node->GetEntity()->AddComponent<scene::MoveControlCmpt>(50, 0.3);
+    cam_node->GetEntity()->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    cam_node->GetEntity()->AddComponent<MoveControlCmpt>(50, 0.3);
 
     // Default position
-    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<scene::TransformCmpt>();
+    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<TransformCmpt>();
     transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
 
     scene->SetCamera(cam_node);
@@ -185,7 +185,7 @@ void TestBed::LoadScene()
 
 void TestBed::CreatePipeline()
 {
-    using namespace graphic;
+    using namespace quark::graphic;
     auto graphic_device = Application::Instance().GetGraphicDevice();
 
     // Create shader
@@ -215,7 +215,7 @@ void TestBed::CreatePipeline()
 
 void TestBed::CreateDepthImage()
 {
-        using namespace graphic;
+        using namespace quark::graphic;
         auto graphic_device = Application::Instance().GetGraphicDevice();
 
         // Image create info

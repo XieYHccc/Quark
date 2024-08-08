@@ -1,7 +1,7 @@
 #pragma once
-#include "Common.h"
+#include "Quark/Graphic/Common.h"
 
-namespace graphic {
+namespace quark::graphic {
 enum ImageUsageBits {
     IMAGE_USAGE_SAMPLING_BIT = (1 << 0),
     IMAGE_USAGE_COLOR_ATTACHMENT_BIT = (1 << 1),

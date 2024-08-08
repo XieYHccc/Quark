@@ -1,7 +1,9 @@
 #pragma once
-#include "UI/UI.h"
-#include "Graphic/Vulkan/Device_Vulkan.h"
-#include "Events/MouseEvent.h"
+#include "Quark/UI/UI.h"
+#include "Quark/Graphic/Vulkan/Device_Vulkan.h"
+#include "Quark/Events/MouseEvent.h"
+
+namespace quark {
 
 class UI_Vulkan final : public UI {
 public:
@@ -25,3 +27,5 @@ private:
     // VkPipeline pipeline_;
 
 };
+
+}

@@ -1,8 +1,11 @@
 #pragma once
-#include "Core/Timer.h"
-#include "Events/ApplicationEvent.h"
-#include "Graphic/Device.h"
-#include "UI/UI.h"
+#include "Quark/Core/Base.h"
+#include "Quark/Core/Timer.h"
+#include "Quark/Events/ApplicationEvent.h"
+#include "Quark/Graphic/Device.h"
+#include "Quark/UI/UI.h"
+
+namespace quark {
 
 struct AppInitSpecs {
     std::string title = "Quark Application";
@@ -55,3 +58,5 @@ protected:
 
 // To be defined in CLIENT
 Application* CreateApplication();
+
+}

@@ -1,7 +1,7 @@
 #pragma once
-#include "Core/Base.h"
+#include "Quark/Core/Base.h"
 
-namespace graphic {
+namespace quark::graphic {
 
 // Macro
 #define DESCRIPTOR_SET_MAX_NUM 4

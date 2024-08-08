@@ -1,14 +1,15 @@
 #pragma once
-#include "Core/Input.h"
-#include "Scene/Ecs.h"
-#include "Scene/Components/TransformCmpt.h"
+#include "Quark/Core/Input.h"
+#include "Quark/Ecs/Entity.h"
+#include "Quark/Scene/Components/TransformCmpt.h"
 
-namespace scene {
+namespace quark {
+
 class MoveControlCmpt : public Component {
 public:
     QK_COMPONENT_TYPE_DECL(MoveControlCmpt)
 
-    MoveControlCmpt(Entity* entity, float moveSpeed = 20, float mouseSensitivity = 0.3);
+    MoveControlCmpt(float moveSpeed = 20, float mouseSensitivity = 0.3);
 
     virtual void Update(float deltaTime);
     void SetMoveSpeed(float moveSpeed) { moveSpeed_ = moveSpeed; }
@@ -22,8 +23,8 @@ protected:
     float pitch_;
     float moveSpeed_;
     float mouseSensitivity_;
-    TransformCmpt* transform_;
     MousePosition lastPosition_;
     bool isFirstMouse_;
 };
+
 }

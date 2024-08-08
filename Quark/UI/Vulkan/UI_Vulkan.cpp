@@ -1,13 +1,15 @@
-#include "qkpch.h"
-#include "UI/Vulkan/UI_Vulkan.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/UI/Vulkan/UI_Vulkan.h"
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
 #define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 #include <backends/imgui_impl_vulkan.h>
-#include "Core/Window.h"
-#include "Graphic/Vulkan/CommandList_Vulkan.h"
-#include "Events/EventManager.h"
+#include "Quark/Core/Window.h"
+#include "Quark/Graphic/Vulkan/CommandList_Vulkan.h"
+#include "Quark/Events/EventManager.h"
+
+namespace quark {
 
 void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
 {
@@ -173,3 +175,4 @@ ImTextureID UI_Vulkan::CreateTextureId(const graphic::Image& image, const graphi
     return (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
+}

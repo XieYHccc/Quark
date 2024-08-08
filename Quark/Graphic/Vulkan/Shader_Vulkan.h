@@ -1,8 +1,8 @@
 #pragma once
-#include "Graphic/Vulkan/Common_Vulkan.h"
-#include "Graphic/Shader.h"
+#include "Quark/Graphic/Vulkan/Common_Vulkan.h"
+#include "Quark/Graphic/Shader.h"
 
-namespace graphic {
+namespace quark::graphic {
 class Shader_Vulkan : public Shader {
 public:
     Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const void* shaderCode, size_t codeSize);

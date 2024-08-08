@@ -1,6 +1,8 @@
-#include "qkpch.h"
-#include "Platform/MacOS/InputGLFW.h"
-#include "Core/Window.h"
+#include "Quark/QuarkPch.h"
+#include "Quark/Platform/MacOS/InputGLFW.h"
+#include "Quark/Core/Window.h"
+
+namespace quark {
 
 template <>
 template <>
@@ -44,4 +46,6 @@ void InputGLFW::RecordKey(int key, int action)
 void InputGLFW::RecordMousePosition(float xpos, float ypos)
 {
     mousePosition_ = {xpos, ypos};
+}
+
 }

@@ -1,8 +1,8 @@
 #pragma once
-#include "Core/Base.h"
-#include "Graphic/Common.h"
-#include "Graphic/RenderPassInfo.h"
-namespace graphic {
+#include "Quark/Core/Base.h"
+#include "Quark/Graphic/Common.h"
+#include "Quark/Graphic/RenderPassInfo.h"
+namespace quark::graphic {
 enum class PolygonMode
 {
     Fill, 
