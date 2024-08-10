@@ -14,3 +14,6 @@
 	path = ThirdParty/imgui_docking
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
+[submodule "ThirdParty/yaml-cpp"]
+	path = ThirdParty/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
