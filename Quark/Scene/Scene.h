@@ -1,5 +1,5 @@
 #pragma once
-#include <list>
+#include <string>
 #include <glm/glm.hpp>
 #include "Quark/Core/Util/ObjectPool.h"
 #include "Quark/Graphic/Common.h"
@@ -11,8 +11,6 @@
 
 namespace quark {
 
-class GLTFLoader;
-class MeshLoader;
 class CameraCmpt;
 class Scene {
     friend class GLTFLoader;
@@ -24,20 +22,20 @@ public:
 
     void Update();
 
-    /*** GameObject Hierachy ***/
+    /*** GameObject ***/
     GameObject* CreateGameObject(const std::string& name = "Null", GameObject* parent = nullptr);
+    void DeleteGameObject(GameObject* GameObject);
     // GameObject* GetGameObjectByName(const std::string& name);
     GameObject* GetRootGameObject() { return m_Root;}
-    void DeleteGameObject(GameObject* GameObject);
 
     /*** Transform Tree ***/
     void UpdateTransformTree(GameObject* GameObject, const glm::mat4& mat);
 
     /***   Components   ***/
     template<typename... Ts>
-    ComponentGroupVector<Ts...>& GetComponents() { return registry_.GetEntityGroup<Ts...>()->GetComponentGroup(); }
+    ComponentGroupVector<Ts...>& GetComponents() { return m_Registry.GetEntityGroup<Ts...>()->GetComponentGroup(); }
     template<typename... Ts>
-    const ComponentGroupVector<Ts...>& GetComponents() const { return registry_.GetEntityGroup<Ts...>()->GetComponentGroup(); }
+    const ComponentGroupVector<Ts...>& GetComponents() const { return m_Registry.GetEntityGroup<Ts...>()->GetComponentGroup(); }
 
     /***    Cameras    ***/
     void SetCamera(GameObject* cam) { m_CameraObject = cam; }
@@ -45,15 +43,17 @@ public:
 
     void SetName(const std::string& name);
 private:
-    EntityRegistry registry_;
-
-    // GameObjects
+    EntityRegistry m_Registry;
     std::vector<GameObject*> m_GameObjects;
+
     GameObject* m_Root;
     GameObject* m_CameraObject;
+
     //std::unordered_map<std::string, GameObject*> GameObjectMap_; TODO: Support name search
     util::ObjectPool<GameObject> m_GameObjectPool;
 
 };
 
 }
+
+#include "Quark/Scene/GameObjectTemplates.inl"

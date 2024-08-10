@@ -16,8 +16,8 @@ Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
     }
 
     // Read in file's binary data
-    std::vector<std::uint8_t> binary_data;
-    if (!FileRead(file_path, binary_data)) {
+    std::vector<byte> binary_data;
+    if (!FileSystem::ReadFile(file_path, binary_data)) {
         CORE_LOGW("ImageLoader::LoadKtx2: Failed to read file {}", file_path);
         return nullptr;
     }

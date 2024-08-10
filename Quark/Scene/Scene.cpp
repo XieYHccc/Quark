@@ -25,7 +25,7 @@ Scene::~Scene()
 GameObject* Scene::CreateGameObject(const std::string &name, GameObject* parent)
 {
     // Create entity
-    Entity* newEntity = registry_.CreateEntity();
+    Entity* newEntity = m_Registry.CreateEntity();
 
     // Create GameObject
     size_t offset = m_GameObjects.size();
@@ -62,7 +62,7 @@ void Scene::DeleteGameObject(GameObject *obj)
         DeleteGameObject(c);
 
     // Delete entity
-    registry_.DeleteEntity(obj->GetEntity());
+    m_Registry.DeleteEntity(obj->GetEntity());
 
     // free the GameObject in pool
     m_GameObjects[obj->m_PoolOffset] = m_GameObjects.back();

@@ -1,27 +1,31 @@
 #pragma once
 #include "Quark/Core/Base.h"
 #include "Quark/Core/Util/Singleton.h"
-#include "Quark/Graphic/Common.h"
+#include "Quark/Asset/Asset.h"
+#include "Quark/Asset/AssetMetadata.h"
 
 namespace quark {
 
-struct Asset {
-    enum class Type {
-        MESH,
-        TEXTURE,
-        MATERIAL,
-        SHADER,
-        MAX_ENUM
-    };
+class AssetManager : public util::MakeSingleton<AssetManager> {
+public:
+	AssetManager();
+	Ref<Asset> GetAsset(AssetID id);
+	Ref<Asset> LoadAsset(AssetID id);
+	void RemoveAsset(AssetID id);
+	AssetType GetAssetTypeFromPath(const std::filesystem::path& filepath);
+	AssetType GetAssetTypeFromExtension(const std::string& extension);
 
-    Ref<graphic::Image> image;
-    std::string fileName;
+	void RegisterAsset(AssetMetadata metaData);
+	void UnRegisterAsset(AssetID id);
 
-};
+private:
+	// Load metadata from disk
+	void LoadAssetRegistry();
+	void SaveAssetRegistry();
+	void ReloadAssets();
 
-
-class AssetManager {
-
+	std::unordered_map<AssetID, Ref<Asset>> m_LoadedAssets;
+	std::unordered_map<AssetID, AssetMetadata> m_AssetMetadata;
 };
 
 }

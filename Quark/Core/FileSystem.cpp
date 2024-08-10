@@ -3,7 +3,17 @@
 
 namespace quark {
 
-bool FileRead(const std::string& fileName, std::vector<uint8_t>& data, size_t readSize, size_t offset)
+bool FileSystem::Exists(const std::filesystem::path& filepath)
+{
+    return std::filesystem::exists(filepath);
+}
+
+bool FileSystem::Exists(const std::string& filepath)
+{
+    return std::filesystem::exists(std::filesystem::path(filepath));
+}
+
+bool FileSystem::ReadFile(const std::string& fileName, std::vector<byte>& data, size_t readSize, size_t offset)
 {
     std::ifstream file(fileName, std::ios::binary | std::ios::ate);
 
@@ -18,7 +28,7 @@ bool FileRead(const std::string& fileName, std::vector<uint8_t>& data, size_t re
         return true;
     }
 
-    CORE_LOGW("util::FileRead: Failed to open file {}", fileName);
+    CORE_LOGW("FileSystem::ReadFile: Failed to open file {}", fileName);
     return false;
 }
 

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(third_party LANGUAGES C CXX)
 
+set(THIRD_PARTY_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
 # glm
 add_library(glm INTERFACE)
 set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
@@ -135,3 +137,8 @@ else()
     target_compile_options(basisu PRIVATE -Wno-deprecated-builtins)
 endif()
 set_target_properties(basisu PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+
+# yaml-cpp
+set(YAML_DIR ${THIRD_PARTY_ROOT}/yaml-cpp)
+add_subdirectory(${YAML_DIR})
+set_target_properties(yaml-cpp PROPERTIES FOLDER "ThirdParty")
