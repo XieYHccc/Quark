@@ -1,7 +1,7 @@
 #include "Quark/QuarkPch.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
-#include "Quark/Scene/Components/CommonCmpts.h"
+#include "Quark/Scene/Components/RelationshipCmpt.h"
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -67,13 +67,13 @@ void TransformCmpt::SetTRSMatrix(const glm::mat4 &trs)
 
 glm::mat4 TransformCmpt::GetWorldMatrix()
 {
-    GameObject* parent = GetEntity()->GetComponent<RelationshipCmpt>()->parent;
+    Entity* parent = GetEntity()->GetComponent<RelationshipCmpt>()->GetParentEntity();
 
     if (parent == nullptr) {
         return GetTRSMatrix();
     }
     else {
-        auto* parent_transform = parent->GetEntity()->GetComponent<TransformCmpt>();
+        auto* parent_transform = parent->GetComponent<TransformCmpt>();
         return parent_transform->GetWorldMatrix() * GetTRSMatrix();
     }
 }

@@ -9,8 +9,12 @@ namespace quark {
 class EntityRegistry;
 class Entity {
 public:
-    Entity(EntityRegistry* entityRegistry, util::Hash hash);
-    Entity() = delete;
+    Entity(EntityRegistry* registry, util::Hash hashId)
+        : m_Registry(registry), m_HashId(hashId) 
+    {
+
+    }
+
     ~Entity() = default;
 
     template<typename T>
@@ -50,6 +54,7 @@ private:
     util::IntrusiveHashMapHolder<util::IntrusivePODWrapper<Component*>> m_ComponentMap;
 
     friend class EntityRegistry;
+    
     template<typename...>
     friend class EntityGroup;
 };

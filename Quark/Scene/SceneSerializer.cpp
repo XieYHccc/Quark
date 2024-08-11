@@ -3,9 +3,10 @@
 
 #include <yaml-cpp/yaml.h>
 namespace quark {
-static void SerializeGameObject(YAML::Emitter& out, GameObject obj)
-{
 
+static void SerializeGameObject(YAML::Emitter& out, Entity* entity)
+{
+	
 }
 
 SceneSerializer::SceneSerializer(const Ref<Scene>& scene)

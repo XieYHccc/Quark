@@ -1,14 +1,19 @@
 #include "Quark/QuarkPch.h"
 #include "Quark/Asset/GLTFLoader.h"
+
 #include <glm/gtc/type_ptr.hpp>
 #include <stb_image.h>
+
 #include "Quark/Core/Util/AlignedAlloc.h"
 #include "Quark/Scene/Scene.h"
-#include "Quark/Graphic/Device.h"
+#include "Quark/Scene/Components/CommonCmpts.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
+#include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Asset/ImageLoader.h"
+#include "Quark/Graphic/Device.h"
+
 namespace quark {
 using namespace quark::graphic;
 
@@ -289,37 +294,35 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     // TODO: Support gltf file with multiple scenes
     // CORE_ASSERT(model_.scenes.size() == 1)
     const tinygltf::Scene& gltf_scene = model_.scenes[model_.defaultScene > -1 ? model_.defaultScene : 0];
-    scene_->SetName(gltf_scene.name);
+    scene_->SetSceneName(gltf_scene.name);
 
     // Load nodes
-    nodes_.reserve(model_.nodes.size());
+    entities_.reserve(model_.nodes.size());
     for (const auto& gltf_node : model_.nodes) {
         auto* newNode = ParseNode(gltf_node);
-        nodes_.push_back(newNode);
+        entities_.push_back(newNode);
     }
 
     // Loop node to again to establish hierachy
     for (size_t i = 0; i < model_.nodes.size(); i++) {
         for (const auto& child : model_.nodes[i].children)
-            nodes_[i]->AddChild(nodes_[child]);
+            entities_[i]->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[child]);
     }
 
     // Add root nodes manually
-    scene_->GetRootGameObject()->ClearChildren();
     for (const auto& node : gltf_scene.nodes) {
-        scene_->GetRootGameObject()->AddChild(nodes_[node]);
+        scene_->GetRootEntity()->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[node]);
     }
 
     return newScene;
 }
 
-GameObject* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
+Entity* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
 {
-    auto* newObj = scene_->CreateGameObject(gltf_node.name);
-    auto* entity = newObj->GetEntity();
+    auto* newObj = scene_->CreateEntity(gltf_node.name, nullptr);
 
 	// Parse transform component
-    TransformCmpt* transform = entity->GetComponent<TransformCmpt>();
+    TransformCmpt* transform = newObj->GetComponent<TransformCmpt>();
 
 	if (gltf_node.translation.size() == 3) {
 		glm::vec3 translation = glm::make_vec3(gltf_node.translation.data());
@@ -339,7 +342,7 @@ GameObject* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
 
     // Parse mesh component
     if (gltf_node.mesh > -1) {
-        MeshCmpt* mesh_cmpt = entity->AddComponent<MeshCmpt>();
+        MeshCmpt* mesh_cmpt = newObj->AddComponent<MeshCmpt>();
         mesh_cmpt->sharedMesh = meshes_[gltf_node.mesh];
     }
 

@@ -29,7 +29,7 @@ public:
 
 			auto* group = static_cast<EntityGroup<Ts...> *>(t);
 			for (auto entity : m_Entities)
-				group->EntityAdd(*entity);
+				group->AddEntity(*entity);
 		}
 
 		return static_cast<EntityGroup<Ts...> *>(t);
@@ -72,7 +72,7 @@ public:
 			auto* group_set = m_ComponentToGroups.find(id);
 			if (group_set)
 				for (auto& group : *group_set)
-					m_EntityGroups.find(group.get_hash())->EntityAdd(*entity);
+					m_EntityGroups.find(group.get_hash())->AddEntity(*entity);
 
 			return comp;
 		}

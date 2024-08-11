@@ -14,20 +14,10 @@ struct NameCmpt : public Component
 
 struct IdCmpt : public Component
 {
-    UUID uuid;
+    UUID id;
     using Component::Component;
     QK_COMPONENT_TYPE_DECL(IdComponent)
     
 };
-
-class GameObject;
-struct RelationshipCmpt : public Component
-{
-    GameObject* parent = nullptr;
-    std::vector<GameObject*> children;
-    using Component::Component;
-    QK_COMPONENT_TYPE_DECL(RelationshipCmpt)
-};
-
 
 } // namespace quark

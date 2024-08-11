@@ -3,11 +3,6 @@
 #include "Quark/Ecs/EntityRegistry.h"
 namespace quark {
 
-Entity::Entity(EntityRegistry* entityRegistry, util::Hash hash)
-    : m_Registry(entityRegistry), m_HashId(hash)
-{
-}
-
 void EntityRegistry::UnRegister(Entity* entity, Component* component)
 {
     if (component == nullptr)
@@ -21,7 +16,7 @@ void EntityRegistry::UnRegister(Entity* entity, Component* component)
         for (auto &group_key : *group_key_set) {
             auto* group = m_EntityGroups.find(group_key.get_hash());
             if (group)
-                group->EntityRemove(*entity);
+                group->RemoveEntity(*entity);
         }
     }  
 

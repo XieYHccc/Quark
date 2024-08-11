@@ -8,8 +8,8 @@ public:
     EntityGroupBase() = default;
 	virtual ~EntityGroupBase() = default;
 
-	virtual void EntityAdd(Entity& entity) = 0;
-	virtual void EntityRemove(const Entity& entity) = 0;
+	virtual void AddEntity(Entity& entity) = 0;
+	virtual void RemoveEntity(const Entity& entity) = 0;
 	virtual void Reset() = 0;
 };
 
@@ -21,14 +21,14 @@ public:
     const ComponentGroupVector<Ts...>& GetComponentGroup() const  { return m_ComponentGroups; }
     ComponentGroupVector<Ts...>& GetComponentGroup() { return m_ComponentGroups; }
 
-    void EntityAdd(Entity& entity) override final {
+    void AddEntity(Entity& entity) override final {
 		if (has_all_components<Ts...>(entity)) {
 			m_EntityToIndexMap[entity.m_HashId].get() = m_Entities.size();
 			m_ComponentGroups.push_back(std::make_tuple(entity.GetComponent<Ts>()...));
 			m_Entities.push_back(&entity);
 		}
     }
-    void EntityRemove(const Entity& entity) override final {
+    void RemoveEntity(const Entity& entity) override final {
         size_t offset = 0;
         if (m_EntityToIndexMap.find_and_consume_pod(entity.m_HashId, offset)) {
             m_Entities[offset] = m_Entities.back();

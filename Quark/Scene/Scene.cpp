@@ -4,82 +4,87 @@
 #include "Quark/Scene/Components/CommonCmpts.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
+#include "Quark/Scene/Components/RelationshipCmpt.h"
 
 namespace quark {
 
 Scene::Scene(const std::string& name)
 {
     // Create root GameObject
-    m_Root = CreateGameObject(name, nullptr);
+    // m_Root = CreateGameObject(name, nullptr);
+    m_RootEntity = CreateEntity(name, nullptr);
 }
 
 Scene::~Scene()
 {   
-    // Free all GameObjects
-    for (auto obj : m_GameObjects) {
-        m_GameObjectPool.free(obj);
-    }
-
+    // DeleteGameObject(GetRootGameObject());
+    DeleteEntity(GetRootEntity());
 }
 
-GameObject* Scene::CreateGameObject(const std::string &name, GameObject* parent)
+
+void Scene::DeleteEntity(Entity* entity)
+{
+    // Remove from parent
+    auto* relationshipCmpt = entity->GetComponent<RelationshipCmpt>();
+    if (relationshipCmpt->GetParentEntity())
+    {
+        auto* parentRelationshipCmpt = relationshipCmpt->GetParentEntity()->GetComponent<RelationshipCmpt>();
+        parentRelationshipCmpt->RemoveChildEntity(entity);
+    }
+
+    // Iteratively delete children
+    std::vector<Entity*> children = relationshipCmpt->GetChildEntities();
+    for (auto* c: children)
+        DeleteEntity(c);
+
+    // Delete entity
+    m_Registry.DeleteEntity(entity);
+}
+
+Entity* Scene::CreateEntity(const std::string& name, Entity* parent)
+{
+    return CreateEntityWithID({}, name, parent);
+}
+
+Entity* Scene::CreateEntityWithID(UUID id, const std::string& name, Entity* parent)
 {
     // Create entity
     Entity* newEntity = m_Registry.CreateEntity();
 
-    // Create GameObject
-    size_t offset = m_GameObjects.size();
-    GameObject* newGameObject = m_GameObjectPool.allocate(this, newEntity, offset);
-    m_GameObjects.push_back(newGameObject);
+    auto* idCmpt = newEntity->AddComponent<IdCmpt>();
+    auto* relationshipCmpt = newEntity->AddComponent<RelationshipCmpt>();
 
-    // Default components
     newEntity->AddComponent<TransformCmpt>();
-    newEntity->AddComponent<RelationshipCmpt>();
-    if (name != "Null") 
+    if (!name.empty()) 
         newEntity->AddComponent<NameCmpt>(name);
 
-    // GameObject's hierarchy 
     if (parent != nullptr)
-        parent->AddChild(newGameObject);
-
-    return newGameObject;
-    
-}
-
-void Scene::SetName(const std::string &name)
-{
-    m_Root->GetEntity()->GetComponent<NameCmpt>()->name = name;
-}
-
-void Scene::DeleteGameObject(GameObject *obj)
-{
-    // Remove from parent
-    if (obj->GetParent())
-        obj->GetParent()->AddChild(obj);
-
-    // Iteratively delete children
-    for (auto* c: obj->GetChildren())
-        DeleteGameObject(c);
-
-    // Delete entity
-    m_Registry.DeleteEntity(obj->GetEntity());
-
-    // free the GameObject in pool
-    m_GameObjects[obj->m_PoolOffset] = m_GameObjects.back();
-    m_GameObjects[obj->m_PoolOffset]->m_PoolOffset = obj->m_PoolOffset;
-    m_GameObjects.pop_back();
-    m_GameObjectPool.free(obj);
-}
-
-CameraCmpt* Scene::GetCamera()
-{
-    if (m_CameraObject)
     {
-        return m_CameraObject->GetEntity()->GetComponent<CameraCmpt>();
+        auto* parentRelationshipCmpt = parent->GetComponent<RelationshipCmpt>();
+        parentRelationshipCmpt->AddChildEntity(newEntity);
+    }
+
+    CORE_DEBUG_ASSERT(m_EntityIdMap.find(id) == m_EntityIdMap.end())
+    m_EntityIdMap[id] = newEntity;
+
+    return newEntity;
+}
+
+void Scene::SetSceneName(const std::string &name)
+{
+    m_RootEntity->GetComponent<NameCmpt>()->name = name;
+}
+
+
+Entity* Scene::GetCameraEntity()
+{
+    if (m_CameraEntity)
+    {
+        return m_CameraEntity;
     }
     else 
     {
-        CORE_LOGW("Scene doesn't have a camera, but you are requesting one.")
+        CORE_LOGW("Scene doesn't have a camera game object, but you are requesting one.")
         return nullptr;
     }
 }

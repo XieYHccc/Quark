@@ -80,12 +80,13 @@ void SceneRenderer::UpdateDrawContext()
     }
 
     // Update scene uniform buffer
-    auto* mainCam = scene_->GetCamera();
-    
-    CORE_DEBUG_ASSERT(mainCam);
+    auto* mainCameraEntity = scene_->GetCameraEntity();
+    CORE_DEBUG_ASSERT(mainCameraEntity)
+    auto* cameraCmpt = mainCameraEntity->GetComponent<CameraCmpt>();
+
 	SceneUniformBufferBlock& sceneData = drawContext_.sceneData;
-	sceneData.view = mainCam->GetViewMatrix();
-	sceneData.proj = mainCam->GetProjectionMatrix();
+	sceneData.view = cameraCmpt->GetViewMatrix();
+	sceneData.proj = cameraCmpt->GetProjectionMatrix();
 	sceneData.proj[1][1] *= -1;
 	sceneData.viewproj = sceneData.proj * sceneData.view;
 

@@ -1,49 +1,50 @@
 #include "Editor/UI/SceneHeirarchy.h"
 #include <Quark/UI/UI.h>
 #include "Quark/Scene/Components/CommonCmpts.h"
+#include "Quark/Scene/Components/RelationshipCmpt.h"
 #include <imgui.h>
 
 namespace quark {
 
-SceneHeirarchy::SceneHeirarchy() : scene_(nullptr), selectedObject_(nullptr)
+SceneHeirarchy::SceneHeirarchy() : m_Scene(nullptr), m_SelectedEntity(nullptr)
 {
 
 }
 
-SceneHeirarchy::SceneHeirarchy(Scene* scene) : scene_(scene), selectedObject_(nullptr)
+SceneHeirarchy::SceneHeirarchy(Scene* scene) : m_Scene(scene), m_SelectedEntity(nullptr)
 {
 
 }
 
 void SceneHeirarchy::Init()
 {
-    scene_ = nullptr;
-    selectedObject_ = nullptr;
+    m_Scene = nullptr;
+    m_SelectedEntity = nullptr;
 }
 
 void SceneHeirarchy::SetScene(Scene *scene)
 {
-    scene_ = scene;
-    selectedObject_ = scene->GetRootGameObject();
+    m_Scene = scene;
+    m_SelectedEntity = scene->GetRootEntity();
 }
 
 void SceneHeirarchy::Render()
 {
-    if (scene_ == nullptr)
+    if (m_Scene == nullptr)
         return;
 
     if(ImGui::Begin("Scene Heirarchy")) {
-        DrawNode(scene_->GetRootGameObject());
+        DrawEntity(m_Scene->GetRootEntity());
 
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
         {
-            selectedObject_ = nullptr;
+            m_SelectedEntity = nullptr;
         }
 
-        if (selectedObject_ == nullptr && ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight))
+        if (m_SelectedEntity == nullptr && ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight))
         {
             if (ImGui::MenuItem("Create Node")) {
-                scene_->CreateGameObject("Not named", scene_->GetRootGameObject());
+                m_Scene->CreateEntity("Not named", m_Scene->GetRootEntity());
             }
             
             ImGui::EndPopup();
@@ -53,32 +54,35 @@ void SceneHeirarchy::Render()
     ImGui::End();
 }
 
-void SceneHeirarchy::DrawNode(GameObject* obj)
+void SceneHeirarchy::DrawEntity(Entity* entity)
 {
-    if (obj == nullptr)
+    if (entity == nullptr)
         return;
     
-    const std::vector<GameObject*>& children = obj->GetChildren();
+    const std::vector<Entity*>& children = entity->GetComponent<RelationshipCmpt>()->GetChildEntities();
 
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
-    flags |= selectedObject_ == obj ? ImGuiTreeNodeFlags_Selected : 0;
-    flags |= children.empty() ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : 0;
+    flags |= m_SelectedEntity == entity ? ImGuiTreeNodeFlags_Selected : 0;
+    flags |= children.empty() ? ImGuiTreeNodeFlags_Leaf : 0;
 
-    auto* nameCmpt = obj->GetEntity()->GetComponent<NameCmpt>();
+    auto* nameCmpt = entity->GetComponent<NameCmpt>();
 
     bool should_delete = false;
-    bool opened = ImGui::TreeNodeEx((void*)(uint64_t)obj, flags, "%s", nameCmpt? nameCmpt->name.c_str() : "");
+    bool opened = ImGui::TreeNodeEx((void*)(uint64_t)entity, flags, "%s", nameCmpt? nameCmpt->name.c_str() : "");
 
     if (ImGui::IsItemClicked())
-        selectedObject_ = obj;
+        m_SelectedEntity = entity;
 
-	if (ImGui::BeginPopupContextItem()) {
+	if (ImGui::BeginPopupContextItem()) 
+    {
         if (ImGui::MenuItem("Add child")) {
-            scene_->CreateGameObject("Not named", obj);
+            m_Scene->CreateEntity("Not named", entity);
         }
 
         if (ImGui::MenuItem("Remove")) {
-            obj->GetParent()->RemoveChild(obj);
+            auto* parentEntity = entity->GetComponent<RelationshipCmpt>()->GetParentEntity();
+            auto* parentRelationshipCmpt = parentEntity->GetComponent<RelationshipCmpt>();
+            parentRelationshipCmpt->RemoveChildEntity(entity);
         }
 
 		if (ImGui::MenuItem("Delete"))
@@ -87,19 +91,23 @@ void SceneHeirarchy::DrawNode(GameObject* obj)
         ImGui::EndPopup();
 	}
 
-    if (opened && !children.empty()) {
-        for (auto* child : obj->GetChildren())
-            DrawNode(child);
-    
-        ImGui::TreePop();
+    if (opened) 
+    {
+        if (!children.empty()) 
+        {
+            for (auto* c : children)
+                DrawEntity(c); 
+        }
 
+        ImGui::TreePop(); 
     }
 
-    if (should_delete) {
-        if (selectedObject_ == obj)
-            selectedObject_ = nullptr;
+    if (should_delete) 
+    {
+        if (m_SelectedEntity == entity)
+            m_SelectedEntity = nullptr;
         
-        scene_->DeleteGameObject(obj);
+        m_Scene->DeleteEntity(entity);
 
         return;
     }

@@ -13,14 +13,14 @@ public:
 
     void SetScene(Scene* scene);
 
-    GameObject* GetSelectedObject() { return selectedObject_; }
+    Entity* GetSelectedEntity() { return m_SelectedEntity; }
 
 private:
-    void DrawNode(GameObject* object);
+    void DrawEntity(Entity* entity);
     void DrawSceneSettings();
 
-    Scene* scene_;
-    GameObject* selectedObject_;
+    Scene* m_Scene;
+    Entity* m_SelectedEntity;
 
 };
 

@@ -50,8 +50,8 @@ EditorApp::~EditorApp()
 void EditorApp::Update(f32 deltaTime)
 {    
     // Update Editor camera's movement
-    auto* editorCameraCmpt = scene_->GetCamera();
-    auto* cameraMoveCmpt = editorCameraCmpt->GetEntity()->GetComponent<EditorCameraControlCmpt>();
+    auto* editorCameraEntity = scene_->GetCameraEntity();
+    auto* cameraMoveCmpt = editorCameraEntity->GetComponent<EditorCameraControlCmpt>();
     cameraMoveCmpt->Update(deltaTime);
 
     // TODO: Update physics
@@ -81,7 +81,7 @@ void EditorApp::UpdateUI()
     heirarchyWindow_.Render();
     
     // Update Inspector
-    inspector_.SetNode(heirarchyWindow_.GetSelectedObject());
+    inspector_.SetEntity(heirarchyWindow_.GetSelectedEntity());
     inspector_.Render();
 
     // Update Scene view port
@@ -211,19 +211,19 @@ void EditorApp::LoadScene()
 
     // Load scene
     GLTFLoader gltf_loader(m_GraphicDevice.get());
-    scene_ = gltf_loader.LoadSceneFromFile("Assets/Gltf/teapot.gltf");
+    scene_ = gltf_loader.LoadSceneFromFile("Assets/Gltf/structure.glb");
 
     // Create camera node
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    auto* cam_node = scene_->CreateGameObject("Editor Camera", scene_->GetRootGameObject());
-    cam_node->GetEntity()->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
-    cam_node->GetEntity()->AddComponent<EditorCameraControlCmpt>(50, 0.3);
+    auto* cameraObj = scene_->CreateEntity("Editor Camera", scene_->GetRootEntity());
+    cameraObj->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    cameraObj->AddComponent<EditorCameraControlCmpt>(50, 0.3);
 
     // Default position
-    auto* transform_cmpt = cam_node->GetEntity()->GetComponent<TransformCmpt>();
+    auto* transform_cmpt = cameraObj->GetComponent<TransformCmpt>();
     transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
 
-    scene_->SetCamera(cam_node);
+    scene_->SetCameraEntity(cameraObj);
 
     // SetUp Renderer
     scene_renderer_ = CreateScope<SceneRenderer>(m_GraphicDevice.get());

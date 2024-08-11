@@ -10,21 +10,21 @@ namespace quark {
 
 void Inspector::Init()
 {
-    selectedNode_ = nullptr;
+    m_SelectedEntity = nullptr;
     rename_ = false;
     buf_[0] = '\0';
 }
 
 template<typename T, typename UIFunction>
-static void DrawComponent(const std::string& name, Entity& entity, UIFunction uiFunction)
+static void DrawComponent(const std::string& name, Entity* entity, UIFunction uiFunction)
 {
     const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
         ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
 
     ImGuiIO& io = ImGui::GetIO();
-    if (entity.HasComponent<T>())
+    if (entity->HasComponent<T>())
     {
-        auto& component = *entity.GetComponent<T>();
+        auto& component = *entity->GetComponent<T>();
         ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
         float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 
@@ -54,24 +54,22 @@ static void DrawComponent(const std::string& name, Entity& entity, UIFunction ui
         }
 
         if (removeComponent)
-            entity.RemoveComponent<T>();
+            entity->RemoveComponent<T>();
     }
 }
 void Inspector::Render()
 {
     if (ImGui::Begin("Inspector"))
     {
-        if (selectedNode_ == nullptr) {
+        if (m_SelectedEntity == nullptr) {
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "No selected node");
             ImGui::End();
             return;
         }
-
-        auto& entity = *selectedNode_->GetEntity();
         
         // Name component
         {   
-            auto* nameCmpt = entity.GetComponent<NameCmpt>();
+            auto* nameCmpt = m_SelectedEntity->GetComponent<NameCmpt>();
             char buffer[256];
             strncpy(buffer, nameCmpt->name.c_str(), sizeof(buffer));
 
@@ -84,7 +82,7 @@ void Inspector::Render()
         
         // Transform component
         {
-            auto* transformCmpt = entity.GetComponent<TransformCmpt>();
+            auto* transformCmpt = m_SelectedEntity->GetComponent<TransformCmpt>();
             if (transformCmpt) {
                 glm::vec3 position = transformCmpt->GetPosition();
                 glm::vec3 scale = transformCmpt->GetScale();
@@ -118,7 +116,7 @@ void Inspector::Render()
         }
 
         // Mesh component
-        DrawComponent<MeshCmpt>("Mesh", entity, [&](auto& component) {
+        DrawComponent<MeshCmpt>("Mesh", m_SelectedEntity, [&](auto& component) {
             Mesh& mesh = *component.sharedMesh;
 
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 125.f);
@@ -132,7 +130,7 @@ void Inspector::Render()
 
 
         // Camera component
-        DrawComponent<CameraCmpt>("Camera", entity, [&](auto& component) {
+        DrawComponent<CameraCmpt>("Camera", m_SelectedEntity, [&](auto& component) {
             float perspectiveVerticalFov = component.fov;
             if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
                 component.fov = perspectiveVerticalFov;

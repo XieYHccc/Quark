@@ -15,6 +15,7 @@ class Device;
 
 class Scene;
 class GameObject;
+class Entity;
 class GLTFLoader {
 public:
     GLTFLoader(graphic::Device* device);
@@ -25,7 +26,7 @@ private:
     Ref<graphic::Image> ParseImage(const tinygltf::Image& gltf_image);
     Ref<Material> ParseMaterial(const tinygltf::Material& gltf_material);
     Ref<Mesh> ParseMesh(const tinygltf::Mesh& gltf_mesh);
-    GameObject* ParseNode(const tinygltf::Node& gltf_node);
+    Entity* ParseNode(const tinygltf::Node& gltf_node);
 
     graphic::Device* device_;
     tinygltf::Model model_;
@@ -50,7 +51,7 @@ private:
     std::vector<Ref<Texture>> textures_;
     std::vector<Ref<Material>> materials_;
     std::vector<Ref<Mesh>> meshes_;
-    std::vector<GameObject*> nodes_;
+    std::vector<Entity*> entities_;
 
 };
 
