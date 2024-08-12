@@ -39,8 +39,9 @@ public:
     quark::graphic::DataFormat depth_format = quark::graphic::DataFormat::D32_SFLOAT;
     quark::graphic::DataFormat color_format; // Same with swapchain format
     
-    quark::Scope<quark::Scene> scene_;
-    quark::Scope<quark::SceneRenderer> scene_renderer_;
+    quark::Scope<quark::Scene> m_Scene;
+    quark::Scope<quark::SceneRenderer> m_SceneRenderer;
+    Entity* m_EditorCameraEntity = nullptr;
 
     // UI window
     SceneHeirarchy heirarchyWindow_;

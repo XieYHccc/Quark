@@ -1,12 +1,14 @@
 #include "Editor/EditorApp.h"
+
 #include <glm/gtx/quaternion.hpp>
+#include <imgui.h>
+#include <Quark/Core/Window.h>
 #include <Quark/Asset/GLTFLoader.h>
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
-#include <Quark/Core/Window.h>
+#include <Quark/Scene/SceneSerializer.h>
 #include <Quark/UI/UI.h>
 #include <Quark/Asset/ImageLoader.h>
-#include <imgui.h>
 
 #include "Editor/CameraControlCmpt.h"
 
@@ -38,26 +40,31 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
 
     // Init UI windows
     heirarchyWindow_.Init();
-    heirarchyWindow_.SetScene(scene_.get());
+    heirarchyWindow_.SetScene(m_Scene.get());
     inspector_.Init();
-    sceneViewPort_.Init();;
+    sceneViewPort_.Init();
+
 }
 
 EditorApp::~EditorApp()
 {
+    m_Scene->DeleteEntity(m_EditorCameraEntity);
+    
+    SceneSerializer serializer(m_Scene.get());
+    serializer.Serialize("Assets/teapot.qkscene");
 }
 
 void EditorApp::Update(f32 deltaTime)
 {    
     // Update Editor camera's movement
-    auto* editorCameraEntity = scene_->GetCameraEntity();
+    auto* editorCameraEntity = m_Scene->GetCameraEntity();
     auto* cameraMoveCmpt = editorCameraEntity->GetComponent<EditorCameraControlCmpt>();
     cameraMoveCmpt->Update(deltaTime);
 
     // TODO: Update physics
 
     // Update scene
-    scene_->Update();
+    m_Scene->OnUpdate();
 
     // Update UI
     UpdateUI();
@@ -66,7 +73,7 @@ void EditorApp::Update(f32 deltaTime)
 void EditorApp::UpdateUI()
 {
     // Prepare UI data
-    UI::Singleton()->BeginFrame();
+    UI::Get()->BeginFrame();
 
     // Debug Ui
     if (ImGui::Begin("Debug")) 
@@ -91,13 +98,13 @@ void EditorApp::UpdateUI()
     // Update Main menu bar
     UpdateMainMenuUI();
 
-    UI::Singleton()->EndFrame();
+    UI::Get()->EndFrame();
 }
 
 void EditorApp::Render(f32 deltaTime)
 {
     // Sync the rendering data with game scene
-    scene_renderer_->UpdateDrawContext();
+    m_SceneRenderer->UpdateDrawContext();
 
     auto graphic_device = Application::Instance().GetGraphicDevice();
 
@@ -142,14 +149,14 @@ void EditorApp::Render(f32 deltaTime)
             cmd->BindPipeLine(*skybox_pipeline);
             cmd->SetViewPort(viewport);
             cmd->SetScissor(scissor);
-            scene_renderer_->RenderSkybox(cmd);
+            m_SceneRenderer->RenderSkybox(cmd);
 
             // Draw scene
             cmd->BindPipeLine(*graphic_pipeline);
             cmd->SetViewPort(viewport);
             cmd->SetScissor(scissor);
             auto geometry_start = m_Timer.ElapsedMillis();
-            scene_renderer_->RenderScene(cmd);
+            m_SceneRenderer->RenderScene(cmd);
             cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
             cmd->EndRenderPass();
@@ -179,7 +186,7 @@ void EditorApp::Render(f32 deltaTime)
 
             ui_pass_info.colorAttachments[0] = swap_chain_image;
             cmd->BeginRenderPass(ui_pass_info);
-            UI::Singleton()->Render(cmd);
+            UI::Get()->Render(cmd);
             cmd->EndRenderPass();
         }
 
@@ -210,25 +217,28 @@ void EditorApp::LoadScene()
     cubeMap_image = image_loader.LoadKtx2("Assets/Textures/etc1s_cubemap_learnopengl.ktx2");
 
     // Load scene
-    GLTFLoader gltf_loader(m_GraphicDevice.get());
-    scene_ = gltf_loader.LoadSceneFromFile("Assets/Gltf/structure.glb");
+    m_Scene = CreateScope<Scene>("");
+    SceneSerializer serializer(m_Scene.get());
+    serializer.Deserialize("Assets/teapot.qkscene");
 
-    // Create camera node
+    // GLTFLoader gltf_loader(m_GraphicDevice.get());
+    // m_Scene = gltf_loader.LoadSceneFromFile("Assets/Gltf/teapot.gltf");
+
+    // Create Editor Camera Entity
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    auto* cameraObj = scene_->CreateEntity("Editor Camera", scene_->GetRootEntity());
-    cameraObj->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
-    cameraObj->AddComponent<EditorCameraControlCmpt>(50, 0.3);
+    m_EditorCameraEntity = m_Scene->CreateEntity("Editor Camera", nullptr);
+    m_EditorCameraEntity->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    m_EditorCameraEntity->AddComponent<EditorCameraControlCmpt>(50, 0.3);
 
-    // Default position
-    auto* transform_cmpt = cameraObj->GetComponent<TransformCmpt>();
+    auto* transform_cmpt = m_EditorCameraEntity->GetComponent<TransformCmpt>();
     transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
 
-    scene_->SetCameraEntity(cameraObj);
+    m_Scene->SetCameraEntity(m_EditorCameraEntity);
 
     // SetUp Renderer
-    scene_renderer_ = CreateScope<SceneRenderer>(m_GraphicDevice.get());
-    scene_renderer_->SetScene(scene_.get());
-    scene_renderer_->SetCubeMap(cubeMap_image);
+    m_SceneRenderer = CreateScope<SceneRenderer>(m_GraphicDevice.get());
+    m_SceneRenderer->SetScene(m_Scene.get());
+    m_SceneRenderer->SetCubeMap(cubeMap_image);
 }
 
 void EditorApp::UpdateMainMenuUI()

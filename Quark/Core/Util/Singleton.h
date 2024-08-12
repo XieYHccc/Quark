@@ -8,7 +8,7 @@ template<typename T>
 class MakeSingleton
 {
 public:
-	QK_FORCE_INLINE static T& Singleton()
+	QK_FORCE_INLINE static T& Get()
 	{
 		CORE_DEBUG_ASSERT(m_initialized);
 		return *reinterpret_cast<T*>(m_global);
@@ -51,7 +51,7 @@ template<typename T>
 class MakeSingletonPtr
 {
 public:
-	QK_FORCE_INLINE static T* Singleton()
+	QK_FORCE_INLINE static T* Get()
 	{
 		return m_global;
 	}

@@ -31,7 +31,7 @@ Application::Application(const AppInitSpecs& specs)
     
     // Init input system
     Input::CreateSingleton();
-    Input::Singleton()->Init();
+    Input::Get()->Init();
 
     // Init graphic device
 #ifdef  USE_VULKAN_DRIVER
@@ -41,7 +41,7 @@ Application::Application(const AppInitSpecs& specs)
 
     // Init UI system
     UI::CreateSingleton();
-    UI::Singleton()->Init(m_GraphicDevice.get(), specs.uiSpecs);
+    UI::Get()->Init(m_GraphicDevice.get(), specs.uiSpecs);
 
     // Register application callback functions
     EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
@@ -50,7 +50,7 @@ Application::Application(const AppInitSpecs& specs)
 Application::~Application() {
 
     // Destroy UI system
-    UI::Singleton()->Finalize();
+    UI::Get()->Finalize();
     UI::FreeSingleton();
     
 #ifdef  USE_VULKAN_DRIVER
@@ -58,7 +58,7 @@ Application::~Application() {
 #endif
 
     // Destroy InputManager
-    Input::Singleton()->Finalize();
+    Input::Get()->Finalize();
     Input::FreeSingleton();
 
     // Destroy window
@@ -75,7 +75,7 @@ void Application::Run()
         f64 start_frame = m_Timer.ElapsedMillis();
 
         // Poll events
-        Input::Singleton()->Update();
+        Input::Get()->Update();
         
         // TODO: Multithreading
         // Update each moudule (including processing inputs)

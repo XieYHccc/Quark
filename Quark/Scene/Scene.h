@@ -14,40 +14,52 @@ namespace quark {
 
 class CameraCmpt;
 class Scene {
-    friend class GLTFLoader;
-    friend class MeshLoader;
-    friend class GameObject;
 public:
     Scene(const std::string& name);
     ~Scene();
 
     void SetSceneName(const std::string& name);
-    void Update();
+    const std::string& GetSceneName() const;
+
+    void OnUpdate();
 
     Entity* CreateEntity(const std::string& name = "", Entity* parent = nullptr);
-    Entity* CreateEntityWithID(UUID idconst, const std::string& name = "", Entity* parent = nullptr);
-    Entity* GetRootEntity() { return m_RootEntity; }
+    Entity* CreateEntityWithID(UUID id, const std::string& name = "", Entity* parent = nullptr);
+    Entity* GetEntityWithID(UUID id);
     void DeleteEntity(Entity* entity);
 
-    /***   Components   ***/
-    template<typename... Ts>
-    ComponentGroupVector<Ts...>& GetComponents() { return m_Registry.GetEntityGroup<Ts...>()->GetComponentGroup(); }
+    std::vector<Entity*>& GetEntities() { return m_Registry.GetEntities(); }
 
     template<typename... Ts>
-    const ComponentGroupVector<Ts...>& GetComponents() const { return m_Registry.GetEntityGroup<Ts...>()->GetComponentGroup(); }
+    ComponentGroupVector<Ts...>& GetComponents() 
+    { 
+        return m_Registry.GetEntityGroup<Ts...>()->GetComponentGroup(); 
+    }
+
+    template<typename... Ts>
+    const ComponentGroupVector<Ts...>& GetComponents() const
+    { 
+        return m_Registry.GetEntityGroup<Ts...>()->GetComponentGroup();
+    }
+
+    template<typename... Ts>
+    std::vector<Entity*>& GetAllEntitiesWith()
+    {
+        return m_Registry.GetEntityGroup<Ts...>()->GetEntities();
+    }
 
     /***    Cameras    ***/
     void SetCameraEntity(Entity* cam) { m_CameraEntity = cam; }
     Entity* GetCameraEntity();
 
 private:
+    std::string m_SceneName;
     EntityRegistry m_Registry;
-
-    Entity* m_RootEntity;
     Entity* m_CameraEntity;
-    
     std::unordered_map<UUID, Entity*> m_EntityIdMap;
 
+    friend class GLTFLoader;
+    friend class MeshLoader;
 };
 
 }

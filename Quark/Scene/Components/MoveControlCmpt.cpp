@@ -15,7 +15,7 @@ MoveControlCmpt::MoveControlCmpt(float moveSpeed, float mouseSensitivity)
 
 void MoveControlCmpt::Update(float deltaTime)
 {
-    MousePosition pos = Input::Singleton()->GetMousePosition();
+    MousePosition pos = Input::Get()->GetMousePosition();
     if (isFirstMouse_) {
         lastPosition_ = pos;
         isFirstMouse_ = false;
@@ -50,13 +50,13 @@ void MoveControlCmpt::ProcessKeyInput(float deltaTime)
     deltaTime = deltaTime / 1000;
 
     glm::vec3 move {0.f};
-    if (Input::Singleton()->IsKeyPressed(KEY_CODE_W, true))
+    if (Input::Get()->IsKeyPressed(KEY_CODE_W, true))
         move.z = -1;
-    if (Input::Singleton()->IsKeyPressed(KEY_CODE_S, true))
+    if (Input::Get()->IsKeyPressed(KEY_CODE_S, true))
         move.z = 1;
-    if (Input::Singleton()->IsKeyPressed(KEY_CODE_A, true))
+    if (Input::Get()->IsKeyPressed(KEY_CODE_A, true))
         move.x = -1;
-    if (Input::Singleton()->IsKeyPressed(KEY_CODE_D, true))
+    if (Input::Get()->IsKeyPressed(KEY_CODE_D, true))
         move.x = 1;
     move = move * moveSpeed_ * deltaTime;
 

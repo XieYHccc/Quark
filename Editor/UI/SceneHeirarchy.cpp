@@ -25,7 +25,7 @@ void SceneHeirarchy::Init()
 void SceneHeirarchy::SetScene(Scene *scene)
 {
     m_Scene = scene;
-    m_SelectedEntity = scene->GetRootEntity();
+    m_SelectedEntity = nullptr;
 }
 
 void SceneHeirarchy::Render()
@@ -34,7 +34,15 @@ void SceneHeirarchy::Render()
         return;
 
     if(ImGui::Begin("Scene Heirarchy")) {
-        DrawEntity(m_Scene->GetRootEntity());
+
+        std::vector<Entity*>& entities = m_Scene->GetAllEntitiesWith<IdCmpt, RelationshipCmpt>();
+        for (auto* e : entities)
+        {
+            if (e->GetComponent<RelationshipCmpt>()->GetParentEntity() == nullptr)
+                DrawEntity(e);
+        }
+
+        // DrawEntity(m_Scene->GetRootEntity());
 
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
         {
@@ -44,7 +52,7 @@ void SceneHeirarchy::Render()
         if (m_SelectedEntity == nullptr && ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight))
         {
             if (ImGui::MenuItem("Create Node")) {
-                m_Scene->CreateEntity("Not named", m_Scene->GetRootEntity());
+                m_Scene->CreateEntity("Not named", nullptr);
             }
             
             ImGui::EndPopup();

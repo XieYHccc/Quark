@@ -86,7 +86,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         // Record Key status
-        ((InputGLFW*)Input::Singleton())->RecordKey(key, action);
+        ((InputGLFW*)Input::Get())->RecordKey(key, action);
 
         switch (action) {
         case GLFW_PRESS: {
@@ -107,7 +107,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos)
     {   
         // Record Mouse position
-        ((InputGLFW*)Input::Singleton())->RecordMousePosition(xpos, ypos);
+        ((InputGLFW*)Input::Get())->RecordMousePosition(xpos, ypos);
 
         EventManager::Instance().TriggerEvent(MouseMovedEvent((float)xpos, (float)ypos));
     });
@@ -118,7 +118,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
 
     glfwSetMouseButtonCallback(window_, [](GLFWwindow* window, int button, int action, int mods) {
         // Record Mouse button status
-        ((InputGLFW*)Input::Singleton())->RecordKey(button, action);
+        ((InputGLFW*)Input::Get())->RecordKey(button, action);
 
         if (action == GLFW_PRESS) {
             EventManager::Instance().TriggerEvent(MouseButtonPressedEvent(button));

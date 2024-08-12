@@ -303,16 +303,16 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
         entities_.push_back(newNode);
     }
 
-    // Loop node to again to establish hierachy
+    // Loop node again to establish hierachy
     for (size_t i = 0; i < model_.nodes.size(); i++) {
         for (const auto& child : model_.nodes[i].children)
             entities_[i]->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[child]);
     }
 
     // Add root nodes manually
-    for (const auto& node : gltf_scene.nodes) {
-        scene_->GetRootEntity()->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[node]);
-    }
+    // for (const auto& node : gltf_scene.nodes) {
+    //     scene_->GetRootEntity()->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[node]);
+    // }
 
     return newScene;
 }

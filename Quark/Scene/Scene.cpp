@@ -9,18 +9,18 @@
 namespace quark {
 
 Scene::Scene(const std::string& name)
+    : m_SceneName(name), m_CameraEntity(nullptr)
 {
-    // Create root GameObject
-    // m_Root = CreateGameObject(name, nullptr);
-    m_RootEntity = CreateEntity(name, nullptr);
 }
 
 Scene::~Scene()
 {   
-    // DeleteGameObject(GetRootGameObject());
-    DeleteEntity(GetRootEntity());
 }
 
+const std::string& Scene::GetSceneName() const
+{
+    return m_SceneName;
+}
 
 void Scene::DeleteEntity(Entity* entity)
 {
@@ -70,11 +70,19 @@ Entity* Scene::CreateEntityWithID(UUID id, const std::string& name, Entity* pare
     return newEntity;
 }
 
-void Scene::SetSceneName(const std::string &name)
+Entity* Scene::GetEntityWithID(UUID id)
 {
-    m_RootEntity->GetComponent<NameCmpt>()->name = name;
+    auto find = m_EntityIdMap.find(id);
+    if (find != m_EntityIdMap.end())
+        return find->second;
+    else
+        return nullptr;
 }
 
+void Scene::SetSceneName(const std::string &name)
+{
+    m_SceneName = name;
+}
 
 Entity* Scene::GetCameraEntity()
 {
@@ -89,7 +97,7 @@ Entity* Scene::GetCameraEntity()
     }
 }
 
-void Scene::Update()
+void Scene::OnUpdate()
 {
 
 }

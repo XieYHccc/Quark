@@ -28,7 +28,7 @@ void SceneViewPort::SetColorAttachment(const graphic::Image* colorAttachment)
         currentId_ = find->second;
     }
     else {
-        currentId_ = UI::Singleton()->CreateTextureId(*colorAttachment, *sampler_);
+        currentId_ = UI::Get()->CreateTextureId(*colorAttachment, *sampler_);
         idMap_.insert({colorAttachment, currentId_});
     }
 }
