@@ -1,8 +1,10 @@
 #include "Editor/UI/SceneHeirarchy.h"
 #include <Quark/UI/UI.h>
-#include "Quark/Scene/Components/CommonCmpts.h"
-#include "Quark/Scene/Components/RelationshipCmpt.h"
+#include <Quark/Scene/Components/CommonCmpts.h>
+#include <Quark/Scene/Components/RelationshipCmpt.h>
 #include <imgui.h>
+
+#include "Editor/CameraControlCmpt.h"
 
 namespace quark {
 
@@ -38,7 +40,8 @@ void SceneHeirarchy::Render()
         std::vector<Entity*>& entities = m_Scene->GetAllEntitiesWith<IdCmpt, RelationshipCmpt>();
         for (auto* e : entities)
         {
-            if (e->GetComponent<RelationshipCmpt>()->GetParentEntity() == nullptr)
+            if (e->GetComponent<RelationshipCmpt>()->GetParentEntity() == nullptr &&
+                !e->HasComponent<EditorCameraControlCmpt>())
                 DrawEntity(e);
         }
 

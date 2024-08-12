@@ -152,7 +152,7 @@ void SceneSerializer::SerializeBinary(AssetID scene)
 
 bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 {
-	YAML::Node data = YAML::LoadFile(filepath);
+	YAML::Node data = YAML::LoadFile(filepath.string());
 
 	try 
 	{
@@ -224,14 +224,16 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 		{
 			uint64_t uuid = entity["Entity"].as<uint64_t>();
 			Entity* deserializedEntity = m_Scene->GetEntityWithID(uuid);
+			auto* relationshipCmpt = deserializedEntity->GetComponent<RelationshipCmpt>();
 
-			auto parent = entity["Parent"];
-			uint64_t parentId = parent.as<uint64_t>();
-			if (parentId != 0)
+			auto children = entity["Children"];
+			if (children)
 			{
-				Entity* parent = m_Scene->GetEntityWithID(parentId);
-				auto* parentRelationshipCmpt = parent->GetComponent<RelationshipCmpt>();
-				parentRelationshipCmpt->AddChildEntity(deserializedEntity);
+				for (auto child : children) 
+				{
+					uint64_t childId = child["Id"].as<uint64_t>();
+					relationshipCmpt->AddChildEntity(m_Scene->GetEntityWithID(childId));
+				}
 			}
 		}
 	}

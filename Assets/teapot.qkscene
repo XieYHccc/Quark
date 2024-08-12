@@ -1,0 +1,30 @@
+Scene: Scene
+Entities:
+  - Entity: 15114384608628924884
+    Parent: 0
+    Children:
+      []
+    NameComponent: Light
+    TransformComponent:
+      Position: [4.07624531, 5.903862, -1.00545394]
+      Rotation: [-132.46637, 72.7793655, -169.256317]
+      Scale: [1, 1, 1]
+  - Entity: 17996153046939052507
+    Parent: 0
+    Children:
+      []
+    NameComponent: Camera
+    TransformComponent:
+      Position: [7.35889149, 4.95830917, 6.92579079]
+      Rotation: [63.5593033, 46.6919479, 1.98741823e-08]
+      Scale: [1, 1, 1]
+  - Entity: 5086338568291612823
+    Parent: 0
+    Children:
+      []
+    NameComponent: Teapot
+    TransformComponent:
+      Position: [1.79999995, -0.200000003, 0]
+      Rotation: [51.1000023, -4.4519752e-06, 48.0000076]
+      Scale: [1, 1, 1]
+    MeshComponent: Assets/Gltf/teapot.gltf
