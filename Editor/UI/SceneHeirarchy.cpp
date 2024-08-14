@@ -37,15 +37,14 @@ void SceneHeirarchy::Render()
 
     if(ImGui::Begin("Scene Heirarchy")) {
 
-        std::vector<Entity*>& entities = m_Scene->GetAllEntitiesWith<IdCmpt, RelationshipCmpt>();
+        // Copy the vector avoid invalid iterator issue, when adding or removing entities
+        std::vector<Entity*> entities = m_Scene->GetAllEntitiesWith<IdCmpt, RelationshipCmpt>();
         for (auto* e : entities)
         {
             if (e->GetComponent<RelationshipCmpt>()->GetParentEntity() == nullptr &&
                 !e->HasComponent<EditorCameraControlCmpt>())
                 DrawEntity(e);
         }
-
-        // DrawEntity(m_Scene->GetRootEntity());
 
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
         {
@@ -63,6 +62,16 @@ void SceneHeirarchy::Render()
     }
 
     ImGui::End();
+
+    // Delete garbage entities
+    for (auto* e : m_GarbageEntities)
+    {
+        if (e == m_SelectedEntity)
+            m_SelectedEntity = nullptr;
+
+        m_Scene->DeleteEntity(e);
+    }
+    m_GarbageEntities.clear();
 }
 
 void SceneHeirarchy::DrawEntity(Entity* entity)
@@ -114,12 +123,8 @@ void SceneHeirarchy::DrawEntity(Entity* entity)
     }
 
     if (should_delete) 
-    {
-        if (m_SelectedEntity == entity)
-            m_SelectedEntity = nullptr;
-        
-        m_Scene->DeleteEntity(entity);
-
+    {   
+        m_GarbageEntities.push_back(entity);
         return;
     }
 

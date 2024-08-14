@@ -1,6 +1,5 @@
 #pragma once
 #include "Quark/Core/Input.h"
-#include "Quark/Ecs/Entity.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 
 namespace quark {
@@ -12,19 +11,19 @@ public:
     MoveControlCmpt(float moveSpeed = 20, float mouseSensitivity = 0.3);
 
     virtual void Update(float deltaTime);
-    void SetMoveSpeed(float moveSpeed) { moveSpeed_ = moveSpeed; }
-    void SetMouseSensitivity(float mouseSensitivity) { mouseSensitivity_ = mouseSensitivity; }
+    void SetMoveSpeed(float moveSpeed) { m_MoveSpeed = moveSpeed; }
+    void SetMouseSensitivity(float mouseSensitivity) { m_MouseSensitivity = mouseSensitivity; }
 
 protected:
     void ProcessKeyInput(float deltaTime);
     void ProcessMouseMove(float xoffset, float yoffset);
 
-    float yaw_ ;
-    float pitch_;
-    float moveSpeed_;
-    float mouseSensitivity_;
-    MousePosition lastPosition_;
-    bool isFirstMouse_;
+    float m_Yaw ;
+    float m_Pitch;
+    float m_MoveSpeed;
+    float m_MouseSensitivity;
+    MousePosition m_LastPosition;
+    bool m_IsFirstMouse;
 };
 
 }

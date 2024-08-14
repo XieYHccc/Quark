@@ -59,7 +59,7 @@ void SceneRenderer::UpdateDrawContext()
     // Fill render objects
     const auto& mesh_transform_cmpts = scene_->GetComponents<MeshCmpt, TransformCmpt>();
     for (const auto [mesh_cmpt, transform_cmpt] : mesh_transform_cmpts) {
-        auto* mesh = mesh_cmpt->mesh? mesh_cmpt->mesh.get() : mesh_cmpt->sharedMesh.get();
+        auto* mesh = mesh_cmpt->uniqueMesh? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
         for (const auto& submesh : mesh->subMeshes) {
             RenderObject new_renderObject;
             new_renderObject.aabb = submesh.aabb;
@@ -70,7 +70,7 @@ void SceneRenderer::UpdateDrawContext()
             new_renderObject.material = submesh.material.get();
             new_renderObject.transform = transform_cmpt->GetWorldMatrix();
 
-            if (new_renderObject.material->alphaMode == Material::AlphaMode::OPAQUE) {
+            if (new_renderObject.material->alphaMode == AlphaMode::OPAQUE) {
                 drawContext_.opaqueObjects.push_back(new_renderObject);
             }
             else {
@@ -80,7 +80,7 @@ void SceneRenderer::UpdateDrawContext()
     }
 
     // Update scene uniform buffer
-    auto* mainCameraEntity = scene_->GetCameraEntity();
+    auto* mainCameraEntity = scene_->GetMainCameraEntity();
     CORE_DEBUG_ASSERT(mainCameraEntity)
     auto* cameraCmpt = mainCameraEntity->GetComponent<CameraCmpt>();
 

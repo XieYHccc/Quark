@@ -9,7 +9,7 @@
 namespace quark {
 
 Scene::Scene(const std::string& name)
-    : m_SceneName(name), m_CameraEntity(nullptr)
+    : m_SceneName(name), m_MainCameraEntity(nullptr)
 {
 }
 
@@ -52,6 +52,8 @@ Entity* Scene::CreateEntityWithID(UUID id, const std::string& name, Entity* pare
     Entity* newEntity = m_Registry.CreateEntity();
 
     auto* idCmpt = newEntity->AddComponent<IdCmpt>();
+    idCmpt->id = id;
+
     auto* relationshipCmpt = newEntity->AddComponent<RelationshipCmpt>();
 
     newEntity->AddComponent<TransformCmpt>();
@@ -84,11 +86,11 @@ void Scene::SetSceneName(const std::string &name)
     m_SceneName = name;
 }
 
-Entity* Scene::GetCameraEntity()
+Entity* Scene::GetMainCameraEntity()
 {
-    if (m_CameraEntity)
+    if (m_MainCameraEntity)
     {
-        return m_CameraEntity;
+        return m_MainCameraEntity;
     }
     else 
     {

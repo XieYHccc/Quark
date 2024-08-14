@@ -11,15 +11,15 @@ enum class AssetStatus
 
 struct AssetMetadata
 {
-	AssetID m_Id = 0;
-	AssetType m_Type = AssetType::MAX_ENUM;
-	AssetStatus m_Status = AssetStatus::None;
+	AssetID id = 0;
+	AssetType type = AssetType::None;
+	AssetStatus status = AssetStatus::None;
 
-	std::filesystem::path m_FilePath;
-	uint64_t m_FileLastWriteTime = 0; // TODO: this is the last write time of the file WE LOADED
-	bool m_IsDataLoaded = false;
+	std::filesystem::path filePath;
+	uint64_t fileLastWriteTime = 0; // TODO: this is the last write time of the file WE LOADED
+	bool isDataLoaded = false;
 
-	bool IsValid() const { return m_Id != 0; }
+	bool IsValid() const { return id != 0; }
 };
 
 }

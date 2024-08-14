@@ -1,9 +1,7 @@
-#include "Quark/QuarkPch.h"
-#include "Quark/Scene/Resources/Mesh.h"
+#include "Quark/Asset/Mesh.h"
 #include "Quark/Core/Application.h"
 
 namespace quark {
-
 Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<SubMeshDescriptor>& subMeshes, bool isDynamic)
     : vertices(vertices), indices(indices), subMeshes(subMeshes), isDynamic(isDynamic)
 {   

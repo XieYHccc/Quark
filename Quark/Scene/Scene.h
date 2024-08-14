@@ -6,12 +6,8 @@
 #include "Quark/Core/UUID.h"
 #include "Quark/Graphic/Common.h"
 #include "Quark/Ecs/EntityRegistry.h"
-#include "Quark/Scene/Resources/Texture.h"
-#include "Quark/Scene/Resources/Material.h"
-#include "Quark/Scene/Resources/Mesh.h"
 
 namespace quark {
-
 class CameraCmpt;
 class Scene {
 public:
@@ -49,13 +45,13 @@ public:
     }
 
     /***    Cameras    ***/
-    void SetCameraEntity(Entity* cam) { m_CameraEntity = cam; }
-    Entity* GetCameraEntity();
+    void SetMainCameraEntity(Entity* cam) { m_MainCameraEntity = cam; }
+    Entity* GetMainCameraEntity();
 
 private:
     std::string m_SceneName;
     EntityRegistry m_Registry;
-    Entity* m_CameraEntity;
+    Entity* m_MainCameraEntity;
     std::unordered_map<UUID, Entity*> m_EntityIdMap;
 
     friend class GLTFLoader;

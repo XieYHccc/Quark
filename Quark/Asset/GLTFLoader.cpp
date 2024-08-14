@@ -137,12 +137,12 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     defaultColorTexture_ = CreateRef<Texture>();
     defaultColorTexture_->image = defaultWhiteImage_;
     defaultColorTexture_->sampler = defalutLinearSampler_;
-    defaultColorTexture_->SetName("Default color texture");
+    defaultColorTexture_->SetDebugName("Default color texture");
 
     defaultMetalTexture_ =CreateRef<Texture>();
     defaultMetalTexture_->image = defaultWhiteImage_;
     defaultMetalTexture_->sampler = defalutLinearSampler_;
-    defaultMetalTexture_->SetName("Default metalic roughness texture");
+    defaultMetalTexture_->SetDebugName("Default metalic roughness texture");
 }
 
 Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
@@ -268,7 +268,7 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     // Create default material
     {
         defaultMaterial_ = CreateRef<Material>();
-        defaultMaterial_->alphaMode = Material::AlphaMode::OPAQUE;
+        defaultMaterial_->alphaMode = AlphaMode::OPAQUE;
         defaultMaterial_->baseColorTexture = defaultColorTexture_;
         defaultMaterial_->metallicRoughnessTexture = defaultMetalTexture_;
         defaultMaterial_->uniformBuffer = materialUniformBuffer;
@@ -409,14 +409,13 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
 Ref<Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
 {
     auto newMaterial = CreateRef<Material>();
-    newMaterial->SetName(mat.name);
-
-    newMaterial->alphaMode = Material::AlphaMode::OPAQUE;
+    newMaterial->SetDebugName(mat.name);
+    newMaterial->alphaMode = AlphaMode::OPAQUE;
     auto find = mat.additionalValues.find("alphaMode");
     if (find != mat.additionalValues.end()) {
         tinygltf::Parameter param = find->second;
         if (param.string_value == "BLEND")
-            newMaterial->alphaMode = Material::AlphaMode::TRANSPARENT;
+            newMaterial->alphaMode = AlphaMode::TRANSPARENT;
     }
 
     // fill uniform buffer data
@@ -471,7 +470,7 @@ Ref<Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
     vertices_.reserve(vertex_count);
     indices_.reserve(index_count);
 
-    std::vector<Mesh::SubMeshDescriptor> submeshes;
+    std::vector<SubMeshDescriptor> submeshes;
     submeshes.reserve(gltf_mesh.primitives.size());
     
     // loop primitives
@@ -527,7 +526,7 @@ Ref<Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 
             // Create vertices
             for (size_t i = 0; i < posAccessor.count; i++) {
-                Mesh::Vertex v = {};
+                Vertex v = {};
                 v.position = glm::make_vec3(&buffer_pos[i * 3]);
 				v.normal = glm::normalize(buffer_normals ? glm::make_vec3(&buffer_normals[i * 3]) : glm::vec3(0.0f));
 				v.uv_x = buffer_texCoords? buffer_texCoords[i * 2] : 0.f;
@@ -617,7 +616,7 @@ Ref<Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 
     // Create mesh
     auto newMesh = CreateRef<Mesh>(vertices_, indices_, submeshes, false);
-    newMesh->SetName(gltf_mesh.name);
+    newMesh->SetDebugName(gltf_mesh.name);
 
     return newMesh;
 }

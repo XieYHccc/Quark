@@ -9,6 +9,8 @@
 #include <Quark/Scene/SceneSerializer.h>
 #include <Quark/UI/UI.h>
 #include <Quark/Asset/ImageLoader.h>
+#include <Quark/Asset/AssetManager.h>
+#include <Quark/Asset/MeshLoader.h>
 
 #include "Editor/CameraControlCmpt.h"
 
@@ -52,12 +54,21 @@ EditorApp::~EditorApp()
     
     SceneSerializer serializer(m_Scene.get());
     serializer.Serialize("Assets/teapot.qkscene");
+
+    MeshLoader meshLoader(m_GraphicDevice.get());
+    Ref<Mesh> teapot = meshLoader.LoadGLTF("Assets/Gltf/teapot.gltf");
+    AssetMetadata metadata;
+    metadata.id = teapot->GetAssetID();
+    metadata.type = AssetType::MESH;
+    metadata.filePath = "Assets/Gltf/teapot.gltf";
+    AssetManager::Get().RegisterAssetWithMetadata(metadata);
+    AssetManager::Get().SaveAssetRegistry();
 }
 
 void EditorApp::Update(f32 deltaTime)
 {    
     // Update Editor camera's movement
-    auto* editorCameraEntity = m_Scene->GetCameraEntity();
+    auto* editorCameraEntity = m_Scene->GetMainCameraEntity();
     auto* cameraMoveCmpt = editorCameraEntity->GetComponent<EditorCameraControlCmpt>();
     cameraMoveCmpt->Update(deltaTime);
 
@@ -233,7 +244,7 @@ void EditorApp::LoadScene()
     auto* transform_cmpt = m_EditorCameraEntity->GetComponent<TransformCmpt>();
     transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
 
-    m_Scene->SetCameraEntity(m_EditorCameraEntity);
+    m_Scene->SetMainCameraEntity(m_EditorCameraEntity);
 
     // SetUp Renderer
     m_SceneRenderer = CreateScope<SceneRenderer>(m_GraphicDevice.get());
@@ -292,7 +303,7 @@ void EditorApp::CreatePipeline()
 
     VertexBindInfo vert_bind_info;
     vert_bind_info.binding = 0;
-    vert_bind_info.stride = sizeof(Mesh::Vertex);
+    vert_bind_info.stride = sizeof(Vertex);
     vert_bind_info.inputRate = VertexBindInfo::INPUT_RATE_VERTEX;
     pipe_desc.vertexBindInfos.push_back(vert_bind_info);
 
@@ -300,7 +311,7 @@ void EditorApp::CreatePipeline()
     pos_attrib.binding = 0;
     pos_attrib.format = VertexAttribInfo::ATTRIB_FORMAT_VEC3;
     pos_attrib.location = 0;
-    pos_attrib.offset = offsetof(Mesh::Vertex, position);
+    pos_attrib.offset = offsetof(Vertex, position);
     pipe_desc.vertexAttribInfos.push_back(pos_attrib);
 
     skybox_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);

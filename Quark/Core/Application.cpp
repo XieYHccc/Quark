@@ -19,17 +19,15 @@ Application::Application(const AppInitSpecs& specs)
 {
     singleton_ = this;
     
-    // Init logger
     Logger::Init();
 
-    // Init event manager
+    AssetManager::CreateSingleton();
+    
     EventManager::Instance().Init();
 
-    // Init window 
     Window::Create();
     Window::Instance()->Init(specs.title,specs.isFullScreen,  specs.width, specs.height);
-    
-    // Init input system
+
     Input::CreateSingleton();
     Input::Get()->Init();
 

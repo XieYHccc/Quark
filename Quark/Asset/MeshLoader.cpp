@@ -7,8 +7,8 @@
 #include "Quark/Scene/Scene.h"
 
 namespace std {
-    template<> struct hash<quark::Mesh::Vertex> {
-        size_t operator()(quark::Mesh::Vertex const& vertex) const {
+    template<> struct hash<quark::Vertex> {
+        size_t operator()(quark::Vertex const& vertex) const {
             size_t pos_hash = hash<glm::vec3>()(vertex.position);
             size_t uv_x_hash = hash<float>()(vertex.uv_x);
             size_t normal_hash = hash<glm::vec3>()(vertex.normal);
@@ -21,6 +21,7 @@ namespace std {
 }
 
 namespace quark {
+
 Ref<Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
     GLTFLoader gltf_loader(graphicDevice_);
 

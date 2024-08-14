@@ -1,9 +1,8 @@
 #pragma once
 #include "Quark/Graphic/Device.h"
-#include "Quark/Scene/Resources/Mesh.h"
+#include "Quark/Asset/Mesh.h"
 
 namespace quark {
-
 class MeshLoader {
 public:
     MeshLoader(graphic::Device* device) : graphicDevice_(device) {};

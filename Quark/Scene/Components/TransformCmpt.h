@@ -1,8 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include "Quark/Ecs/Entity.h"
 
+#include "Quark/Ecs/Component.h"
 namespace quark {
 
 class TransformCmpt : public Component{

@@ -18,7 +18,7 @@ void EditorCameraControlCmpt::Update(float deltaTime)
         isViewPortTouching_ = false;
     }
 
-    lastPosition_ = Input::Get()->GetMousePosition();
+    m_LastPosition = Input::Get()->GetMousePosition();
 
 }
 

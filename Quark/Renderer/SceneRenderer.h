@@ -1,10 +1,10 @@
 #pragma once
 #include <glm/glm.hpp>
 #include "Quark/Core/Math/Frustum.h"
-#include "Quark/Scene/Resources/Mesh.h"
+#include "Quark/Asset/Material.h"
+#include "Quark/Asset/Mesh.h"
 
 namespace quark {
-
 namespace graphic {
 class CommandList;
 class Device;

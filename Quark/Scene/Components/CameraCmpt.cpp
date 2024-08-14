@@ -1,8 +1,9 @@
 #include "Quark/QuarkPch.h"
 #include <glm/gtx/transform.hpp>
 #include "Quark/Core/Window.h"
-#include "Quark/Scene/Components/CameraCmpt.h"
+#include "Quark/Ecs/Entity.h"
 #include "Quark/Events/EventManager.h"
+#include "Quark/Scene/Components/CameraCmpt.h"
 
 namespace quark {
 

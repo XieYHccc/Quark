@@ -120,7 +120,7 @@ void Inspector::Render()
             Mesh& mesh = *component.sharedMesh;
 
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 125.f);
-			ImGui::LabelText("##Name", "%s", mesh.GetName().c_str());
+			ImGui::LabelText("##Name", "%s", "TODO");
 			ImGui::PopItemWidth();
 
 			ImGui::SameLine();

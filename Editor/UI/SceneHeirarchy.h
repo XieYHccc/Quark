@@ -21,6 +21,7 @@ private:
 
     Scene* m_Scene;
     Entity* m_SelectedEntity;
+    std::vector<Entity*> m_GarbageEntities;
 
 };
 

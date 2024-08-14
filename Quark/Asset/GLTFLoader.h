@@ -4,8 +4,8 @@
 // #define TINYGLTF_NO_EXTERNAL_IMAGE
 #include <tiny_gltf.h>
 #include "Quark/Graphic/Common.h"
-#include "Quark/Scene/Resources/Material.h"
-#include "Quark/Scene/Resources/Mesh.h"
+#include "Quark/Asset/Material.h"
+#include "Quark/Asset/Mesh.h"
 
 namespace quark {
 
@@ -44,7 +44,7 @@ private:
     static std::unordered_map<std::string, bool> supportedExtensions_;
 
     // Temporary storage for indexing
-    std::vector<Mesh::Vertex> vertices_;
+    std::vector<Vertex> vertices_;
     std::vector<uint32_t> indices_;
     std::vector<Ref<graphic::Sampler>> samplers_;
     std::vector<Ref<graphic::Image>> images_;

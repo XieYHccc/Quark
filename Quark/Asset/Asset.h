@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "Quark/Core/UUID.h"
 
 namespace quark {
@@ -6,6 +7,7 @@ namespace quark {
 using AssetID = UUID;
 
 enum class AssetType : uint16_t {
+	None,
 	SCENE,
 	MESH,
 	MATERIAL,
@@ -14,17 +16,20 @@ enum class AssetType : uint16_t {
 	SCRIPT,
 	AUDIO,
 	FONT,
-	MAX_ENUM
 };
  
 class Asset {
 public:
 	Asset() = default;
 	virtual ~Asset() = default;
-	virtual AssetType GetAssetType() { return AssetType::MAX_ENUM; }
-	static AssetType GetStaticAssetType() { return AssetType::MAX_ENUM; }
 
-	AssetID GetID() const { return m_AssetID; }
+	virtual AssetType GetAssetType() { return AssetType::None; }
+	static AssetType GetStaticAssetType() { return AssetType::None; }
+
+	AssetID GetAssetID() const { return m_AssetID; }
+	AssetID SetAssetID(AssetID id) { return m_AssetID = id; }
+	
+	void SetDebugName(const std::string& name) { m_DebugName = name; }
 
 	virtual bool operator==(const Asset& other) const
 	{
@@ -37,6 +42,8 @@ public:
 
 private:
 	AssetID m_AssetID;
+	std::string m_DebugName;
+
 	friend class AssetManager; // If the Asset is reloaded from AssetManager, AssetManager should be able to set the ID of the Asset
 };
 

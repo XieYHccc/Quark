@@ -1,29 +1,29 @@
 #pragma once
 #include <glm/glm.hpp>
-#include "Quark/Scene/Resources/Base.h"
-#include "Quark/Scene/Resources/Texture.h"
-#include "Quark/Graphic/Common.h"
+#include "Quark/Asset/Asset.h"
+#include "Quark/Asset/Texture.h"
 
 namespace quark {
+enum class AlphaMode {
+    OPAQUE,
+    TRANSPARENT
+};
 
-struct Material : public Resource{
-    enum AlphaMode {
-        OPAQUE,
-        TRANSPARENT
-    } alphaMode = AlphaMode::OPAQUE;
-
+struct Material : public Asset {
     struct UniformBufferBlock {
         glm::vec4 baseColorFactor = glm::vec4(1.0f);
         float metalicFactor = 1.f;
         float roughNessFactor = 1.f;
     } uniformBufferData;
 
-    // Gpu resources
-    Ref<graphic::Buffer> uniformBuffer = nullptr;
+    AlphaMode alphaMode = AlphaMode::OPAQUE;
+
+    Ref<graphic::Buffer> uniformBuffer;
     size_t uniformBufferOffset = 0;
 
     Ref<Texture> baseColorTexture;
     Ref<Texture> metallicRoughnessTexture;
     Ref<Texture> normalTexture;
 };
+
 }

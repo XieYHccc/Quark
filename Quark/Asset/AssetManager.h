@@ -9,16 +9,18 @@ namespace quark {
 class AssetManager : public util::MakeSingleton<AssetManager> {
 public:
 	AssetManager();
+
 	Ref<Asset> GetAsset(AssetID id);
-	Ref<Asset> LoadAsset(AssetID id);
 	void RemoveAsset(AssetID id);
+
+	bool IsAssetLoaded(AssetID id);
+
 	AssetType GetAssetTypeFromPath(const std::filesystem::path& filepath);
 	AssetType GetAssetTypeFromExtension(const std::string& extension);
 
-	void RegisterAsset(AssetMetadata metaData);
-	void UnRegisterAsset(AssetID id);
-
-private:
+	void RegisterAssetWithMetadata(AssetMetadata metaData);
+	AssetMetadata GetAssetMetadata(AssetID id);
+	
 	// Load metadata from disk
 	void LoadAssetRegistry();
 	void SaveAssetRegistry();

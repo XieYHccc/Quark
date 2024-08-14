@@ -4,7 +4,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "Quark/Core/Application.h"
-#include "Quark/Asset/MeshLoader.h"
+#include "Quark/Asset/AssetManager.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
@@ -112,7 +112,11 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 	if (entity->HasComponent<MeshCmpt>())
 	{
 		auto* meshCmpt = entity->GetComponent<MeshCmpt>();
-		out << YAML::Key << "MeshComponent" << YAML::Value << "Assets/Gltf/teapot.gltf";
+		out << YAML::Key << "MeshComponent";
+
+		out << YAML::BeginMap; 
+		out << YAML::Key << "AssetID" << YAML::Value << meshCmpt->sharedMesh->GetAssetID();
+		out << YAML::EndMap;
 	}
 		
 	out << YAML::EndMap; // Entity
@@ -213,9 +217,11 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 			if (meshCmpt)
 			{
 				auto* mc = deserializedEntity->AddComponent<MeshCmpt>();
-				MeshLoader meshLoader(Application::Instance().GetGraphicDevice());
-				mc->sharedMesh = meshLoader.LoadGLTF(meshCmpt.as<std::string>());
-				mc->mesh = nullptr;
+				uint64_t assetId = meshCmpt["AssetID"].as<uint64_t>();
+
+				Ref<Asset> mesh = AssetManager::Get().GetAsset(assetId);
+				mc->sharedMesh = std::static_pointer_cast<Mesh>(mesh);
+				mc->uniqueMesh = nullptr;
 			}
 		}
 

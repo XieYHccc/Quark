@@ -1,6 +1,7 @@
 #pragma once
+#include <string>
 #include "Quark/Core/UUID.h"
-#include "Quark/Ecs/Entity.h"
+#include "Quark/Ecs/Component.h"
 
 namespace quark {
 
