@@ -140,5 +140,6 @@ set_target_properties(basisu PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT
 
 # yaml-cpp
 set(YAML_DIR ${THIRD_PARTY_ROOT}/yaml-cpp)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Disable YAML tools")
 add_subdirectory(${YAML_DIR})
 set_target_properties(yaml-cpp PROPERTIES FOLDER "ThirdParty")
