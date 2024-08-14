@@ -13,11 +13,11 @@
 
 namespace quark {
 
-Application* Application::singleton_ = nullptr;
+Application* Application::s_Instance = nullptr;
 
 Application::Application(const AppInitSpecs& specs) 
 {
-    singleton_ = this;
+    s_Instance = this;
     
     Logger::Init();
 

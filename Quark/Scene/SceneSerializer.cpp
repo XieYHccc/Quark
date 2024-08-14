@@ -218,9 +218,9 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 			{
 				auto* mc = deserializedEntity->AddComponent<MeshCmpt>();
 				uint64_t assetId = meshCmpt["AssetID"].as<uint64_t>();
-
-				Ref<Asset> mesh = AssetManager::Get().GetAsset(assetId);
-				mc->sharedMesh = std::static_pointer_cast<Mesh>(mesh);
+				auto mesh = AssetManager::Get().GetAsset<Mesh>(assetId);
+				
+				mc->sharedMesh = mesh;
 				mc->uniqueMesh = nullptr;
 			}
 		}

@@ -9,6 +9,7 @@ message("-- [Quark] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin )
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(ASSETS_PATH ${PROJECT_SOURCE_DIR}/Assets)
+
 # find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
 
@@ -67,3 +68,7 @@ add_custom_target(
     Shaders 
     DEPENDS ${SPIRV_BINARY_FILES}
 )
+
+# copy Assets to build directory
+file(COPY ${ASSETS_PATH} DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+file(COPY ${PROJECT_SOURCE_DIR}/Editor/imgui.ini DESTINATION ${EXECUTABLE_OUTPUT_PATH})

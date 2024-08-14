@@ -139,7 +139,7 @@ void UI_Vulkan::BeginFrame()
     ImGuiIO& io = ImGui::GetIO();
     ImGuiStyle& style = ImGui::GetStyle();
     float minWinSizeX = style.WindowMinSize.x;
-    style.WindowMinSize.x = 350.0f;
+    style.WindowMinSize.x = 360.0f;
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable)
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID);
     style.WindowMinSize.x = minWinSizeX;

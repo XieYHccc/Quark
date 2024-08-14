@@ -60,7 +60,6 @@ void SceneHeirarchy::Render()
             ImGui::EndPopup();
         }
     }
-
     ImGui::End();
 
     // Delete garbage entities

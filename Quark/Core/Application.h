@@ -1,6 +1,7 @@
 #pragma once
 #include "Quark/Core/Base.h"
 #include "Quark/Core/Timer.h"
+#include "Quark/Core/Window.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Graphic/Device.h"
 #include "Quark/UI/UI.h"
@@ -17,17 +18,18 @@ struct AppInitSpecs {
 
 class Application {
 public:
-    static Application& Instance() { return *singleton_; }
-private:
-    static Application* singleton_;
-public:
+    static Application& Get() { return *s_Instance; }
+    
     Application(const AppInitSpecs& specs);
     virtual ~Application();
     Application(const Application&) = delete;
     const Application& operator=(const Application&) = delete;
 
     void Run();
+
     graphic::Device* GetGraphicDevice() { return m_GraphicDevice.get();}
+
+    Window& GetWindow();
 
 private:
     // Update Game Logic per frame
@@ -54,6 +56,10 @@ protected:
     Timer m_Timer;
     AppStatus m_Status;
     Scope<graphic::Device> m_GraphicDevice;
+    Scope<Window> m_Window;
+    
+private:
+    static Application* s_Instance;
 };
 
 // To be defined in CLIENT

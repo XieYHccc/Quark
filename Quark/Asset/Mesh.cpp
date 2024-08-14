@@ -6,7 +6,7 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& ind
     : vertices(vertices), indices(indices), subMeshes(subMeshes), isDynamic(isDynamic)
 {   
     CORE_DEBUG_ASSERT(!vertices.empty() && ! indices.empty())
-    auto* graphic_device = Application::Instance().GetGraphicDevice();
+    auto* graphic_device = Application::Get().GetGraphicDevice();
 
     // Calculate mesh's aabb from submesh's aabb
     for (auto& submesh : this->subMeshes) {
@@ -38,7 +38,7 @@ void Mesh::CreateRenderResources()
 
 	const size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
 	const size_t indexBufferSize = indices.size() * sizeof(uint32_t);
-    auto* graphic_device = Application::Instance().GetGraphicDevice();
+    auto* graphic_device = Application::Get().GetGraphicDevice();
 
     // Create vertex buffer
     graphic::BufferDesc vert_buffer_desc;

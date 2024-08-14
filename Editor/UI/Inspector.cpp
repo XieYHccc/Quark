@@ -73,12 +73,35 @@ void Inspector::Render()
             char buffer[256];
             strncpy(buffer, nameCmpt->name.c_str(), sizeof(buffer));
 
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Node name:");
-            ImGui::SameLine();
             if (ImGui::InputText("##Name", buffer, sizeof(buffer)))
                 nameCmpt->name = buffer;
         }
+
+        ImGui::SameLine();
+        ImGui::PushItemWidth(-1);
+
+        if (ImGui::Button("Add Component"))
+            ImGui::OpenPopup("AddComponent");
+
+        if (ImGui::BeginPopup("AddComponent"))
+        {
+            if (ImGui::MenuItem("Mesh"))
+            {
+                if (!m_SelectedEntity->HasComponent<MeshCmpt>())
+                    m_SelectedEntity->AddComponent<MeshCmpt>();
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (ImGui::MenuItem("Camera"))
+            {
+                if (!m_SelectedEntity->HasComponent<CameraCmpt>())
+                    m_SelectedEntity->AddComponent<CameraCmpt>();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+        ImGui::PopItemWidth();
         
         // Transform component
         {

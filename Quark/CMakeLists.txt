@@ -33,9 +33,9 @@ target_precompile_headers(quark PRIVATE ${QUARK_SOURCE_ROOT_DIR/QuarkPch.h})
 add_dependencies(quark Shaders)
 
 # copy shader to binary file directory
-set(SPIRV_SOURCE_DIR "${ASSETS_PATH}")
-set(SPIRV_DESTINATION_DIR "${EXECUTABLE_OUTPUT_PATH}/Assets")
-add_custom_command(
-    TARGET quark POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${SPIRV_SOURCE_DIR} ${SPIRV_DESTINATION_DIR}
-)
+# set(SPIRV_SOURCE_DIR "${ASSETS_PATH}")
+# set(SPIRV_DESTINATION_DIR "${EXECUTABLE_OUTPUT_PATH}/Assets")
+# add_custom_command(
+#     TARGET quark POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory ${SPIRV_SOURCE_DIR} ${SPIRV_DESTINATION_DIR}
+# )

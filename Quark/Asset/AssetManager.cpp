@@ -5,7 +5,9 @@
 
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Application.h"
+#include "Quark/Core/Util/StringUtils.h"
 #include "Quark/Asset/MeshLoader.h"
+#include "Quark/Asset/AssetExtensions.h"
 
 namespace quark {
 static std::filesystem::path s_AssetDirectory = "Assets";
@@ -53,16 +55,14 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 	if (metadata.IsValid()) 
 	{
 		if (metadata.isDataLoaded) 
-		{
 			asset = m_LoadedAssets[id];
-		}
 		else 
 		{
 			// Load asset data
 			switch (metadata.type) {
 			case AssetType::MESH:
 				{
-					MeshLoader meshLoader(Application::Instance().GetGraphicDevice());
+					MeshLoader meshLoader(Application::Get().GetGraphicDevice());
 					asset = meshLoader.LoadGLTF(metadata.filePath.string());
 					asset->SetAssetID(id);
 					break;
@@ -81,6 +81,11 @@ bool AssetManager::IsAssetLoaded(AssetID id)
 	return m_LoadedAssets.contains(id);
 }
 
+bool AssetManager::IsAssetIDValid(AssetID id)
+{
+	return GetAssetMetadata(id).IsValid();
+}
+
 void AssetManager::RemoveAsset(AssetID id)
 {
 	if (m_LoadedAssets.contains(id))
@@ -92,18 +97,79 @@ void AssetManager::RemoveAsset(AssetID id)
 
 AssetType AssetManager::GetAssetTypeFromPath(const std::filesystem::path& filepath)
 {
-	return AssetType();
+	return GetAssetTypeFromExtension(filepath.extension().string());
+	
 }
 
 AssetType AssetManager::GetAssetTypeFromExtension(const std::string& extension)
 {
-	return AssetType();
+	std::string ext = util::string::ToLowerCopy(extension);
+	if (s_AssetExtensionMap.find(ext) == s_AssetExtensionMap.end())
+	{
+		CORE_LOGW("[AssetManager] No asset type found for extension {0}", ext);
+		return AssetType::None;
+	}
+
+	return s_AssetExtensionMap.at(ext);
 }
 
-void AssetManager::RegisterAssetWithMetadata(AssetMetadata metaData)
+AssetID AssetManager::GetAssetIDFromFilePath(const std::filesystem::path& filepath)
+{
+	return GetAssetMetadata(filepath).id;
+}
+
+std::unordered_set<AssetID> AssetManager::GetAllAssetsWithType(AssetType type)
+{
+	std::unordered_set<AssetID> result;
+
+	for (auto& [id, metadata] : m_AssetMetadata)
+	{
+		if (metadata.type == type)
+			result.insert(id);
+	}
+
+	return result;
+}
+AssetMetadata AssetManager::GetAssetMetadata(const std::filesystem::path& filepath)
+{
+	for (auto& [id, metadata] : m_AssetMetadata)
+	{
+		if (metadata.filePath == filepath)
+			return metadata;
+	}
+
+	return AssetMetadata();
+}
+
+void AssetManager::SetMetadata(AssetID id, AssetMetadata metaData)
 {
 	CORE_ASSERT(metaData.IsValid())
 	m_AssetMetadata[metaData.id] = metaData;
+}
+
+AssetID AssetManager::ImportAsset(const std::filesystem::path &filepath)
+{
+
+	if (auto metadata = GetAssetMetadata(filepath); metadata.IsValid())
+	{
+		CORE_LOGW("[AssetManager] Asset already Imported with id {0}", metadata.id);
+		return metadata.id;
+	}
+
+	AssetType type = GetAssetTypeFromPath(filepath);
+	if (type == AssetType::None)
+	{
+		CORE_LOGW("[AssetManager] Asset file {0} is not supported.", filepath.string());
+		return 0;
+	}
+
+	AssetMetadata newMetadata;
+	newMetadata.id = AssetID();
+	newMetadata.filePath = filepath;
+	newMetadata.type = type;
+	SetMetadata(newMetadata.id, newMetadata);
+
+	return newMetadata.id;
 }
 
 AssetMetadata AssetManager::GetAssetMetadata(AssetID id)
@@ -156,7 +222,7 @@ void AssetManager::LoadAssetRegistry()
 			continue;
 		}
 
-		RegisterAssetWithMetadata(metadata);
+		SetMetadata(metadata.id, metadata);
 
 	}
 

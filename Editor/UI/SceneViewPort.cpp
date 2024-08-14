@@ -7,7 +7,7 @@ namespace quark {
 
 void SceneViewPort::Init()
 {
-    device_ = Application::Instance().GetGraphicDevice();
+    device_ = Application::Get().GetGraphicDevice();
 
     graphic::SamplerDesc samplerDesc;
     samplerDesc.minFilter = graphic::SamplerFilter::LINEAR;

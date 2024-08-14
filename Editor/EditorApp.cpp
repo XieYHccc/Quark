@@ -52,16 +52,11 @@ EditorApp::~EditorApp()
 {
     m_Scene->DeleteEntity(m_EditorCameraEntity);
     
+    // Serialize scene
     SceneSerializer serializer(m_Scene.get());
     serializer.Serialize("Assets/teapot.qkscene");
 
-    MeshLoader meshLoader(m_GraphicDevice.get());
-    Ref<Mesh> teapot = meshLoader.LoadGLTF("Assets/Gltf/teapot.gltf");
-    AssetMetadata metadata;
-    metadata.id = teapot->GetAssetID();
-    metadata.type = AssetType::MESH;
-    metadata.filePath = "Assets/Gltf/teapot.gltf";
-    AssetManager::Get().RegisterAssetWithMetadata(metadata);
+    // Save asset registry
     AssetManager::Get().SaveAssetRegistry();
 }
 
@@ -117,7 +112,7 @@ void EditorApp::Render(f32 deltaTime)
     // Sync the rendering data with game scene
     m_SceneRenderer->UpdateDrawContext();
 
-    auto graphic_device = Application::Instance().GetGraphicDevice();
+    auto graphic_device = Application::Get().GetGraphicDevice();
 
     if (graphic_device->BeiginFrame(deltaTime)) {
         auto cmd = graphic_device->BeginCommandList();
@@ -256,7 +251,7 @@ void EditorApp::UpdateMainMenuUI()
 {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("Load Project")) {
+			if (ImGui::MenuItem("Seri")) {
                 // LoadProject();
 			}
 			ImGui::EndMenu();
@@ -320,7 +315,7 @@ void EditorApp::CreatePipeline()
 void EditorApp::CreateColorDepthAttachments()
 {
         using namespace quark::graphic;
-        auto graphic_device = Application::Instance().GetGraphicDevice();
+        auto graphic_device = Application::Get().GetGraphicDevice();
 
         // Create depth image
         ImageDesc image_desc;

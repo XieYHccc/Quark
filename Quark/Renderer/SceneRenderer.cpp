@@ -60,6 +60,8 @@ void SceneRenderer::UpdateDrawContext()
     const auto& mesh_transform_cmpts = scene_->GetComponents<MeshCmpt, TransformCmpt>();
     for (const auto [mesh_cmpt, transform_cmpt] : mesh_transform_cmpts) {
         auto* mesh = mesh_cmpt->uniqueMesh? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
+
+        if (!mesh) continue;
         for (const auto& submesh : mesh->subMeshes) {
             RenderObject new_renderObject;
             new_renderObject.aabb = submesh.aabb;
@@ -70,12 +72,10 @@ void SceneRenderer::UpdateDrawContext()
             new_renderObject.material = submesh.material.get();
             new_renderObject.transform = transform_cmpt->GetWorldMatrix();
 
-            if (new_renderObject.material->alphaMode == AlphaMode::OPAQUE) {
+            if (new_renderObject.material->alphaMode == AlphaMode::OPAQUE) 
                 drawContext_.opaqueObjects.push_back(new_renderObject);
-            }
-            else {
+            else
                 drawContext_.transparentObjects.push_back(new_renderObject);
-            }
         }
     }
 
