@@ -17,3 +17,6 @@
 [submodule "ThirdParty/yaml-cpp"]
 	path = ThirdParty/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "ThirdParty/nfd-extended"]
+	path = ThirdParty/nfd-extended
+	url = https://github.com/btzy/nativefiledialog-extended.git
