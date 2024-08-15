@@ -41,7 +41,6 @@ void SceneRenderer::PrepareForRender()
 	drawContext_.sceneData.sunlightColor = glm::vec4(1.f);
 	drawContext_.sceneData.sunlightDirection = glm::vec4(0,1,0.5,1.f);
     
-    UpdateDrawContext();
 }
 
 void SceneRenderer::SetScene(Scene* scene)
@@ -81,20 +80,23 @@ void SceneRenderer::UpdateDrawContext()
 
     // Update scene uniform buffer
     auto* mainCameraEntity = scene_->GetMainCameraEntity();
-    CORE_DEBUG_ASSERT(mainCameraEntity)
-    auto* cameraCmpt = mainCameraEntity->GetComponent<CameraCmpt>();
 
-	SceneUniformBufferBlock& sceneData = drawContext_.sceneData;
-	sceneData.view = cameraCmpt->GetViewMatrix();
-	sceneData.proj = cameraCmpt->GetProjectionMatrix();
-	sceneData.proj[1][1] *= -1;
-	sceneData.viewproj = sceneData.proj * sceneData.view;
+    if (mainCameraEntity)
+    {
+        auto* cameraCmpt = mainCameraEntity->GetComponent<CameraCmpt>();
 
-    SceneUniformBufferBlock* mapped_data = (SceneUniformBufferBlock*)drawContext_.sceneUniformBuffer->GetMappedDataPtr();
-    *mapped_data = drawContext_.sceneData;
+        SceneUniformBufferBlock& sceneData = drawContext_.sceneData;
+        sceneData.view = cameraCmpt->GetViewMatrix();
+        sceneData.proj = cameraCmpt->GetProjectionMatrix();
+        sceneData.proj[1][1] *= -1;
+        sceneData.viewproj = sceneData.proj * sceneData.view;
 
-    // Update frustum
-    drawContext_.frustum_.Build(glm::inverse(sceneData.viewproj));
+        SceneUniformBufferBlock* mapped_data = (SceneUniformBufferBlock*)drawContext_.sceneUniformBuffer->GetMappedDataPtr();
+        *mapped_data = drawContext_.sceneData;
+
+        // Update frustum
+        drawContext_.frustum_.Build(glm::inverse(sceneData.viewproj));
+    }
 
 }
 

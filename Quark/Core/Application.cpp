@@ -1,4 +1,7 @@
 #include "Quark/QuarkPch.h"
+
+#include <nfd.hpp>
+
 #include "Quark/Core/Application.h"
 #include "Quark/Core/KeyMouseCodes.h"
 #include "Quark/Core/Window.h"
@@ -27,6 +30,8 @@ Application::Application(const AppInitSpecs& specs)
 
     Window::Create();
     Window::Instance()->Init(specs.title,specs.isFullScreen,  specs.width, specs.height);
+
+    CORE_ASSERT(NFD::Init() == NFD_OKAY)
 
     Input::CreateSingleton();
     Input::Get()->Init();

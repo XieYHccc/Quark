@@ -1,4 +1,6 @@
 #include "Quark/QuarkPch.h"
+#include <nfd.hpp>
+
 #include "Quark/Core/FileSystem.h"
 
 namespace quark {
@@ -30,6 +32,40 @@ bool FileSystem::ReadFile(const std::string& fileName, std::vector<byte>& data, 
 
     CORE_LOGW("FileSystem::ReadFile: Failed to open file {}", fileName);
     return false;
+}
+
+std::filesystem::path FileSystem::OpenFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters)
+{
+    NFD::UniquePath filePath;
+    nfdresult_t result = NFD::OpenDialog(filePath, (const nfdfilteritem_t*)inFilters.begin(), inFilters.size());
+
+    switch (result)
+    {
+    case NFD_OKAY: return filePath.get();
+    case NFD_CANCEL: return "";
+    case NFD_ERROR:
+    {
+        CORE_LOGE("NFD-Extended threw an error: {}", NFD::GetError());
+        return "";
+    }
+    }
+}
+
+std::filesystem::path FileSystem::SaveFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters)
+{
+    NFD::UniquePath filePath;
+    nfdresult_t result = NFD::SaveDialog(filePath, (const nfdfilteritem_t*)inFilters.begin(), inFilters.size());
+
+    switch (result)
+    {
+    case NFD_OKAY: return filePath.get();
+    case NFD_CANCEL: return "";
+    case NFD_ERROR:
+    {
+        CORE_LOGE("NFD-Extended threw an error: {}", NFD::GetError());
+        return "";
+    }
+    }
 }
 
 }

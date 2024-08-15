@@ -141,5 +141,11 @@ set_target_properties(basisu PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT
 # yaml-cpp
 set(YAML_DIR ${THIRD_PARTY_ROOT}/yaml-cpp)
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Disable YAML tools")
+set(BUILD_TESTING OFF CACHE BOOL "Disable ctest") # TODO: This doesn't belong here, move it in the future
 add_subdirectory(${YAML_DIR})
 set_target_properties(yaml-cpp PROPERTIES FOLDER "ThirdParty")
+
+# nfd-extended
+set(NFD_EXTENDED_DIR ${THIRD_PARTY_ROOT}/nfd-extended)
+add_subdirectory(${NFD_EXTENDED_DIR})
+set_target_properties(nfd PROPERTIES FOLDER "ThirdParty")

@@ -12,5 +12,15 @@ public:
 	static bool ReadFile(const std::string& fileName, std::vector<byte>& data, size_t readSize = ~0ull, size_t offset = 0);
 
 	static uint64_t GetLastWriteTime(const std::filesystem::path& filepath);
+
+public:
+	struct FileDialogFilterItem
+	{
+		const char* name;
+		const char* spec;
+	};
+
+	static std::filesystem::path OpenFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters = {});
+	static std::filesystem::path SaveFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters = {});
 };
 }

@@ -18,11 +18,6 @@ SceneHeirarchy::SceneHeirarchy(Scene* scene) : m_Scene(scene), m_SelectedEntity(
 
 }
 
-void SceneHeirarchy::Init()
-{
-    m_Scene = nullptr;
-    m_SelectedEntity = nullptr;
-}
 
 void SceneHeirarchy::SetScene(Scene *scene)
 {

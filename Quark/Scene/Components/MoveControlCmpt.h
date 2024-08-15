@@ -14,7 +14,6 @@ public:
     void SetMoveSpeed(float moveSpeed) { m_MoveSpeed = moveSpeed; }
     void SetMouseSensitivity(float mouseSensitivity) { m_MouseSensitivity = mouseSensitivity; }
 
-protected:
     void ProcessKeyInput(float deltaTime);
     void ProcessMouseMove(float xoffset, float yoffset);
 

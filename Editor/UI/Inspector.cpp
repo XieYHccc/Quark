@@ -8,11 +8,11 @@
 
 namespace quark {
 
-void Inspector::Init()
+Inspector::Inspector()
 {
     m_SelectedEntity = nullptr;
-    rename_ = false;
-    buf_[0] = '\0';
+    m_Rename = false;
+    m_Buf[0] = '\0';
 }
 
 template<typename T, typename UIFunction>
@@ -57,6 +57,7 @@ static void DrawComponent(const std::string& name, Entity* entity, UIFunction ui
             entity->RemoveComponent<T>();
     }
 }
+
 void Inspector::Render()
 {
     if (ImGui::Begin("Inspector"))

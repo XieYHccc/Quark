@@ -8,7 +8,6 @@ public:
     SceneHeirarchy();
     SceneHeirarchy(Scene* scene);
 
-    virtual void Init() override;
     virtual void Render() override;
 
     void SetScene(Scene* scene);

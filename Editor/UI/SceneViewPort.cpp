@@ -4,10 +4,9 @@
 #include <Quark/Events/EventManager.h>
 
 namespace quark {
-
-void SceneViewPort::Init()
+SceneViewPort::SceneViewPort()
 {
-    device_ = Application::Get().GetGraphicDevice();
+    m_Device = Application::Get().GetGraphicDevice();
 
     graphic::SamplerDesc samplerDesc;
     samplerDesc.minFilter = graphic::SamplerFilter::LINEAR;
@@ -15,35 +14,35 @@ void SceneViewPort::Init()
     samplerDesc.addressModeU = graphic::SamplerAddressMode::REPEAT;
     samplerDesc.addressModeV = graphic::SamplerAddressMode::REPEAT;
     samplerDesc.addressModeW = graphic::SamplerAddressMode::REPEAT;
-    sampler_ = device_->CreateSampler(samplerDesc);
+    m_Sampler = m_Device->CreateSampler(samplerDesc);
 
-    panelsize_ = {0, 0};
+    m_Panelsize = { 0, 0 };
 }
 
 void SceneViewPort::SetColorAttachment(const graphic::Image* colorAttachment)
 {
-    auto find = idMap_.find(colorAttachment);
+    auto find = m_IdMap.find(colorAttachment);
 
-    if (find != idMap_.end()) {
-        currentId_ = find->second;
+    if (find != m_IdMap.end()) {
+        m_CurrentId = find->second;
     }
     else {
-        currentId_ = UI::Get()->CreateTextureId(*colorAttachment, *sampler_);
-        idMap_.insert({colorAttachment, currentId_});
+        m_CurrentId = UI::Get()->CreateTextureId(*colorAttachment, *m_Sampler);
+        m_IdMap.insert({colorAttachment, m_CurrentId});
     }
 }
 
 void SceneViewPort::Render()
 {
-    CORE_DEBUG_ASSERT(currentId_)
+    CORE_DEBUG_ASSERT(m_CurrentId)
 
     ImGui::Begin("Scene");
     if(ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
         EventManager::Instance().TriggerEvent(SceneViewPortTouchedEvent());
     }
 
-	panelsize_ = ImGui::GetContentRegionAvail();
-	ImGui::Image(currentId_, panelsize_);
+	m_Panelsize = ImGui::GetContentRegionAvail();
+	ImGui::Image(m_CurrentId, m_Panelsize);
 	
 	ImGui::End();
 }

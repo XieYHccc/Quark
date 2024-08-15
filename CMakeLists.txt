@@ -30,6 +30,11 @@ find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{
 ################################################################################
 # Configuration                                                                #
 ################################################################################
+
+if (MSVC)
+    add_compile_options(/MP)
+endif()
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()

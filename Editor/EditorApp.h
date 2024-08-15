@@ -16,6 +16,11 @@ public:
     void Render(float deltaTime) override final;
     void UpdateUI() override final;
     
+    void NewScene();
+    void OpenScene();
+    void SaveSceneAs();
+    void SetUpEditorCameraEntity();
+
     void CreateColorDepthAttachments();
     void CreatePipeline();
     void SetUpRenderPass();
@@ -44,9 +49,9 @@ public:
     Entity* m_EditorCameraEntity = nullptr;
 
     // UI window
-    SceneHeirarchy heirarchyWindow_;
-    Inspector inspector_;
-    SceneViewPort sceneViewPort_;
+    SceneHeirarchy m_HeirarchyPanel;
+    Inspector m_InspectorPanel;
+    SceneViewPort m_SceneViewPort;
     
     // Debug
     float cmdListRecordTime = 0;

@@ -3,14 +3,15 @@
 #include <glm/gtx/quaternion.hpp>
 #include <imgui.h>
 #include <Quark/Core/Window.h>
+#include <Quark/Core/FileSystem.h>
 #include <Quark/Asset/GLTFLoader.h>
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/SceneSerializer.h>
-#include <Quark/UI/UI.h>
 #include <Quark/Asset/ImageLoader.h>
 #include <Quark/Asset/AssetManager.h>
 #include <Quark/Asset/MeshLoader.h>
+#include <Quark/UI/UI.h>
 
 #include "Editor/CameraControlCmpt.h"
 
@@ -20,7 +21,7 @@ Application* CreateApplication()
     AppInitSpecs specs;
     specs.uiSpecs.flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS;
     specs.title = "Quark Editor";
-    specs.width = 1400;
+    specs.width = 1600;
     specs.height = 1000;
     specs.isFullScreen = false;
 
@@ -40,22 +41,13 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     // Load scene
     LoadScene();
 
-    // Init UI windows
-    heirarchyWindow_.Init();
-    heirarchyWindow_.SetScene(m_Scene.get());
-    inspector_.Init();
-    sceneViewPort_.Init();
+    // Init UI Panels
+    m_HeirarchyPanel.SetScene(m_Scene.get());
 
 }
 
 EditorApp::~EditorApp()
-{
-    m_Scene->DeleteEntity(m_EditorCameraEntity);
-    
-    // Serialize scene
-    SceneSerializer serializer(m_Scene.get());
-    serializer.Serialize("Assets/teapot.qkscene");
-
+{   
     // Save asset registry
     AssetManager::Get().SaveAssetRegistry();
 }
@@ -78,8 +70,10 @@ void EditorApp::Update(f32 deltaTime)
 
 void EditorApp::UpdateUI()
 {
-    // Prepare UI data
     UI::Get()->BeginFrame();
+
+    // Update Main menu bar
+    UpdateMainMenuUI();
 
     // Debug Ui
     if (ImGui::Begin("Debug")) 
@@ -91,20 +85,68 @@ void EditorApp::UpdateUI()
     ImGui::End();
 
     // Update Scene Heirarchy
-    heirarchyWindow_.Render();
+    m_HeirarchyPanel.Render();
     
     // Update Inspector
-    inspector_.SetEntity(heirarchyWindow_.GetSelectedEntity());
-    inspector_.Render();
+    m_InspectorPanel.SetEntity(m_HeirarchyPanel.GetSelectedEntity());
+    m_InspectorPanel.Render();
 
     // Update Scene view port
-    sceneViewPort_.SetColorAttachment(color_image.get());
-    sceneViewPort_.Render();
-    
-    // Update Main menu bar
-    UpdateMainMenuUI();
+    m_SceneViewPort.SetColorAttachment(color_image.get());
+    m_SceneViewPort.Render();
+
 
     UI::Get()->EndFrame();
+}
+
+void EditorApp::NewScene()
+{
+    m_Scene = CreateScope<Scene>("New Scene");
+    SetUpEditorCameraEntity();
+
+    m_SceneRenderer->SetScene(m_Scene.get());
+    m_HeirarchyPanel.SetScene(m_Scene.get());
+}
+
+void EditorApp::OpenScene()
+{
+    std::filesystem::path filepath = FileSystem::OpenFileDialog({ { "Quark Scene", "qkscene" } });
+    if (!filepath.empty())
+    {
+        m_Scene = CreateScope<Scene>("");
+        SceneSerializer serializer(m_Scene.get());
+        serializer.Deserialize(filepath.string());
+
+        SetUpEditorCameraEntity();
+
+        m_SceneRenderer->SetScene(m_Scene.get());
+        m_HeirarchyPanel.SetScene(m_Scene.get());
+
+    }
+
+}
+
+void EditorApp::SaveSceneAs()
+{
+    std::filesystem::path filepath = FileSystem::SaveFileDialog({ { "Quark Scene", "qkscene" } });
+    if (!filepath.empty())
+    {
+        SceneSerializer serializer(m_Scene.get());
+        serializer.Serialize(filepath.string());
+    }
+}
+
+void EditorApp::SetUpEditorCameraEntity()
+{
+    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
+    m_EditorCameraEntity = m_Scene->CreateEntity("Editor Camera", nullptr);
+    m_EditorCameraEntity->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
+    m_EditorCameraEntity->AddComponent<EditorCameraControlCmpt>(50, 0.3);
+
+    auto* transform_cmpt = m_EditorCameraEntity->GetComponent<TransformCmpt>();
+    transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
+
+    m_Scene->SetMainCameraEntity(m_EditorCameraEntity);
 }
 
 void EditorApp::Render(f32 deltaTime)
@@ -227,19 +269,8 @@ void EditorApp::LoadScene()
     SceneSerializer serializer(m_Scene.get());
     serializer.Deserialize("Assets/teapot.qkscene");
 
-    // GLTFLoader gltf_loader(m_GraphicDevice.get());
-    // m_Scene = gltf_loader.LoadSceneFromFile("Assets/Gltf/teapot.gltf");
-
     // Create Editor Camera Entity
-    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    m_EditorCameraEntity = m_Scene->CreateEntity("Editor Camera", nullptr);
-    m_EditorCameraEntity->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
-    m_EditorCameraEntity->AddComponent<EditorCameraControlCmpt>(50, 0.3);
-
-    auto* transform_cmpt = m_EditorCameraEntity->GetComponent<TransformCmpt>();
-    transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
-
-    m_Scene->SetMainCameraEntity(m_EditorCameraEntity);
+    SetUpEditorCameraEntity();
 
     // SetUp Renderer
     m_SceneRenderer = CreateScope<SceneRenderer>(m_GraphicDevice.get());
@@ -249,13 +280,23 @@ void EditorApp::LoadScene()
 
 void EditorApp::UpdateMainMenuUI()
 {
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("Seri")) {
-                // LoadProject();
-			}
-			ImGui::EndMenu();
-		}
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+                NewScene();
+
+            if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
+                OpenScene();
+
+            if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
+                SaveSceneAs();
+
+            //if (ImGui::MenuItem("Exit"))
+
+            ImGui::EndMenu();
+        }
 
         ImGui::EndMainMenuBar();
     }

@@ -10,23 +10,28 @@ class SceneViewPortTouchedEvent : public Event {
 public:
     SceneViewPortTouchedEvent() = default;
     EVENT_TYPE("SceneViewPortTouchedEvent")
+
+    virtual std::string ToString() const override
+    {
+        return "SceneViewPortTouchedEvent";
+    }
+
 };
 
 class SceneViewPort : public UIWindowBase
 {
 public:
-    SceneViewPort() = default;
+    SceneViewPort();
 
-    void Init() override;
     void Render() override;
     void SetColorAttachment(const graphic::Image* colorAttachment);
 
 private:
-    Ref<graphic::Sampler> sampler_;
-    ImTextureID currentId_;
-    std::unordered_map<const graphic::Image*, ImTextureID> idMap_;
-    graphic::Device* device_;
-    ImVec2 panelsize_;
+    Ref<graphic::Sampler> m_Sampler;
+    ImTextureID m_CurrentId;
+    std::unordered_map<const graphic::Image*, ImTextureID> m_IdMap;
+    graphic::Device* m_Device;
+    ImVec2 m_Panelsize;
 };
 
 }

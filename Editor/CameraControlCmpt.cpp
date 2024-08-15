@@ -4,18 +4,26 @@
 namespace quark {
 
 EditorCameraControlCmpt::EditorCameraControlCmpt(float moveSpeed, float mouseSensitivity)
-    : MoveControlCmpt(moveSpeed, mouseSensitivity), isViewPortTouching_(false)
+    : MoveControlCmpt(moveSpeed, mouseSensitivity), m_IsViewPortTouching(false)
 {
-    EventManager::Instance().Subscribe<SceneViewPortTouchedEvent>([&](const SceneViewPortTouchedEvent& e) {
+    m_ViewPortTouchedEventCallback = [&](const SceneViewPortTouchedEvent& e) {
         OnViewPortTouchedEvent(e);
-    });
+    };
+
+    EventManager::Instance().Subscribe<SceneViewPortTouchedEvent>(m_ViewPortTouchedEventCallback);
+}
+
+EditorCameraControlCmpt::~EditorCameraControlCmpt()
+{
+    EventManager::Instance().Unsubscribe<SceneViewPortTouchedEvent>(m_ViewPortTouchedEventCallback);
+
 }
 
 void EditorCameraControlCmpt::Update(float deltaTime)
 {   
-    if (isViewPortTouching_) {
+    if (m_IsViewPortTouching) {
         MoveControlCmpt::Update(deltaTime);
-        isViewPortTouching_ = false;
+        m_IsViewPortTouching = false;
     }
 
     m_LastPosition = Input::Get()->GetMousePosition();
@@ -24,6 +32,7 @@ void EditorCameraControlCmpt::Update(float deltaTime)
 
 void EditorCameraControlCmpt::OnViewPortTouchedEvent(const SceneViewPortTouchedEvent& e)
 {
-    isViewPortTouching_ = true;
+    m_IsViewPortTouching = true;
 }
+
 }
