@@ -3,158 +3,165 @@
 
 namespace quark {
 
-using Keycode = uint16_t;
-using MouseCode = uint16_t;
+	using KeyCode = uint16_t;
+	using MouseCode = uint16_t;
 
-enum : Keycode {
-    // From glfw3.h
-    KEY_CODE_SPACE = 32,
-    KEY_CODE_APOSTROPHE = 39, /* ' */
-    KEY_CODE_COMMA = 44,      /* , */
-    KEY_CODE_MINUS = 45,      /* - */
-    KEY_CODE_PERIOD = 46,     /* . */
-    KEY_CODE_SLASH = 47,      /* / */
+	namespace Key
+	{
+		enum : KeyCode
+		{
+			// From glfw3.h
+			Space = 32,
+			Apostrophe = 39, /* ' */
+			Comma = 44, /* , */
+			Minus = 45, /* - */
+			Period = 46, /* . */
+			Slash = 47, /* / */
 
-    KEY_CODE_D0 = 48, /* 0 */
-    KEY_CODE_D1 = 49, /* 1 */
-    KEY_CODE_D2 = 50, /* 2 */
-    KEY_CODE_D3 = 51, /* 3 */
-    KEY_CODE_D4 = 52, /* 4 */
-    KEY_CODE_D5 = 53, /* 5 */
-    KEY_CODE_D6 = 54, /* 6 */
-    KEY_CODE_D7 = 55, /* 7 */
-    KEY_CODE_D8 = 56, /* 8 */
-    KEY_CODE_D9 = 57, /* 9 */
+			D0 = 48, /* 0 */
+			D1 = 49, /* 1 */
+			D2 = 50, /* 2 */
+			D3 = 51, /* 3 */
+			D4 = 52, /* 4 */
+			D5 = 53, /* 5 */
+			D6 = 54, /* 6 */
+			D7 = 55, /* 7 */
+			D8 = 56, /* 8 */
+			D9 = 57, /* 9 */
 
-    KEY_CODE_SEMICOLON = 59, /* ; */
-    KEY_CODE_EQUAL = 61,     /* = */
+			Semicolon = 59, /* ; */
+			Equal = 61, /* = */
 
-    KEY_CODE_A = 65,
-    KEY_CODE_B = 66,
-    KEY_CODE_C = 67,
-    KEY_CODE_D = 68,
-    KEY_CODE_E = 69,
-    KEY_CODE_F = 70,
-    KEY_CODE_G = 71,
-    KEY_CODE_H = 72,
-    KEY_CODE_I = 73,
-    KEY_CODE_J = 74,
-    KEY_CODE_K = 75,
-    KEY_CODE_L = 76,
-    KEY_CODE_M = 77,
-    KEY_CODE_N = 78,
-    KEY_CODE_O = 79,
-    KEY_CODE_P = 80,
-    KEY_CODE_Q = 81,
-    KEY_CODE_R = 82,
-    KEY_CODE_S = 83,
-    KEY_CODE_T = 84,
-    KEY_CODE_U = 85,
-    KEY_CODE_V = 86,
-    KEY_CODE_W = 87,
-    KEY_CODE_X = 88,
-    KEY_CODE_Y = 89,
-    KEY_CODE_Z = 90,
+			A = 65,
+			B = 66,
+			C = 67,
+			D = 68,
+			E = 69,
+			F = 70,
+			G = 71,
+			H = 72,
+			I = 73,
+			J = 74,
+			K = 75,
+			L = 76,
+			M = 77,
+			N = 78,
+			O = 79,
+			P = 80,
+			Q = 81,
+			R = 82,
+			S = 83,
+			T = 84,
+			U = 85,
+			V = 86,
+			W = 87,
+			X = 88,
+			Y = 89,
+			Z = 90,
 
-    KEY_CODE_LEFT_BRACKET = 91,  /* [ */
-    KEY_CODE_BACKSLASH = 92,    /* \ */
-    KEY_CODE_RIGHT_BRACKET = 93, /* ] */
-    KEY_CODE_GRAVE_ACCENT = 96,  /* ` */
+			LeftBracket = 91,  /* [ */
+			Backslash = 92,  /* \ */
+			RightBracket = 93,  /* ] */
+			GraveAccent = 96,  /* ` */
 
-    KEY_CODE_WORLD1 = 161, /* non-US #1 */
-    KEY_CODE_WORLD2 = 162, /* non-US #2 */
+			World1 = 161, /* non-US #1 */
+			World2 = 162, /* non-US #2 */
 
-    /* Function keys */
-    KEY_CODE_ESCAPE = 256,
-    KEY_CODE_ENTER = 257,
-    KEY_CODE_TAB = 258,
-    KEY_CODE_BACKSPACE = 259,
-    KEY_CODE_INSERT = 260,
-    KEY_CODE_DELETE = 261,
-    KEY_CODE_RIGHT = 262,
-    KEY_CODE_LEFT = 263,
-    KEY_CODE_DOWN = 264,
-    KEY_CODE_UP = 265,
-    KEY_CODE_PAGEUP = 266,
-    KEY_CODE_PAGEDOWN = 267,
-    KEY_CODE_HOME = 268,
-    KEY_CODE_END = 269,
-    KEY_CODE_CAPSLOCK = 280,
-    KEY_CODE_SCROLLLOCK = 281,
-    KEY_CODE_NUMLOCK = 282,
-    KEY_CODE_PRINTSCREEN = 283,
-    KEY_CODE_PAUSE = 284,
-    KEY_CODE_F1 = 290,
-    KEY_CODE_F2 = 291,
-    KEY_CODE_F3 = 292,
-    KEY_CODE_F4 = 293,
-    KEY_CODE_F5 = 294,
-    KEY_CODE_F6 = 295,
-    KEY_CODE_F7 = 296,
-    KEY_CODE_F8 = 297,
-    KEY_CODE_F9 = 298,
-    KEY_CODE_F10 = 299,
-    KEY_CODE_F11 = 300,
-    KEY_CODE_F12 = 301,
-    KEY_CODE_F13 = 302,
-    KEY_CODE_F14 = 303,
-    KEY_CODE_F15 = 304,
-    KEY_CODE_F16 = 305,
-    KEY_CODE_F17 = 306,
-    KEY_CODE_F18 = 307,
-    KEY_CODE_F19 = 308,
-    KEY_CODE_F20 = 309,
-    KEY_CODE_F21 = 310,
-    KEY_CODE_F22 = 311,
-    KEY_CODE_F23 = 312,
-    KEY_CODE_F24 = 313,
-    KEY_CODE_F25 = 314,
+			/* Function keys */
+			Escape = 256,
+			Enter = 257,
+			Tab = 258,
+			Backspace = 259,
+			Insert = 260,
+			Delete = 261,
+			Right = 262,
+			Left = 263,
+			Down = 264,
+			Up = 265,
+			PageUp = 266,
+			PageDown = 267,
+			Home = 268,
+			End = 269,
+			CapsLock = 280,
+			ScrollLock = 281,
+			NumLock = 282,
+			PrintScreen = 283,
+			Pause = 284,
+			F1 = 290,
+			F2 = 291,
+			F3 = 292,
+			F4 = 293,
+			F5 = 294,
+			F6 = 295,
+			F7 = 296,
+			F8 = 297,
+			F9 = 298,
+			F10 = 299,
+			F11 = 300,
+			F12 = 301,
+			F13 = 302,
+			F14 = 303,
+			F15 = 304,
+			F16 = 305,
+			F17 = 306,
+			F18 = 307,
+			F19 = 308,
+			F20 = 309,
+			F21 = 310,
+			F22 = 311,
+			F23 = 312,
+			F24 = 313,
+			F25 = 314,
 
-    /* Keypad */
-    KEY_CODE_KP0 = 320,
-    KEY_CODE_KP1 = 321,
-    KEY_CODE_KP2 = 322,
-    KEY_CODE_KP3 = 323,
-    KEY_CODE_KP4 = 324,
-    KEY_CODE_KP5 = 325,
-    KEY_CODE_KP6 = 326,
-    KEY_CODE_KP7 = 327,
-    KEY_CODE_KP8 = 328,
-    KEY_CODE_KP9 = 329,
-    KEY_CODE_KPDECIMAL = 330,
-    KEY_CODE_KPDIVIDE = 331,
-    KEY_CODE_KPMULTIPLY = 332,
-    KEY_CODE_KPSUBTRACT = 333,
-    KEY_CODE_KPADD = 334,
-    KEY_CODE_KPENTER = 335,
-    KEY_CODE_KPEQUAL = 336,
+			/* Keypad */
+			KP0 = 320,
+			KP1 = 321,
+			KP2 = 322,
+			KP3 = 323,
+			KP4 = 324,
+			KP5 = 325,
+			KP6 = 326,
+			KP7 = 327,
+			KP8 = 328,
+			KP9 = 329,
+			KPDecimal = 330,
+			KPDivide = 331,
+			KPMultiply = 332,
+			KPSubtract = 333,
+			KPAdd = 334,
+			KPEnter = 335,
+			KPEqual = 336,
 
-    KEY_CODE_LEFTSHIFT = 340,
-    KEY_CODE_LEFTCONTROL = 341,
-    KEY_CODE_LEFTALT = 342,
-    KEY_CODE_LEFTSUPER = 343,
-    KEY_CODE_RIGHTSHIFT = 344,
-    KEY_CODE_RIGHTCONTROL = 345,
-    KEY_CODE_RIGHTALT = 346,
-    KEY_CODE_RIGHTSUPER = 347,
-    KEY_CODE_MENU = 348
-};
+			LeftShift = 340,
+			LeftControl = 341,
+			LeftAlt = 342,
+			LeftSuper = 343,
+			RightShift = 344,
+			RightControl = 345,
+			RightAlt = 346,
+			RightSuper = 347,
+			Menu = 348
+		};
+	}
 
-enum : MouseCode {
-    // From glfw3.h
-    MOUSE_CODE_BUTTON0 = 0,
-    MOUSE_CODE_BUTTON1 = 1,
-    MOUSE_CODE_BUTTON2 = 2,
-    MOUSE_CODE_BUTTON3 = 3,
-    MOUSE_CODE_BUTTON4 = 4,
-    MOUSE_CODE_BUTTON5 = 5,
-    MOUSE_CODE_BUTTON6 = 6,
-    MOUSE_CODE_BUTTON7 = 7,
+	namespace Mouse
+	{
+		enum : MouseCode
+		{
+			// From glfw3.h
+			Button0 = 0,
+			Button1 = 1,
+			Button2 = 2,
+			Button3 = 3,
+			Button4 = 4,
+			Button5 = 5,
+			Button6 = 6,
+			Button7 = 7,
 
-    MOUSE_CODE_BUTTONLAST = MOUSE_CODE_BUTTON7,
-    MOUSE_CODE_BUTTONLEFT = MOUSE_CODE_BUTTON0,
-    MOUSE_CODE_BUTTONRIGHT = MOUSE_CODE_BUTTON1,
-    MOUSE_CODE_BUTTONMIDDLE = MOUSE_CODE_BUTTON2
-};
-
+			ButtonLast = Button7,
+			ButtonLeft = Button0,
+			ButtonRight = Button1,
+			ButtonMiddle = Button2
+		};
+	}
 }

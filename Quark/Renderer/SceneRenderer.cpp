@@ -11,10 +11,10 @@ namespace quark {
 
 using namespace graphic;
 SceneRenderer::SceneRenderer(graphic::Device* device)
-    : device_(device)
+    : m_GraphicDevice(device)
 {
     // Load Cube mesh
-    MeshLoader mesh_loader(device_);
+    MeshLoader mesh_loader(m_GraphicDevice);
     cubeMesh_ = mesh_loader.LoadGLTF("Assets/Gltf/cube.gltf");
 
     // Create cube map sampler
@@ -24,41 +24,35 @@ SceneRenderer::SceneRenderer(graphic::Device* device)
     sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
     sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
     sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
-    cubeMapSampler_ = device_->CreateSampler(sampler_desc);
+    cubeMapSampler_ = m_GraphicDevice->CreateSampler(sampler_desc);
 
     // Create scene uniform buffer
-    BufferDesc scene_buffer_desc;
-    scene_buffer_desc.domain = BufferMemoryDomain::CPU;
-    scene_buffer_desc.size = sizeof(SceneUniformBufferBlock);
-    scene_buffer_desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    drawContext_.sceneUniformBuffer = device_->CreateBuffer(scene_buffer_desc);
+    BufferDesc m_Scenebuffer_desc;
+    m_Scenebuffer_desc.domain = BufferMemoryDomain::CPU;
+    m_Scenebuffer_desc.size = sizeof(SceneUniformBufferBlock);
+    m_Scenebuffer_desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    m_DrawContext.sceneUniformBuffer = m_GraphicDevice->CreateBuffer(m_Scenebuffer_desc);
 }
 
 void SceneRenderer::PrepareForRender()
 {
     // prepare light information
-    drawContext_.sceneData.ambientColor = glm::vec4(.1f);
-	drawContext_.sceneData.sunlightColor = glm::vec4(1.f);
-	drawContext_.sceneData.sunlightDirection = glm::vec4(0,1,0.5,1.f);
+    m_DrawContext.sceneData.ambientColor = glm::vec4(.1f);
+	m_DrawContext.sceneData.sunlightColor = glm::vec4(1.f);
+	m_DrawContext.sceneData.sunlightDirection = glm::vec4(0,1,0.5,1.f);
     
 }
 
-void SceneRenderer::SetScene(Scene* scene)
-{
-    scene_ = scene;
-    PrepareForRender();
-}
-
-void SceneRenderer::UpdateDrawContext()
+void SceneRenderer::UpdateRenderObjects()
 {
     // Clear render objects
-    drawContext_.opaqueObjects.clear();
-    drawContext_.transparentObjects.clear();
+    m_DrawContext.opaqueObjects.clear();
+    m_DrawContext.transparentObjects.clear();
 
     // Fill render objects
-    const auto& mesh_transform_cmpts = scene_->GetComponents<MeshCmpt, TransformCmpt>();
+    const auto& mesh_transform_cmpts = m_Scene->GetComponents<MeshCmpt, TransformCmpt>();
     for (const auto [mesh_cmpt, transform_cmpt] : mesh_transform_cmpts) {
-        auto* mesh = mesh_cmpt->uniqueMesh? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
+        auto* mesh = mesh_cmpt->uniqueMesh ? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
 
         if (!mesh) continue;
         for (const auto& submesh : mesh->subMeshes) {
@@ -71,32 +65,58 @@ void SceneRenderer::UpdateDrawContext()
             new_renderObject.material = submesh.material.get();
             new_renderObject.transform = transform_cmpt->GetWorldMatrix();
 
-            if (new_renderObject.material->alphaMode == AlphaMode::OPAQUE) 
-                drawContext_.opaqueObjects.push_back(new_renderObject);
+            if (new_renderObject.material->alphaMode == AlphaMode::OPAQUE)
+                m_DrawContext.opaqueObjects.push_back(new_renderObject);
             else
-                drawContext_.transparentObjects.push_back(new_renderObject);
+                m_DrawContext.transparentObjects.push_back(new_renderObject);
         }
     }
+}
+
+void SceneRenderer::SetScene(Scene* scene)
+{
+    m_Scene = scene;
+    PrepareForRender();
+}
+
+void SceneRenderer::UpdateDrawContext()
+{
+    // Update RenderObjects
+    UpdateRenderObjects();
 
     // Update scene uniform buffer
-    auto* mainCameraEntity = scene_->GetMainCameraEntity();
+    auto* mainCameraEntity = m_Scene->GetMainCameraEntity();
 
     if (mainCameraEntity)
     {
         auto* cameraCmpt = mainCameraEntity->GetComponent<CameraCmpt>();
 
-        SceneUniformBufferBlock& sceneData = drawContext_.sceneData;
-        sceneData.view = cameraCmpt->GetViewMatrix();
-        sceneData.proj = cameraCmpt->GetProjectionMatrix();
-        sceneData.proj[1][1] *= -1;
-        sceneData.viewproj = sceneData.proj * sceneData.view;
-
-        SceneUniformBufferBlock* mapped_data = (SceneUniformBufferBlock*)drawContext_.sceneUniformBuffer->GetMappedDataPtr();
-        *mapped_data = drawContext_.sceneData;
+        CameraUniformBufferBlock& cameraData = m_DrawContext.sceneData.cameraData;
+        cameraData.view = cameraCmpt->GetViewMatrix();
+        cameraData.proj = cameraCmpt->GetProjectionMatrix();
+        cameraData.proj[1][1] *= -1;
+        cameraData.viewproj = cameraData.proj * cameraData.view;
 
         // Update frustum
-        drawContext_.frustum_.Build(glm::inverse(sceneData.viewproj));
+        m_DrawContext.frustum.Build(glm::inverse(cameraData.viewproj));
     }
+
+    SceneUniformBufferBlock* mapped_data = (SceneUniformBufferBlock*)m_DrawContext.sceneUniformBuffer->GetMappedDataPtr();
+    *mapped_data = m_DrawContext.sceneData;
+}
+
+void SceneRenderer::UpdateDrawContext(const CameraUniformBufferBlock& cameraData)
+{
+    // Update RenderObjects
+    UpdateRenderObjects();
+
+    // Update camera data
+    m_DrawContext.sceneData.cameraData = cameraData;
+    m_DrawContext.frustum.Build(glm::inverse(cameraData.viewproj));
+
+    // Update Scene uniform buffer
+    SceneUniformBufferBlock* mapped_data = (SceneUniformBufferBlock*)m_DrawContext.sceneUniformBuffer->GetMappedDataPtr();
+    *mapped_data = m_DrawContext.sceneData;
 
 }
 
@@ -104,7 +124,7 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
 {
     CORE_DEBUG_ASSERT(cubeMap_)
 
-    cmd_list->BindUniformBuffer(0, 0, *drawContext_.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
+    cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
     cmd_list->BindImage(0, 1, *cubeMap_, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd_list->BindSampler(0, 1, *cubeMapSampler_);
     cmd_list->BindVertexBuffer(0, *cubeMesh_->vertexBuffer, 0);
@@ -114,26 +134,26 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
 
 void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
 {
-    CORE_DEBUG_ASSERT(device_)
+    CORE_DEBUG_ASSERT(m_GraphicDevice)
     
-    std::vector<u32>& opaque_draws = drawContext_.opaqueDraws;
-    std::vector<u32>& transparent_draws = drawContext_.transparentDraws;
+    std::vector<u32>& opaque_draws = m_DrawContext.opaqueDraws;
+    std::vector<u32>& transparent_draws = m_DrawContext.transparentDraws;
     opaque_draws.clear();
-    opaque_draws.reserve(drawContext_.opaqueObjects.size());
+    opaque_draws.reserve(m_DrawContext.opaqueObjects.size());
     transparent_draws.clear();
-    transparent_draws.reserve(drawContext_.transparentObjects.size());
+    transparent_draws.reserve(m_DrawContext.transparentObjects.size());
 
     // Frustum culling
     auto is_visible = [&](const RenderObject& obj) {
         math::Aabb transformed_aabb = obj.aabb.Transform(obj.transform);
-        if (drawContext_.frustum_.CheckSphere(transformed_aabb))
+        if (m_DrawContext.frustum.CheckSphere(transformed_aabb))
             return true;
         else
             return false;
     };
 
-    for (u32 i = 0; i < drawContext_.opaqueObjects.size(); i++) {
-        if (is_visible(drawContext_.opaqueObjects[i])) {
+    for (u32 i = 0; i < m_DrawContext.opaqueObjects.size(); i++) {
+        if (is_visible(m_DrawContext.opaqueObjects[i])) {
             opaque_draws.push_back(i);
         }
         // opaque_draws.push_back(i);
@@ -141,8 +161,8 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
 
     // Sort render objects by material and mesh
     std::sort(opaque_draws.begin(), opaque_draws.end(), [&](const u32& iA, const u32& iB) {
-        const RenderObject& A = drawContext_.opaqueObjects[iA];
-        const RenderObject& B = drawContext_.opaqueObjects[iB];
+        const RenderObject& A = m_DrawContext.opaqueObjects[iA];
+        const RenderObject& B = m_DrawContext.opaqueObjects[iB];
         if (A.material == B.material)
             return A.indexBuffer < B.indexBuffer;
         else
@@ -150,7 +170,7 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
     });
 
     // Bind scene uniform buffer
-    cmd_list->BindUniformBuffer(0, 0, *drawContext_.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
+    cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
 
     Material* last_mat = nullptr;
     graphic::Buffer* last_indexBuffer = nullptr;
@@ -183,7 +203,7 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
     };
 
     for (const u32& idx : opaque_draws) {
-        draw(drawContext_.opaqueObjects[idx]);
+        draw(m_DrawContext.opaqueObjects[idx]);
     }
 
     // TODO: Draw transparent objects

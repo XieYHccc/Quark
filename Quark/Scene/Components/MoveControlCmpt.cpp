@@ -52,18 +52,17 @@ void MoveControlCmpt::ProcessKeyInput(float deltaTime)
     deltaTime = deltaTime / 1000;
 
     glm::vec3 move {0.f};
-    if (Input::Get()->IsKeyPressed(KEY_CODE_W, true))
+    if (Input::Get()->IsKeyPressed(Key::W, true))
         move.z = -1;
-    if (Input::Get()->IsKeyPressed(KEY_CODE_S, true))
+    if (Input::Get()->IsKeyPressed(Key::S, true))
         move.z = 1;
-    if (Input::Get()->IsKeyPressed(KEY_CODE_A, true))
+    if (Input::Get()->IsKeyPressed(Key::A, true))
         move.x = -1;
-    if (Input::Get()->IsKeyPressed(KEY_CODE_D, true))
+    if (Input::Get()->IsKeyPressed(Key::D, true))
         move.x = 1;
     move = move * m_MoveSpeed * deltaTime;
 
-    glm::mat4 rotationMatrix = glm::toMat4(transform->GetQuat());
-    transform->SetPosition(transform->GetPosition() + glm::vec3(rotationMatrix * glm::vec4(move, 0.f)));
+    transform->SetPosition(transform->GetPosition() + glm::rotate(transform->GetQuat(), move));
 }
 
 }

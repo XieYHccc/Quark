@@ -4,8 +4,6 @@
 #include <Quark/Scene/Components/RelationshipCmpt.h>
 #include <imgui.h>
 
-#include "Editor/CameraControlCmpt.h"
-
 namespace quark {
 
 SceneHeirarchy::SceneHeirarchy() : m_Scene(nullptr), m_SelectedEntity(nullptr)
@@ -36,8 +34,7 @@ void SceneHeirarchy::Render()
         std::vector<Entity*> entities = m_Scene->GetAllEntitiesWith<IdCmpt, RelationshipCmpt>();
         for (auto* e : entities)
         {
-            if (e->GetComponent<RelationshipCmpt>()->GetParentEntity() == nullptr &&
-                !e->HasComponent<EditorCameraControlCmpt>())
+            if (e->GetComponent<RelationshipCmpt>()->GetParentEntity() == nullptr)
                 DrawEntity(e);
         }
 

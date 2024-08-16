@@ -10,10 +10,12 @@ public:
 
     virtual void Render() override;
 
-    void SetEntity(Entity* entity) { m_SelectedEntity = entity; }
+    void SetScene(Scene* scene) { m_Scene = scene; }
+    void SetSelectedEntity(Entity* entity) { m_SelectedEntity = entity; }
 
 private:
     Entity* m_SelectedEntity;
+    Scene* m_Scene;
     bool m_Rename;
     char m_Buf[128];
 

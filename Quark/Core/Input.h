@@ -26,9 +26,9 @@ public:
     virtual void Update() = 0;  // pool input event
     virtual void Finalize() = 0;
 
-    bool IsKeyPressed(Keycode key, bool repeat) const;
-    bool IsKeyReleased(Keycode key) const;
-    bool IsKeyKeepPressed(Keycode key) const;
+    bool IsKeyPressed(KeyCode key, bool repeat) const;
+    bool IsKeyReleased(KeyCode key) const;
+    bool IsKeyKeepPressed(KeyCode key) const;
 
     bool IsMousePressed(MouseCode button, bool repeat) const;
     bool IsMouseReleased(MouseCode button) const;

@@ -6,7 +6,7 @@ namespace quark {
 
 class KeyPressedEvent : public Event {
 public:
-    KeyPressedEvent(int keyCode, int repeatCount) : key(keyCode), repeatCount(repeatCount) {}
+    KeyPressedEvent(KeyCode keyCode, int repeatCount) : key(keyCode), repeatCount(repeatCount) {}
 
     std::string ToString() const override
     {
@@ -18,13 +18,13 @@ public:
     EVENT_TYPE("KeyPressedEvent")
     
 public:
-    Keycode key;
+    KeyCode key;
     int repeatCount;
 };
 
 class KeyReleasedEvent : public Event {
 public:
-    KeyReleasedEvent(int keyCode) : key(keyCode) {}
+    KeyReleasedEvent(KeyCode keyCode) : key(keyCode) {}
 
     std::string ToString() const override
     {
@@ -35,13 +35,13 @@ public:
 
     EVENT_TYPE("KeyReleasedEvent")
 public:
-    Keycode key;
+    KeyCode key;
 };
 
 class KeyTypedEvent : public Event {
 public:
 
-    KeyTypedEvent(int keyCode) : key(keyCode) {}
+    KeyTypedEvent(KeyCode keyCode) : key(keyCode) {}
 
     std::string ToString() const override
     {
@@ -52,7 +52,7 @@ public:
 
     EVENT_TYPE("KeyTypedEvent")
 public:
-    Keycode key;
+    KeyCode key;
 };
 
 }

@@ -2,6 +2,9 @@
 #include <Quark/Core/Application.h>
 #include <Quark/Scene/Scene.h>
 #include <Quark/Renderer/SceneRenderer.h>
+#include <Quark/Events/KeyEvent.h>
+
+#include "Editor/EditorCamera.h"
 #include "Editor/UI/SceneHeirarchy.h"
 #include "Editor/UI/Inspector.h"
 #include "Editor/UI/SceneViewPort.h"
@@ -15,17 +18,18 @@ public:
     void Update(float deltaTime) override final;
     void Render(float deltaTime) override final;
     void UpdateUI() override final;
-    
+    void UpdateMainMenuUI();
+
+    void OnKeyPressed(KeyPressedEvent& e);
+
     void NewScene();
     void OpenScene();
     void SaveSceneAs();
-    void SetUpEditorCameraEntity();
 
     void CreateColorDepthAttachments();
     void CreatePipeline();
     void SetUpRenderPass();
     void LoadScene();
-    void UpdateMainMenuUI();
 
     quark::Ref<quark::graphic::Shader> vert_shader;
     quark::Ref<quark::graphic::Shader> frag_shader;
@@ -47,6 +51,7 @@ public:
     quark::Scope<quark::Scene> m_Scene;
     quark::Scope<quark::SceneRenderer> m_SceneRenderer;
     Entity* m_EditorCameraEntity = nullptr;
+    EditorCamera m_EditorCamera;
 
     // UI window
     SceneHeirarchy m_HeirarchyPanel;

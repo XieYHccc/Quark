@@ -11,6 +11,7 @@ namespace quark {
 Inspector::Inspector()
 {
     m_SelectedEntity = nullptr;
+    m_Scene = nullptr;
     m_Rename = false;
     m_Buf[0] = '\0';
 }
@@ -155,6 +156,17 @@ void Inspector::Render()
 
         // Camera component
         DrawComponent<CameraCmpt>("Camera", m_SelectedEntity, [&](auto& component) {
+
+            if (ImGui::Button("SetMainCamera"))
+            {
+                if (m_Scene)
+					m_Scene->SetMainCameraEntity(m_SelectedEntity);
+            }
+
+            float aspect = component.aspect;
+            if (ImGui::DragFloat("Aspect", &aspect))
+				component.aspect = aspect;
+
             float perspectiveVerticalFov = component.fov;
             if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
                 component.fov = perspectiveVerticalFov;

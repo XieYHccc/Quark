@@ -4,7 +4,7 @@
 
 namespace quark {
 
-bool Input::IsKeyPressed(Keycode key, bool repeat) const
+bool Input::IsKeyPressed(KeyCode key, bool repeat) const
 {
     if (repeat) {
         return keyMouseStatus_[key] == KeyAction::KEY_PRESSED
@@ -15,12 +15,12 @@ bool Input::IsKeyPressed(Keycode key, bool repeat) const
 }
 
 
-bool Input::IsKeyReleased(Keycode key) const
+bool Input::IsKeyReleased(KeyCode key) const
 {
     return keyMouseStatus_[key] == KeyAction::KEY_RELEASED;
 }
 
-bool Input::IsKeyKeepPressed(Keycode key) const
+bool Input::IsKeyKeepPressed(KeyCode key) const
 {
     return keyMouseStatus_[key] == KeyAction::KEY_KEEP_PRESSED;
 }
@@ -36,11 +36,9 @@ bool Input::IsMouseReleased(MouseCode button) const
 }
 
 
-
 MousePosition Input::GetMousePosition() const
 {
     return mousePosition_;
 }
-
 
 }

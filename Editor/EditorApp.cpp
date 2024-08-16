@@ -4,16 +4,13 @@
 #include <imgui.h>
 #include <Quark/Core/Window.h>
 #include <Quark/Core/FileSystem.h>
-#include <Quark/Asset/GLTFLoader.h>
+#include <Quark/Core/Input.h>
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/SceneSerializer.h>
 #include <Quark/Asset/ImageLoader.h>
 #include <Quark/Asset/AssetManager.h>
-#include <Quark/Asset/MeshLoader.h>
 #include <Quark/UI/UI.h>
-
-#include "Editor/CameraControlCmpt.h"
 
 namespace quark {
 Application* CreateApplication()
@@ -29,7 +26,7 @@ Application* CreateApplication()
 }
 
 EditorApp::EditorApp(const AppInitSpecs& specs)
-    : Application(specs)
+    : Application(specs), m_EditorCamera(60, 1.5, 0.1, 256)
 {
     color_format = m_GraphicDevice->GetSwapChainImageFormat();
 
@@ -38,12 +35,20 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     CreatePipeline();
     CreateColorDepthAttachments();
 
-    // Load scene
     LoadScene();
 
     // Init UI Panels
     m_HeirarchyPanel.SetScene(m_Scene.get());
+    m_InspectorPanel.SetScene(m_Scene.get());
 
+    // SetUp Renderer
+    m_SceneRenderer = CreateScope<SceneRenderer>(m_GraphicDevice.get());
+    m_SceneRenderer->SetScene(m_Scene.get());
+    m_SceneRenderer->SetCubeMap(cubeMap_image);
+
+    // Adjust editor camera's aspect ratio
+    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
+    m_EditorCamera.aspectRatio = aspect;
 }
 
 EditorApp::~EditorApp()
@@ -55,9 +60,7 @@ EditorApp::~EditorApp()
 void EditorApp::Update(f32 deltaTime)
 {    
     // Update Editor camera's movement
-    auto* editorCameraEntity = m_Scene->GetMainCameraEntity();
-    auto* cameraMoveCmpt = editorCameraEntity->GetComponent<EditorCameraControlCmpt>();
-    cameraMoveCmpt->Update(deltaTime);
+    m_EditorCamera.OnUpdate(deltaTime / 1000);
 
     // TODO: Update physics
 
@@ -88,7 +91,7 @@ void EditorApp::UpdateUI()
     m_HeirarchyPanel.Render();
     
     // Update Inspector
-    m_InspectorPanel.SetEntity(m_HeirarchyPanel.GetSelectedEntity());
+    m_InspectorPanel.SetSelectedEntity(m_HeirarchyPanel.GetSelectedEntity());
     m_InspectorPanel.Render();
 
     // Update Scene view port
@@ -102,10 +105,10 @@ void EditorApp::UpdateUI()
 void EditorApp::NewScene()
 {
     m_Scene = CreateScope<Scene>("New Scene");
-    SetUpEditorCameraEntity();
 
     m_SceneRenderer->SetScene(m_Scene.get());
     m_HeirarchyPanel.SetScene(m_Scene.get());
+    m_InspectorPanel.SetScene(m_Scene.get());
 }
 
 void EditorApp::OpenScene()
@@ -117,10 +120,9 @@ void EditorApp::OpenScene()
         SceneSerializer serializer(m_Scene.get());
         serializer.Deserialize(filepath.string());
 
-        SetUpEditorCameraEntity();
-
         m_SceneRenderer->SetScene(m_Scene.get());
         m_HeirarchyPanel.SetScene(m_Scene.get());
+        m_InspectorPanel.SetScene(m_Scene.get());
 
     }
 
@@ -136,26 +138,19 @@ void EditorApp::SaveSceneAs()
     }
 }
 
-void EditorApp::SetUpEditorCameraEntity()
-{
-    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    m_EditorCameraEntity = m_Scene->CreateEntity("Editor Camera", nullptr);
-    m_EditorCameraEntity->AddComponent<CameraCmpt>(aspect, 60.f, 0.1f, 256);
-    m_EditorCameraEntity->AddComponent<EditorCameraControlCmpt>(50, 0.3);
-
-    auto* transform_cmpt = m_EditorCameraEntity->GetComponent<TransformCmpt>();
-    transform_cmpt->SetPosition(glm::vec3(0, 0, 10));
-
-    m_Scene->SetMainCameraEntity(m_EditorCameraEntity);
-}
-
 void EditorApp::Render(f32 deltaTime)
 {
     // Sync the rendering data with game scene
-    m_SceneRenderer->UpdateDrawContext();
+    CameraUniformBufferBlock cameraData;
+    cameraData.proj = m_EditorCamera.GetProjectionMatrix();
+    cameraData.proj[1][1] *= -1;
+    cameraData.view = m_EditorCamera.GetViewMatrix();
+    cameraData.viewproj = cameraData.proj * cameraData.view;
 
+    m_SceneRenderer->UpdateDrawContext(cameraData);
+
+    // Rendering commands
     auto graphic_device = Application::Get().GetGraphicDevice();
-
     if (graphic_device->BeiginFrame(deltaTime)) {
         auto cmd = graphic_device->BeginCommandList();
         auto* swap_chain_image = graphic_device->GetPresentImage();
@@ -266,16 +261,7 @@ void EditorApp::LoadScene()
 
     // Load scene
     m_Scene = CreateScope<Scene>("");
-    SceneSerializer serializer(m_Scene.get());
-    serializer.Deserialize("Assets/teapot.qkscene");
 
-    // Create Editor Camera Entity
-    SetUpEditorCameraEntity();
-
-    // SetUp Renderer
-    m_SceneRenderer = CreateScope<SceneRenderer>(m_GraphicDevice.get());
-    m_SceneRenderer->SetScene(m_Scene.get());
-    m_SceneRenderer->SetCubeMap(cubeMap_image);
 }
 
 void EditorApp::UpdateMainMenuUI()
@@ -300,6 +286,14 @@ void EditorApp::UpdateMainMenuUI()
 
         ImGui::EndMainMenuBar();
     }
+}
+
+void EditorApp::OnKeyPressed(KeyPressedEvent& e)
+{
+    if (e.repeatCount > 0)
+        return;
+
+    bool control = Input::Get()->IsKeyKeepPressed(Key::LeftControl) || Input::Get()->IsKeyKeepPressed(Key::RightControl);
 }
 
 void EditorApp::CreatePipeline()

@@ -1,9 +1,11 @@
 #include "Quark/QuarkPch.h"
+
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
-#include <glm/gtx/transform.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 namespace quark {
 
