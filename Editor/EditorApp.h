@@ -15,9 +15,9 @@ public:
     EditorApp(const quark::AppInitSpecs& specs);
     ~EditorApp();
 
-    void Update(float deltaTime) override final;
-    void Render(float deltaTime) override final;
-    void UpdateUI() override final;
+    void OnUpdate(TimeStep ts) override final;
+    void OnRender(TimeStep ts) override final;
+    void OnUpdateImGui() override final;
     void UpdateMainMenuUI();
 
     void OnKeyPressed(KeyPressedEvent& e);

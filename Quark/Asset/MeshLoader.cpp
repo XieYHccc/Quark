@@ -1,7 +1,9 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 #include "Quark/Asset/MeshLoader.h"
+
 #include <glm/gtx/hash.hpp>
 #include <tiny_obj_loader.h>
+
 #include "Quark/Asset/GLTFLoader.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Scene.h"

@@ -1,4 +1,4 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 #include "Quark/Asset/ImageLoader.h"
 #include <ktx.h>
 #include <basisu_transcoder.h>

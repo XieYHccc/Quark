@@ -1,4 +1,4 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 #include "Quark/Core/Util/StringUtils.h"
 
 namespace quark::util {

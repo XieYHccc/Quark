@@ -1,4 +1,4 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 #include "Quark/Platform/MacOS/WindowGLFW.h"
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"

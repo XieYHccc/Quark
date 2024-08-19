@@ -28,7 +28,7 @@ endif()
 target_include_directories(quark PUBLIC ${CMAKE_SOURCE_DIR} )
 target_link_libraries(quark glm tinygltf tiny_obj_loader stb_image 
     glfw Vulkan::Vulkan vma imgui spirv_reflect spdlog::spdlog ktx basisu yaml-cpp::yaml-cpp nfd)
-target_precompile_headers(quark PRIVATE ${QUARK_SOURCE_ROOT_DIR/QuarkPch.h})
+target_precompile_headers(quark PRIVATE ${QUARK_SOURCE_ROOT_DIR}/qkpch.h)
 
 add_dependencies(quark Shaders)
 

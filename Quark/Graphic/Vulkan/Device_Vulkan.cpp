@@ -1,4 +1,4 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 #define VMA_IMPLEMENTATION
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
 #include "Quark/Core/Window.h"
@@ -324,7 +324,7 @@ void Device_Vulkan::ShutDown()
 
 }
 
-bool Device_Vulkan::BeiginFrame(f32 deltaTime)
+bool Device_Vulkan::BeiginFrame(TimeStep ts)
 {
     // Move to next frame
     currentFrame = (currentFrame + 1) % MAX_FRAME_NUM_IN_FLIGHT;
@@ -371,7 +371,7 @@ bool Device_Vulkan::BeiginFrame(f32 deltaTime)
     return true;
 }
 
-bool Device_Vulkan::EndFrame(f32 deltaTime)
+bool Device_Vulkan::EndFrame(TimeStep ts)
 {
     auto& frame = GetCurrentFrame();
 

@@ -1,4 +1,4 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 
 #include <nfd.hpp>
 
@@ -75,23 +75,23 @@ Application::~Application() {
 void Application::Run()
 {
     while (m_Status.isRunning) {
-        f64 start_frame = m_Timer.ElapsedMillis();
+        f64 start_frame = m_Timer.ElapsedSeconds();
 
         // Poll events
         Input::Get()->Update();
         
         // TODO: Multithreading
         // Update each moudule (including processing inputs)
-        Update(m_Status.lastFrameDuration);
+        OnUpdate(m_Status.lastFrameDuration);
 
         // Render Scene
-        Render(m_Status.lastFrameDuration);
+        OnRender(m_Status.lastFrameDuration);
 
         // Dispatch events
         EventManager::Instance().DispatchEvents();
 
-        m_Status.lastFrameDuration = m_Timer.ElapsedMillis() - start_frame;
-        m_Status.fps = 1000.0f / m_Status.lastFrameDuration;
+        m_Status.lastFrameDuration = m_Timer.ElapsedSeconds() - start_frame;
+        m_Status.fps = 1.f / m_Status.lastFrameDuration;
     }
 }
 

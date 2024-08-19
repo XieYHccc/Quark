@@ -1,4 +1,4 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 #include "Quark/Core/Window.h"
 
 #if defined(QK_PLATFORM_WINDOWS) || defined(QK_PLATFORM_MACOS)

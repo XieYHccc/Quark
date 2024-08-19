@@ -1,3 +1,4 @@
+#include "Quark/qkpch.h"
 #include "Quark/Asset/AssetManager.h"
 
 #include <fstream>

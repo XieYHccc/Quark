@@ -1,8 +1,8 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 #include "Quark/Ecs/Entity.h"
 #include "Quark/Ecs/EntityRegistry.h"
-namespace quark {
 
+namespace quark {
 void EntityRegistry::UnRegister(Entity* entity, Component* component)
 {
     if (component == nullptr)

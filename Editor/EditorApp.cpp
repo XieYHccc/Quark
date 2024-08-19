@@ -57,10 +57,10 @@ EditorApp::~EditorApp()
     AssetManager::Get().SaveAssetRegistry();
 }
 
-void EditorApp::Update(f32 deltaTime)
+void EditorApp::OnUpdate(TimeStep ts)
 {    
     // Update Editor camera's movement
-    m_EditorCamera.OnUpdate(deltaTime / 1000);
+    m_EditorCamera.OnUpdate(ts);
 
     // TODO: Update physics
 
@@ -68,10 +68,10 @@ void EditorApp::Update(f32 deltaTime)
     m_Scene->OnUpdate();
 
     // Update UI
-    UpdateUI();
+    OnUpdateImGui();
 }   
 
-void EditorApp::UpdateUI()
+void EditorApp::OnUpdateImGui()
 {
     UI::Get()->BeginFrame();
 
@@ -138,7 +138,7 @@ void EditorApp::SaveSceneAs()
     }
 }
 
-void EditorApp::Render(f32 deltaTime)
+void EditorApp::OnRender(TimeStep ts)
 {
     // Sync the rendering data with game scene
     CameraUniformBufferBlock cameraData;
@@ -151,7 +151,7 @@ void EditorApp::Render(f32 deltaTime)
 
     // Rendering commands
     auto graphic_device = Application::Get().GetGraphicDevice();
-    if (graphic_device->BeiginFrame(deltaTime)) {
+    if (graphic_device->BeiginFrame(ts)) {
         auto cmd = graphic_device->BeginCommandList();
         auto* swap_chain_image = graphic_device->GetPresentImage();
 
@@ -249,7 +249,7 @@ void EditorApp::Render(f32 deltaTime)
 
         // Submit command list
         graphic_device->SubmitCommandList(cmd);
-        graphic_device->EndFrame(deltaTime);
+        graphic_device->EndFrame(ts);
     }
 }
 

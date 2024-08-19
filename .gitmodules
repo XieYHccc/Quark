@@ -3,7 +3,7 @@
 	url = https://github.com/glfw/glfw.git
 [submodule "ThirdParty/glm"]
 	path = ThirdParty/glm
-	url = git@github.com:g-truc/glm.git
+	url = https://github.com/g-truc/glm.git
 [submodule "ThirdParty/spdlog"]
 	path = ThirdParty/spdlog
 	url = https://github.com/gabime/spdlog.git

@@ -1,5 +1,6 @@
 #pragma once
 #include "Quark/Core/Base.h"
+#include "Quark/Core/TimeStep.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Graphic/Common.h"
 #include "Quark/Graphic/Buffer.h"
@@ -41,8 +42,8 @@ public:
     
     virtual bool Init() = 0;
     virtual void ShutDown() = 0;
-    virtual bool BeiginFrame(f32 deltaTime) = 0;
-    virtual bool EndFrame(f32 deltaTime) = 0;
+    virtual bool BeiginFrame(TimeStep ts) = 0;
+    virtual bool EndFrame(TimeStep ts) = 0;
     virtual void OnWindowResize(const WindowResizeEvent& event) = 0;    // window resize callback
 
 	/*** RESOURCES ***/  

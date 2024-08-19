@@ -86,8 +86,8 @@ public:
     
     bool Init() override final;
     void ShutDown() override final;
-    bool BeiginFrame(f32 deltaTime) override final;
-    bool EndFrame(f32 deltaTime) override final;
+    bool BeiginFrame(TimeStep ts) override final;
+    bool EndFrame(TimeStep ts) override final;
     void OnWindowResize(const WindowResizeEvent& event) override final;
 
 	/*** RESOURCES ***/ 

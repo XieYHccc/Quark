@@ -1,4 +1,4 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 #include "Quark/Platform/MacOS/InputGLFW.h"
 #include "Quark/Core/Window.h"
 

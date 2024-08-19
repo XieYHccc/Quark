@@ -1,4 +1,4 @@
-#include "Quark/QuarkPch.h"
+#include "Quark/qkpch.h"
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
