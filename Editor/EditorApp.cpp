@@ -1,10 +1,15 @@
 #include "Editor/EditorApp.h"
 
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
+#include <ImGuizmo.h>
+
 #include <Quark/Core/Window.h>
 #include <Quark/Core/FileSystem.h>
 #include <Quark/Core/Input.h>
+#include <Quark/Events/KeyEvent.h>
+#include <Quark/Events/EventManager.h>
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/SceneSerializer.h>
@@ -26,7 +31,7 @@ Application* CreateApplication()
 }
 
 EditorApp::EditorApp(const AppInitSpecs& specs)
-    : Application(specs), m_EditorCamera(60, 1.5, 0.1, 256)
+    : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1.5, 0.1, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
 {
     color_format = m_GraphicDevice->GetSwapChainImageFormat();
 
@@ -49,6 +54,10 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     // Adjust editor camera's aspect ratio
     float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
     m_EditorCamera.aspectRatio = aspect;
+
+    EventManager::Instance().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) {
+        OnKeyPressed(e);
+    });
 }
 
 EditorApp::~EditorApp()
@@ -58,9 +67,14 @@ EditorApp::~EditorApp()
 }
 
 void EditorApp::OnUpdate(TimeStep ts)
-{    
+{   
+    // Update Editor camera's aspect ratio
+    float cameraAspect = m_ViewportSize.x / m_ViewportSize.y;
+    m_EditorCamera.aspectRatio = cameraAspect;
+
     // Update Editor camera's movement
-    m_EditorCamera.OnUpdate(ts);
+    if (m_ViewportHovered && Input::Get()->IsKeyPressed(Key::LeftAlt, true))
+        m_EditorCamera.OnUpdate(ts);
 
     // TODO: Update physics
 
@@ -76,7 +90,26 @@ void EditorApp::OnUpdateImGui()
     UI::Get()->BeginFrame();
 
     // Update Main menu bar
-    UpdateMainMenuUI();
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+                NewScene();
+
+            if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
+                OpenScene();
+
+            if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
+                SaveSceneAs();
+
+            //if (ImGui::MenuItem("Exit"))
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
 
     // Debug Ui
     if (ImGui::Begin("Debug")) 
@@ -87,17 +120,62 @@ void EditorApp::OnUpdateImGui()
     }
     ImGui::End();
 
-    // Update Scene Heirarchy
+    //Scene Heirarchy
     m_HeirarchyPanel.Render();
     
-    // Update Inspector
+    //Inspector
     m_InspectorPanel.SetSelectedEntity(m_HeirarchyPanel.GetSelectedEntity());
     m_InspectorPanel.Render();
 
-    // Update Scene view port
-    m_SceneViewPort.SetColorAttachment(color_image.get());
-    m_SceneViewPort.Render();
+    //Scene view port
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+    ImGui::Begin("Viewport");
+    m_ViewportFocused = ImGui::IsWindowFocused();
+    m_ViewportHovered = ImGui::IsWindowHovered();
 
+    ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+    m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+    ImGui::Image(m_ColorAttachmentId, ImVec2{ m_ViewportSize.x, m_ViewportSize.y });
+
+
+    // Gizmos
+    Entity* selectedEntity = m_HeirarchyPanel.GetSelectedEntity();
+    if (selectedEntity && m_GizmoType != -1)
+    {
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist();
+        ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+        glm::mat4 cameraProjection = m_EditorCamera.GetProjectionMatrix();
+        glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
+
+        auto* tc = selectedEntity->GetComponent<TransformCmpt>();
+        glm::mat4 transform = tc->GetWorldMatrix();
+
+        bool snap = Input::Get()->IsKeyPressed(Key::LeftControl, true);
+        float snapValue = 0.5f; // Snap to 0.5m for translation/scale
+        // Snap to 45 degrees for rotation
+        if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+            snapValue = 45.0f;
+
+        float snapValues[3] = { snapValue, snapValue, snapValue };
+
+        ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
+            (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
+            nullptr, snap ? snapValues : nullptr);
+
+        if (ImGuizmo::IsUsing())
+        {
+            glm::vec3 translation, rotation, scale;
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
+
+            tc->SetPosition(translation);
+            tc->SetEuler(glm::radians(rotation));
+            tc->SetScale(scale);
+        }
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
 
     UI::Get()->EndFrame();
 }
@@ -264,36 +342,48 @@ void EditorApp::LoadScene()
 
 }
 
-void EditorApp::UpdateMainMenuUI()
-{
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("New Scene", "Ctrl+N"))
-                NewScene();
-
-            if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
-                OpenScene();
-
-            if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
-                SaveSceneAs();
-
-            //if (ImGui::MenuItem("Exit"))
-
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMainMenuBar();
-    }
-}
-
-void EditorApp::OnKeyPressed(KeyPressedEvent& e)
+void EditorApp::OnKeyPressed(const KeyPressedEvent& e)
 {
     if (e.repeatCount > 0)
         return;
 
-    bool control = Input::Get()->IsKeyKeepPressed(Key::LeftControl) || Input::Get()->IsKeyKeepPressed(Key::RightControl);
+    bool control = Input::Get()->IsKeyPressed(Key::LeftControl,true) || Input::Get()->IsKeyPressed(Key::RightControl, true);
+    bool shift = Input::Get()->IsKeyPressed(Key::LeftShift, true) || Input::Get()->IsKeyPressed(Key::RightShift, true);
+
+    switch (e.key)
+    {
+    case Key::N:
+		if (control)
+			NewScene();
+		break;
+    case Key::O:
+        if (control)
+            OpenScene();
+        break;
+    case Key::S:
+		if (control && shift)
+			SaveSceneAs();
+		break;
+    // Gizmos
+    case Key::Q:
+        if (!ImGuizmo::IsUsing())
+            m_GizmoType = -1;
+        break;
+    case Key::W:
+        if (!ImGuizmo::IsUsing())
+			m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+		break;
+    case Key::E:
+		if (!ImGuizmo::IsUsing())
+            m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+        break;
+    case Key::R:
+        if (!ImGuizmo::IsUsing())
+		m_GizmoType = ImGuizmo::OPERATION::SCALE;
+        break;
+    default:
+        break;
+    }
 }
 
 void EditorApp::CreatePipeline()
@@ -350,7 +440,6 @@ void EditorApp::CreatePipeline()
 void EditorApp::CreateColorDepthAttachments()
 {
         using namespace quark::graphic;
-        auto graphic_device = Application::Get().GetGraphicDevice();
 
         // Create depth image
         ImageDesc image_desc;
@@ -363,15 +452,26 @@ void EditorApp::CreateColorDepthAttachments()
         image_desc.mipLevels = 1;
         image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         image_desc.usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        depth_image = graphic_device->CreateImage(image_desc);
+        depth_image = m_GraphicDevice->CreateImage(image_desc);
 
         // Create color image
         image_desc.format = color_format;
         image_desc.initialLayout = ImageLayout::UNDEFINED;
         image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
-        color_image = graphic_device->CreateImage(image_desc);
-}
+        color_image = m_GraphicDevice->CreateImage(image_desc);
 
+        // Default linear sampler
+        graphic::SamplerDesc samplerDesc;
+        samplerDesc.minFilter = graphic::SamplerFilter::LINEAR;
+        samplerDesc.magFliter = graphic::SamplerFilter::LINEAR;
+        samplerDesc.addressModeU = graphic::SamplerAddressMode::REPEAT;
+        samplerDesc.addressModeV = graphic::SamplerAddressMode::REPEAT;
+        samplerDesc.addressModeW = graphic::SamplerAddressMode::REPEAT;
+        m_DefaultLinearSampler = m_GraphicDevice->CreateSampler(samplerDesc);
+
+        // Create Imgui texture id
+        m_ColorAttachmentId = UI::Get()->CreateTextureId(*color_image, *m_DefaultLinearSampler);
+}
 
 void EditorApp::SetUpRenderPass()
 {   

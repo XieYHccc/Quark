@@ -1,8 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-#include <Quark/Core/Timestep.h>
-
-#include "Editor/UI/SceneViewPort.h"
+#include <Quark/Core/TimeStep.h>
 
 namespace quark {
 class EditorCamera {
@@ -17,7 +15,6 @@ public:
 	EditorCamera(float degreeFov, float aspectRatio, float nearClip, float farClip);
 
 	void OnUpdate(TimeStep timestep);
-	void OnViewPortHovered(const SceneViewPortTouchedEvent& event); //Kinda ugly here, but it's fine for now
 
 	void Init();
 
@@ -37,7 +34,5 @@ private:
 	float m_Pitch, m_Yaw;	// in radians
 
 	glm::vec2 m_LastMousePosition;
-	bool m_IsFirstMouse;
-	bool m_IsViewPortHovered;
 };
 }

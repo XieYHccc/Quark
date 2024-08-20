@@ -149,3 +149,15 @@ set_target_properties(yaml-cpp PROPERTIES FOLDER "ThirdParty")
 set(NFD_EXTENDED_DIR ${THIRD_PARTY_ROOT}/nfd-extended)
 add_subdirectory(${NFD_EXTENDED_DIR})
 set_target_properties(nfd PROPERTIES FOLDER "ThirdParty")
+
+
+# imguizmo
+set(IMGUIZMO_DIR ${THIRD_PARTY_ROOT}/imguizmo)
+set(IMGUIZMO_SOURCES
+	${IMGUIZMO_DIR}/ImGuizmo.cpp
+	${IMGUIZMO_DIR}/ImGuizmo.h
+)
+add_library(imguizmo STATIC ${IMGUIZMO_SOURCES})
+target_include_directories(imguizmo SYSTEM PUBLIC ${IMGUIZMO_DIR})
+target_link_libraries(imguizmo imgui)
+set_target_properties(imguizmo PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)

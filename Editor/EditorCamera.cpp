@@ -13,10 +13,6 @@ EditorCamera::EditorCamera(float degreeFov, float aspectRatio, float nearClip, f
 	: fov(degreeFov), aspectRatio(aspectRatio), nearClip(nearClip), farClip(farClip)
 {
 	Init();
-
-	EventManager::Instance().Subscribe<SceneViewPortTouchedEvent>([&](const SceneViewPortTouchedEvent& e) {
-		OnViewPortHovered(e);
-	});
 }
 
 void EditorCamera::Init()
@@ -24,30 +20,15 @@ void EditorCamera::Init()
 	m_Position = glm::vec3(0.0f, 0.0f, 5.0f);
 	m_Pitch = 0.0f;
 	m_Yaw = 0.0f;
-	m_IsFirstMouse = true;
 	m_LastMousePosition = {0, 0};
-	m_IsViewPortHovered = false;
 
 }
 
 void EditorCamera::OnUpdate(TimeStep timestep)
 {
 	glm::vec2 mousePos = { Input::Get()->GetMousePosition().x_pos, Input::Get()->GetMousePosition().y_pos };
-	if (m_IsFirstMouse)
-	{
-		m_LastMousePosition = mousePos;
-		m_IsFirstMouse = false;
-	}
-
-	// Process mouse movement
 	float xoffset = mousePos.x - m_LastMousePosition.x;
 	float yoffset = mousePos.y - m_LastMousePosition.y;
-
-	if (!m_IsViewPortHovered) 
-	{ 
-		m_IsFirstMouse = true;
-		return;
-	}
 
 	if (Input::Get()->IsMousePressed(Mouse::ButtonLeft, true))
 	{
@@ -71,14 +52,8 @@ void EditorCamera::OnUpdate(TimeStep timestep)
 		m_Position += glm::rotate(GetRotation(), move);
 
 	}
-	
-	m_IsViewPortHovered = false;
-	m_LastMousePosition = mousePos;
-}
 
-void EditorCamera::OnViewPortHovered(const SceneViewPortTouchedEvent& event)
-{
-	m_IsViewPortHovered = true;
+	m_LastMousePosition = mousePos;
 }
 
 glm::mat4 EditorCamera::GetViewMatrix() const
