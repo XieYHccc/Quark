@@ -5,8 +5,9 @@
 #include <Quark/Events/KeyEvent.h>
 
 #include "Editor/EditorCamera.h"
-#include "Editor/UI/SceneHeirarchy.h"
-#include "Editor/UI/Inspector.h"
+#include "Editor/Panel/SceneHeirarchyPanel.h"
+#include "Editor/Panel/InspectorPanel.h"
+#include "Editor/Panel/ContentBrowserPanel.h"
 
 namespace quark {
 class EditorApp : public quark::Application  {  
@@ -16,7 +17,7 @@ public:
 
     void OnUpdate(TimeStep ts) override final;
     void OnRender(TimeStep ts) override final;
-    void OnUpdateImGui() override final;
+    void OnImGuiUpdate() override final;
 
     void OnKeyPressed(const KeyPressedEvent& e);
 
@@ -62,8 +63,9 @@ public:
     int m_GizmoType = -1;
 
     // UI window
-    SceneHeirarchy m_HeirarchyPanel;
-    Inspector m_InspectorPanel;
+    SceneHeirarchyPanel m_HeirarchyPanel;
+    InspectorPanel m_InspectorPanel;
+    ContentBrowserPanel m_ContentBrowserPanel;
     
     // Debug
     float cmdListRecordTime = 0;

@@ -38,7 +38,7 @@ private:
     virtual void OnRender(TimeStep ts) = 0;
 
     // Prepare UI data
-    virtual void OnUpdateImGui() {};
+    virtual void OnImGuiUpdate() {};
 
     // Callback functions for events
     void OnWindowClose(const WindowCloseEvent& event);

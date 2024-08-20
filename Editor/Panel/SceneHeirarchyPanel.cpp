@@ -1,4 +1,5 @@
-#include "Editor/UI/SceneHeirarchy.h"
+#include "Editor/Panel/SceneHeirarchyPanel.h"
+
 #include <Quark/UI/UI.h>
 #include <Quark/Scene/Components/CommonCmpts.h>
 #include <Quark/Scene/Components/RelationshipCmpt.h>
@@ -6,24 +7,24 @@
 
 namespace quark {
 
-SceneHeirarchy::SceneHeirarchy() : m_Scene(nullptr), m_SelectedEntity(nullptr)
+SceneHeirarchyPanel::SceneHeirarchyPanel() : m_Scene(nullptr), m_SelectedEntity(nullptr)
 {
 
 }
 
-SceneHeirarchy::SceneHeirarchy(Scene* scene) : m_Scene(scene), m_SelectedEntity(nullptr)
+SceneHeirarchyPanel::SceneHeirarchyPanel(Scene* scene) : m_Scene(scene), m_SelectedEntity(nullptr)
 {
 
 }
 
 
-void SceneHeirarchy::SetScene(Scene *scene)
+void SceneHeirarchyPanel::SetScene(Scene *scene)
 {
     m_Scene = scene;
     m_SelectedEntity = nullptr;
 }
 
-void SceneHeirarchy::Render()
+void SceneHeirarchyPanel::OnImGuiUpdate()
 {
     if (m_Scene == nullptr)
         return;
@@ -65,7 +66,7 @@ void SceneHeirarchy::Render()
     m_GarbageEntities.clear();
 }
 
-void SceneHeirarchy::DrawEntity(Entity* entity)
+void SceneHeirarchyPanel::DrawEntity(Entity* entity)
 {
     if (entity == nullptr)
         return;

@@ -9,8 +9,8 @@
 
 namespace quark {
 
-EditorCamera::EditorCamera(float degreeFov, float aspectRatio, float nearClip, float farClip)
-	: fov(degreeFov), aspectRatio(aspectRatio), nearClip(nearClip), farClip(farClip)
+EditorCamera::EditorCamera(float _degreeFov, float _viewportWidth, float _viewportHeight, float _nearClip, float _farClip)
+	: fov(_degreeFov), viewportWidth(_viewportWidth), viewportHeight(_viewportHeight), nearClip(_nearClip), farClip(_farClip), m_FocalPoint(0.f), m_Position(0.f)
 {
 	Init();
 }
@@ -18,6 +18,7 @@ EditorCamera::EditorCamera(float degreeFov, float aspectRatio, float nearClip, f
 void EditorCamera::Init()
 {
 	m_Position = glm::vec3(0.0f, 0.0f, 5.0f);
+	m_FocalPoint = glm::vec3(0.0f, 0.0f, 0.0f);
 	m_Pitch = 0.0f;
 	m_Yaw = 0.0f;
 	m_LastMousePosition = {0, 0};
@@ -27,33 +28,29 @@ void EditorCamera::Init()
 void EditorCamera::OnUpdate(TimeStep timestep)
 {
 	glm::vec2 mousePos = { Input::Get()->GetMousePosition().x_pos, Input::Get()->GetMousePosition().y_pos };
-	float xoffset = mousePos.x - m_LastMousePosition.x;
-	float yoffset = mousePos.y - m_LastMousePosition.y;
+	glm::vec2 delta = mousePos - m_LastMousePosition;
+	m_LastMousePosition = mousePos;
 
 	if (Input::Get()->IsMousePressed(Mouse::ButtonLeft, true))
-	{
-		// Process mouse movement
-		m_Pitch -= (glm::radians(yoffset) * rotationSpeed);
-		m_Yaw -= (glm::radians(xoffset) * rotationSpeed);
-		m_Pitch = std::clamp(m_Pitch, -1.5f, 1.5f);		// make sure that when pitch is out of bounds, screen doesn't get flipped
+		MouseRotate(delta);
+	else if (Input::Get()->IsMousePressed(Mouse::ButtonMiddle, true))
+		MousePan(delta);
+	else if (Input::Get()->IsMousePressed(Mouse::ButtonRight, true))
+		MouseZoom(delta.y);
 
-		// Process key input
-		glm::vec3 move{ 0.f };
-		if (Input::Get()->IsKeyPressed(Key::W, true))
-			move.z = -1;
-		if (Input::Get()->IsKeyPressed(Key::S, true))
-			move.z = 1;
-		if (Input::Get()->IsKeyPressed(Key::A, true))
-			move.x = -1;
-		if (Input::Get()->IsKeyPressed(Key::D, true))
-			move.x = 1;
-		move = move * moveSpeed * timestep.GetSeconds();
+	// Process key input
+	glm::vec3 move{ 0.f };
+	if (Input::Get()->IsKeyPressed(Key::W, true))
+		move.z = -1;
+	if (Input::Get()->IsKeyPressed(Key::S, true))
+		move.z = 1;
+	if (Input::Get()->IsKeyPressed(Key::A, true))
+		move.x = -1;
+	if (Input::Get()->IsKeyPressed(Key::D, true))
+		move.x = 1;
 
-		m_Position += glm::rotate(GetRotation(), move);
-
-	}
-
-	m_LastMousePosition = mousePos;
+	move = move * moveSpeed * timestep.GetSeconds();
+	m_Position += glm::rotate(GetRotation(), move);
 }
 
 glm::mat4 EditorCamera::GetViewMatrix() const
@@ -63,7 +60,7 @@ glm::mat4 EditorCamera::GetViewMatrix() const
 
 glm::mat4 EditorCamera::GetProjectionMatrix() const
 {
-	return glm::perspective(glm::radians(fov), aspectRatio, nearClip, farClip);
+	return glm::perspective(glm::radians(fov), (viewportWidth / viewportHeight), nearClip, farClip);
 }
 
 glm::quat EditorCamera::GetRotation() const
@@ -84,6 +81,36 @@ glm::vec3 EditorCamera::GetRightDirection() const
 glm::vec3 EditorCamera::GetUpDirection() const
 {
 	return glm::rotate(GetRotation(), glm::vec3(0.f, 1.f, 0.f));
+}
+
+std::pair<float, float> EditorCamera::PanSpeed() const
+{
+	float x = std::min(viewportWidth / 1000.0f, 2.4f); // max = 2.4f
+	float xFactor = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
+
+	float y = std::min(viewportHeight / 1000.0f, 2.4f); // max = 2.4f
+	float yFactor = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
+
+	return { xFactor, yFactor };
+}
+
+void EditorCamera::MousePan(const glm::vec2& delta)
+{
+	auto [xspeed, yspeed] = PanSpeed();
+	m_Position += GetRightDirection() * delta.x * xspeed;
+	m_Position -= GetUpDirection() * delta.y * yspeed;
+}
+
+void EditorCamera::MouseRotate(const glm::vec2& delta)
+{
+	m_Pitch -= (glm::radians(delta.y) * rotationSpeed);
+	m_Yaw -= (glm::radians(delta.x) * rotationSpeed);
+	m_Pitch = std::clamp(m_Pitch, -1.5f, 1.5f);
+}
+
+void EditorCamera::MouseZoom(float delta)
+{
+	m_Position += GetFowardDirection() * delta * 0.1f;
 }
 
 } // namespace quark

@@ -23,7 +23,7 @@ public:
     virtual ~Input() = default;
     
     virtual void Init() = 0; // Init mouse position
-    virtual void Update() = 0;  // pool input event
+    virtual void OnUpdate() = 0;  // pool input event
     virtual void Finalize() = 0;
 
     bool IsKeyPressed(KeyCode key, bool repeat) const;

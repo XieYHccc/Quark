@@ -31,7 +31,7 @@ Application* CreateApplication()
 }
 
 EditorApp::EditorApp(const AppInitSpecs& specs)
-    : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1.5, 0.1, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
+    : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1280, 720, 0.1, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
 {
     color_format = m_GraphicDevice->GetSwapChainImageFormat();
 
@@ -52,8 +52,8 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     m_SceneRenderer->SetCubeMap(cubeMap_image);
 
     // Adjust editor camera's aspect ratio
-    float aspect = (float)Window::Instance()->GetWidth() / Window::Instance()->GetHeight();
-    m_EditorCamera.aspectRatio = aspect;
+    m_EditorCamera.viewportWidth = Window::Instance()->GetWidth();
+    m_EditorCamera.viewportHeight = Window::Instance()->GetHeight();
 
     EventManager::Instance().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) {
         OnKeyPressed(e);
@@ -69,8 +69,8 @@ EditorApp::~EditorApp()
 void EditorApp::OnUpdate(TimeStep ts)
 {   
     // Update Editor camera's aspect ratio
-    float cameraAspect = m_ViewportSize.x / m_ViewportSize.y;
-    m_EditorCamera.aspectRatio = cameraAspect;
+    m_EditorCamera.viewportWidth = m_ViewportSize.x;
+    m_EditorCamera.viewportHeight = m_ViewportSize.y;
 
     // Update Editor camera's movement
     if (m_ViewportHovered && Input::Get()->IsKeyPressed(Key::LeftAlt, true))
@@ -81,11 +81,9 @@ void EditorApp::OnUpdate(TimeStep ts)
     // Update scene
     m_Scene->OnUpdate();
 
-    // Update UI
-    OnUpdateImGui();
 }   
 
-void EditorApp::OnUpdateImGui()
+void EditorApp::OnImGuiUpdate()
 {
     UI::Get()->BeginFrame();
 
@@ -120,14 +118,17 @@ void EditorApp::OnUpdateImGui()
     }
     ImGui::End();
 
-    //Scene Heirarchy
-    m_HeirarchyPanel.Render();
+    // Scene Heirarchy
+    m_HeirarchyPanel.OnImGuiUpdate();
     
-    //Inspector
+    // Inspector
     m_InspectorPanel.SetSelectedEntity(m_HeirarchyPanel.GetSelectedEntity());
-    m_InspectorPanel.Render();
+    m_InspectorPanel.OnImGuiUpdate();
 
-    //Scene view port
+    // Content Browser
+    m_ContentBrowserPanel.OnImGuiUpdate();
+
+    // Scene view port
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
     ImGui::Begin("Viewport");
     m_ViewportFocused = ImGui::IsWindowFocused();

@@ -78,11 +78,13 @@ void Application::Run()
         f64 start_frame = m_Timer.ElapsedSeconds();
 
         // Poll events
-        Input::Get()->Update();
+        Input::Get()->OnUpdate();
         
         // TODO: Multithreading
         // Update each moudule (including processing inputs)
         OnUpdate(m_Status.lastFrameDuration);
+
+        OnImGuiUpdate();
 
         // Render Scene
         OnRender(m_Status.lastFrameDuration);

@@ -1,14 +1,15 @@
 #pragma once
 #include <Quark/Scene/Scene.h>
-#include "Editor/UI/Common.h"
+
+#include "Editor/Panel/Panel.h"
 
 namespace quark {
-class SceneHeirarchy : public UIWindowBase {
+class SceneHeirarchyPanel final: public Panel {
 public:
-    SceneHeirarchy();
-    SceneHeirarchy(Scene* scene);
+    SceneHeirarchyPanel();
+    SceneHeirarchyPanel(Scene* scene);
 
-    virtual void Render() override;
+    void OnImGuiUpdate() override;
 
     void SetScene(Scene* scene);
 
@@ -16,7 +17,6 @@ public:
 
 private:
     void DrawEntity(Entity* entity);
-    void DrawSceneSettings();
 
     Scene* m_Scene;
     Entity* m_SelectedEntity;

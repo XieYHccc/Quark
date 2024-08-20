@@ -25,7 +25,7 @@ void InputGLFW::Init()
     mousePosition_ = {(float)xpos, (float)ypos};
 }
 
-void InputGLFW::Update()
+void InputGLFW::OnUpdate()
 {
     // handle events
     glfwPollEvents();

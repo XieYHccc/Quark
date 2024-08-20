@@ -7,7 +7,7 @@ namespace quark {
 class InputGLFW : public Input {
 public:
     void Init() override;
-    void Update() override;
+    void OnUpdate() override;
     void Finalize() override;
 
 private:
