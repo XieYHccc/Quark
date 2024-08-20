@@ -20,3 +20,6 @@
 [submodule "ThirdParty/nfd-extended"]
 	path = ThirdParty/nfd-extended
 	url = https://github.com/btzy/nativefiledialog-extended.git
+[submodule "ThirdParty/imguizmo"]
+	path = ThirdParty/imguizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git
