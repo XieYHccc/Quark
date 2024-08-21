@@ -109,7 +109,7 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
-        device_->context->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+        device_->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
     }
 
     // Generate mipmaps
@@ -153,7 +153,7 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
 
-        device_->context->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+        device_->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
 
         // Blit image
         vkCmdBlitImage(cmd, handle_, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
@@ -165,7 +165,7 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
         barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
         barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
         barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
-        device_->context->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+        device_->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
     }
 }
 
@@ -173,7 +173,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
     : Image(desc), device_(device)
 {
     CORE_DEBUG_ASSERT(device != nullptr)
-    auto& vk_context = device_->context;
+    auto& vk_context = device_->vkContext;
     auto vk_device = device_->vkDevice;
 
     // Default values
@@ -446,7 +446,7 @@ Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
 
     if (desc.enableAnisotropy) {
         info.anisotropyEnable = VK_TRUE;
-        info.maxAnisotropy = device_->context->properties2.properties.limits.maxSamplerAnisotropy;
+        info.maxAnisotropy = device_->vkContext->properties2.properties.limits.maxSamplerAnisotropy;
     }
     else {
         info.anisotropyEnable = VK_FALSE;

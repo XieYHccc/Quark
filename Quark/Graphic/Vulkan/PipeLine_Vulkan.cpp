@@ -305,7 +305,7 @@ PipeLineLayout::~PipeLineLayout()
 }
 
 PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
-    :PipeLine(PipeLineType::GRAPHIC), device_(device), renderPassInfo_(desc.renderPassInfo)
+    :PipeLine(PipeLineBindingPoint::GRAPHIC), device_(device), renderPassInfo_(desc.renderPassInfo)
 {
     CORE_DEBUG_ASSERT(device_)
     CORE_DEBUG_ASSERT(desc.vertShader != nullptr && desc.fragShader != nullptr)

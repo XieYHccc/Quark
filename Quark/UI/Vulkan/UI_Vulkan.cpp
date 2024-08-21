@@ -100,11 +100,11 @@ void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
         ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)Window::Instance()->GetNativeWindow(), true);
 
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = device_->context->instance;
-        init_info.PhysicalDevice = device_->context->physicalDevice;
+        init_info.Instance = device_->vkContext->instance;
+        init_info.PhysicalDevice = device_->vkContext->physicalDevice;
         init_info.Device = device_->vkDevice;
-        init_info.Queue = device_->context->graphicQueue;
-        init_info.QueueFamily = device_->context->graphicQueueIndex;
+        init_info.Queue = device_->vkContext->graphicQueue;
+        init_info.QueueFamily = device_->vkContext->graphicQueueIndex;
         init_info.DescriptorPool = descriptorPool_;
         init_info.MinImageCount = 3;
         init_info.ImageCount = 3;

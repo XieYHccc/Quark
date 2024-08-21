@@ -12,10 +12,14 @@ namespace quark::graphic {
 // - Set 3: Per-draw uniforms
 class Shader : public GpuResource {
 public:
-    virtual ~Shader() = default;    
-    ShaderStage GetStage() const {return stage_; }
-protected:
     Shader(ShaderStage stage) : stage_(stage) {};
+    virtual ~Shader() = default;    
+
+    ShaderStage GetStage() const {return stage_; }
+
+    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::SHADER; }
+
+protected:
     ShaderStage stage_;
 };
 

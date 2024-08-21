@@ -27,10 +27,9 @@ struct physicalDeviceRequirement
 */
 class VulkanContext {
 public:
+    bool enableDebugUtils = false;
     VkInstance instance = VK_NULL_HANDLE;
-#ifdef QK_DEBUG_BUILD
     VkDebugUtilsMessengerEXT debugMessenger;
-#endif
     VmaAllocator vmaAllocator = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;

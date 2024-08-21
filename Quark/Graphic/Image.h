@@ -68,9 +68,13 @@ struct ImageInitData {
 class Image : public GpuResource{
 public:
     ~Image() = default;
-    const ImageDesc& GetDesc() const { return desc_; }
-protected:
     Image(const ImageDesc& desc) : desc_(desc) {};
+
+    const ImageDesc& GetDesc() const { return desc_; }
+
+    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::IMAGE; }
+
+protected:
     ImageDesc desc_;
 
 };
@@ -106,12 +110,15 @@ struct SamplerDesc
     };
 };
 
-class Sampler
+class Sampler : public GpuResource
 {
 public:
-    virtual ~Sampler() = default;
-protected:
     Sampler() = default;
+    virtual ~Sampler() = default;
+
+    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::SAMPLER; }
+
+private:
     SamplerDesc desc_;
 };
 

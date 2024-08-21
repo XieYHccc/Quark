@@ -169,22 +169,25 @@ struct GraphicPipeLineDesc {
 };
 
 
-enum class PipeLineType {
+enum class PipeLineBindingPoint {
     GRAPHIC,
     COMPUTE
 };
 
 class PipeLine : public GpuResource{
 public:
+    PipeLine(PipeLineBindingPoint type) : type_(type) {};
     virtual ~PipeLine() = default;
-    PipeLineType GetType() const { return type_; }
+
+    PipeLineBindingPoint GetBindingPoint() const { return type_; }
+
+    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::PIPELINE; }
 
 protected:
-    PipeLine(PipeLineType type) : type_(type) {};
     Ref<Shader> vertShader_;
     Ref<Shader> fragShder_;
     Ref<Shader> computeShader_;
-    PipeLineType type_;
+    PipeLineBindingPoint type_;
 };
 
 }

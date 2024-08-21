@@ -27,13 +27,24 @@ struct ComputePipeLineDesc;
 struct GraphicPipeLineDesc;
 struct SamplerDesc;
 
+enum class GPU_RESOURCE_TYPE {
+    BUFFER,
+	IMAGE,
+	SHADER,
+	PIPELINE,
+	SAMPLER,
+    COMMAND_LIST,
+	MAX_ENUM
+};
+
 class GpuResource {
 public:
-    virtual ~GpuResource() = default;
-    GpuResource(const GpuResource&) = delete;
-    GpuResource& operator=(const GpuResource&) = delete;
-protected:
     GpuResource() = default;
+    GpuResource(const GpuResource&) = delete;
+    virtual ~GpuResource() = default;
+    GpuResource& operator=(const GpuResource&) = delete;
+
+    virtual GPU_RESOURCE_TYPE GetGpuResourceType() const = 0;
 };
 
 enum QueueType

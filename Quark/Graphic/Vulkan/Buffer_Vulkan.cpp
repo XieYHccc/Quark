@@ -18,7 +18,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     CORE_DEBUG_ASSERT(device_ != nullptr)
     CORE_DEBUG_ASSERT(desc.size != 0)
 
-    const auto& vulkan_context = device_->context;
+    const auto& vulkan_context = device_->vkContext;
 
     // Buffer create info
     VkBufferCreateInfo buffer_create_info = {};
@@ -31,7 +31,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     if (vulkan_context->features12.bufferDeviceAddress)
         buffer_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    if (device_->context->uniqueQueueFamilies.size() > 1) {
+    if (device_->vkContext->uniqueQueueFamilies.size() > 1) {
         buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
         buffer_create_info.queueFamilyIndexCount = vulkan_context->uniqueQueueFamilies.size();
         buffer_create_info.pQueueFamilyIndices = vulkan_context->uniqueQueueFamilies.data();
@@ -64,23 +64,23 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     VK_CHECK(vmaCreateBuffer(device_->vmaAllocator, &buffer_create_info, &alloc_create_info, &handle_, &allocation_, &allocInfo_))
 
     if (desc.domain == BufferMemoryDomain::CPU)
-        pMappedData_ = allocInfo_.pMappedData;
+        m_pMappedData = allocInfo_.pMappedData;
 
     if (vulkan_context->features12.bufferDeviceAddress) {
         VkBufferDeviceAddressInfo bda_info = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
         bda_info.buffer = handle_;
-        gpuAddress_ = vkGetBufferDeviceAddress(device_->vkDevice, &bda_info); 
+        m_GpuAddress = vkGetBufferDeviceAddress(device_->vkDevice, &bda_info); 
     }
 
     // Data Copy
     if (init_data != nullptr) {
         if (desc.domain == BufferMemoryDomain::CPU) {
-            memcpy(pMappedData_, init_data, desc.size);
+            memcpy(m_pMappedData, init_data, desc.size);
         }
         else {  // static data uplodaing
 
             Device_Vulkan::CopyCmdAllocator::CopyCmd copyCmd = device_->copyAllocator.allocate(desc.size);
-            memcpy(copyCmd.stageBuffer->GetMappedDataPtr(), init_data, desc_.size);
+            memcpy(copyCmd.stageBuffer->GetMappedDataPtr(), init_data, m_Desc.size);
 
             // copy buffer
             VkBufferCopy copyRegion = {};

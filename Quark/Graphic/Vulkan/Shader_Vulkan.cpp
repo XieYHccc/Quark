@@ -14,7 +14,7 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     CORE_LOGD("Creating vulkan shader...")
 
     VkDevice vk_device = device_->vkDevice;
-    auto& vk_context = device_->context;
+    auto& vk_context = device_->vkContext;
 
     // Create shader module
     VkShaderModuleCreateInfo moduleInfo = {};

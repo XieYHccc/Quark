@@ -76,8 +76,9 @@ struct PipelineImageBarrier
     u32 baseArrayLayer = UINT32_MAX;
 };
 
-class CommandList : public GpuResource{
+class CommandList : public GpuResource {
 public:
+    CommandList(QueueType type) : m_QueueType(type) {};
     virtual ~CommandList() = default;
 
     virtual void BindPushConstant(const void* data, size_t offset, size_t size) = 0;
@@ -99,10 +100,11 @@ public:
     virtual void BeginRenderPass(const RenderPassInfo& info) = 0;
     virtual void EndRenderPass() = 0;
     
-    QueueType GetType() const { return type_; }
+    QueueType GetQueueType() const { return m_QueueType; }
+    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::COMMAND_LIST; }
+
 protected:
-    CommandList(QueueType type) : type_(type) {};
-    QueueType type_;
+    QueueType m_QueueType;
 };
 
 }

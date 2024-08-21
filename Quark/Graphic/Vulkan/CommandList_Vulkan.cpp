@@ -10,14 +10,14 @@ CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
     : CommandList(type), device_(device)
 {
     CORE_DEBUG_ASSERT(device_ != nullptr)
-    auto& vulkan_context = device_->context;
+    auto& vulkan_context = device_->vkContext;
     VkDevice vk_device = device_->vkDevice;
 
     // Create command pool
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     // TODO: Support other queue types
-    switch (type_) {
+    switch (m_QueueType) {
     case QUEUE_TYPE_GRAPHICS:
         poolInfo.queueFamilyIndex = vulkan_context->graphicQueueIndex;
         break;
@@ -163,7 +163,7 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
         dependency_info.imageMemoryBarrierCount = static_cast<uint32_t>(imageBarriers_.size());
         dependency_info.pImageMemoryBarriers = imageBarriers_.data();
 
-        device_->context->extendFunction.pVkCmdPipelineBarrier2KHR(cmdBuffer_, &dependency_info);
+        device_->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(cmdBuffer_, &dependency_info);
 
         memoryBarriers_.clear();
         imageBarriers_.clear();
@@ -284,7 +284,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     rendering_info.pStencilAttachment = nullptr;
     rendering_info.pNext = nullptr;
 
-    device_->context->extendFunction.pVkCmdBeginRenderingKHR(cmdBuffer_, &rendering_info);   
+    device_->vkContext->extendFunction.pVkCmdBeginRenderingKHR(cmdBuffer_, &rendering_info);   
 }
 
 void CommandList_Vulkan::EndRenderPass()
@@ -296,7 +296,7 @@ void CommandList_Vulkan::EndRenderPass()
 #endif
     // Set state back to in recording
     state = CommandListState::IN_RECORDING;
-    device_->context->extendFunction.pVkCmdEndRenderingKHR(cmdBuffer_);
+    device_->vkContext->extendFunction.pVkCmdEndRenderingKHR(cmdBuffer_);
 }
 
 void CommandList_Vulkan::BindPushConstant(const void *data, size_t offset, size_t size)
@@ -452,7 +452,7 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
         return;
     }
     
-    if (internal_pipeline.GetType() == PipeLineType::GRAPHIC)
+    if (internal_pipeline.GetBindingPoint() == PipeLineBindingPoint::GRAPHIC)
         vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, internal_pipeline.GetHandle());
     else
         vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.GetHandle());
@@ -631,7 +631,7 @@ void CommandList_Vulkan::Flush_DescriptorSet(u32 set)
         vkUpdateDescriptorSetWithTemplate(device_->vkDevice, allocated.first, updata_template, bindings);
     }
 
-    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->GetType() == PipeLineType::GRAPHIC? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
+    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
         currentPipeLine_->GetLayout()->handle, set, 1, &allocated.first, num_dynamic_offsets, dynamic_offsets);
 
     currentSets[set] = allocated.first;
@@ -655,7 +655,7 @@ void CommandList_Vulkan::Rebind_DescriptorSet(u32 set)
         }
     });
 
-    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->GetType() == PipeLineType::GRAPHIC? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
+    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
         currentPipeLine_->GetLayout()->handle, set, 1, &currentSets[set], num_dynamic_offsets, dynamic_offsets);
 }
 

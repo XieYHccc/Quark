@@ -3,16 +3,21 @@
 #include <GLFW/glfw3.h>
 #include "Quark/Core/Window.h"
 
-struct GLFWwindow;
-
 namespace quark::graphic {
+
 
 VulkanContext::VulkanContext()
 {
-    CreateInstance();
+
 #ifdef QK_DEBUG_BUILD
-    CreateDebugMessenger();
+    enableDebugUtils = true;
+#else
+    enableDebugUtils = false;
 #endif
+
+    CreateInstance();
+    if (enableDebugUtils)
+        CreateDebugMessenger();
     CreateSurface();
     SelectPhysicalDevice();
     CreateLogicalDevice();
@@ -32,11 +37,13 @@ VulkanContext::~VulkanContext()
     vkDestroyDevice(logicalDevice, nullptr);
     CORE_LOGD("Destroying vulkan surface...")
     vkDestroySurfaceKHR(instance, surface, nullptr);
-#ifdef QK_DEBUG_BUILD
-    CORE_LOGD("Destroying debug messenger...")
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    func(instance, debugMessenger, nullptr);
-#endif
+
+    if (enableDebugUtils)
+    {
+        CORE_LOGD("Destroying debug messenger...")
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        func(instance, debugMessenger, nullptr);
+    }
 
     CORE_LOGD("Destroying vulkan instance...")
     vkDestroyInstance(instance, nullptr);
@@ -69,11 +76,12 @@ void VulkanContext::CreateInstance()
     const std::vector<const char*> required_extensions = GetRequiredExtensions();
     std::vector<const char*> required_layers;
 
-#ifdef QK_DEBUG_BUILD
-    CORE_LOGD("Required vulkan instance extensions:")
-    for(const auto& s : required_extensions)
-        CORE_LOGD("  {}", s);
-#endif
+    if (enableDebugUtils)
+    {
+        CORE_LOGD("Required vulkan instance extensions:")
+        for (const auto& s : required_extensions)
+            CORE_LOGD("  {}", s);
+    }
 
     // Check extensions and layers support infomation
     CORE_LOGD("Checking vulkan instance extensions support...")
@@ -149,12 +157,10 @@ void VulkanContext::CreateDebugMessenger()
     createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = VkDebugCallback;
 
-#ifdef QK_DEBUG_BUILD
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    CORE_ASSERT_MSG(func, "Failed to create debug messenger!");
     VK_CHECK(func(instance, &createInfo, nullptr, &debugMessenger))
+
     CORE_LOGD("Vulkan debug messenger created")
-#endif
 }
 
 void VulkanContext::CreateSurface()
@@ -226,7 +232,8 @@ void VulkanContext::SelectPhysicalDevice()
         "VK_KHR_synchronization2",
         "VK_KHR_copy_commands2"
     };
-#ifdef __APPLE__
+
+#ifdef QK_PLATFORM_MACOS
         required_extensions.push_back("VK_KHR_portability_subset");
 #endif
 
@@ -629,14 +636,13 @@ std::vector<const char*> VulkanContext::GetRequiredExtensions() const
     for (unsigned int i = 0; i < glfwExtensionCount; i++)
         extensions.push_back(glfwExtensions[i]);
 
-#ifdef __APPLE__
+#ifdef QK_PLATFORM_MACOS
     extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
     extensions.push_back("VK_KHR_get_physical_device_properties2");
 #endif
 
-#ifdef QK_DEBUG_BUILD
+    if (enableDebugUtils)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-#endif
     return extensions; 
 }
 
