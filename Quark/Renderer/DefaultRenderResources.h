@@ -13,6 +13,7 @@ namespace quark {
 		inline static Ref<graphic::Sampler> linearSampler;
 		inline static Ref<graphic::Sampler> nearestSampler;
 		inline static Ref<graphic::Sampler> cubeMapSampler;
+
 		static void Init()
 		{
 			using namespace graphic;

@@ -15,6 +15,7 @@
 #include <Quark/Scene/SceneSerializer.h>
 #include <Quark/Asset/TextureLoader.h>
 #include <Quark/Asset/AssetManager.h>
+#include <Quark/Renderer/DefaultRenderResources.h>
 #include <Quark/UI/UI.h>
 
 namespace quark {
@@ -68,6 +69,8 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
 EditorApp::~EditorApp()
 {   
     // Save asset registry
+
+    AssetManager::Get().ImportAsset(std::filesystem::path("Assets/Textures/etc1s_cubemap_learnopengl.ktx2"));
     AssetManager::Get().SaveAssetRegistry();
 }
 
@@ -469,17 +472,8 @@ void EditorApp::CreateColorDepthAttachments()
         image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
         color_image = m_GraphicDevice->CreateImage(image_desc);
 
-        // Default linear sampler
-        graphic::SamplerDesc samplerDesc;
-        samplerDesc.minFilter = graphic::SamplerFilter::LINEAR;
-        samplerDesc.magFliter = graphic::SamplerFilter::LINEAR;
-        samplerDesc.addressModeU = graphic::SamplerAddressMode::REPEAT;
-        samplerDesc.addressModeV = graphic::SamplerAddressMode::REPEAT;
-        samplerDesc.addressModeW = graphic::SamplerAddressMode::REPEAT;
-        m_DefaultLinearSampler = m_GraphicDevice->CreateSampler(samplerDesc);
-
         // Create Imgui texture id
-        m_ColorAttachmentId = UI::Get()->CreateTextureId(*color_image, *m_DefaultLinearSampler);
+        m_ColorAttachmentId = UI::Get()->CreateTextureId(*color_image, *DefaultRenderResources::linearSampler);
 }
 
 void EditorApp::SetUpRenderPass()

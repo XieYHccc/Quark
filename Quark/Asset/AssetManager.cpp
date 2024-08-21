@@ -8,11 +8,14 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/StringUtils.h"
 #include "Quark/Asset/MeshLoader.h"
+#include "Quark/Asset/TextureLoader.h"
 #include "Quark/Asset/AssetExtensions.h"
 
 namespace quark {
 static std::filesystem::path s_AssetDirectory = "Assets";
 static std::filesystem::path s_AssetRegistryPath = "Assets/AssetRegistry.qkr";
+
+static AssetMetadata s_NullMetadata;
 
 static AssetType  GetAssetTypeFromString(std::string_view assetType)
 {
@@ -55,8 +58,10 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 
 	if (metadata.IsValid()) 
 	{
-		if (metadata.isDataLoaded) 
+		if (metadata.isDataLoaded)
+		{
 			asset = m_LoadedAssets[id];
+		}
 		else 
 		{
 			// Load asset data
@@ -65,14 +70,28 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 				{
 					MeshLoader meshLoader(Application::Get().GetGraphicDevice());
 					asset = meshLoader.LoadGLTF(metadata.filePath.string());
-					asset->SetAssetID(id);
+					break;
+				}
+			case AssetType::TEXTURE:
+				{
+					TextureLoader textureLoader;
+					asset = textureLoader.LoadStb(metadata.filePath.string());
 					break;
 				}
 			default:
 				CORE_ASSERT(0)
 			}
+
+			if (asset)
+			{
+				asset->SetAssetID(id);
+				m_LoadedAssets[id] = asset;
+				metadata.isDataLoaded = true;
+				SetMetadata(id, metadata);
+			}
 		}
 	}
+
 
 	return asset;
 }
@@ -131,16 +150,6 @@ std::unordered_set<AssetID> AssetManager::GetAllAssetsWithType(AssetType type)
 
 	return result;
 }
-AssetMetadata AssetManager::GetAssetMetadata(const std::filesystem::path& filepath)
-{
-	for (auto& [id, metadata] : m_AssetMetadata)
-	{
-		if (metadata.filePath == filepath)
-			return metadata;
-	}
-
-	return AssetMetadata();
-}
 
 void AssetManager::SetMetadata(AssetID id, AssetMetadata metaData)
 {
@@ -178,7 +187,18 @@ AssetMetadata AssetManager::GetAssetMetadata(AssetID id)
 	if (m_AssetMetadata.contains(id))
 		return m_AssetMetadata[id];
 
-	return AssetMetadata();
+	return s_NullMetadata;
+}
+
+AssetMetadata AssetManager::GetAssetMetadata(const std::filesystem::path& filepath)
+{
+	for (auto& [id, metadata] : m_AssetMetadata)
+	{
+		if (metadata.filePath == filepath)
+			return metadata;
+	}
+
+	return s_NullMetadata;
 }
 
 void AssetManager::LoadAssetRegistry()

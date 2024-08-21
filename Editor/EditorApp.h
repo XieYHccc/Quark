@@ -40,10 +40,9 @@ public:
     Ref<quark::graphic::PipeLine> graphic_pipeline;
     Ref<quark::graphic::PipeLine> skybox_pipeline;
 
-    graphic::RenderPassInfo forward_pass_info; // First pass
-    graphic::RenderPassInfo ui_pass_info;   // Second pass
+    quark::graphic::RenderPassInfo forward_pass_info; // First pass
+    quark::graphic::RenderPassInfo ui_pass_info;   // Second pass
 
-    Ref<quark::graphic::Sampler> m_DefaultLinearSampler;
     Ref<quark::Texture> m_CubeMapTexture;
     Ref<quark::graphic::Image> depth_image;
     Ref<quark::graphic::Image> color_image;
@@ -54,13 +53,10 @@ public:
     Scope<SceneRenderer> m_SceneRenderer;
     EditorCamera m_EditorCamera;
 
-    bool m_ViewportFocused, m_ViewportHovered;
-
     glm::vec2 m_ViewportSize;
     glm::vec2 m_ViewportBounds[2];
-
     ImTextureID m_ColorAttachmentId;
-
+    bool m_ViewportFocused, m_ViewportHovered;
     int m_GizmoType = -1;
 
     // UI window

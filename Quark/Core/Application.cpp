@@ -58,15 +58,15 @@ Application::Application(const AppInitSpecs& specs)
 
 Application::~Application() {
 
-    // Destroy UI system
     UI::Get()->Finalize();
     UI::FreeSingleton();
     
     DefaultRenderResources::ShutDown();
 
-#ifdef  USE_VULKAN_DRIVER
+    AssetManager::FreeSingleton();
+
     m_GraphicDevice->ShutDown();
-#endif
+    m_GraphicDevice.reset();
 
     // Destroy InputManager
     Input::Get()->Finalize();

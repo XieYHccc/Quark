@@ -11,7 +11,7 @@ namespace quark {
 // Disable debug and trace logging for release builds.
 #ifdef QK_DEBUG_BUILD
     #define LOG_DEBUG_ENABLED 1
-    #define LOG_TRACE_ENABLED 1
+    #define LOG_TRACE_ENABLED 0
 #else
     #define LOG_DEBUG_ENABLED 0
     #define LOG_TRACE_ENABLED 0
