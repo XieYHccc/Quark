@@ -11,8 +11,8 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
-#include "Quark/Asset/ImageLoader.h"
-#include "Quark/Graphic/Device.h"
+#include "Quark/Renderer/DefaultRenderResources.h"
+#include "Quark/Asset/TextureLoader.h"
 
 namespace quark {
 using namespace quark::graphic;
@@ -49,7 +49,6 @@ inline SamplerFilter convert_min_filter(int min_filter)
 	}
 };
 
-
 inline SamplerFilter convert_mag_filter(int mag_filter)
 {
 	switch (mag_filter)
@@ -84,64 +83,64 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
     CORE_DEBUG_ASSERT(device_ != nullptr)
 
     // Create default resouces
-    defalutLinearSampler_ = device_->CreateSampler(SamplerDesc{.minFilter = SamplerFilter::LINEAR,
-        .magFliter = SamplerFilter::LINEAR,
-        .addressModeU = SamplerAddressMode::REPEAT,
-        .addressModeV = SamplerAddressMode::REPEAT,
-        .addressModeW = SamplerAddressMode::REPEAT});
+    //defalutLinearSampler_ = device_->CreateSampler(SamplerDesc{.minFilter = SamplerFilter::LINEAR,
+    //    .magFliter = SamplerFilter::LINEAR,
+    //    .addressModeU = SamplerAddressMode::REPEAT,
+    //    .addressModeV = SamplerAddressMode::REPEAT,
+    //    .addressModeW = SamplerAddressMode::REPEAT});
 
-    // defalut error check board image
-    constexpr uint32_t black = 0x000000FF;
-    constexpr uint32_t magenta = 0xFF00FFFF;
-    std::array<uint32_t, 32 * 32 > pixels;
-    for (int x = 0; x < 32; x++) {
-        for (int y = 0; y < 32; y++) {
-            pixels[y * 32 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
-        }
-    }
+    //// defalut error check board image
+    //constexpr uint32_t black = 0x000000FF;
+    //constexpr uint32_t magenta = 0xFF00FFFF;
+    //std::array<uint32_t, 32 * 32 > pixels;
+    //for (int x = 0; x < 32; x++) {
+    //    for (int y = 0; y < 32; y++) {
+    //        pixels[y * 32 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
+    //    }
+    //}
 
-    ImageDesc texture_desc = {
-        .width = 32,
-        .height = 32,
-        .depth = 1,
-        .mipLevels = 1,
-        .arraySize = 1,
-        .type = ImageType::TYPE_2D,
-        .format = DataFormat::R8G8B8A8_UNORM,
-        .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-        .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT
-    };
+    //ImageDesc texture_desc = {
+    //    .width = 32,
+    //    .height = 32,
+    //    .depth = 1,
+    //    .mipLevels = 1,
+    //    .arraySize = 1,
+    //    .type = ImageType::TYPE_2D,
+    //    .format = DataFormat::R8G8B8A8_UNORM,
+    //    .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+    //    .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT
+    //};
 
-    ImageInitData init_data = {
-        .data = pixels.data(),
-        .rowPitch = 32 * 4,
-        .slicePitch = 32 * 32 * 4
-    };
+    //ImageInitData init_data = {
+    //    .data = pixels.data(),
+    //    .rowPitch = 32 * 4,
+    //    .slicePitch = 32 * 32 * 4
+    //};
 
-    defaultCheckBoardImage_ = device_->CreateImage(texture_desc, &init_data);
+    //// defaultCheckBoardImage_ = device_->CreateImage(texture_desc, &init_data);
 
-    // default White image
-    constexpr uint32_t white = 0xFFFFFFFF;
-    texture_desc.width = 1;
-    texture_desc.height = 1;
-    
-    init_data = {
-        .data = &white,
-        .rowPitch = 1 * 4,
-        .slicePitch = 1 * 1 * 4
-    };
+    //// default White image
+    //constexpr uint32_t white = 0xFFFFFFFF;
+    //texture_desc.width = 1;
+    //texture_desc.height = 1;
+    //
+    //init_data = {
+    //    .data = &white,
+    //    .rowPitch = 1 * 4,
+    //    .slicePitch = 1 * 1 * 4
+    //};
 
-    defaultWhiteImage_ = device_->CreateImage(texture_desc, &init_data);
+    // defaultWhiteImage_ = device_->CreateImage(texture_desc, &init_data);
 
     // Create defalult texture
     defaultColorTexture_ = CreateRef<Texture>();
-    defaultColorTexture_->image = defaultWhiteImage_;
-    defaultColorTexture_->sampler = defalutLinearSampler_;
+    defaultColorTexture_->image = DefaultRenderResources::whiteImage;
+    defaultColorTexture_->sampler = DefaultRenderResources::linearSampler;
     defaultColorTexture_->SetDebugName("Default color texture");
 
     defaultMetalTexture_ =CreateRef<Texture>();
-    defaultMetalTexture_->image = defaultWhiteImage_;
-    defaultMetalTexture_->sampler = defalutLinearSampler_;
+    defaultMetalTexture_->image = DefaultRenderResources::whiteImage;
+    defaultMetalTexture_->sampler = DefaultRenderResources::linearSampler;
     defaultMetalTexture_->SetDebugName("Default metalic roughness texture");
 }
 
@@ -176,10 +175,9 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
 	if (!warn.empty()){
 		CORE_LOGI("{}", warn);
 	}
-    if (!importResult) {
-		CORE_LOGE("Failed to load gltf file {}", filename);
+    if (!importResult) 
         return nullptr;
-	}
+
 	// Check extensions
 	for (auto &used_extension : model_.extensionsUsed) {
 		auto it = supportedExtensions_.find(used_extension);
@@ -221,8 +219,8 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
         auto newTexture = CreateRef<Texture>();
 
         // Default values
-        newTexture->image = defaultWhiteImage_;
-        newTexture->sampler = defalutLinearSampler_;
+        newTexture->image = DefaultRenderResources::whiteImage;
+        newTexture->sampler = DefaultRenderResources::linearSampler;
 
         if (model_.textures[texture_index].source > -1) {
             newTexture->image = images_[model_.textures[texture_index].source];
@@ -397,13 +395,14 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
         }
         
         if (is_ktx) {
-            ImageLoader image_loader(device_);
-            return image_loader.LoadKtx(gltf_image.uri);
+            TextureLoader textureLoader;
+            return textureLoader.LoadKtx(gltf_image.uri);
         }
     }
     
     CORE_LOGE("GLTFLoader::ParseImage::Failed to load image: {}", gltf_image.uri)
-    return defaultCheckBoardImage_;
+
+    return DefaultRenderResources::checkboardImage;
 }
 
 Ref<Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)

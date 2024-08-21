@@ -42,18 +42,20 @@ private:
 
     // Callback functions for events
     void OnWindowClose(const WindowCloseEvent& event);
-    void OnWindowResize(const WindowResizeEvent& event) {}
+    void OnWindowResize(const WindowResizeEvent& event);
 
 protected:
     struct AppStatus 
     {
         f32 fps { 0 };
         bool isRunning { true };
+        bool isMinimized { false };
         f64 lastFrameDuration { 0 };
     };
 
     Timer m_Timer;
     AppStatus m_Status;
+
     Scope<graphic::Device> m_GraphicDevice;
     Scope<Window> m_Window;
     

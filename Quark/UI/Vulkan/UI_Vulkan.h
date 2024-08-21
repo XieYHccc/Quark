@@ -17,6 +17,7 @@ public:
     void EndFrame() override;
     void Render(graphic::CommandList* cmd) override;
 
+    ImTextureID CreateTextureId(const Ref<Texture>& texture) override;
     ImTextureID CreateTextureId(const graphic::Image& image, const graphic::Sampler& sampler) override;
 private:
     

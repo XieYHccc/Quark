@@ -9,6 +9,7 @@
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Asset/AssetManager.h"
+#include "Quark/Renderer/DefaultRenderResources.h"
 
 #ifdef USE_VULKAN_DRIVER
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
@@ -42,12 +43,17 @@ Application::Application(const AppInitSpecs& specs)
     m_GraphicDevice->Init();
 #endif
 
+    // Init default render resources
+    DefaultRenderResources::Init();
+
     // Init UI system
     UI::CreateSingleton();
     UI::Get()->Init(m_GraphicDevice.get(), specs.uiSpecs);
 
     // Register application callback functions
     EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
+    EventManager::Instance().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event);});
+
 }
 
 Application::~Application() {
@@ -56,6 +62,8 @@ Application::~Application() {
     UI::Get()->Finalize();
     UI::FreeSingleton();
     
+    DefaultRenderResources::ShutDown();
+
 #ifdef  USE_VULKAN_DRIVER
     m_GraphicDevice->ShutDown();
 #endif
@@ -74,20 +82,22 @@ Application::~Application() {
 
 void Application::Run()
 {
-    while (m_Status.isRunning) {
+    while (m_Status.isRunning) 
+    {
         f64 start_frame = m_Timer.ElapsedSeconds();
 
         // Poll events
         Input::Get()->OnUpdate();
         
-        // TODO: Multithreading
-        // Update each moudule (including processing inputs)
-        OnUpdate(m_Status.lastFrameDuration);
+        if (!m_Status.isMinimized)
+        {
+            // TODO: Multithreading
+            OnUpdate(m_Status.lastFrameDuration);
 
-        OnImGuiUpdate();
+            OnImGuiUpdate();
 
-        // Render Scene
-        OnRender(m_Status.lastFrameDuration);
+            OnRender(m_Status.lastFrameDuration);
+        }
 
         // Dispatch events
         EventManager::Instance().DispatchEvents();
@@ -100,6 +110,17 @@ void Application::Run()
 void Application::OnWindowClose(const WindowCloseEvent& e)
 {
     m_Status.isRunning = false;
+}
+
+void Application::OnWindowResize(const WindowResizeEvent& event)
+{
+    if (event.width == 0 || event.height == 0)
+    {
+        m_Status.isMinimized = true;
+        return;
+    }
+
+    m_Status.isMinimized = false;
 }
 
 }

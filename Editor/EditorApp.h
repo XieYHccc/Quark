@@ -1,5 +1,6 @@
 #pragma once
 #include <Quark/Core/Application.h>
+#include <Quark/Core/FileSystem.h>
 #include <Quark/Scene/Scene.h>
 #include <Quark/Renderer/SceneRenderer.h>
 #include <Quark/Events/KeyEvent.h>
@@ -23,12 +24,12 @@ public:
 
     void NewScene();
     void OpenScene();
+    void OpenScene(const std::filesystem::path& path);
     void SaveSceneAs();
 
     void CreateColorDepthAttachments();
     void CreatePipeline();
     void SetUpRenderPass();
-    void LoadScene();
 
 public:
     Ref<quark::graphic::Shader> vert_shader;
@@ -43,7 +44,7 @@ public:
     graphic::RenderPassInfo ui_pass_info;   // Second pass
 
     Ref<quark::graphic::Sampler> m_DefaultLinearSampler;
-    Ref<quark::graphic::Image> cubeMap_image;
+    Ref<quark::Texture> m_CubeMapTexture;
     Ref<quark::graphic::Image> depth_image;
     Ref<quark::graphic::Image> color_image;
     graphic::DataFormat depth_format = quark::graphic::DataFormat::D32_SFLOAT;

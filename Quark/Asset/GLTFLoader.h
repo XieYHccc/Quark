@@ -33,9 +33,6 @@ private:
     Scene* scene_;
     std::string filePath_;
 
-    Ref<graphic::Sampler> defalutLinearSampler_;
-    Ref<graphic::Image> defaultCheckBoardImage_;
-    Ref<graphic::Image> defaultWhiteImage_;
     Ref<Texture> defaultColorTexture_;
     Ref<Texture> defaultMetalTexture_;
     Ref<Material> defaultMaterial_;

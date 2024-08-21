@@ -1,7 +1,7 @@
 #pragma once
 #include <imgui.h>
 #include "Quark/Core/Util/Singleton.h"
-#include "Quark/Graphic/Device.h"
+#include "Quark/Asset/Texture.h"
 
 namespace quark {
 
@@ -27,6 +27,7 @@ public:
     virtual void EndFrame() = 0;
     virtual void Render(graphic::CommandList* cmd) = 0;
 
+    virtual ImTextureID CreateTextureId(const Ref<Texture>& texture) = 0;
     virtual ImTextureID CreateTextureId(const graphic::Image& image, const graphic::Sampler& sampler) = 0;
 
 };

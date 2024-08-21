@@ -176,7 +176,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 
 	std::string sceneName = data["Scene"].as<std::string>();
 	m_Scene->SetSceneName(sceneName);
-	CORE_LOGD("Deserializing scene: {}", sceneName);
+	CORE_LOGI("Deserializing scene: {}", sceneName);
 
 	auto entities = data["Entities"];
 	if (entities)
@@ -189,7 +189,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 			auto nameComponent = entity["NameComponent"];
 			if (nameComponent)
 				name = nameComponent.as<std::string>();
-			CORE_LOGI("Deserializing entity with ID: {0} and name: {1}", uuid, name);
+			CORE_LOGT("Deserializing entity with ID: {0} and name: {1}", uuid, name);
 
 			Entity* deserializedEntity = m_Scene->CreateEntityWithID(uuid, name);
 

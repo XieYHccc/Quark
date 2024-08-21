@@ -167,6 +167,15 @@ void UI_Vulkan::Render(graphic::CommandList* cmd)
 	}
 }
 
+ImTextureID UI_Vulkan::CreateTextureId(const Ref<Texture>& texture)
+{
+    VkSampler samp = graphic::ToInternal(texture->sampler.get()).GetHandle();
+    VkImageView view = graphic::ToInternal(texture->image.get()).GetView();
+
+    return (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+
 ImTextureID UI_Vulkan::CreateTextureId(const graphic::Image& image, const graphic::Sampler& sampler)
 {
     VkSampler samp = graphic::ToInternal(&sampler).GetHandle();
@@ -174,5 +183,4 @@ ImTextureID UI_Vulkan::CreateTextureId(const graphic::Image& image, const graphi
 
     return (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
-
 }

@@ -53,7 +53,7 @@ public:
     SceneRenderer(graphic::Device* device);
 
     void SetScene(Scene* scene);
-    void SetCubeMap(Ref<graphic::Image> cubeMap) { cubeMap_ = cubeMap; }
+    void SetCubeMap(const Ref<Texture>& cubeMap) { m_CubeMap = cubeMap; }
     void RenderScene(graphic::CommandList* cmd_list);
     void RenderSkybox(graphic::CommandList* cmd_list);
     void UpdateDrawContext();
@@ -65,9 +65,8 @@ private:
 
     graphic::Device* m_GraphicDevice;
     Scene* m_Scene;
-    Ref<graphic::Image> cubeMap_;
-    Ref<graphic::Sampler> cubeMapSampler_;
-    Ref<Mesh> cubeMesh_;
+    Ref<Texture> m_CubeMap;
+    Ref<Mesh> m_CubeMesh;
 
     // Data need to be updated every frame
     struct DrawContext {

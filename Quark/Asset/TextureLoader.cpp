@@ -1,16 +1,21 @@
 #include "Quark/qkpch.h"
-#include "Quark/Asset/ImageLoader.h"
+#include "Quark/Asset/TextureLoader.h"
+
 #include <ktx.h>
 #include <basisu_transcoder.h>
+#include <stb_image.h>
+
+#include "Quark/Core/Application.h"
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Graphic/TextureFormatLayout.h"
+#include "Quark/Renderer/DefaultRenderResources.h"
 
 namespace quark {
-Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
+Ref<Texture> TextureLoader::LoadKtx2(const std::string &file_path, bool isCubemap)
 {
     if (file_path.find_last_of(".") != std::string::npos) {
         if (file_path.substr(file_path.find_last_of(".") + 1) != "ktx2") {
-            CORE_LOGW("ImageLoader::LoadKtx: The file {} is not a ktx2 file", file_path);
+            CORE_LOGW("TextureLoader::LoadKtx: The file {} is not a ktx2 file", file_path);
             return nullptr;
         }
     }
@@ -18,7 +23,7 @@ Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
     // Read in file's binary data
     std::vector<byte> binary_data;
     if (!FileSystem::ReadFile(file_path, binary_data)) {
-        CORE_LOGW("ImageLoader::LoadKtx2: Failed to read file {}", file_path);
+        CORE_LOGW("TextureLoader::LoadKtx2: Failed to read file {}", file_path);
         return nullptr;
     }
 
@@ -32,7 +37,7 @@ Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
     basist::ktx2_transcoder ktxTranscoder;
     bool success = ktxTranscoder.init(binary_data.data(), binary_data.size());
     if (!success) {
-        CORE_LOGW("ImageLoader::LoadKtx2: Failed to initialize ktx2 transcoder for file {}", file_path);
+        CORE_LOGW("TextureLoader::LoadKtx2: Failed to initialize ktx2 transcoder for file {}", file_path);
         return nullptr;
     }
 
@@ -55,14 +60,15 @@ Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
     desc.format = graphic::DataFormat::R8G8B8A8_UNORM;
     basist::transcoder_texture_format targetFormat = basist::transcoder_texture_format::cTFRGBA32;
 
-    if (graphicDevice_->features.textureCompressionBC) {
+    auto* graphicDevice = Application::Get().GetGraphicDevice();
+    if (graphicDevice->features.textureCompressionBC) {
         // BC7 is the preferred block compression if available
-        if (graphicDevice_->isFormatSupported(graphic::DataFormat::BC7_UNORM_BLOCK)) {
+        if (graphicDevice->isFormatSupported(graphic::DataFormat::BC7_UNORM_BLOCK)) {
             targetFormat = basist::transcoder_texture_format::cTFBC7_RGBA;
             desc.format = graphic::DataFormat::BC7_UNORM_BLOCK;
         } 
         else {
-            if (graphicDevice_->isFormatSupported(graphic::DataFormat::BC3_UNORM_BLOCK)) {
+            if (graphicDevice->isFormatSupported(graphic::DataFormat::BC3_UNORM_BLOCK)) {
                 targetFormat = basist::transcoder_texture_format::cTFBC3_RGBA;
                 desc.format = graphic::DataFormat::BC3_UNORM_BLOCK;
             }
@@ -99,7 +105,7 @@ Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
                         initData.push_back(newSubresource);
                     } 
                     else {
-                        CORE_LOGW("ImageLoader::LoadKtx2: Failed to transcode image level {} layer {} face {}", level, layer, face);
+                        CORE_LOGW("TextureLoader::LoadKtx2: Failed to transcode image level {} layer {} face {}", level, layer, face);
                         return nullptr;
                     }
 
@@ -107,23 +113,63 @@ Ref<graphic::Image> ImageLoader::LoadKtx2(const std::string &file_path)
             }
         }
 
-        if (!initData.empty()) {
-            auto newKtx2Image = graphicDevice_->CreateImage(desc, initData.data());
+        if (!initData.empty()) 
+        {
+            Ref<Texture> newTexture = CreateRef<Texture>();
+            newTexture->image = graphicDevice->CreateImage(desc, initData.data());
+            newTexture->sampler = isCubemap? DefaultRenderResources::cubeMapSampler : DefaultRenderResources::linearSampler;
             ktxTranscoder.clear();
-            return newKtx2Image;
+            return newTexture;
         }
 
     }
 
     return nullptr;
-}   
+}
+
+Ref<Texture> TextureLoader::LoadStb(const std::string& file_path)
+{
+    using namespace graphic;
+
+    int width, height, channels;
+    // stbi_set_flip_vertically_on_load(true);
+    void* data = stbi_load(file_path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    if (!data) 
+    {
+		CORE_LOGW("TextureLoader::LoadStb: Failed to load image {}", file_path);
+		return nullptr;
+	}
+
+    ImageDesc desc;
+    desc.width = static_cast<u32>(width);
+    desc.height = static_cast<u32>(height);
+    desc.depth = 1u;
+    desc.arraySize = 1;     // Only support 1 layer and 1 mipmap level for embedded image
+    desc.mipLevels = 1;
+    desc.format = DataFormat::R8G8B8A8_UNORM;
+    desc.type = ImageType::TYPE_2D;
+    desc.usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
+    desc.initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+    desc.generateMipMaps = false;        // Generate mipmaps for embedded image
+
+    ImageInitData init_data;
+    init_data.data = data;
+    init_data.rowPitch = desc.width * 4;
+    init_data.slicePitch = init_data.rowPitch * desc.height;
+
+    Ref<Texture> newTexture = CreateRef<Texture>();
+    newTexture->image = Application::Get().GetGraphicDevice()->CreateImage(desc, &init_data);
+    newTexture->sampler = DefaultRenderResources::linearSampler;
+
+    return newTexture;
+}
 
 
-Ref<graphic::Image> ImageLoader::LoadKtx(const std::string& file_path) {
+Ref<graphic::Image> TextureLoader::LoadKtx(const std::string& file_path) {
     if (file_path.find_last_of(".") != std::string::npos) {
         std::string file_extension = file_path.substr(file_path.find_last_of(".") + 1);
         if (file_extension != "ktx" && file_extension != "ktx2") {
-            CORE_LOGW("ImageLoader::LoadKtx: The file {} is not a ktx file", file_path);
+            CORE_LOGW("TextureLoader::LoadKtx: The file {} is not a ktx file", file_path);
             return nullptr;
         }
     }
@@ -182,7 +228,7 @@ Ref<graphic::Image> ImageLoader::LoadKtx(const std::string& file_path) {
         }
     }
 
-    auto newKtxImage = graphicDevice_->CreateImage(desc, initData.data());
+    auto newKtxImage = Application::Get().GetGraphicDevice()->CreateImage(desc, initData.data());
     ktxTexture_Destroy(ktxTexture);
 
     return newKtxImage;

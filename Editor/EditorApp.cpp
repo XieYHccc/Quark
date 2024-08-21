@@ -13,7 +13,7 @@
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/SceneSerializer.h>
-#include <Quark/Asset/ImageLoader.h>
+#include <Quark/Asset/TextureLoader.h>
 #include <Quark/Asset/AssetManager.h>
 #include <Quark/UI/UI.h>
 
@@ -40,7 +40,12 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     CreatePipeline();
     CreateColorDepthAttachments();
 
-    LoadScene();
+    // Load cube map
+    TextureLoader textureLoader;
+    m_CubeMapTexture = textureLoader.LoadKtx2("Assets/Textures/etc1s_cubemap_learnopengl.ktx2");
+
+    // Load scene
+    m_Scene = CreateScope<Scene>("");
 
     // Init UI Panels
     m_HeirarchyPanel.SetScene(m_Scene.get());
@@ -49,7 +54,7 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     // SetUp Renderer
     m_SceneRenderer = CreateScope<SceneRenderer>(m_GraphicDevice.get());
     m_SceneRenderer->SetScene(m_Scene.get());
-    m_SceneRenderer->SetCubeMap(cubeMap_image);
+    m_SceneRenderer->SetCubeMap(m_CubeMapTexture);
 
     // Adjust editor camera's aspect ratio
     m_EditorCamera.viewportWidth = Window::Instance()->GetWidth();
@@ -138,6 +143,15 @@ void EditorApp::OnImGuiUpdate()
     m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
     ImGui::Image(m_ColorAttachmentId, ImVec2{ m_ViewportSize.x, m_ViewportSize.y });
 
+    if (ImGui::BeginDragDropTarget())
+    {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+        {
+            const wchar_t* path = (const wchar_t*)payload->Data;
+            OpenScene(path);
+        }
+        ImGui::EndDragDropTarget();
+    }
 
     // Gizmos
     Entity* selectedEntity = m_HeirarchyPanel.GetSelectedEntity();
@@ -195,16 +209,20 @@ void EditorApp::OpenScene()
     std::filesystem::path filepath = FileSystem::OpenFileDialog({ { "Quark Scene", "qkscene" } });
     if (!filepath.empty())
     {
-        m_Scene = CreateScope<Scene>("");
-        SceneSerializer serializer(m_Scene.get());
-        serializer.Deserialize(filepath.string());
-
-        m_SceneRenderer->SetScene(m_Scene.get());
-        m_HeirarchyPanel.SetScene(m_Scene.get());
-        m_InspectorPanel.SetScene(m_Scene.get());
-
+        OpenScene(filepath);
     }
 
+}
+
+void EditorApp::OpenScene(const std::filesystem::path& path)
+{
+    m_Scene = CreateScope<Scene>("");
+    SceneSerializer serializer(m_Scene.get());
+    serializer.Deserialize(path.string());
+
+    m_SceneRenderer->SetScene(m_Scene.get());
+    m_HeirarchyPanel.SetScene(m_Scene.get());
+    m_InspectorPanel.SetScene(m_Scene.get());
 }
 
 void EditorApp::SaveSceneAs()
@@ -332,16 +350,6 @@ void EditorApp::OnRender(TimeStep ts)
     }
 }
 
-void EditorApp::LoadScene()
-{   
-    // Load cube map
-    ImageLoader image_loader(m_GraphicDevice.get());
-    cubeMap_image = image_loader.LoadKtx2("Assets/Textures/etc1s_cubemap_learnopengl.ktx2");
-
-    // Load scene
-    m_Scene = CreateScope<Scene>("");
-
-}
 
 void EditorApp::OnKeyPressed(const KeyPressedEvent& e)
 {

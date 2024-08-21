@@ -322,21 +322,24 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         // Copy to image
         vkCmdCopyBufferToImage(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).GetHandle(), handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copys.size(), copys.data());
         
-        // Generate mipmaps?
+        // Generate mipmaps? //TODO: change to use graphic queue to generate mipmaps
         if (desc.generateMipMaps) {
             GenerateMipMap(desc, copyCmd.cmdBuffer); // After generating, image is in the layout of VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         }
 
         // Transit image layout to required init layout
-        barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-        barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; //TODO: Parse to correct stage
-        barrier.dstAccessMask = ParseImageLayoutToMemoryAccess(desc.initialLayout);
-        barrier.subresourceRange.levelCount = create_info.mipLevels;
-        barrier.oldLayout = desc.generateMipMaps? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = ConvertImageLayout(desc_.initialLayout);
+        if (desc.initialLayout != ImageLayout::UNDEFINED)
+        {
+            barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+            barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; //TODO: Parse to correct stage
+            barrier.dstAccessMask = ParseImageLayoutToMemoryAccess(desc.initialLayout);
+            barrier.subresourceRange.levelCount = create_info.mipLevels;
+            barrier.oldLayout = desc.generateMipMaps ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier.newLayout = ConvertImageLayout(desc_.initialLayout);
 
-        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.cmdBuffer, &dependencyInfo);
+            vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.cmdBuffer, &dependencyInfo);
+        }
 
         // submit and block cpu
         device_->copyAllocator.submit(copyCmd);

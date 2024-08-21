@@ -15,16 +15,7 @@ SceneRenderer::SceneRenderer(graphic::Device* device)
 {
     // Load Cube mesh
     MeshLoader mesh_loader(m_GraphicDevice);
-    cubeMesh_ = mesh_loader.LoadGLTF("Assets/Gltf/cube.gltf");
-
-    // Create cube map sampler
-    SamplerDesc sampler_desc;
-    sampler_desc.minFilter = SamplerFilter::LINEAR;
-    sampler_desc.magFliter = SamplerFilter::LINEAR;
-    sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
-    sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
-    sampler_desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
-    cubeMapSampler_ = m_GraphicDevice->CreateSampler(sampler_desc);
+    m_CubeMesh = mesh_loader.LoadGLTF("Assets/Gltf/cube.gltf");
 
     // Create scene uniform buffer
     BufferDesc m_Scenebuffer_desc;
@@ -122,14 +113,14 @@ void SceneRenderer::UpdateDrawContext(const CameraUniformBufferBlock& cameraData
 
 void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
 {
-    CORE_DEBUG_ASSERT(cubeMap_)
+    CORE_DEBUG_ASSERT(m_CubeMap)
 
     cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
-    cmd_list->BindImage(0, 1, *cubeMap_, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
-    cmd_list->BindSampler(0, 1, *cubeMapSampler_);
-    cmd_list->BindVertexBuffer(0, *cubeMesh_->vertexBuffer, 0);
-    cmd_list->BindIndexBuffer(*cubeMesh_->indexBuffer, 0, IndexBufferFormat::UINT32);
-    cmd_list->DrawIndexed(cubeMesh_->indices.size(), 1, 0, 0, 0);
+    cmd_list->BindImage(0, 1, *m_CubeMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+    cmd_list->BindSampler(0, 1, *m_CubeMap->sampler);
+    cmd_list->BindVertexBuffer(0, *m_CubeMesh->vertexBuffer, 0);
+    cmd_list->BindIndexBuffer(*m_CubeMesh->indexBuffer, 0, IndexBufferFormat::UINT32);
+    cmd_list->DrawIndexed(m_CubeMesh->indices.size(), 1, 0, 0, 0);
 }
 
 void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
