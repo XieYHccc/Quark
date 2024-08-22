@@ -209,6 +209,8 @@ Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::alloca
         bufferDesc.size = std::max(bufferDesc.size, uint64_t(65536));
         bufferDesc.usageBits = BUFFER_USAGE_TRANSFER_FROM_BIT;
         newCmd.stageBuffer = m_Device->CreateBuffer(bufferDesc);
+
+        m_Device->SetDebugName(newCmd.stageBuffer, "CopyCmdAllocator staging buffer");
     }
 
     // Reset fence
@@ -459,7 +461,34 @@ Ref<Sampler> Device_Vulkan::CreateSampler(const SamplerDesc &desc)
 
 void Device_Vulkan::SetDebugName(const Ref<GpuResource>& resouce, const char* name)
 {
+    if (!vkContext->enableDebugUtils || !resouce)
+        return;
 
+
+    VkDebugUtilsObjectNameInfoEXT info{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
+    info.pObjectName = name;
+
+    switch (resouce->GetGpuResourceType())
+    {
+    case GpuResourceType::BUFFER:
+        info.objectType = VK_OBJECT_TYPE_BUFFER;
+        info.objectHandle = (uint64_t)static_cast<Buffer_Vulkan*>(resouce.get())->GetHandle();
+		break;
+    case GpuResourceType::IMAGE:
+		info.objectType = VK_OBJECT_TYPE_IMAGE;
+        info.objectHandle = (uint64_t)static_cast<Image_Vulkan*>(resouce.get())->GetHandle();
+        break;
+    default:
+        break;
+    }
+
+    if (info.objectHandle == (uint64_t)VK_NULL_HANDLE)
+        return;
+
+    PFN_vkSetDebugUtilsObjectNameEXT pfnVkSetDebugUtilsObjectNameEXT =
+        (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(vkContext->instance, "vkSetDebugUtilsObjectNameEXT");
+
+    VK_CHECK(pfnVkSetDebugUtilsObjectNameEXT(vkDevice, &info))
 }
 
 CommandList* Device_Vulkan::BeginCommandList(QueueType type)

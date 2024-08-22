@@ -181,7 +181,7 @@ public:
 
     PipeLineBindingPoint GetBindingPoint() const { return type_; }
 
-    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::PIPELINE; }
+    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::PIPELINE; }
 
 protected:
     Ref<Shader> vertShader_;

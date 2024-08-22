@@ -72,7 +72,7 @@ public:
 
     const ImageDesc& GetDesc() const { return desc_; }
 
-    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::IMAGE; }
+    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::IMAGE; }
 
 protected:
     ImageDesc desc_;
@@ -116,7 +116,7 @@ public:
     Sampler() = default;
     virtual ~Sampler() = default;
 
-    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::SAMPLER; }
+    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::SAMPLER; }
 
 private:
     SamplerDesc desc_;

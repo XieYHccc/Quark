@@ -80,14 +80,15 @@ public:
     bool EndFrame(TimeStep ts) override final;
     void OnWindowResize(const WindowResizeEvent& event) override final;
 
+    /*** RESOURCES ***/
     Ref<Buffer> CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr) override final;
     Ref<Image> CreateImage(const ImageDesc& desc, const ImageInitData* init_data = nullptr) override final;
     Ref<Shader> CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize) override final;
     Ref<Shader> CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) override final;
     Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) override final;
     Ref<Sampler> CreateSampler(const SamplerDesc& desc) override final;
-    void SetDebugName(const Ref<GpuResource>& resouce, const char* name) override final;
 
+    /*** COMMAND LIST ***/
     CommandList* BeginCommandList(QueueType type = QueueType::QUEUE_TYPE_GRAPHICS) override final;
     void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) override final;
 
@@ -95,6 +96,7 @@ public:
     DataFormat GetSwapChainImageFormat() override final;
 
     bool isFormatSupported(DataFormat format) override final;
+    void SetDebugName(const Ref<GpuResource>& resouce, const char* name) override final;
 
     // Vulkan specific
 public:

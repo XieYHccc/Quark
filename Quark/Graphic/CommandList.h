@@ -101,7 +101,7 @@ public:
     virtual void EndRenderPass() = 0;
     
     QueueType GetQueueType() const { return m_QueueType; }
-    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::COMMAND_LIST; }
+    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::COMMAND_LIST; }
 
 protected:
     QueueType m_QueueType;

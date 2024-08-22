@@ -27,7 +27,7 @@ struct ComputePipeLineDesc;
 struct GraphicPipeLineDesc;
 struct SamplerDesc;
 
-enum class GPU_RESOURCE_TYPE {
+enum class GpuResourceType {
     BUFFER,
 	IMAGE,
 	SHADER,
@@ -44,7 +44,7 @@ public:
     virtual ~GpuResource() = default;
     GpuResource& operator=(const GpuResource&) = delete;
 
-    virtual GPU_RESOURCE_TYPE GetGpuResourceType() const = 0;
+    virtual GpuResourceType GetGpuResourceType() const = 0;
 };
 
 enum QueueType

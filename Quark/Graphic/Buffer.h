@@ -45,7 +45,7 @@ public:
     const BufferDesc& GetDesc() const { return m_Desc;}
     void* GetMappedDataPtr() { return m_pMappedData; }
     u64 GetGpuAddress() { return m_GpuAddress;}
-    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::BUFFER; }
+    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::BUFFER; }
 
 protected:
     BufferDesc m_Desc;

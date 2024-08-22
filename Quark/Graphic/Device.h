@@ -53,9 +53,8 @@ public:
     virtual Ref<Shader> CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) = 0;
     virtual Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) = 0;
     virtual Ref<Sampler> CreateSampler(const SamplerDesc& desc) = 0;
-    virtual void SetDebugName(const Ref<GpuResource>& resouce, const char* name) = 0;
 
-	/*** COMMANDS ***/
+	/*** COMMAND LIST ***/
     virtual CommandList* BeginCommandList(QueueType type = QueueType::QUEUE_TYPE_GRAPHICS) = 0;
     virtual void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) = 0;
 
@@ -65,6 +64,7 @@ public:
 
     /*** PROPERTIES ***/
     virtual bool isFormatSupported(DataFormat format) = 0;
+    virtual void SetDebugName(const Ref<GpuResource>& resouce, const char* name) = 0;
 };
 
 }

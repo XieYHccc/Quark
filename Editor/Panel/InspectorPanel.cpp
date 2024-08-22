@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
-
+#include <Quark/Asset/AssetManager.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/Components/MeshCmpt.h>
 #include <Quark/Scene/Components/CommonCmpts.h>
@@ -225,15 +225,33 @@ void InspectorPanel::OnImGuiUpdate()
 
         // Mesh component
         DrawComponent<MeshCmpt>("Mesh", m_SelectedEntity, [&](auto& component) {
+            bool hasMesh = component.sharedMesh != nullptr;
+
             Mesh& mesh = *component.sharedMesh;
+            std::filesystem::path meshAssetPath = hasMesh? AssetManager::Get().GetAssetMetadata(mesh.GetAssetID()).filePath : 
+                std::filesystem::path("None");
 
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 125.f);
-			ImGui::LabelText("##Name", "%s", "TODO");
+			ImGui::LabelText("##Name", "%s", meshAssetPath.string().c_str());
 			ImGui::PopItemWidth();
 
 			ImGui::SameLine();
 			if (ImGui::Button("Set", ImVec2(80.f, 25.f)))
 				ImGui::OpenPopup("Set Mesh");
+
+            if (ImGui::BeginPopup("Set Mesh"))
+            {
+                for (auto id : AssetManager::Get().GetAllAssetsWithType(AssetType::MESH))
+				{
+					auto metadata = AssetManager::Get().GetAssetMetadata(id);
+					if (ImGui::MenuItem(metadata.filePath.string().c_str()))
+					{
+						component.sharedMesh = AssetManager::Get().GetAsset<Mesh>(id);
+						break;
+					}
+				}
+                ImGui::EndPopup();
+            }
         });
 
 

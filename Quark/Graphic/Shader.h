@@ -17,7 +17,7 @@ public:
 
     ShaderStage GetStage() const {return stage_; }
 
-    GPU_RESOURCE_TYPE GetGpuResourceType() const override { return GPU_RESOURCE_TYPE::SHADER; }
+    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::SHADER; }
 
 protected:
     ShaderStage stage_;
