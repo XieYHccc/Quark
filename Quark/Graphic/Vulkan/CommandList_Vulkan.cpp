@@ -1,9 +1,10 @@
 #include "Quark/qkpch.h"
+#include "Quark/Core/Util/Hash.h"
+#include "Quark/Core/Util/BitOperations.h"
 #include "Quark/Graphic/Vulkan/CommandList_Vulkan.h"
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
 #include "Quark/Graphic/Vulkan/PipeLine_Vulkan.h"
-#include "Quark/Core/Util/Hash.h"
-#include "Quark/Core/Util/BitOperations.h"
+#include "Quark/Graphic/Vulkan/DescriptorSetAllocator.h"
 
 namespace quark::graphic {
 CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
@@ -299,16 +300,20 @@ void CommandList_Vulkan::EndRenderPass()
     device_->vkContext->extendFunction.pVkCmdEndRenderingKHR(cmdBuffer_);
 }
 
-void CommandList_Vulkan::BindPushConstant(const void *data, size_t offset, size_t size)
+void CommandList_Vulkan::BindPushConstant(const void *data, uint32_t offset, uint32_t size)
 {
     CORE_DEBUG_ASSERT(offset + size < PUSH_CONSTANT_DATA_SIZE)
 
 #ifdef QK_DEBUG_BUILD
-    if (currentPipeLine_ == nullptr) {
+    if (currentPipeLine_ == nullptr) 
+    {
         CORE_LOGE("You can not bind a push constant before binding a pipeline.")
+        return;
     }
-    if (currentPipeLine_->GetLayout()->pushConstant.size == 0) {
+    if (currentPipeLine_->GetLayout()->pushConstant.size == 0) 
+    {
         CORE_LOGE("Current pipeline's layout do not have a push constant")
+        return;
     }
 #endif
 
@@ -622,7 +627,7 @@ void CommandList_Vulkan::Flush_DescriptorSet(u32 set)
         }
     }
     util::Hash hash = h.get();
-    auto allocated = currentPipeLine_->GetLayout()->setAllocators[set]->find(hash);
+    auto allocated = currentPipeLine_->GetLayout()->setAllocators[set]->Find(hash);
 
     // The descriptor set was not successfully cached, rebuild
     if (!allocated.second) {
@@ -646,7 +651,7 @@ void CommandList_Vulkan::Rebind_DescriptorSet(u32 set)
     auto& bindings = bindingState_.descriptorBindings[set];
 
 	u32 num_dynamic_offsets = 0;
-	u32 dynamic_offsets[SET_BINDINGS_MAX_NUM];
+	uint32_t dynamic_offsets[SET_BINDINGS_MAX_NUM];
 
     util::for_each_bit(set_layout.uniform_buffer_mask, [&](u32 binding) {
         for (size_t i = 0; i < set_layout.vk_bindings[binding].descriptorCount; ++i) {

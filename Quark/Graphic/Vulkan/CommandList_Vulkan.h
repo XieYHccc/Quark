@@ -23,7 +23,7 @@ public:
     ~CommandList_Vulkan();
 
     void BindPipeLine(const PipeLine& pipeline) override;
-    void BindPushConstant(const void* data, size_t offset, size_t size) override;
+    void BindPushConstant(const void* data, uint32_t offset, uint32_t size) override;
     void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override;
     void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override;
     void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) override;

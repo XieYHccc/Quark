@@ -29,7 +29,7 @@ public:
     uint32_t GetBlockDimX() const { return block_dim_x_; }
     uint32_t GetBlockDimY() const { return block_dim_y_; }
     uint32_t GetBlockStride() const { return block_stride_; }
-    uint32_t GetRequiredSize() const { return required_size_;}
+    uint64_t GetRequiredSize() const { return required_size_;}
     uint32_t GetMipLevels() const { return mip_levels_; }
     uint32_t GetArraySize() const { return array_size_; }
     const MipInfo& GetMipInfo(uint32_t mip_level) const { return mips_[mip_level];}

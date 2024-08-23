@@ -7,8 +7,6 @@ namespace quark::graphic {
 constexpr VkImageLayout ConvertImageLayout(ImageLayout layout)
 {
     switch (layout) {
-    case ImageLayout::UNDEFINED:
-        return VK_IMAGE_LAYOUT_UNDEFINED;
     case ImageLayout::GENERAL:
         return VK_IMAGE_LAYOUT_GENERAL;
     case ImageLayout::COLOR_ATTACHMENT_OPTIMAL:
@@ -25,6 +23,8 @@ constexpr VkImageLayout ConvertImageLayout(ImageLayout layout)
         return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     case ImageLayout::PRESENT:
         return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    default:
+        return VK_IMAGE_LAYOUT_UNDEFINED;
     }
 }
 

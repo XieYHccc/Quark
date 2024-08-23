@@ -18,6 +18,7 @@ enum class AssetType : uint16_t {
 	FONT,
 };
  
+// An asset is globally unique and can be identified by its AssetID
 class Asset {
 public:
 	Asset() = default;

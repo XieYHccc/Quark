@@ -6,6 +6,7 @@
 #include "Quark/Graphic/Vulkan/Context_Vulkan.h"
 #include "Quark/Graphic/Vulkan/CommandList_Vulkan.h"
 #include "Quark/Graphic/Vulkan/PipeLine_Vulkan.h"
+#include "Quark/Graphic/Vulkan/DescriptorSetAllocator.h"
 
 namespace quark::graphic {
 

@@ -94,7 +94,6 @@ Entity* Scene::GetMainCameraEntity()
     }
     else 
     {
-        CORE_LOGW("Scene doesn't have a camera game object, but you are requesting one.")
         return nullptr;
     }
 }

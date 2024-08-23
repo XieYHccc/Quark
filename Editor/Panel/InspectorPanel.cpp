@@ -256,13 +256,18 @@ void InspectorPanel::OnImGuiUpdate()
 
 
         // Camera component
-        DrawComponent<CameraCmpt>("Camera", m_SelectedEntity, [&](auto& component) {
+        DrawComponent<CameraCmpt>("Camera", m_SelectedEntity, [&](auto& component) 
+        {
+            if (!m_Scene)
+                return;
 
-            if (ImGui::Button("SetMainCamera"))
-            {
-                if (m_Scene)
-					m_Scene->SetMainCameraEntity(m_SelectedEntity);
-            }
+            bool isPrimary = m_Scene->GetMainCameraEntity() == m_SelectedEntity;
+            ImGui::Checkbox("Primary", &isPrimary);
+
+            if (isPrimary && m_Scene->GetMainCameraEntity() != m_SelectedEntity)
+				m_Scene->SetMainCameraEntity(m_SelectedEntity);
+            else if (!isPrimary && m_Scene->GetMainCameraEntity() == m_SelectedEntity)
+                m_Scene->SetMainCameraEntity(nullptr);
 
             float aspect = component.aspect;
             if (ImGui::DragFloat("Aspect", &aspect))
@@ -281,6 +286,7 @@ void InspectorPanel::OnImGuiUpdate()
                 component.zFar = perspectiveFar;
         });
     }
+
     ImGui::End();
 }
 

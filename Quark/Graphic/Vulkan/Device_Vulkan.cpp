@@ -349,7 +349,7 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
 
     // Put unused (more than 8 frames) descriptor set back to vacant pool
     for (auto& [k, value] : cached_descriptorSetAllocator) {
-        value.begin_frame();   
+        value.BeginFrame();   
     }
 
     // Acquire a swapchain image 

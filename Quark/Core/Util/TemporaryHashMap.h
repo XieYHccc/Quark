@@ -65,7 +65,7 @@ public:
 		object_pool.clear();
 	}
 
-	void begin_frame()
+	void BeginFrame()
 	{
 		index = (index + 1) & (RingSize - 1);
 		auto &ring = rings[index];
