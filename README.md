@@ -33,6 +33,7 @@ Quark is my personal learning project.
 - Event System
 - UI with ImGui
 - Scene Editor Tool
+- KTX2 Transcoding
 
 ## Todo
 
