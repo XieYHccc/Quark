@@ -36,20 +36,20 @@ Quark is my personal learning project.
 
 ## Todo
 
-- [] Quark Customized Asset Format
-  - [] Mesh
-  - [] Texture
-  - [] Material
-- [] Deferred Renderer
-- [] D3D12 Rendering Backend
-- [] PBR Rendering
-  - [] Directional Light
-  - [] Point Light
-  - [] Plane Light
-- [] Scriping System
-- [] Multithreading architecture (Rendering and Game Logitc)
-- [] Physics System
-- [] Ray Tracing
+- [ ] Quark Customized Asset Format
+  - [ ] Mesh
+  - [ ] Texture
+  - [ ] Material
+- [ ] Deferred Renderer
+- [ ] D3D12 Rendering Backend
+- [ ] PBR Rendering
+  - [ ] Directional Light
+  - [ ] Point Light
+  - [ ] Plane Light
+- [ ] Scriping System
+- [ ] Multithreading architecture (Rendering and Game Logitc)
+- [ ] Physics System
+- [ ] Ray Tracing
 
 ## Current Editor Looklike
 ![Editor Screen shot](EditorScreenShot.png "Editor's look")
