@@ -1,10 +1,55 @@
+```
+  ____    _    _      __      _____     _  __
+ / __ \  | |  | |     /\     |  __ \   | |/ /
+| |  | | | |  | |    /  \    | |__) |  | ' / 
+| |  | | | |  | |   / /\ \   |  _  /   |  <  
+| |__| | | |__| |  / ____ \  | | \ \   | . \ 
+ \___\_\  \____/  /_/    \_\ |_|  \_\  |_|\_\
+                                     
+
+                                                                
+```
+
+
+# Quark Game Engine
+
+Quark is my personal learning project.
+
+
+## Environment
+
+- Windows, MacOS
+- C++17+( have been tested on MSVC and Clang)
+- CMake 3.10 +
+- Vulkan1.3+
+
+## Feature
+
+- Render Hardware Interface
+- Vulkan Backend
+- 3D Scene Renderer (Forward Renderer)
+- Entity Component System
+- Asset System
+- Event System
+- UI with ImGui
+- Scene Editor Tool
+
 ## Todo
-* 设计引擎专属的Mesh、Texture二进制结构以及Scene的jason结构。
-* 增添Asset Manager来管理资产的读取和写入
-* 支持D3D12作为渲染后端
-* 完善PBR Rendering
-* 完善引擎的编辑器
 
+- [] Quark Customized Asset Format
+  - [] Mesh
+  - [] Texture
+  - [] Material
+- [] Deferred Renderer
+- [] D3D12 Rendering Backend
+- [] PBR Rendering
+  - [] Directional Light
+  - [] Point Light
+  - [] Plane Light
+- [] Scriping System
+- [] Multithreading architecture (Rendering and Game Logitc)
+- [] Physics System
+- [] Ray Tracing
 
-## 丑陋的编辑器
+## Current Editor Looklike
 ![Editor Screen shot](EditorScreenShot.png "Editor's look")
