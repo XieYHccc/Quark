@@ -36,11 +36,12 @@ Quark is my personal learning project.
 - KTX2 Transcoding
 
 ## Todo
-
+- [ ] Mouse Picking in Scene Editor
 - [ ] Quark Customized Asset Format
   - [ ] Mesh
   - [ ] Texture
   - [ ] Material
+- [ ] Skeleton Animation
 - [ ] Deferred Renderer
 - [ ] D3D12 Rendering Backend
 - [ ] PBR Rendering
