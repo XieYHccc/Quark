@@ -21,6 +21,8 @@ Ref<Material> MeshRendererCmpt::GetMaterial(uint32_t index)
 		return m_Mesh->subMeshes[index].material;
 	else
 		CORE_LOGW("MeshRendererCmpt::GetMaterial: Index out of range");
+
+	return nullptr;
 }
 
 };

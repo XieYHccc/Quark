@@ -4,6 +4,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "Quark/Core/Application.h"
+#include "Quark/Core/Util/SerializationUtils.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
@@ -12,42 +13,8 @@
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
 
-namespace YAML {
-template<>
-struct convert<glm::vec3>
-{
-	static Node encode(const glm::vec3& rhs)
-	{
-		Node node;
-		node.push_back(rhs.x);
-		node.push_back(rhs.y);
-		node.push_back(rhs.z);
-		node.SetStyle(EmitterStyle::Flow);
-		return node;
-	}
-
-	static bool decode(const Node& node, glm::vec3& rhs)
-	{
-		if (!node.IsSequence() || node.size() != 3)
-			return false;
-
-		rhs.x = node[0].as<float>();
-		rhs.y = node[1].as<float>();
-		rhs.z = node[2].as<float>();
-		return true;
-	}
-};
-
-}
-
 namespace quark {
-YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec3& vec)
-{
-	out << YAML::Flow;
-	out << YAML::BeginSeq << vec.x << vec.y << vec.z << YAML::EndSeq;
-	return out;
-}
-
+	
 static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 {
 	out << YAML::BeginMap; // Entity

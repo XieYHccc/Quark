@@ -18,12 +18,12 @@ struct Material : public Asset {
 
     AlphaMode alphaMode = AlphaMode::OPAQUE;
 
-    Ref<graphic::Buffer> uniformBuffer;
-    size_t uniformBufferOffset = 0;
-
     Ref<Texture> baseColorTexture;
     Ref<Texture> metallicRoughnessTexture;
     Ref<Texture> normalTexture;
+    
+    Ref<graphic::Buffer> uniformBuffer;
+    size_t uniformBufferOffset = 0;
 };
 
 }

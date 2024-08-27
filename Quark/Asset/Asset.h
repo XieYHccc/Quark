@@ -32,11 +32,11 @@ public:
 	
 	void SetDebugName(const std::string& name) { m_DebugName = name; }
 
-	virtual bool operator==(const Asset& other) const
+	bool operator==(const Asset& other) const
 	{
 		return m_AssetID == other.m_AssetID;
 	}
-	virtual bool operator!=(const Asset& other) const
+	bool operator!=(const Asset& other) const
 	{
 		return !(*this == other);
 	}

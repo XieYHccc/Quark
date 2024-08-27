@@ -7,9 +7,10 @@
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/StringUtils.h"
+#include "Quark/Asset/AssetExtensions.h"
 #include "Quark/Asset/MeshLoader.h"
 #include "Quark/Asset/TextureLoader.h"
-#include "Quark/Asset/AssetExtensions.h"
+#include "Quark/Asset/MaterialSerializer.h"
 
 namespace quark {
 static std::filesystem::path s_AssetDirectory = "Assets";
@@ -61,6 +62,7 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 		if (metadata.isDataLoaded)
 		{
 			asset = m_LoadedAssets[id];
+			return asset;
 		}
 		else 
 		{
@@ -78,6 +80,14 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 					asset = textureLoader.LoadStb(metadata.filePath.string());
 					break;
 				}
+			case AssetType::MATERIAL:
+				{
+					MaterialSerializer matSerializer;
+					Ref<Material> newMat = CreateRef<Material>();
+					if (matSerializer.TryLoadData(metadata.filePath.string(), newMat))
+						asset = newMat;
+					break;
+				}
 			default:
 				CORE_ASSERT(0)
 			}
@@ -91,7 +101,6 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 			}
 		}
 	}
-
 
 	return asset;
 }

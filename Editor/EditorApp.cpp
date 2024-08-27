@@ -15,7 +15,8 @@
 #include <Quark/Scene/SceneSerializer.h>
 #include <Quark/Asset/TextureLoader.h>
 #include <Quark/Asset/AssetManager.h>
-#include <Quark/Renderer/DefaultRenderResources.h>
+#include <Quark/Asset/MaterialSerializer.h>
+#include "Quark/Renderer/GpuResourceManager.h"
 #include <Quark/UI/UI.h>
 
 namespace quark {
@@ -61,6 +62,9 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     m_EditorCamera.viewportWidth = Window::Instance()->GetWidth();
     m_EditorCamera.viewportHeight = Window::Instance()->GetHeight();
 
+    AssetID id = 11240586857107879824ull;
+    Ref<Material> testMat  = AssetManager::Get().GetAsset<Material>(id);
+    
     EventManager::Instance().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) {
         OnKeyPressed(e);
     });
@@ -71,7 +75,24 @@ EditorApp::~EditorApp()
     // Save asset registry
 
     AssetManager::Get().ImportAsset(std::filesystem::path("Assets/Textures/etc1s_cubemap_learnopengl.ktx2"));
+    AssetID newMatId = AssetManager::Get().ImportAsset(std::filesystem::path("Assets/Materials/testMat.qkmaterial"));
+
+    Ref<Material> newMat = CreateRef<Material>();
+    newMat->SetAssetID(newMatId);
+    newMat->baseColorTexture = m_CubeMapTexture;
+    newMat->metallicRoughnessTexture = CreateRef<Texture>();
+    newMat->metallicRoughnessTexture->image = GpuResourceManager::Get().whiteImage;
+    newMat->uniformBufferData.baseColorFactor = glm::vec4(1.0f);
+    newMat->uniformBufferData.metalicFactor = 1.0f;
+    newMat->uniformBufferData.roughNessFactor = 1.0f;
+    newMat->alphaMode = AlphaMode::OPAQUE;
+
+    MaterialSerializer matSerializer;
+    matSerializer.Serialize("Assets/Materials/testMat.qkmaterial", newMat);
+
     AssetManager::Get().SaveAssetRegistry();
+
+
 }
 
 void EditorApp::OnUpdate(TimeStep ts)
@@ -150,7 +171,7 @@ void EditorApp::OnImGuiUpdate()
     {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
         {
-            const wchar_t* path = (const wchar_t*)payload->Data;
+            const char* path = (const char*)payload->Data;
             OpenScene(path);
         }
 
@@ -474,7 +495,7 @@ void EditorApp::CreateColorDepthAttachments()
         color_image = m_GraphicDevice->CreateImage(image_desc);
 
         // Create Imgui texture id
-        m_ColorAttachmentId = UI::Get()->CreateTextureId(*color_image, *DefaultRenderResources::linearSampler);
+        m_ColorAttachmentId = UI::Get()->CreateTextureId(*color_image, *GpuResourceManager::Get().linearSampler);
 }
 
 void EditorApp::SetUpRenderPass()

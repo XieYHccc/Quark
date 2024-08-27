@@ -12,7 +12,7 @@ public:
 	virtual bool TryLoadData(const AssetMetadata& metadata, Ref<Asset>& asset) const = 0;
 
 	//TODO: Serialize and deserialize from AssetPack
-
+	
 };
 
 class MaterialSerializer : public AssetSerializer

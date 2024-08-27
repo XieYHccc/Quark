@@ -11,7 +11,7 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
-#include "Quark/Renderer/DefaultRenderResources.h"
+#include "Quark/Renderer/GpuResourceManager.h"
 #include "Quark/Asset/TextureLoader.h"
 
 namespace quark {
@@ -134,13 +134,13 @@ GLTFLoader::GLTFLoader(graphic::Device* device)
 
     // Create defalult texture
     defaultColorTexture_ = CreateRef<Texture>();
-    defaultColorTexture_->image = DefaultRenderResources::whiteImage;
-    defaultColorTexture_->sampler = DefaultRenderResources::linearSampler;
+    defaultColorTexture_->image = GpuResourceManager::Get().whiteImage;
+    defaultColorTexture_->sampler = GpuResourceManager::Get().linearSampler;
     defaultColorTexture_->SetDebugName("Default color texture");
 
     defaultMetalTexture_ =CreateRef<Texture>();
-    defaultMetalTexture_->image = DefaultRenderResources::whiteImage;
-    defaultMetalTexture_->sampler = DefaultRenderResources::linearSampler;
+    defaultMetalTexture_->image = GpuResourceManager::Get().whiteImage;
+    defaultMetalTexture_->sampler = GpuResourceManager::Get().linearSampler;
     defaultMetalTexture_->SetDebugName("Default metalic roughness texture");
 }
 
@@ -219,8 +219,8 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
         auto newTexture = CreateRef<Texture>();
 
         // Default values
-        newTexture->image = DefaultRenderResources::whiteImage;
-        newTexture->sampler = DefaultRenderResources::linearSampler;
+        newTexture->image = GpuResourceManager::Get().whiteImage;
+        newTexture->sampler = GpuResourceManager::Get().linearSampler;
 
         if (model_.textures[texture_index].source > -1) {
             newTexture->image = images_[model_.textures[texture_index].source];
@@ -402,7 +402,7 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
     
     CORE_LOGE("GLTFLoader::ParseImage::Failed to load image: {}", gltf_image.uri)
 
-    return DefaultRenderResources::checkboardImage;
+    return GpuResourceManager::Get().checkboardImage;
 }
 
 Ref<Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)

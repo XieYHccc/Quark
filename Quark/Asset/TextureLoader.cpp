@@ -8,7 +8,7 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Graphic/TextureFormatLayout.h"
-#include "Quark/Renderer/DefaultRenderResources.h"
+#include "Quark/Renderer/GpuResourceManager.h"
 
 namespace quark {
 Ref<Texture> TextureLoader::LoadKtx2(const std::string &file_path, bool isCubemap)
@@ -117,7 +117,7 @@ Ref<Texture> TextureLoader::LoadKtx2(const std::string &file_path, bool isCubema
         {
             Ref<Texture> newTexture = CreateRef<Texture>();
             newTexture->image = graphicDevice->CreateImage(desc, initData.data());
-            newTexture->sampler = isCubemap? DefaultRenderResources::cubeMapSampler : DefaultRenderResources::linearSampler;
+            newTexture->sampler = isCubemap? GpuResourceManager::Get().cubeMapSampler : GpuResourceManager::Get().linearSampler;
             ktxTranscoder.clear();
             return newTexture;
         }
@@ -159,7 +159,7 @@ Ref<Texture> TextureLoader::LoadStb(const std::string& file_path)
 
     Ref<Texture> newTexture = CreateRef<Texture>();
     newTexture->image = Application::Get().GetGraphicDevice()->CreateImage(desc, &init_data);
-    newTexture->sampler = DefaultRenderResources::linearSampler;
+    newTexture->sampler = GpuResourceManager::Get().linearSampler;
 
     return newTexture;
 }

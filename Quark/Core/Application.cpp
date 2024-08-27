@@ -9,7 +9,7 @@
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Asset/AssetManager.h"
-#include "Quark/Renderer/DefaultRenderResources.h"
+#include "Quark/Renderer/GpuResourceManager.h"
 
 #ifdef USE_VULKAN_DRIVER
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
@@ -44,7 +44,8 @@ Application::Application(const AppInitSpecs& specs)
 #endif
 
     // Init default render resources
-    DefaultRenderResources::Init();
+    GpuResourceManager::CreateSingleton();
+    GpuResourceManager::Get().Init();
 
     // Init UI system
     UI::CreateSingleton();
@@ -60,10 +61,11 @@ Application::~Application() {
 
     UI::Get()->Finalize();
     UI::FreeSingleton();
-    
-    DefaultRenderResources::ShutDown();
 
     AssetManager::FreeSingleton();
+
+    GpuResourceManager::Get().Shutdown();
+    GpuResourceManager::FreeSingleton();
 
     m_GraphicDevice->ShutDown();
     m_GraphicDevice.reset();

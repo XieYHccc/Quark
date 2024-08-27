@@ -54,9 +54,9 @@ void ContentBrowserPanel::OnImGuiUpdate()
 
 		if (ImGui::BeginDragDropSource())
 		{
-			std::filesystem::path relativePath(path);
-			const wchar_t* itemPath = relativePath.c_str();
-			ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
+			std::string pathString = path.string();
+			ImGui::TextUnformatted(filenameString.c_str());
+			ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", pathString.c_str(), pathString.size() + 1);
 			ImGui::EndDragDropSource();
 		}
 
@@ -67,7 +67,7 @@ void ContentBrowserPanel::OnImGuiUpdate()
 
 		}
 
-		ImGui::TextWrapped(filenameString.c_str());
+		ImGui::TextWrapped("%s", filenameString.c_str());
 		ImGui::NextColumn();
 
 	}
