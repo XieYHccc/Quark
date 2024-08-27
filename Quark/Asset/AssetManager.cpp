@@ -8,8 +8,8 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/StringUtils.h"
 #include "Quark/Asset/AssetExtensions.h"
-#include "Quark/Asset/MeshLoader.h"
-#include "Quark/Asset/TextureLoader.h"
+#include "Quark/Asset/MeshImporter.h"
+#include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/MaterialSerializer.h"
 
 namespace quark {
@@ -69,25 +69,25 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 			// Load asset data
 			switch (metadata.type) {
 			case AssetType::MESH:
-				{
-					MeshLoader meshLoader(Application::Get().GetGraphicDevice());
-					asset = meshLoader.LoadGLTF(metadata.filePath.string());
-					break;
-				}
+			{
+				MeshImporter meshLoader;
+				asset = meshLoader.ImportGLTF(metadata.filePath.string());
+				break;
+			}
 			case AssetType::TEXTURE:
-				{
-					TextureLoader textureLoader;
-					asset = textureLoader.LoadStb(metadata.filePath.string());
-					break;
-				}
+			{
+				TextureImporter textureLoader;
+				asset = textureLoader.ImportStb(metadata.filePath.string());
+				break;
+			}
 			case AssetType::MATERIAL:
-				{
-					MaterialSerializer matSerializer;
-					Ref<Material> newMat = CreateRef<Material>();
-					if (matSerializer.TryLoadData(metadata.filePath.string(), newMat))
-						asset = newMat;
-					break;
-				}
+			{
+				MaterialSerializer matSerializer;
+				Ref<Material> newMat = CreateRef<Material>();
+				if (matSerializer.TryLoadData(metadata.filePath.string(), newMat))
+					asset = newMat;
+				break;
+			}
 			default:
 				CORE_ASSERT(0)
 			}
@@ -110,7 +110,7 @@ bool AssetManager::IsAssetLoaded(AssetID id)
 	return m_LoadedAssets.contains(id);
 }
 
-bool AssetManager::IsAssetIDValid(AssetID id)
+bool AssetManager::IsAssetIdValid(AssetID id)
 {
 	return GetAssetMetadata(id).IsValid();
 }
@@ -140,6 +140,14 @@ AssetType AssetManager::GetAssetTypeFromExtension(const std::string& extension)
 	}
 
 	return s_AssetExtensionMap.at(ext);
+}
+
+AssetType AssetManager::GetAssetTypeFromID(AssetID id)
+{
+	if (IsAssetIdValid(id))
+		return GetAssetMetadata(id).type;
+	else
+		return AssetType::None;
 }
 
 AssetID AssetManager::GetAssetIDFromFilePath(const std::filesystem::path& filepath)
@@ -255,7 +263,7 @@ void AssetManager::LoadAssetRegistry()
 		SetMetadata(metadata.id, metadata);
 
 	}
-
+		CORE_LOGI("[AssetManager] Loaded {0} asset entries", m_AssetMetadata.size());
 }
 void AssetManager::SaveAssetRegistry()
 {

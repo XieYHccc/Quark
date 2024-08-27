@@ -10,6 +10,7 @@ inline static std::unordered_map<std::string, AssetType> s_AssetExtensionMap =
 	{ ".qkscene", AssetType::SCENE },
 	{ ".qkmesh", AssetType::MESH },
 	{ ".qkmaterial", AssetType::MATERIAL },
+	{ ".qktexture", AssetType::TEXTURE},
 	{ ".cs", AssetType::SCRIPT },
 
 	// mesh/animation source

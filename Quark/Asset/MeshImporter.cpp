@@ -1,10 +1,11 @@
 #include "Quark/qkpch.h"
-#include "Quark/Asset/MeshLoader.h"
+#include "Quark/Asset/MeshImporter.h"
 
 #include <glm/gtx/hash.hpp>
 #include <tiny_obj_loader.h>
 
-#include "Quark/Asset/GLTFLoader.h"
+#include "Quark/Core/Application.h"
+#include "Quark/Asset/GLTFImporter.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Scene.h"
 
@@ -24,10 +25,16 @@ namespace std {
 
 namespace quark {
 
-Ref<Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
-    GLTFLoader gltf_loader(graphicDevice_);
+MeshImporter::MeshImporter()
+	: graphicDevice_(Application::Get().GetGraphicDevice())
+{
 
-    Scope<Scene> gltf_scene = gltf_loader.LoadSceneFromFile(filepath);
+}
+
+Ref<Mesh> MeshImporter::ImportGLTF(const std::string& filepath) {
+	GLTFImporter gltf_importer;
+
+    Ref<Scene> gltf_scene = gltf_importer.Import(filepath);
     if (!gltf_scene) {
         CORE_LOGE("Failed to load gltf scene from file: {}", filepath);
         return nullptr;
@@ -45,7 +52,7 @@ Ref<Mesh> MeshLoader::LoadGLTF(const std::string& filepath) {
 
 }
 
-Ref<Mesh> MeshLoader::LoadOBJ(const std::string &filepath)
+Ref<Mesh> MeshImporter::ImportOBJ(const std::string &filepath)
 {
     tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig config;

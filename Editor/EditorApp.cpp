@@ -13,7 +13,7 @@
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/SceneSerializer.h>
-#include <Quark/Asset/TextureLoader.h>
+#include <Quark/Asset/TextureImporter.h>
 #include <Quark/Asset/AssetManager.h>
 #include <Quark/Asset/MaterialSerializer.h>
 #include "Quark/Renderer/GpuResourceManager.h"
@@ -43,8 +43,8 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     CreateColorDepthAttachments();
 
     // Load cube map
-    TextureLoader textureLoader;
-    m_CubeMapTexture = textureLoader.LoadKtx2("Assets/Textures/etc1s_cubemap_learnopengl.ktx2");
+    TextureImporter textureLoader;
+    m_CubeMapTexture = textureLoader.ImportKtx2("Assets/Textures/etc1s_cubemap_learnopengl.ktx2", true);
 
     // Load scene
     m_Scene = CreateScope<Scene>("");

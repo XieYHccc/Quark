@@ -1,7 +1,7 @@
 #include "Editor/Panel/ContentBrowserPanel.h"
 
 #include <Quark/Core/FileSystem.h>
-#include <Quark/Asset/TextureLoader.h>
+#include <Quark/Asset/TextureImporter.h>
 #include <Quark/UI/UI.h>
 
 namespace quark {
@@ -11,9 +11,9 @@ static std::filesystem::path s_AssetDirectory = "Assets";
 ContentBrowserPanel::ContentBrowserPanel()
 	:m_CurrentDirectory(s_AssetDirectory)
 {
-	TextureLoader loader;
-	m_FileIcon = loader.LoadStb("Assets/Icons/ContentBrowser/FileIcon.png");
-	m_FolderIcon = loader.LoadStb("Assets/Icons/ContentBrowser/DirectoryIcon.png");
+	TextureImporter loader;
+	m_FileIcon = loader.ImportStb("Assets/Icons/ContentBrowser/FileIcon.png");
+	m_FolderIcon = loader.ImportStb("Assets/Icons/ContentBrowser/DirectoryIcon.png");
 	m_FileIconId = UI::Get()->CreateTextureId(m_FileIcon);
 	m_FolderIconId = UI::Get()->CreateTextureId(m_FolderIcon);
 }

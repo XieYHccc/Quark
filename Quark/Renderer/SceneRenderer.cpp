@@ -5,7 +5,7 @@
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Graphic/Device.h"
-#include "Quark/Asset/MeshLoader.h"
+#include "Quark/Asset/MeshImporter.h"
 
 namespace quark {
 
@@ -14,8 +14,8 @@ SceneRenderer::SceneRenderer(graphic::Device* device)
     : m_GraphicDevice(device)
 {
     // Load Cube mesh
-    MeshLoader mesh_loader(m_GraphicDevice);
-    m_CubeMesh = mesh_loader.LoadGLTF("Assets/Gltf/cube.gltf");
+    MeshImporter mesh_loader;
+    m_CubeMesh = mesh_loader.ImportGLTF("Assets/Gltf/cube.gltf");
 
     // Create scene uniform buffer
     BufferDesc m_Scenebuffer_desc;

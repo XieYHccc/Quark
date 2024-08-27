@@ -16,24 +16,28 @@ public:
 	Ref<T> GetAsset(AssetID id);
 	Ref<Asset> GetAsset(AssetID id);
 
-	bool IsAssetIDValid(AssetID id);	// Is AssetID has a backup metadata? This has nothing to do with the actual asset data
+	bool IsAssetIdValid(AssetID id);	// Is AssetID has a backup metadata? This has nothing to do with the actual asset data
 	bool IsAssetLoaded(AssetID id);		// Is Asset has been loaded into memory?
+
+	std::unordered_set<AssetID> GetAllAssetsWithType(AssetType type);
 
 	AssetID ImportAsset(const std::filesystem::path& filepath);
 	void RemoveAsset(AssetID id);
 
 	AssetType GetAssetTypeFromPath(const std::filesystem::path& filepath);
 	AssetType GetAssetTypeFromExtension(const std::string& extension);
+	AssetType GetAssetTypeFromID(AssetID id);
 
 	AssetID GetAssetIDFromFilePath(const std::filesystem::path& filepath);
-	std::unordered_set<AssetID> GetAllAssetsWithType(AssetType type);
 
 	AssetMetadata GetAssetMetadata(AssetID id);
 	AssetMetadata GetAssetMetadata(const std::filesystem::path& filepath);
 
-	void SetMetadata(AssetID id, AssetMetadata metaData);
 	void LoadAssetRegistry();
 	void SaveAssetRegistry();
+
+private:
+	void SetMetadata(AssetID id, AssetMetadata metaData);
 	void ReloadAssets();
 
 	std::unordered_map<AssetID, Ref<Asset>> m_LoadedAssets;

@@ -1,8 +1,5 @@
 #include "Quark/qkpch.h"
 #include "Quark/Scene/SceneSerializer.h"
-
-#include <yaml-cpp/yaml.h>
-
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/SerializationUtils.h"
 #include "Quark/Asset/AssetManager.h"

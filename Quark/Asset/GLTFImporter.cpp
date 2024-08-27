@@ -1,9 +1,10 @@
 #include "Quark/qkpch.h"
-#include "Quark/Asset/GLTFLoader.h"
+#include "Quark/Asset/GLTFImporter.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <stb_image.h>
 
+#include <Quark/Core/Application.h>
 #include "Quark/Core/Util/AlignedAlloc.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
@@ -12,12 +13,12 @@
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Renderer/GpuResourceManager.h"
-#include "Quark/Asset/TextureLoader.h"
+#include "Quark/Asset/TextureImporter.h"
 
 namespace quark {
 using namespace quark::graphic;
 
-std::unordered_map<std::string, bool> GLTFLoader::supportedExtensions_ = {
+std::unordered_map<std::string, bool> GLTFImporter::supportedExtensions_ = {
     {"KHR_lights_punctual", false}};
 
 static bool loadImageDataFunc(tinygltf::Image* image, const int imageIndex, std::string* error, std::string* warning, int req_width, int req_height, const unsigned char* bytes, int size, void* userData)
@@ -77,74 +78,22 @@ inline SamplerAddressMode convert_wrap_mode(int wrap)
 	}
 };
 
-GLTFLoader::GLTFLoader(graphic::Device* device)
-    :device_(device)
+GLTFImporter::GLTFImporter()
+    :m_GraphicDevice(Application::Get().GetGraphicDevice())
 {
-    CORE_DEBUG_ASSERT(device_ != nullptr)
-
-    // Create default resouces
-    //defalutLinearSampler_ = device_->CreateSampler(SamplerDesc{.minFilter = SamplerFilter::LINEAR,
-    //    .magFliter = SamplerFilter::LINEAR,
-    //    .addressModeU = SamplerAddressMode::REPEAT,
-    //    .addressModeV = SamplerAddressMode::REPEAT,
-    //    .addressModeW = SamplerAddressMode::REPEAT});
-
-    //// defalut error check board image
-    //constexpr uint32_t black = 0x000000FF;
-    //constexpr uint32_t magenta = 0xFF00FFFF;
-    //std::array<uint32_t, 32 * 32 > pixels;
-    //for (int x = 0; x < 32; x++) {
-    //    for (int y = 0; y < 32; y++) {
-    //        pixels[y * 32 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
-    //    }
-    //}
-
-    //ImageDesc texture_desc = {
-    //    .width = 32,
-    //    .height = 32,
-    //    .depth = 1,
-    //    .mipLevels = 1,
-    //    .arraySize = 1,
-    //    .type = ImageType::TYPE_2D,
-    //    .format = DataFormat::R8G8B8A8_UNORM,
-    //    .initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-    //    .usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT
-    //};
-
-    //ImageInitData init_data = {
-    //    .data = pixels.data(),
-    //    .rowPitch = 32 * 4,
-    //    .slicePitch = 32 * 32 * 4
-    //};
-
-    //// defaultCheckBoardImage_ = device_->CreateImage(texture_desc, &init_data);
-
-    //// default White image
-    //constexpr uint32_t white = 0xFFFFFFFF;
-    //texture_desc.width = 1;
-    //texture_desc.height = 1;
-    //
-    //init_data = {
-    //    .data = &white,
-    //    .rowPitch = 1 * 4,
-    //    .slicePitch = 1 * 1 * 4
-    //};
-
-    // defaultWhiteImage_ = device_->CreateImage(texture_desc, &init_data);
-
     // Create defalult texture
-    defaultColorTexture_ = CreateRef<Texture>();
-    defaultColorTexture_->image = GpuResourceManager::Get().whiteImage;
-    defaultColorTexture_->sampler = GpuResourceManager::Get().linearSampler;
-    defaultColorTexture_->SetDebugName("Default color texture");
+    m_DefaultColorTexture = CreateRef<Texture>();
+    m_DefaultColorTexture->image = GpuResourceManager::Get().whiteImage;
+    m_DefaultColorTexture->sampler = GpuResourceManager::Get().linearSampler;
+    m_DefaultColorTexture->SetDebugName("Default color texture");
 
-    defaultMetalTexture_ =CreateRef<Texture>();
-    defaultMetalTexture_->image = GpuResourceManager::Get().whiteImage;
-    defaultMetalTexture_->sampler = GpuResourceManager::Get().linearSampler;
-    defaultMetalTexture_->SetDebugName("Default metalic roughness texture");
+    m_DefaultMetalTexture = CreateRef<Texture>();
+    m_DefaultMetalTexture->image = GpuResourceManager::Get().whiteImage;
+    m_DefaultMetalTexture->sampler = GpuResourceManager::Get().linearSampler;
+    m_DefaultMetalTexture->SetDebugName("Default metalic roughness texture");
 }
 
-Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
+Ref<Scene> GLTFImporter::Import(const std::string &filename)
 {
     CORE_LOGI("Loading GLTF file: {}", filename)
     
@@ -162,12 +111,12 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     if (pos == std::string::npos) {
         pos = filename.find_last_of('\\');
     }
-    filePath_ = filename.substr(0, pos);
+    m_FilePath = filename.substr(0, pos);
 
     // TODO:
     gltf_loader.SetImageLoader(loadImageDataFunc, nullptr);
 
-    bool importResult = binary? gltf_loader.LoadBinaryFromFile(&model_, &err, &warn, filename.c_str()) : gltf_loader.LoadASCIIFromFile(&model_, &err, &warn, filename.c_str());
+    bool importResult = binary? gltf_loader.LoadBinaryFromFile(&m_Model, &err, &warn, filename.c_str()) : gltf_loader.LoadASCIIFromFile(&m_Model, &err, &warn, filename.c_str());
 
 	if (!err.empty()){
 		CORE_LOGE("Error loading gltf model: {}.", err);
@@ -179,13 +128,13 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
         return nullptr;
 
 	// Check extensions
-	for (auto &used_extension : model_.extensionsUsed) {
+	for (auto &used_extension : m_Model.extensionsUsed) {
 		auto it = supportedExtensions_.find(used_extension);
 
-		// Check if extension isn't supported by the GLTFLoader
+		// Check if extension isn't supported by the GLTFImporter
 		if (it == supportedExtensions_.end()) {
 			// If extension is required then we shouldn't allow the scene to be loaded
-			if (std::find(model_.extensionsRequired.begin(), model_.extensionsRequired.end(), used_extension) != model_.extensionsRequired.end())
+			if (std::find(m_Model.extensionsRequired.begin(), m_Model.extensionsRequired.end(), used_extension) != m_Model.extensionsRequired.end())
 				CORE_ASSERT_MSG(0, "Cannot load glTF file. Contains a required unsupported extension: " + used_extension)
 			else
 				CORE_LOGW("glTF file contains an unsupported extension, unexpected results may occur: {}", used_extension)
@@ -197,48 +146,47 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
 		}
 	}
 
-    Scope<Scene> newScene = CreateScope<Scene>("gltf scene"); // name would be overwritten later..
-    scene_ = newScene.get();
+    m_Scene = CreateRef<Scene>("gltf scene"); // name would be overwritten later..
 
     // Load samplers
-    samplers_.resize(model_.samplers.size());
-    for (size_t sampler_index = 0; sampler_index < model_.samplers.size(); sampler_index++) {
-        samplers_[sampler_index] = ParseSampler(model_.samplers[sampler_index]);
+    samplers_.resize(m_Model.samplers.size());
+    for (size_t sampler_index = 0; sampler_index < m_Model.samplers.size(); sampler_index++) {
+        samplers_[sampler_index] = ParseSampler(m_Model.samplers[sampler_index]);
     }
 
     // Load images
-    images_.resize(model_.images.size());
-    for (size_t image_index = 0; image_index < model_.images.size(); image_index++) {
-        Ref<Image> newImage = ParseImage(model_.images[image_index]);
+    images_.resize(m_Model.images.size());
+    for (size_t image_index = 0; image_index < m_Model.images.size(); image_index++) {
+        Ref<Image> newImage = ParseImage(m_Model.images[image_index]);
         images_[image_index] = newImage;
     }
 
     // Load textures
-    textures_.resize(model_.textures.size());
-    for (size_t texture_index = 0; texture_index < model_.textures.size(); texture_index++) {
+    textures_.resize(m_Model.textures.size());
+    for (size_t texture_index = 0; texture_index < m_Model.textures.size(); texture_index++) {
         auto newTexture = CreateRef<Texture>();
 
         // Default values
         newTexture->image = GpuResourceManager::Get().whiteImage;
         newTexture->sampler = GpuResourceManager::Get().linearSampler;
 
-        if (model_.textures[texture_index].source > -1) {
-            newTexture->image = images_[model_.textures[texture_index].source];
+        if (m_Model.textures[texture_index].source > -1) {
+            newTexture->image = images_[m_Model.textures[texture_index].source];
         }
-        if (model_.textures[texture_index].sampler > -1) {
-            newTexture->sampler = samplers_[model_.textures[texture_index].sampler];
+        if (m_Model.textures[texture_index].sampler > -1) {
+            newTexture->sampler = samplers_[m_Model.textures[texture_index].sampler];
         }
 
         textures_[texture_index] = newTexture;
     }
 
     // Using dynamic uniform buffer for material uniform data
-    size_t min_ubo_alignment = device_->GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
+    size_t min_ubo_alignment = m_GraphicDevice->GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
     size_t dynamic_alignment = sizeof(Material::UniformBufferBlock);
 	if (min_ubo_alignment > 0)
 		dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
 
-	size_t buffer_size = (model_.materials.size() + 1) * dynamic_alignment; // additional 1 is for default material
+	size_t buffer_size = (m_Model.materials.size() + 1) * dynamic_alignment; // additional 1 is for default material
     auto* ubo_data = (Material::UniformBufferBlock*)util::memalign_alloc(dynamic_alignment, buffer_size);
     CORE_DEBUG_ASSERT(ubo_data)
 
@@ -249,13 +197,13 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
         .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
     };
 
-    Ref<graphic::Buffer> materialUniformBuffer = device_->CreateBuffer(uniform_buffer_desc);
+    Ref<graphic::Buffer> materialUniformBuffer = m_GraphicDevice->CreateBuffer(uniform_buffer_desc);
     auto* mapped_data = (Material::UniformBufferBlock*)materialUniformBuffer->GetMappedDataPtr();
 
     // Load materials
-    materials_.reserve(model_.materials.size() + 1); // one more default material
-    for (size_t material_index = 0; material_index < model_.materials.size(); material_index++) {
-        auto newMaterial = ParseMaterial(model_.materials[material_index]);
+    materials_.reserve(m_Model.materials.size() + 1); // one more default material
+    for (size_t material_index = 0; material_index < m_Model.materials.size(); material_index++) {
+        auto newMaterial = ParseMaterial(m_Model.materials[material_index]);
         auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (material_index * dynamic_alignment));
         *ubo = newMaterial->uniformBufferData;
         newMaterial->uniformBuffer = materialUniformBuffer;
@@ -265,17 +213,17 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
 
     // Create default material
     {
-        defaultMaterial_ = CreateRef<Material>();
-        defaultMaterial_->alphaMode = AlphaMode::OPAQUE;
-        defaultMaterial_->baseColorTexture = defaultColorTexture_;
-        defaultMaterial_->metallicRoughnessTexture = defaultMetalTexture_;
-        defaultMaterial_->uniformBuffer = materialUniformBuffer;
-        defaultMaterial_->uniformBufferOffset = model_.materials.size() * dynamic_alignment;
+        m_DefaultMaterial = CreateRef<Material>();
+        m_DefaultMaterial->alphaMode = AlphaMode::OPAQUE;
+        m_DefaultMaterial->baseColorTexture = m_DefaultColorTexture;
+        m_DefaultMaterial->metallicRoughnessTexture = m_DefaultMetalTexture;
+        m_DefaultMaterial->uniformBuffer = materialUniformBuffer;
+        m_DefaultMaterial->uniformBufferOffset = m_Model.materials.size() * dynamic_alignment;
         
-        auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (model_.materials.size() * dynamic_alignment));
-        *ubo = defaultMaterial_->uniformBufferData;
+        auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (m_Model.materials.size() * dynamic_alignment));
+        *ubo = m_DefaultMaterial->uniformBufferData;
 
-        materials_.push_back(defaultMaterial_);
+        materials_.push_back(m_DefaultMaterial);
     }
 
     // data copy
@@ -283,41 +231,41 @@ Scope<Scene> GLTFLoader::LoadSceneFromFile(const std::string &filename)
     util::memalign_free(ubo_data);
 
     // Load meshes
-    meshes_.reserve(model_.meshes.size());
-    for (const auto& gltf_mesh : model_.meshes) {
+    meshes_.reserve(m_Model.meshes.size());
+    for (const auto& gltf_mesh : m_Model.meshes) {
         meshes_.push_back(ParseMesh(gltf_mesh));
     }
 
     // TODO: scene handling with no default scene
     // TODO: Support gltf file with multiple scenes
-    // CORE_ASSERT(model_.scenes.size() == 1)
-    const tinygltf::Scene& gltf_scene = model_.scenes[model_.defaultScene > -1 ? model_.defaultScene : 0];
-    scene_->SetSceneName(gltf_scene.name);
+    // CORE_ASSERT(m_Model.scenes.size() == 1)
+    const tinygltf::Scene& gltf_scene = m_Model.scenes[m_Model.defaultScene > -1 ? m_Model.defaultScene : 0];
+    m_Scene->SetSceneName(gltf_scene.name);
 
     // Load nodes
-    entities_.reserve(model_.nodes.size());
-    for (const auto& gltf_node : model_.nodes) {
+    entities_.reserve(m_Model.nodes.size());
+    for (const auto& gltf_node : m_Model.nodes) {
         auto* newNode = ParseNode(gltf_node);
         entities_.push_back(newNode);
     }
 
     // Loop node again to establish hierachy
-    for (size_t i = 0; i < model_.nodes.size(); i++) {
-        for (const auto& child : model_.nodes[i].children)
+    for (size_t i = 0; i < m_Model.nodes.size(); i++) {
+        for (const auto& child : m_Model.nodes[i].children)
             entities_[i]->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[child]);
     }
 
     // Add root nodes manually
     // for (const auto& node : gltf_scene.nodes) {
-    //     scene_->GetRootEntity()->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[node]);
+    //     m_Scene->GetRootEntity()->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[node]);
     // }
 
-    return newScene;
+    return m_Scene;
 }
 
-Entity* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
+Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
 {
-    auto* newObj = scene_->CreateEntity(gltf_node.name, nullptr);
+    auto* newObj = m_Scene->CreateEntity(gltf_node.name, nullptr);
 
 	// Parse transform component
     TransformCmpt* transform = newObj->GetComponent<TransformCmpt>();
@@ -349,7 +297,7 @@ Entity* GLTFLoader::ParseNode(const tinygltf::Node& gltf_node)
     return newObj;
 }
 
-Ref<graphic::Sampler> GLTFLoader::ParseSampler(const tinygltf::Sampler &gltf_sampler)
+Ref<graphic::Sampler> GLTFImporter::ParseSampler(const tinygltf::Sampler &gltf_sampler)
 {
     SamplerDesc desc = {
         .minFilter = convert_min_filter(gltf_sampler.minFilter),
@@ -358,10 +306,10 @@ Ref<graphic::Sampler> GLTFLoader::ParseSampler(const tinygltf::Sampler &gltf_sam
         .addressModeV = convert_wrap_mode(gltf_sampler.wrapT)
     };
 
-    return device_->CreateSampler(desc);
+    return m_GraphicDevice->CreateSampler(desc);
 }
 
-Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
+Ref<graphic::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
 {
     if (!gltf_image.image.empty()) { // Image embedded in gltf file or loaded with stb
         ImageDesc desc;
@@ -382,11 +330,11 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
         init_data.rowPitch = desc.width * 4;
         init_data.slicePitch = init_data.rowPitch * desc.height;
 
-        return device_->CreateImage(desc, &init_data);
+        return m_GraphicDevice->CreateImage(desc, &init_data);
     }
     else { // Image loaded from external file
 
-        std::string image_uri = filePath_ + "/" +gltf_image.uri;
+        std::string image_uri = m_FilePath + "/" +gltf_image.uri;
         bool is_ktx = false;
         if (image_uri.find_last_of(".") != std::string::npos) {
             if (image_uri.substr(image_uri.find_last_of(".") + 1) == "ktx") {
@@ -395,17 +343,17 @@ Ref<graphic::Image> GLTFLoader::ParseImage(const tinygltf::Image& gltf_image)
         }
         
         if (is_ktx) {
-            TextureLoader textureLoader;
-            return textureLoader.LoadKtx(gltf_image.uri);
+            TextureImporter textureLoader;
+            return textureLoader.ImportKtx(gltf_image.uri)->image;
         }
     }
     
-    CORE_LOGE("GLTFLoader::ParseImage::Failed to load image: {}", gltf_image.uri)
+    CORE_LOGE("GLTFImporter::ParseImage::Failed to load image: {}", gltf_image.uri)
 
     return GpuResourceManager::Get().checkboardImage;
 }
 
-Ref<Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
+Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
 {
     auto newMaterial = CreateRef<Material>();
     newMaterial->SetDebugName(mat.name);
@@ -434,8 +382,8 @@ Ref<Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
     }
     
     // Default textures
-    newMaterial->baseColorTexture = defaultColorTexture_;
-    newMaterial->metallicRoughnessTexture = defaultMetalTexture_;
+    newMaterial->baseColorTexture = m_DefaultColorTexture;
+    newMaterial->metallicRoughnessTexture = m_DefaultMetalTexture;
 
     find = mat.values.find("metallicRoughnessTexture");
     if (find != mat.values.end()) {
@@ -450,7 +398,7 @@ Ref<Material> GLTFLoader::ParseMaterial(const tinygltf::Material& mat)
     return newMaterial;
 }
 
-Ref<Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
+Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 {
 
     vertices_.clear();
@@ -461,9 +409,9 @@ Ref<Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 
     // Get vertex count and index count up-front
     for (const auto& p : gltf_mesh.primitives) {
-        vertex_count += model_.accessors[p.attributes.find("POSITION")->second].count;
+        vertex_count += m_Model.accessors[p.attributes.find("POSITION")->second].count;
         if (p.indices > -1) {
-            index_count += model_.accessors[p.indices].count;
+            index_count += m_Model.accessors[p.indices].count;
         }
     }
     vertices_.reserve(vertex_count);
@@ -492,30 +440,30 @@ Ref<Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 
             // Position attribute is required
             CORE_ASSERT_MSG(p.attributes.find("POSITION") != p.attributes.end(), "Position attribute is required")
-            const tinygltf::Accessor &posAccessor = model_.accessors[p.attributes.find("POSITION")->second];
-            const tinygltf::BufferView &posView = model_.bufferViews[posAccessor.bufferView];
-            buffer_pos = reinterpret_cast<const float *>(&(model_.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
+            const tinygltf::Accessor &posAccessor = m_Model.accessors[p.attributes.find("POSITION")->second];
+            const tinygltf::BufferView &posView = m_Model.bufferViews[posAccessor.bufferView];
+            buffer_pos = reinterpret_cast<const float *>(&(m_Model.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
             min_pos = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
             max_pos = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
             CORE_DEBUG_ASSERT(min_pos != max_pos)
             
             if (p.attributes.find("NORMAL") != p.attributes.end()) {
-                const tinygltf::Accessor& normAccessor = model_.accessors[p.attributes.find("NORMAL")->second];
-                const tinygltf::BufferView& normView = model_.bufferViews[normAccessor.bufferView];
-                buffer_normals= reinterpret_cast<const float *>(&(model_.buffers[normView.buffer].data[normAccessor.byteOffset + normView.byteOffset]));
+                const tinygltf::Accessor& normAccessor = m_Model.accessors[p.attributes.find("NORMAL")->second];
+                const tinygltf::BufferView& normView = m_Model.bufferViews[normAccessor.bufferView];
+                buffer_normals= reinterpret_cast<const float *>(&(m_Model.buffers[normView.buffer].data[normAccessor.byteOffset + normView.byteOffset]));
             }
 
             if (p.attributes.find("TEXCOORD_0") != p.attributes.end()) {
-                const tinygltf::Accessor &uvAccessor = model_.accessors[p.attributes.find("TEXCOORD_0")->second];
-                const tinygltf::BufferView &uvView = model_.bufferViews[uvAccessor.bufferView];
-                buffer_texCoords = reinterpret_cast<const float *>(&(model_.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
+                const tinygltf::Accessor &uvAccessor = m_Model.accessors[p.attributes.find("TEXCOORD_0")->second];
+                const tinygltf::BufferView &uvView = m_Model.bufferViews[uvAccessor.bufferView];
+                buffer_texCoords = reinterpret_cast<const float *>(&(m_Model.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
             }
 
             if (p.attributes.find("COLOR_0") != p.attributes.end())
             {
-                const tinygltf::Accessor& colorAccessor = model_.accessors[p.attributes.find("COLOR_0")->second];
-                const tinygltf::BufferView& colorView = model_.bufferViews[colorAccessor.bufferView];
-                buffer_colors = &(model_.buffers[colorView.buffer].data[colorAccessor.byteOffset + colorView.byteOffset]);
+                const tinygltf::Accessor& colorAccessor = m_Model.accessors[p.attributes.find("COLOR_0")->second];
+                const tinygltf::BufferView& colorView = m_Model.bufferViews[colorAccessor.bufferView];
+                buffer_colors = &(m_Model.buffers[colorView.buffer].data[colorAccessor.byteOffset + colorView.byteOffset]);
                 numColorComponents = colorAccessor.type == TINYGLTF_PARAMETER_TYPE_FLOAT_VEC3 ? 3 : 4;
                 colorComponentType = colorAccessor.componentType;
                 CORE_DEBUG_ASSERT(colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT
@@ -574,9 +522,9 @@ Ref<Mesh> GLTFLoader::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 
         // Indices
         {
-            const tinygltf::Accessor &accessor = model_.accessors[p.indices];
-            const tinygltf::BufferView &bufferView = model_.bufferViews[accessor.bufferView];
-            const tinygltf::Buffer &buffer = model_.buffers[bufferView.buffer];
+            const tinygltf::Accessor &accessor = m_Model.accessors[p.indices];
+            const tinygltf::BufferView &bufferView = m_Model.bufferViews[accessor.bufferView];
+            const tinygltf::Buffer &buffer = m_Model.buffers[bufferView.buffer];
 
             index_num = static_cast<uint32_t>(accessor.count);
             const void* data_ptr = &(buffer.data[accessor.byteOffset + bufferView.byteOffset]);

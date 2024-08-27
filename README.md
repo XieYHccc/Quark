@@ -50,6 +50,7 @@ Quark is my personal learning project.
   - [ ] Plane Light
 - [ ] Scriping System
 - [ ] Multithreading architecture (Rendering and Game Logitc)
+- [ ] Dedicated Asset Loading thread
 - [ ] Physics System
 - [ ] Ray Tracing
 

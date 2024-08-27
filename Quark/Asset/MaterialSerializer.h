@@ -6,11 +6,11 @@ namespace quark {
 class MaterialSerializer {
 public:
 
-    void Serialize(const std::string& filePath, const Ref<Material>& materialAsset);
-    bool TryLoadData(const std::string& filepath, Ref<Material>& outMaterial);
+    void Serialize(const std::string& fePath, const Ref<Material>& materialAsset);
+    bool TryLoadData(const std::string& fililepath, Ref<Material>& outMaterial);
     
-    void SerializeBinary();
-    bool DeserializeBinary();
+    void SerializeToAssetPack();
+    bool DeserializeFromAssetPack();
 
 private:
     std::string SerializeToYaml(const Ref<Material>& materialAsset);

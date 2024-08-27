@@ -16,10 +16,10 @@ class Device;
 class Scene;
 class GameObject;
 class Entity;
-class GLTFLoader {
+class GLTFImporter {
 public:
-    GLTFLoader(graphic::Device* device);
-    Scope<Scene> LoadSceneFromFile(const std::string& file_path);
+    GLTFImporter();
+    Ref<Scene> Import(const std::string& file_path);
 
 private:
     Ref<graphic::Sampler> ParseSampler(const tinygltf::Sampler& gltf_sampler);
@@ -28,14 +28,14 @@ private:
     Ref<Mesh> ParseMesh(const tinygltf::Mesh& gltf_mesh);
     Entity* ParseNode(const tinygltf::Node& gltf_node);
 
-    graphic::Device* device_;
-    tinygltf::Model model_;
-    Scene* scene_;
-    std::string filePath_;
+    graphic::Device* m_GraphicDevice;
+    tinygltf::Model m_Model;
+    Ref<Scene> m_Scene;
+    std::string m_FilePath;
 
-    Ref<Texture> defaultColorTexture_;
-    Ref<Texture> defaultMetalTexture_;
-    Ref<Material> defaultMaterial_;
+    Ref<Texture> m_DefaultColorTexture;
+    Ref<Texture> m_DefaultMetalTexture;
+    Ref<Material> m_DefaultMaterial;
     
     // Supported extensions mapped to whether they are enabled
     static std::unordered_map<std::string, bool> supportedExtensions_;
