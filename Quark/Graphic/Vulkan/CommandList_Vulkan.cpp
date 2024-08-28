@@ -8,11 +8,11 @@
 
 namespace quark::graphic {
 CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
-    : CommandList(type), device_(device)
+    : CommandList(type), m_GraphicDevice(device)
 {
-    CORE_DEBUG_ASSERT(device_ != nullptr)
-    auto& vulkan_context = device_->vkContext;
-    VkDevice vk_device = device_->vkDevice;
+    CORE_DEBUG_ASSERT(m_GraphicDevice != nullptr)
+    auto& vulkan_context = m_GraphicDevice->vkContext;
+    VkDevice vk_device = m_GraphicDevice->vkDevice;
 
     // Create command pool
     VkCommandPoolCreateInfo poolInfo = {};
@@ -35,57 +35,57 @@ CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
         break;
     }
     poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    VK_CHECK(vkCreateCommandPool(vk_device, &poolInfo, nullptr, &cmdPool_))
+    VK_CHECK(vkCreateCommandPool(vk_device, &poolInfo, nullptr, &m_CmdPool))
 
     // Allocate command buffer
     VkCommandBufferAllocateInfo commandBufferInfo = {};
     commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     commandBufferInfo.commandBufferCount = 1;
-    commandBufferInfo.commandPool = cmdPool_;
+    commandBufferInfo.commandPool = m_CmdPool;
     commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    VK_CHECK(vkAllocateCommandBuffers(vk_device, &commandBufferInfo, &cmdBuffer_))
+    VK_CHECK(vkAllocateCommandBuffers(vk_device, &commandBufferInfo, &m_CmdBuffer))
 
     VkSemaphoreCreateInfo semCreateInfo = {};
     semCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    VK_CHECK(vkCreateSemaphore(vk_device, &semCreateInfo, nullptr, &cmdCompleteSemaphore_))
+    VK_CHECK(vkCreateSemaphore(vk_device, &semCreateInfo, nullptr, &m_CmdCompleteSemaphore))
 }
 
 void CommandList_Vulkan::ResetAndBeginCmdBuffer()
 {
     // Reset status
-    vkResetCommandPool(device_->vkDevice, cmdPool_, 0);
+    vkResetCommandPool(m_GraphicDevice->vkDevice, m_CmdPool, 0);
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     beginInfo.pInheritanceInfo = nullptr; // Optional
-    VK_CHECK(vkBeginCommandBuffer(cmdBuffer_, &beginInfo))
+    VK_CHECK(vkBeginCommandBuffer(m_CmdBuffer, &beginInfo))
 
-    waitForSwapchainImage_ = false;
-    swapChainWaitStages_ = 0;
-    imageBarriers_.clear();
-    bufferBarriers_.clear();
-    memoryBarriers_.clear();
+    m_WaitForSwapchainImage = false;
+    m_SwapChainWaitStages = 0;
+    m_ImageBarriers.clear();
+    m_BufferBarriers.clear();
+    m_MemoryBarriers.clear();
     state = CommandListState::IN_RECORDING;
 
-    dirty_SetBits_ = 0;
-    ditry_SetDynamicBits_ = 0;
-    dirty_VertexBufferBits_ = 0;
-    bindingState_ = {};
-    currentPipeLine_ = nullptr;
+    m_DirtySetBits = 0;
+    m_DirtySetDynamicBits = 0;
+    m_DirtyVertexBufferBits = 0;
+    m_BindingState = {};
+    m_CurrentPipeline = nullptr;
 
 }
 
 CommandList_Vulkan::~CommandList_Vulkan()
 {
-    vkDestroySemaphore(device_->vkDevice, cmdCompleteSemaphore_, nullptr);
-    vkDestroyCommandPool(device_->vkDevice, cmdPool_, nullptr); 
+    vkDestroySemaphore(m_GraphicDevice->vkDevice, m_CmdCompleteSemaphore, nullptr);
+    vkDestroyCommandPool(m_GraphicDevice->vkDevice, m_CmdPool, nullptr); 
 }
 
 void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier *imageBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier *bufferBarriers, u32 bufferBarriersCount)
 {
     CORE_DEBUG_ASSERT(bufferBarriers == nullptr);   // do not support buffer barrier for now
 
-    CORE_DEBUG_ASSERT(memoryBarriers_.empty() && imageBarriers_.empty() && bufferBarriers_.empty())
+    CORE_DEBUG_ASSERT(m_MemoryBarriers.empty() && m_ImageBarriers.empty() && m_BufferBarriers.empty())
 
     // Memory Barriers
     for (size_t i = 0; i < memoryBarriersCount; ++i) {
@@ -97,7 +97,7 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
         vk_memory_barrier.srcAccessMask = (VkAccessFlagBits2)memory_barrier.srcMemoryAccessBits;
         vk_memory_barrier.dstStageMask = (VkPipelineStageFlagBits2)memory_barrier.dstStageBits;
         vk_memory_barrier.dstAccessMask = (VkAccessFlagBits2)memory_barrier.dstMemoryAccessBits;
-        memoryBarriers_.push_back(vk_memory_barrier);
+        m_MemoryBarriers.push_back(vk_memory_barrier);
     }
 
     // Image Barriers
@@ -149,40 +149,40 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
         vk_image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         vk_image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-        imageBarriers_.push_back(vk_image_barrier);
+        m_ImageBarriers.push_back(vk_image_barrier);
     }
     
     // TODO:Support buffer barrier
 
-    if (!memoryBarriers_.empty() || !imageBarriers_.empty() || !bufferBarriers_.empty()) {
+    if (!m_MemoryBarriers.empty() || !m_ImageBarriers.empty() || !m_BufferBarriers.empty()) {
         VkDependencyInfo dependency_info = {};
         dependency_info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-        dependency_info.memoryBarrierCount = static_cast<uint32_t>(memoryBarriers_.size());
-        dependency_info.pMemoryBarriers = memoryBarriers_.data();
-        dependency_info.bufferMemoryBarrierCount = static_cast<uint32_t>(bufferBarriers_.size());
-        dependency_info.pBufferMemoryBarriers = bufferBarriers_.data();
-        dependency_info.imageMemoryBarrierCount = static_cast<uint32_t>(imageBarriers_.size());
-        dependency_info.pImageMemoryBarriers = imageBarriers_.data();
+        dependency_info.memoryBarrierCount = static_cast<uint32_t>(m_MemoryBarriers.size());
+        dependency_info.pMemoryBarriers = m_MemoryBarriers.data();
+        dependency_info.bufferMemoryBarrierCount = static_cast<uint32_t>(m_BufferBarriers.size());
+        dependency_info.pBufferMemoryBarriers = m_BufferBarriers.data();
+        dependency_info.imageMemoryBarrierCount = static_cast<uint32_t>(m_ImageBarriers.size());
+        dependency_info.pImageMemoryBarriers = m_ImageBarriers.data();
 
-        device_->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(cmdBuffer_, &dependency_info);
+        m_GraphicDevice->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(m_CmdBuffer, &dependency_info);
 
-        memoryBarriers_.clear();
-        imageBarriers_.clear();
-        bufferBarriers_.clear();
+        m_MemoryBarriers.clear();
+        m_ImageBarriers.clear();
+        m_BufferBarriers.clear();
     }
 }
 
 void CommandList_Vulkan::ResetBindingStatus()
 {
-    bindingState_ = {};
+    m_BindingState = {};
 
     for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++) {
-        currentSets[i] = VK_NULL_HANDLE;
+        m_CurrentSets[i] = VK_NULL_HANDLE;
     }
 
-    dirty_SetBits_ = 0;
-    dirty_VertexBufferBits_ = 0;
-    ditry_SetDynamicBits_ = 0;
+    m_DirtySetBits = 0;
+    m_DirtyVertexBufferBits = 0;
+    m_DirtySetDynamicBits= 0;
 }
 
 void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
@@ -198,8 +198,8 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
 
     // Change state
     state = CommandListState::IN_RENDERPASS;
-    currentRenderPassInfo_ = &info;
-    currentPipeLine_ = nullptr;
+    m_CurrentRenderPassInfo = &info;
+    m_CurrentPipeline = nullptr;
     ResetBindingStatus();
 
     VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
@@ -255,9 +255,10 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
         color_attachments[i].clearValue.color.float32[3] = info.clearColors[i].color[3];
 
         // internal swapchain image state tracking
-        if (internal_image.IsSwapChainImage()) {
-            waitForSwapchainImage_ = true;
-            swapChainWaitStages_ |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+        if (internal_image.IsSwapChainImage()) 
+        {
+            m_WaitForSwapchainImage = true;
+            m_SwapChainWaitStages |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
         }
     }
 
@@ -285,7 +286,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     rendering_info.pStencilAttachment = nullptr;
     rendering_info.pNext = nullptr;
 
-    device_->vkContext->extendFunction.pVkCmdBeginRenderingKHR(cmdBuffer_, &rendering_info);   
+    m_GraphicDevice->vkContext->extendFunction.pVkCmdBeginRenderingKHR(m_CmdBuffer, &rendering_info);   
 }
 
 void CommandList_Vulkan::EndRenderPass()
@@ -297,28 +298,28 @@ void CommandList_Vulkan::EndRenderPass()
 #endif
     // Set state back to in recording
     state = CommandListState::IN_RECORDING;
-    device_->vkContext->extendFunction.pVkCmdEndRenderingKHR(cmdBuffer_);
+    m_GraphicDevice->vkContext->extendFunction.pVkCmdEndRenderingKHR(m_CmdBuffer);
 }
 
-void CommandList_Vulkan::BindPushConstant(const void *data, uint32_t offset, uint32_t size)
+void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_t size)
 {
     CORE_DEBUG_ASSERT(offset + size < PUSH_CONSTANT_DATA_SIZE)
 
 #ifdef QK_DEBUG_BUILD
-    if (currentPipeLine_ == nullptr) 
+    if (m_CurrentPipeline == nullptr) 
     {
         CORE_LOGE("You can not bind a push constant before binding a pipeline.")
         return;
     }
-    if (currentPipeLine_->GetLayout()->pushConstant.size == 0) 
+    if (m_CurrentPipeline->GetLayout()->pushConstant.size == 0) 
     {
         CORE_LOGE("Current pipeline's layout do not have a push constant")
         return;
     }
 #endif
 
-    auto& layout = *currentPipeLine_->GetLayout();
-    vkCmdPushConstants(cmdBuffer_,
+    auto& layout = *m_CurrentPipeline->GetLayout();
+    vkCmdPushConstants(m_CmdBuffer,
         layout.handle,
         layout.pushConstant.stageFlags,
         offset,
@@ -333,31 +334,31 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
     CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
-    if (currentPipeLine_ == nullptr) {
+    if (m_CurrentPipeline == nullptr) {
         CORE_LOGE("You must bind a pipeline before binding a uniform buffer.")
     }
     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0) {
         CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : The bounded buffer doesn't has BUFFER_USAGE_UNIFORM_BUFFER_BIT")
     }
-    if ((currentPipeLine_->GetLayout()->setLayoutMask & (1u << set)) == 0 ||
-        (currentPipeLine_->GetLayout()->setLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
+    if ((m_CurrentPipeline->GetLayout()->setLayoutMask & (1u << set)) == 0 ||
+        (m_CurrentPipeline->GetLayout()->setLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
         CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : Set: {}, binding: {} is not a uniforom buffer.", set, binding)
     }
 #endif
 
     auto& internal_buffer = ToInternal(&buffer);
-    auto& b = bindingState_.descriptorBindings[set][binding];
+    auto& b = m_BindingState.descriptorBindings[set][binding];
 
     if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size) {
         if (b.dynamicOffset != offset) {
-            ditry_SetDynamicBits_ |= 1u << set;
+            m_DirtySetDynamicBits|= 1u << set;
             b.dynamicOffset = offset;
         }
     }
     else {
         b.buffer = {internal_buffer.GetHandle(), 0, size};
         b.dynamicOffset = offset;
-        dirty_SetBits_ |= 1u << set;
+        m_DirtySetBits |= 1u << set;
     }
 
 }
@@ -368,27 +369,27 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
     CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
-    if (currentPipeLine_ == nullptr) {
+    if (m_CurrentPipeline == nullptr) {
         CORE_LOGE("You must bind a pipeline before binding a storage buffer.")
     }
     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT) == 0) {
         CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : The bounded buffer doesn't has BUFFER_USAGE_STORAGE_BUFFER_BIT")
     }
-    if ((currentPipeLine_->GetLayout()->setLayoutMask & (1u << set)) == 0 ||
-        (currentPipeLine_->GetLayout()->setLayouts[set].storage_buffer_mask & (1u << binding))== 0) {
+    if ((m_CurrentPipeline->GetLayout()->setLayoutMask & (1u << set)) == 0 ||
+        (m_CurrentPipeline->GetLayout()->setLayouts[set].storage_buffer_mask & (1u << binding))== 0) {
         CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : Set: {}, binding: {} is not a storage buffer.", set, binding)
     }
 #endif
 
     auto& internal_buffer = ToInternal(&buffer);
-    auto& b = bindingState_.descriptorBindings[set][binding];
+    auto& b = m_BindingState.descriptorBindings[set][binding];
 
     if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size) 
         return;
 
     b.buffer = {internal_buffer.GetHandle(), offset, size};
     b.dynamicOffset = 0;
-    dirty_SetBits_ |= 1u << set;
+    m_DirtySetBits |= 1u << set;
 
 
 }
@@ -399,7 +400,7 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
     CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
-    if (currentPipeLine_ == nullptr) {
+    if (m_CurrentPipeline == nullptr) {
         CORE_LOGE("You must bind a pipeline before binding a image.")
     }
     if (!(image.GetDesc().usageBits & IMAGE_USAGE_SAMPLING_BIT) &&
@@ -412,14 +413,14 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
 #endif
 
     auto& internal_image = ToInternal(&image);
-    auto& b = bindingState_.descriptorBindings[set][binding];
+    auto& b = m_BindingState.descriptorBindings[set][binding];
 
     if (b.image.imageView == internal_image.GetView() && b.image.imageLayout == ConvertImageLayout(layout))
         return;
 
     b.image.imageView = internal_image.GetView();
     b.image.imageLayout = ConvertImageLayout(layout);
-    dirty_SetBits_ |= 1u << set;
+    m_DirtySetBits |= 1u << set;
     
 }
 
@@ -429,23 +430,23 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
     CORE_DEBUG_ASSERT(internal_pipeline.GetHandle() != VK_NULL_HANDLE)
 
 #ifdef QK_DEBUG_BUILD
-    if (currentRenderPassInfo_ == nullptr) {
+    if (m_CurrentRenderPassInfo == nullptr) {
         CORE_LOGE("BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.")
         return;
     }
     const auto& render_pass_info = internal_pipeline.GetRenderPassInfo();
-    if (render_pass_info.numColorAttachments != currentRenderPassInfo_->numColorAttachments) {
+    if (render_pass_info.numColorAttachments != m_CurrentRenderPassInfo->numColorAttachments) {
         CORE_LOGE("BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.")
         return;
     }
 
-    if (render_pass_info.depthAttachmentFormat != currentRenderPassInfo_->depthAttachmentFormat) {
+    if (render_pass_info.depthAttachmentFormat != m_CurrentRenderPassInfo->depthAttachmentFormat) {
         CORE_LOGE("BindPipeLine()::The pipeline's depth attachment is not equal to the current render pass.")
         return;
     }
 
     for (size_t i = 0; i < render_pass_info.numColorAttachments; i++) {
-        if (render_pass_info.colorAttachmentFormats[i] != currentRenderPassInfo_->colorAttachments[i]->GetDesc().format) {
+        if (render_pass_info.colorAttachmentFormats[i] != m_CurrentRenderPassInfo->colorAttachments[i]->GetDesc().format) {
             CORE_LOGE("BindPipeLine()::The pipeline's color attachment format[{}] is not equal to the current render pass.", i)
             return;
         
@@ -453,17 +454,17 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
     }
 #endif
 
-    if (currentPipeLine_ == &internal_pipeline) {
+    if (m_CurrentPipeline == &internal_pipeline) {
         return;
     }
     
     if (internal_pipeline.GetBindingPoint() == PipeLineBindingPoint::GRAPHIC)
-        vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, internal_pipeline.GetHandle());
+        vkCmdBindPipeline(m_CmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, internal_pipeline.GetHandle());
     else
-        vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.GetHandle());
+        vkCmdBindPipeline(m_CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.GetHandle());
 
     // Reset status
-    currentPipeLine_ = &internal_pipeline;
+    m_CurrentPipeline = &internal_pipeline;
     ResetBindingStatus();
 }
 
@@ -473,19 +474,19 @@ void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sample
     CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
-    if (currentPipeLine_ == nullptr) {
+    if (m_CurrentPipeline == nullptr) {
         CORE_LOGE("You must bind a pipeline before binding a sampler.")
     }
 #endif
 
     auto& internal_sampler = ToInternal(&sampler);
-    auto& b = bindingState_.descriptorBindings[set][binding];
+    auto& b = m_BindingState.descriptorBindings[set][binding];
 
     if (b.image.sampler == internal_sampler.GetHandle())
         return;
 
     b.image.sampler = internal_sampler.GetHandle();
-    dirty_SetBits_ |= 1u << set;
+    m_DirtySetBits |= 1u << set;
 }
 
 void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const IndexBufferFormat format)
@@ -494,7 +495,7 @@ void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const
     CORE_DEBUG_ASSERT(internal_buffer.GetHandle() != VK_NULL_HANDLE)
     CORE_DEBUG_ASSERT((buffer.GetDesc().usageBits & BUFFER_USAGE_INDEX_BUFFER_BIT) != 0)
     
-    auto& index_buffer_binding_state = bindingState_.indexBufferBindingState;
+    auto& index_buffer_binding_state = m_BindingState.indexBufferBindingState;
     if (internal_buffer.GetHandle() == index_buffer_binding_state.buffer &&
         offset == index_buffer_binding_state.offset &&
         format == index_buffer_binding_state.format) {
@@ -505,7 +506,7 @@ void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const
     index_buffer_binding_state.offset = offset;
     index_buffer_binding_state.format = format;
 
-    vkCmdBindIndexBuffer(cmdBuffer_, internal_buffer.GetHandle(), offset, (format == IndexBufferFormat::UINT16? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32));
+    vkCmdBindIndexBuffer(m_CmdBuffer, internal_buffer.GetHandle(), offset, (format == IndexBufferFormat::UINT16? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32));
 }
 
 void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64 offset)
@@ -515,7 +516,7 @@ void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64
     CORE_DEBUG_ASSERT(binding < VERTEX_BUFFER_MAX_NUM)
     CORE_DEBUG_ASSERT(buffer.GetDesc().usageBits & BUFFER_USAGE_VERTEX_BUFFER_BIT)
 
-    auto& vertex_buffer_binding_state = bindingState_.vertexBufferBindingState;
+    auto& vertex_buffer_binding_state = m_BindingState.vertexBufferBindingState;
     if (vertex_buffer_binding_state.buffers[binding] == internal_buffer.GetHandle() &&
         vertex_buffer_binding_state.offsets[binding] == offset) {
         return;
@@ -523,36 +524,36 @@ void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64
 
     vertex_buffer_binding_state.buffers[binding] = internal_buffer.GetHandle();
     vertex_buffer_binding_state.offsets[binding] = offset;
-    dirty_VertexBufferBits_ |= 1u << binding;
+    m_DirtyVertexBufferBits |= 1u << binding;
 
 }
 
 void CommandList_Vulkan::SetScissor(const Scissor &scissor)
 {
-	scissor_.offset = { scissor.offset.x, scissor.offset.y };
-	scissor_.extent = { scissor.extent.width,scissor.extent.height };
+	m_Scissor.offset = { scissor.offset.x, scissor.offset.y };
+	m_Scissor.extent = { scissor.extent.width,scissor.extent.height };
 
-	vkCmdSetScissor(cmdBuffer_, 0, 1, &scissor_);
+	vkCmdSetScissor(m_CmdBuffer, 0, 1, &m_Scissor);
 }
 
 void CommandList_Vulkan::SetViewPort(const Viewport &viewport)
 {
-	viewport_.x = viewport.x;
-	viewport_.y = viewport.y;
-	viewport_.width = viewport.width;
-	viewport_.height = viewport.height;
-	viewport_.minDepth = viewport.minDepth;
-	viewport_.maxDepth = viewport.maxDepth;
+	m_Viewport.x = viewport.x;
+	m_Viewport.y = viewport.y;
+	m_Viewport.width = viewport.width;
+	m_Viewport.height = viewport.height;
+	m_Viewport.minDepth = viewport.minDepth;
+	m_Viewport.maxDepth = viewport.maxDepth;
 
-	vkCmdSetViewport(cmdBuffer_, 0, 1, &viewport_);
+	vkCmdSetViewport(m_CmdBuffer, 0, 1, &m_Viewport);
 }
 
-void CommandList_Vulkan::Flush_DescriptorSet(u32 set)
+void CommandList_Vulkan::FlushDescriptorSet(u32 set)
 {
-    CORE_DEBUG_ASSERT((currentPipeLine_->GetLayout()->setLayoutMask & (1u << set)) != 0)
+    CORE_DEBUG_ASSERT((m_CurrentPipeline->GetLayout()->setLayoutMask & (1u << set)) != 0)
 
-    auto& set_layout = currentPipeLine_->GetLayout()->setLayouts[set];
-    auto& bindings = bindingState_.descriptorBindings[set];
+    auto& set_layout = m_CurrentPipeline->GetLayout()->setLayouts[set];
+    auto& bindings = m_BindingState.descriptorBindings[set];
 
 	u32 num_dynamic_offsets = 0;
 	u32 dynamic_offsets[SET_BINDINGS_MAX_NUM];
@@ -627,28 +628,28 @@ void CommandList_Vulkan::Flush_DescriptorSet(u32 set)
         }
     }
     util::Hash hash = h.get();
-    auto allocated = currentPipeLine_->GetLayout()->setAllocators[set]->Find(hash);
+    auto allocated = m_CurrentPipeline->GetLayout()->setAllocators[set]->Find(hash);
 
     // The descriptor set was not successfully cached, rebuild
     if (!allocated.second) {
-        auto updata_template = currentPipeLine_->GetLayout()->updateTemplate[set];
+        auto updata_template = m_CurrentPipeline->GetLayout()->updateTemplate[set];
         CORE_DEBUG_ASSERT(updata_template)
-        vkUpdateDescriptorSetWithTemplate(device_->vkDevice, allocated.first, updata_template, bindings);
+        vkUpdateDescriptorSetWithTemplate(m_GraphicDevice->vkDevice, allocated.first, updata_template, bindings);
     }
 
-    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
-        currentPipeLine_->GetLayout()->handle, set, 1, &allocated.first, num_dynamic_offsets, dynamic_offsets);
+    vkCmdBindDescriptorSets(m_CmdBuffer, (m_CurrentPipeline->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
+        m_CurrentPipeline->GetLayout()->handle, set, 1, &allocated.first, num_dynamic_offsets, dynamic_offsets);
 
-    currentSets[set] = allocated.first;
+    m_CurrentSets[set] = allocated.first;
 }  
 
-void CommandList_Vulkan::Rebind_DescriptorSet(u32 set)
+void CommandList_Vulkan::RebindDescriptorSet(u32 set)
 {
-    CORE_DEBUG_ASSERT((currentPipeLine_->GetLayout()->setLayoutMask & (1u << set)) != 0)
-    CORE_DEBUG_ASSERT(currentSets[set] != nullptr)
+    CORE_DEBUG_ASSERT((m_CurrentPipeline->GetLayout()->setLayoutMask & (1u << set)) != 0)
+    CORE_DEBUG_ASSERT(m_CurrentSets[set] != nullptr)
 
-    auto& set_layout = currentPipeLine_->GetLayout()->setLayouts[set];
-    auto& bindings = bindingState_.descriptorBindings[set];
+    auto& set_layout = m_CurrentPipeline->GetLayout()->setLayouts[set];
+    auto& bindings = m_BindingState.descriptorBindings[set];
 
 	u32 num_dynamic_offsets = 0;
 	uint32_t dynamic_offsets[SET_BINDINGS_MAX_NUM];
@@ -660,57 +661,57 @@ void CommandList_Vulkan::Rebind_DescriptorSet(u32 set)
         }
     });
 
-    vkCmdBindDescriptorSets(cmdBuffer_, (currentPipeLine_->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
-        currentPipeLine_->GetLayout()->handle, set, 1, &currentSets[set], num_dynamic_offsets, dynamic_offsets);
+    vkCmdBindDescriptorSets(m_CmdBuffer, (m_CurrentPipeline->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
+        m_CurrentPipeline->GetLayout()->handle, set, 1, &m_CurrentSets[set], num_dynamic_offsets, dynamic_offsets);
 }
 
 void CommandList_Vulkan::DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance)
 {
-    CORE_DEBUG_ASSERT(bindingState_.indexBufferBindingState.buffer != VK_NULL_HANDLE)
+    CORE_DEBUG_ASSERT(m_BindingState.indexBufferBindingState.buffer != VK_NULL_HANDLE)
 
     // Flush render state : update descriptor sets and bind vertex buffers 
-    Flush_RenderState();
+    FlushRenderState();
     
-    vkCmdDrawIndexed(cmdBuffer_, index_count, instance_count, first_index, vertex_offset, first_instance);
+    vkCmdDrawIndexed(m_CmdBuffer, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
 void CommandList_Vulkan::Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
 {
     // Flush render state : update descriptor sets and bind vertex buffers 
-    Flush_RenderState();
+    FlushRenderState();
 
-    vkCmdDraw(cmdBuffer_, vertex_count, instance_count, first_vertex, first_instance);
+    vkCmdDraw(m_CmdBuffer, vertex_count, instance_count, first_vertex, first_instance);
 }
 
-void CommandList_Vulkan::Flush_RenderState()
+void CommandList_Vulkan::FlushRenderState()
 {
-    auto* pipeline_layout = currentPipeLine_->GetLayout();
+    auto* pipeline_layout = m_CurrentPipeline->GetLayout();
 
     // 1. Flush dirty descriptor set
-    u32 sets_need_update = pipeline_layout->setLayoutMask & dirty_SetBits_;
-    util::for_each_bit(sets_need_update, [&](u32 set) { Flush_DescriptorSet(set);});
-    dirty_SetBits_ &= ~sets_need_update;
+    u32 sets_need_update = pipeline_layout->setLayoutMask & m_DirtySetBits;
+    util::for_each_bit(sets_need_update, [&](u32 set) { FlushDescriptorSet(set); });
+    m_DirtySetBits &= ~sets_need_update;
 
     // If we update a set, we also bind dynamically
-    ditry_SetDynamicBits_ &= ~sets_need_update;
+    m_DirtySetDynamicBits&= ~sets_need_update;
 
     // if only rebound dynamic uniform buffers with different offset,
     // we only need to rebinding descriptor set with different dynamic offsets
-    u32 dynamic_sets_need_update = pipeline_layout->setLayoutMask & ditry_SetDynamicBits_;
-    util::for_each_bit(dynamic_sets_need_update, [&](u32 set) {Rebind_DescriptorSet(set);});
-    ditry_SetDynamicBits_ &= ~dynamic_sets_need_update;
+    u32 dynamic_sets_need_update = pipeline_layout->setLayoutMask & m_DirtySetDynamicBits;
+    util::for_each_bit(dynamic_sets_need_update, [&](u32 set) {RebindDescriptorSet(set);});
+    m_DirtySetDynamicBits&= ~dynamic_sets_need_update;
 
     // 2.Flush dirty vertex buffer
-    auto& vertex_buffer_bindings = bindingState_.vertexBufferBindingState;
-    util::for_each_bit_range(dirty_VertexBufferBits_, [&](u32 first_binding, u32 count) {
+    auto& vertex_buffer_bindings = m_BindingState.vertexBufferBindingState;
+    util::for_each_bit_range(m_DirtyVertexBufferBits, [&](u32 first_binding, u32 count) {
 #ifdef QK_DEBUG_BUILD
         for (size_t binding = first_binding; binding < count; ++binding) {
             CORE_DEBUG_ASSERT(vertex_buffer_bindings.buffers[binding] != VK_NULL_HANDLE)
         }
 #endif
-        vkCmdBindVertexBuffers(cmdBuffer_, first_binding, count, vertex_buffer_bindings.buffers + first_binding, vertex_buffer_bindings.offsets + first_binding);
+        vkCmdBindVertexBuffers(m_CmdBuffer, first_binding, count, vertex_buffer_bindings.buffers + first_binding, vertex_buffer_bindings.offsets + first_binding);
     });
-    dirty_VertexBufferBits_ = 0;
+    m_DirtyVertexBufferBits = 0;
 
 }
 

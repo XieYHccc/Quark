@@ -81,7 +81,7 @@ public:
     CommandList(QueueType type) : m_QueueType(type) {};
     virtual ~CommandList() = default;
 
-    virtual void BindPushConstant(const void* data, uint32_t offset, uint32_t size) = 0;
+    virtual void PushConstant(const void* data, uint32_t offset, uint32_t size) = 0;
     virtual void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) = 0;   
     virtual void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) = 0;
     virtual void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) = 0;

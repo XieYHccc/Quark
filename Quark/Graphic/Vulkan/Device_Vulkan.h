@@ -99,7 +99,8 @@ public:
     bool isFormatSupported(DataFormat format) override final;
     void SetDebugName(const Ref<GpuResource>& resouce, const char* name) override final;
 
-    // Vulkan specific
+    ///////////////////// Vulkan specific ////////////////////////////////
+
 public:
     DescriptorSetAllocator* Request_DescriptorSetAllocator(const DescriptorSetLayout& layout);
 

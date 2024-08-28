@@ -48,21 +48,23 @@ public:
     ~DescriptorSetAllocator();
 
     void BeginFrame();
-    VkDescriptorSetLayout GetLayout() const { return layout_; }
+    VkDescriptorSetLayout GetLayout() const { return m_Layout; }
     std::pair<VkDescriptorSet, bool> Find(size_t hash);
 
 private:
-    Device_Vulkan* device_;
-    VkDescriptorSetLayout layout_ = VK_NULL_HANDLE;
-    std::vector<PoolSizeRatio> poolSizeRatios_;
-    std::vector<VkDescriptorPool> pools_;
-    uint32_t setsPerPool_ = DEFAULT_SETS_NUM_PER_POOL; // default value
+    Device_Vulkan* m_Device;
+
+    VkDescriptorSetLayout m_Layout = VK_NULL_HANDLE;
+    std::vector<PoolSizeRatio> m_PoolSizeRatios;
+    std::vector<VkDescriptorPool> m_Pools;
+
+    uint32_t setsPerPool = DEFAULT_SETS_NUM_PER_POOL; // default value
 
     struct DescriptorSetNode : util::TemporaryHashmapEnabled<DescriptorSetNode>, util::IntrusiveListEnabled<DescriptorSetNode>
     {
         explicit DescriptorSetNode(VkDescriptorSet set_) : set(set_) {}
         VkDescriptorSet set;
     };
-    util::TemporaryHashmap<DescriptorSetNode, DESCRIPTOR_SET_RING_SIZE, true> set_nodes;
+    util::TemporaryHashmap<DescriptorSetNode, DESCRIPTOR_SET_RING_SIZE, true> m_SetNodes;
 };
 }

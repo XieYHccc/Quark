@@ -86,7 +86,7 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 	out << YAML::EndMap; // Entity
 }
 
-SceneSerializer::SceneSerializer(Scene* scene)
+SceneSerializer::SceneSerializer(Ref<Scene>& scene)
 	: m_Scene(scene)
 {
 

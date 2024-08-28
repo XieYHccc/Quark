@@ -50,20 +50,17 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     m_Scene = CreateScope<Scene>("");
 
     // Init UI Panels
-    m_HeirarchyPanel.SetScene(m_Scene.get());
-    m_InspectorPanel.SetScene(m_Scene.get());
+    m_HeirarchyPanel.SetScene(m_Scene);
+    m_InspectorPanel.SetScene(m_Scene);
 
     // SetUp Renderer
     m_SceneRenderer = CreateScope<SceneRenderer>(m_GraphicDevice.get());
-    m_SceneRenderer->SetScene(m_Scene.get());
+    m_SceneRenderer->SetScene(m_Scene);
     m_SceneRenderer->SetCubeMap(m_CubeMapTexture);
 
     // Adjust editor camera's aspect ratio
     m_EditorCamera.viewportWidth = Window::Instance()->GetWidth();
     m_EditorCamera.viewportHeight = Window::Instance()->GetHeight();
-
-    AssetID id = 11240586857107879824ull;
-    Ref<Material> testMat  = AssetManager::Get().GetAsset<Material>(id);
     
     EventManager::Instance().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) {
         OnKeyPressed(e);
@@ -222,11 +219,11 @@ void EditorApp::OnImGuiUpdate()
 
 void EditorApp::NewScene()
 {
-    m_Scene = CreateScope<Scene>("New Scene");
+    m_Scene = CreateRef<Scene>("New Scene");
 
-    m_SceneRenderer->SetScene(m_Scene.get());
-    m_HeirarchyPanel.SetScene(m_Scene.get());
-    m_InspectorPanel.SetScene(m_Scene.get());
+    m_SceneRenderer->SetScene(m_Scene);
+    m_HeirarchyPanel.SetScene(m_Scene);
+    m_InspectorPanel.SetScene(m_Scene);
 }
 
 void EditorApp::OpenScene()
@@ -241,13 +238,13 @@ void EditorApp::OpenScene()
 
 void EditorApp::OpenScene(const std::filesystem::path& path)
 {
-    m_Scene = CreateScope<Scene>("");
-    SceneSerializer serializer(m_Scene.get());
+    m_Scene = CreateRef<Scene>("");
+    SceneSerializer serializer(m_Scene);
     serializer.Deserialize(path.string());
 
-    m_SceneRenderer->SetScene(m_Scene.get());
-    m_HeirarchyPanel.SetScene(m_Scene.get());
-    m_InspectorPanel.SetScene(m_Scene.get());
+    m_SceneRenderer->SetScene(m_Scene);
+    m_HeirarchyPanel.SetScene(m_Scene);
+    m_InspectorPanel.SetScene(m_Scene);
 }
 
 void EditorApp::SaveSceneAs()
@@ -255,7 +252,7 @@ void EditorApp::SaveSceneAs()
     std::filesystem::path filepath = FileSystem::SaveFileDialog({ { "Quark Scene", "qkscene" } });
     if (!filepath.empty())
     {
-        SceneSerializer serializer(m_Scene.get());
+        SceneSerializer serializer(m_Scene);
         serializer.Serialize(filepath.string());
     }
 }
@@ -430,9 +427,9 @@ void EditorApp::CreatePipeline()
 
     // Scene shaders
     vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(ShaderStage::STAGE_VERTEX,
-        "Resources/Shaders/Spirv/pbr.vert.spv");
+        "Resources/Shaders/Spirv/mesh.vert.spv");
     frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(ShaderStage::STAGE_FRAGEMNT,
-        "Resources/Shaders/Spirv/pbr.frag.spv");
+        "Resources/Shaders/Spirv/mesh.frag.spv");
     
     // Scene pipeline
     GraphicPipeLineDesc pipe_desc;

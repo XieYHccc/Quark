@@ -23,5 +23,5 @@ private:
     VkPushConstantRange pushConstant_;
 };
 
-CONVERT_TO_VULKAN_INTERNAL(Shader)
+CONVERT_TO_VULKAN_INTERNAL_FUNC(Shader)
 }

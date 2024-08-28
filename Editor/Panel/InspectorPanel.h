@@ -10,12 +10,12 @@ public:
 
     void OnImGuiUpdate() override;
 
-    void SetScene(Scene* scene) { m_Scene = scene; }
+    void SetScene(Ref<Scene> scene) { m_Scene = scene; }
     void SetSelectedEntity(Entity* entity) { m_SelectedEntity = entity; }
 
 private:
     Entity* m_SelectedEntity;
-    Scene* m_Scene;
+    Ref<Scene> m_Scene;
     bool m_Rename;
     char m_Buf[128];
 

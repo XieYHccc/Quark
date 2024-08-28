@@ -7,19 +7,21 @@ namespace quark {
 class SceneHeirarchyPanel final: public Panel {
 public:
     SceneHeirarchyPanel();
-    SceneHeirarchyPanel(Scene* scene);
+    SceneHeirarchyPanel(Ref<Scene> scene);
 
     void OnImGuiUpdate() override;
 
-    void SetScene(Scene* scene);
+    void SetScene(Ref<Scene> scene);
 
     Entity* GetSelectedEntity() { return m_SelectedEntity; }
 
 private:
     void DrawEntity(Entity* entity);
 
-    Scene* m_Scene;
+    Ref<Scene> m_Scene;
+
     Entity* m_SelectedEntity;
+
     std::vector<Entity*> m_GarbageEntities;
 
 };

@@ -70,14 +70,16 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 			switch (metadata.type) {
 			case AssetType::MESH:
 			{
-				MeshImporter meshLoader;
-				asset = meshLoader.ImportGLTF(metadata.filePath.string());
+				// TODO: Use MeshSerializer instead of MeshImporter
+				MeshImporter meshImporter;
+				asset = meshImporter.ImportGLTF(metadata.filePath.string());
 				break;
 			}
 			case AssetType::TEXTURE:
 			{
-				TextureImporter textureLoader;
-				asset = textureLoader.ImportStb(metadata.filePath.string());
+				// TODO: Use TextureSerializer instead of TextureImporter
+				TextureImporter textureImporter;
+				asset = textureImporter.ImportStb(metadata.filePath.string());
 				break;
 			}
 			case AssetType::MATERIAL:

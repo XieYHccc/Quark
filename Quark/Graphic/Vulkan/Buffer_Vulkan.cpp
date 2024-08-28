@@ -6,19 +6,19 @@ namespace quark::graphic {
 
 Buffer_Vulkan::~Buffer_Vulkan()
 {
-    if (handle_ != VK_NULL_HANDLE) {
-        auto& frame = device_->GetCurrentFrame();
-        frame.garbageBuffers.push_back(std::make_pair(handle_, allocation_)); 
+    if (m_Handle != VK_NULL_HANDLE) {
+        auto& frame = m_Device->GetCurrentFrame();
+        frame.garbageBuffers.push_back(std::make_pair(m_Handle, m_Allocation)); 
     }
 }
 
 Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, const void* init_data)
-    : Buffer(desc), device_(device)
+    : Buffer(desc), m_Device(device)
 {
-    CORE_DEBUG_ASSERT(device_ != nullptr)
+    CORE_DEBUG_ASSERT(m_Device != nullptr)
     CORE_DEBUG_ASSERT(desc.size != 0)
 
-    const auto& vulkan_context = device_->vkContext;
+    const auto& vulkan_context = m_Device->vkContext;
 
     // Buffer create info
     VkBufferCreateInfo buffer_create_info = {};
@@ -31,7 +31,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     if (vulkan_context->features12.bufferDeviceAddress)
         buffer_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    if (device_->vkContext->uniqueQueueFamilies.size() > 1) {
+    if (m_Device->vkContext->uniqueQueueFamilies.size() > 1) {
         buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
         buffer_create_info.queueFamilyIndexCount = vulkan_context->uniqueQueueFamilies.size();
         buffer_create_info.pQueueFamilyIndices = vulkan_context->uniqueQueueFamilies.data();
@@ -61,15 +61,15 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     } 
 
     // Create Buffer
-    VK_CHECK(vmaCreateBuffer(device_->vmaAllocator, &buffer_create_info, &alloc_create_info, &handle_, &allocation_, &allocInfo_))
+    VK_CHECK(vmaCreateBuffer(m_Device->vmaAllocator, &buffer_create_info, &alloc_create_info, &m_Handle, &m_Allocation, &m_AllocInfo))
 
     if (desc.domain == BufferMemoryDomain::CPU)
-        m_pMappedData = allocInfo_.pMappedData;
+        m_pMappedData = m_AllocInfo.pMappedData;
 
     if (vulkan_context->features12.bufferDeviceAddress) {
         VkBufferDeviceAddressInfo bda_info = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
-        bda_info.buffer = handle_;
-        m_GpuAddress = vkGetBufferDeviceAddress(device_->vkDevice, &bda_info); 
+        bda_info.buffer = m_Handle;
+        m_GpuAddress = vkGetBufferDeviceAddress(m_Device->vkDevice, &bda_info); 
     }
 
     // Data Copy
@@ -79,7 +79,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
         }
         else {  // static data uplodaing
 
-            Device_Vulkan::CopyCmdAllocator::CopyCmd copyCmd = device_->copyAllocator.allocate(desc.size);
+            Device_Vulkan::CopyCmdAllocator::CopyCmd copyCmd = m_Device->copyAllocator.allocate(desc.size);
             memcpy(copyCmd.stageBuffer->GetMappedDataPtr(), init_data, m_Desc.size);
 
             // copy buffer
@@ -87,10 +87,10 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
             copyRegion.size = desc.size;
             copyRegion.srcOffset = 0;
             copyRegion.dstOffset = 0;
-            vkCmdCopyBuffer(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).handle_, handle_, 1, &copyRegion);
+            vkCmdCopyBuffer(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).m_Handle, m_Handle, 1, &copyRegion);
 
             // Submit this command which would block CPU
-            device_->copyAllocator.submit(copyCmd);
+            m_Device->copyAllocator.submit(copyCmd);
         }
     }
 

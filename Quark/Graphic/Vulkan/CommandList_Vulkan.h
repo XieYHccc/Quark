@@ -22,8 +22,8 @@ public:
     CommandList_Vulkan(Device_Vulkan* device, QueueType type_);
     ~CommandList_Vulkan();
 
+    void PushConstant(const void* data, uint32_t offset, uint32_t size) override;
     void BindPipeLine(const PipeLine& pipeline) override;
-    void BindPushConstant(const void* data, uint32_t offset, uint32_t size) override;
     void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override;
     void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override;
     void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) override;
@@ -41,44 +41,29 @@ public:
     void BeginRenderPass(const RenderPassInfo& info) override;
     void EndRenderPass() override;
 
-public:
+    ///////////////////////// Vulkan specific /////////////////////////
+
     void ResetAndBeginCmdBuffer();
-    const VkCommandBuffer GetHandle() const { return cmdBuffer_; }
-    const VkSemaphore GetCmdCompleteSemaphore() const { return cmdCompleteSemaphore_; }
-    std::uint32_t GetSwapChainWaitStages() const { return swapChainWaitStages_; }
-    bool IsWaitingForSwapChainImage() const { return waitForSwapchainImage_; }
+    const VkCommandBuffer GetHandle() const { return m_CmdBuffer; }
+    const VkSemaphore GetCmdCompleteSemaphore() const { return m_CmdCompleteSemaphore; }
+    std::uint32_t GetSwapChainWaitStages() const { return m_SwapChainWaitStages; }
+    bool IsWaitingForSwapChainImage() const { return m_WaitForSwapchainImage; }
     
 private:
-    void Flush_DescriptorSet(u32 set);
-    void Flush_RenderState();
-    void Rebind_DescriptorSet(u32 set);
+    void FlushDescriptorSet(u32 set);
+    void FlushRenderState();
+    void RebindDescriptorSet(u32 set);
     void ResetBindingStatus();
 
-    Device_Vulkan* device_;
-    VkSemaphore cmdCompleteSemaphore_;
-    VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
-    VkCommandPool cmdPool_ = VK_NULL_HANDLE;
-    std::vector<VkMemoryBarrier2> memoryBarriers_;
-    std::vector<VkImageMemoryBarrier2> imageBarriers_;
-    std::vector<VkBufferMemoryBarrier2> bufferBarriers_;
-    bool waitForSwapchainImage_ = false;
-    u32 swapChainWaitStages_ = 0;
-
-    // Rendering state 
-    const RenderPassInfo* currentRenderPassInfo_ = nullptr;
-    const PipeLine_Vulkan* currentPipeLine_ = nullptr;
-    VkDescriptorSet currentSets[DESCRIPTOR_SET_MAX_NUM] = {};
-    VkViewport viewport_ = {};
-    VkRect2D scissor_ = {};
-
-    struct BindingState {
-        DescriptorBinding descriptorBindings[DESCRIPTOR_SET_MAX_NUM][SET_BINDINGS_MAX_NUM] = {};
+private:
+    struct BindingState
+    {
         struct VertexBufferBindingState
         {
             VkBuffer buffers[VERTEX_BUFFER_MAX_NUM] = {};
             VkDeviceSize offsets[VERTEX_BUFFER_MAX_NUM] = {};
         } vertexBufferBindingState;
-        
+
         struct IndexBufferBindingState
         {
             VkBuffer buffer = VK_NULL_HANDLE;
@@ -86,13 +71,33 @@ private:
             IndexBufferFormat format = IndexBufferFormat::UINT32;
         } indexBufferBindingState;
 
-    } bindingState_;
+        DescriptorBinding descriptorBindings[DESCRIPTOR_SET_MAX_NUM][SET_BINDINGS_MAX_NUM] = {};
+    };
 
 
-    u32 dirty_SetBits_ = 0;
-    u32 ditry_SetDynamicBits_ = 0;
-    u32 dirty_VertexBufferBits_ = 0;
+    Device_Vulkan* m_GraphicDevice;
+    VkSemaphore m_CmdCompleteSemaphore = VK_NULL_HANDLE;
+    VkCommandBuffer m_CmdBuffer = VK_NULL_HANDLE;
+    VkCommandPool m_CmdPool = VK_NULL_HANDLE;
+
+    std::vector<VkMemoryBarrier2> m_MemoryBarriers;
+    std::vector<VkImageMemoryBarrier2> m_ImageBarriers;
+    std::vector<VkBufferMemoryBarrier2> m_BufferBarriers;
+    bool m_WaitForSwapchainImage = false;
+    uint32_t m_SwapChainWaitStages = 0;
+
+    // Rendering state 
+    const RenderPassInfo* m_CurrentRenderPassInfo = nullptr;
+    const PipeLine_Vulkan* m_CurrentPipeline = nullptr;
+    VkDescriptorSet m_CurrentSets[DESCRIPTOR_SET_MAX_NUM] = {};
+    VkViewport m_Viewport = {};
+    VkRect2D m_Scissor = {};
+    BindingState m_BindingState;
+
+    uint32_t m_DirtySetBits = 0;
+    uint32_t m_DirtySetDynamicBits = 0;
+    uint32_t m_DirtyVertexBufferBits = 0;
 };
 
-CONVERT_TO_VULKAN_INTERNAL(CommandList)
+CONVERT_TO_VULKAN_INTERNAL_FUNC(CommandList)
 }

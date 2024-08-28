@@ -33,7 +33,7 @@ VULKAN_INTERNAL_CLASS(Sampler)
 
 #undef VULKAN_INTERNAL_CLASS
 
-#define CONVERT_TO_VULKAN_INTERNAL(x_) \
+#define CONVERT_TO_VULKAN_INTERNAL_FUNC(x_) \
     inline x_##_Vulkan& ToInternal(x_* ptr) { return *static_cast<x_##_Vulkan*>(ptr);} \
     inline const x_##_Vulkan& ToInternal(const x_* ptr) {return *static_cast<const x_##_Vulkan*>(ptr);}\
 

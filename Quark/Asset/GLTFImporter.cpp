@@ -343,8 +343,8 @@ Ref<graphic::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
         }
         
         if (is_ktx) {
-            TextureImporter textureLoader;
-            return textureLoader.ImportKtx(gltf_image.uri)->image;
+            TextureImporter textureImporter;
+            return textureImporter.ImportKtx(gltf_image.uri)->image;
         }
     }
     

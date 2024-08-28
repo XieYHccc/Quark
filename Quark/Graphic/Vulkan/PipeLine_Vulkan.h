@@ -39,5 +39,5 @@ private:
     RenderPassInfo renderPassInfo_;
 };
 
-CONVERT_TO_VULKAN_INTERNAL(PipeLine)
+CONVERT_TO_VULKAN_INTERNAL_FUNC(PipeLine)
 }

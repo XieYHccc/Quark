@@ -8,7 +8,7 @@ class Scene;
 class SceneSerializer
 {
 public:
-	SceneSerializer(Scene* scene);
+	SceneSerializer(Ref<Scene>& scene);
 
 	void Serialize(const std::filesystem::path& filepath);
 	void SerializeBinary(AssetID scene);
@@ -21,6 +21,6 @@ public:
 	inline static std::string_view s_DefaultExtension = ".qkscene";
 
 private:
-	Scene* m_Scene;
+	Ref<Scene> m_Scene;
 };
 }

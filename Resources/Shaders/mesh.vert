@@ -3,7 +3,7 @@
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_buffer_reference : require
 
-#include "input_structures.glsl"
+#include "./include/input_structures.glsl"
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec3 outColor;
@@ -23,26 +23,23 @@ layout(buffer_reference, std430) readonly buffer VertexBuffer{
 };
 
 //push constants block
-layout( push_constant ) uniform constants
+layout( push_constant ) uniform PushConstants
 {
-	mat4 render_matrix;
+	mat4 modelMatrix;
 	VertexBuffer vertexBuffer;
 
-	float metalicFactor;
-	float roughnessFactor;
-	vec4 colorFactors;
-} PushConstants;
+} modelData;
 
 void main() 
 {
-	Vertex v = PushConstants.vertexBuffer.vertices[gl_VertexIndex];
+	Vertex v = modelData.vertexBuffer.vertices[gl_VertexIndex];
 	
 	vec4 position = vec4(v.position, 1.0f);
 
-	gl_Position =  sceneData.viewproj * PushConstants.render_matrix * position;
+	gl_Position =  sceneData.viewproj * modelData.modelMatrix * position;
 
-	outNormal = (PushConstants.render_matrix * vec4(v.normal, 0.f)).xyz;
-	outColor = v.color.xyz * PushConstants.colorFactors.xyz;	
+	outNormal = (modelData.modelMatrix * vec4(v.normal, 0.f)).xyz;
+	outColor = v.color.xyz;
 	outUV.x = v.uv_x;
 	outUV.y = v.uv_y;
 }

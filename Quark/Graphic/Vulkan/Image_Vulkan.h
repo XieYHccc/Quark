@@ -64,7 +64,7 @@ private:
     bool isSwapChainImage_;
 };
 
-CONVERT_TO_VULKAN_INTERNAL(Image)
+CONVERT_TO_VULKAN_INTERNAL_FUNC(Image)
 
 class Sampler_Vulkan : public Sampler {
 public:
@@ -76,5 +76,5 @@ private:
     VkSampler handle_;
 };
 
-CONVERT_TO_VULKAN_INTERNAL(Sampler)
+CONVERT_TO_VULKAN_INTERNAL_FUNC(Sampler)
 }

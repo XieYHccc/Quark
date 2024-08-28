@@ -49,7 +49,7 @@ public:
     graphic::DataFormat depth_format = quark::graphic::DataFormat::D32_SFLOAT;
     graphic::DataFormat color_format; // Same with swapchain format
     
-    Scope<Scene> m_Scene;
+    Ref<Scene> m_Scene;
     Scope<SceneRenderer> m_SceneRenderer;
     EditorCamera m_EditorCamera;
 

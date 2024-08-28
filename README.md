@@ -53,6 +53,7 @@ Quark is my personal learning project.
 - [ ] Dedicated Asset Loading thread
 - [ ] Physics System
 - [ ] Ray Tracing
+- [ ] Bindless Model
 
 ## Current Editor Looklike
 ![Editor Screen shot](EditorScreenShot.png "Editor's look")

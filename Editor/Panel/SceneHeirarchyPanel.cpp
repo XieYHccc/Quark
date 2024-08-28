@@ -12,13 +12,13 @@ SceneHeirarchyPanel::SceneHeirarchyPanel() : m_Scene(nullptr), m_SelectedEntity(
 
 }
 
-SceneHeirarchyPanel::SceneHeirarchyPanel(Scene* scene) : m_Scene(scene), m_SelectedEntity(nullptr)
+SceneHeirarchyPanel::SceneHeirarchyPanel(Ref<Scene> scene) : m_Scene(scene), m_SelectedEntity(nullptr)
 {
 
 }
 
 
-void SceneHeirarchyPanel::SetScene(Scene *scene)
+void SceneHeirarchyPanel::SetScene(Ref<Scene> scene)
 {
     m_Scene = scene;
     m_SelectedEntity = nullptr;
