@@ -3,6 +3,8 @@
 #include "Quark/Graphic/Device.h"
 
 namespace quark {
+
+// This class is responsible for managing some global gpu resources
 class GpuResourceManager : public util::MakeSingleton<GpuResourceManager> {
 public:
     // Default resources
@@ -20,6 +22,7 @@ public:
     void Init();
     void Shutdown();
 
+    Ref<graphic::Buffer> RequestMaterialUniformBuffer(size_t& outOffset);
 
 };
 }

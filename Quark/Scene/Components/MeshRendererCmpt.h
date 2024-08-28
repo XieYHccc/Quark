@@ -11,10 +11,12 @@ public:
 
 	MeshRendererCmpt() = default;
 
-	void SetMesh(const Ref<Mesh>& mesh);
-	void SetMaterial(const Ref<Material>& mat, uint32_t index);
+	void SetMesh(Ref<Mesh>& mesh);
+	void SetMaterial(Ref<Material>& mat, uint32_t index);
 
 	Ref<Material> GetMaterial(uint32_t index);
+
+	std::vector<Ref<Material>> GetMaterials();
 
 private:
 	Ref<Mesh> m_Mesh;

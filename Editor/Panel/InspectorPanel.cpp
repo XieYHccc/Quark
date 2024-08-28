@@ -6,8 +6,11 @@
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/Components/MeshCmpt.h>
 #include <Quark/Scene/Components/CommonCmpts.h>
+#include <Quark/Scene/Components/TransformCmpt.h>
+#include <Quark/Scene/Components/MeshRendererCmpt.h>
 
 namespace quark {
+
 static bool DrawVec3Control(const char* label, glm::vec3& vector, float reset = 0.f, float columnWidth = 100.f)
 {
     bool changed = false;
@@ -184,6 +187,18 @@ void InspectorPanel::OnImGuiUpdate()
                 ImGui::CloseCurrentPopup();
             }
 
+            if (ImGui::MenuItem("MeshRenderer"))
+			{
+                if (!m_SelectedEntity->HasComponent<MeshRendererCmpt>())
+                {
+                    auto cmpt = m_SelectedEntity->AddComponent<MeshRendererCmpt>();
+                    auto meshCmpt = m_SelectedEntity->GetComponent<MeshCmpt>();
+
+                    cmpt->SetMesh(meshCmpt->sharedMesh);
+                }
+				ImGui::CloseCurrentPopup();
+			}
+
             ImGui::EndPopup();
         }
         ImGui::PopItemWidth();
@@ -254,7 +269,6 @@ void InspectorPanel::OnImGuiUpdate()
             }
         });
 
-
         // Camera component
         DrawComponent<CameraCmpt>("Camera", m_SelectedEntity, [&](auto& component) 
         {
@@ -285,6 +299,43 @@ void InspectorPanel::OnImGuiUpdate()
             if (ImGui::DragFloat("Far", &perspectiveFar))
                 component.zFar = perspectiveFar;
         });
+
+        // MeshRenderer component
+        DrawComponent<MeshRendererCmpt>("MeshRenderer", m_SelectedEntity, [&](auto& component) 
+		{
+			for (size_t i = 0; auto mat : component.GetMaterials())
+			{
+				ImGui::Text("Material %d", i);
+
+				std::filesystem::path materialAssetPath = mat? 
+					AssetManager::Get().GetAssetMetadata(mat->GetAssetID()).filePath : std::filesystem::path("None");
+
+				ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 125.f);
+				ImGui::LabelText("##Name", "%s", materialAssetPath.string().c_str());
+				ImGui::PopItemWidth();
+
+				ImGui::SameLine();
+				if (ImGui::Button("Set", ImVec2(80.f, 25.f)))
+					ImGui::OpenPopup("Set Material");
+
+				if (ImGui::BeginPopup("Set Material"))
+				{
+					for (auto id : AssetManager::Get().GetAllAssetsWithType(AssetType::MATERIAL))
+					{
+						auto metadata = AssetManager::Get().GetAssetMetadata(id);
+						if (ImGui::MenuItem(metadata.filePath.string().c_str()))
+						{
+                            Ref<Material> materialAsset = AssetManager::Get().GetAsset<Material>(id);
+                            component.SetMaterial(materialAsset, i);
+							break;
+						}
+					}
+					ImGui::EndPopup();
+				}
+
+                i++;
+			}
+		});
     }
 
     ImGui::End();
