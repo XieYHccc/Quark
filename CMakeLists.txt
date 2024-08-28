@@ -8,7 +8,7 @@ message("-- [Quark] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 # set output path
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin )
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(ASSETS_PATH ${PROJECT_SOURCE_DIR}/Assets)
+set(REOURCES_DIR ${PROJECT_SOURCE_DIR}/Resources)
 
 # find_package(OpenGL REQUIRED)
 find_package(Vulkan REQUIRED)
@@ -52,15 +52,15 @@ add_subdirectory(./Editor)
 # Shaders Compilation                                                           #
 ################################################################################
 file(GLOB_RECURSE GLSL_SOURCE_FILES
-    "${ASSETS_PATH}/Shaders/*.frag"
-    "${ASSETS_PATH}/Shaders/*.vert"
-    "${ASSETS_PATH}/Shaders/*.comp"
+    "${REOURCES_DIR}/Shaders/*.frag"
+    "${REOURCES_DIR}/Shaders/*.vert"
+    "${REOURCES_DIR}/Shaders/*.comp"
     )
 
 foreach(GLSL ${GLSL_SOURCE_FILES})
   message(STATUS "BUILDING SHADER")
   get_filename_component(FILE_NAME ${GLSL} NAME)
-  set(SPIRV "${ASSETS_PATH}/Shaders/Spirv/${FILE_NAME}.spv")
+  set(SPIRV "${REOURCES_DIR}/Shaders/Spirv/${FILE_NAME}.spv")
   message(STATUS ${GLSL})
   add_custom_command(
     OUTPUT ${SPIRV}
@@ -75,5 +75,5 @@ add_custom_target(
 )
 
 # copy Assets to build directory
-file(COPY ${ASSETS_PATH} DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+file(COPY ${REOURCES_DIR} DESTINATION ${EXECUTABLE_OUTPUT_PATH})
 file(COPY ${PROJECT_SOURCE_DIR}/Editor/imgui.ini DESTINATION ${EXECUTABLE_OUTPUT_PATH})
