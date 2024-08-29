@@ -10,7 +10,7 @@ void MeshRendererCmpt::SetMesh(Ref<Mesh>& mesh)
 
 void MeshRendererCmpt::SetMaterial(Ref<Material>& mat, uint32_t index)
 {
-	if (index < m_Mesh->subMeshes.size() - 1)
+	if (index < m_Mesh->subMeshes.size())
 		m_Mesh->subMeshes[index].material = mat;
 	else
 		CORE_LOGW("MeshRendererCmpt::SetMaterial: Index out of range");
@@ -18,7 +18,7 @@ void MeshRendererCmpt::SetMaterial(Ref<Material>& mat, uint32_t index)
 
 Ref<Material> MeshRendererCmpt::GetMaterial(uint32_t index)
 {
-	if (index < m_Mesh->subMeshes.size() - 1)
+	if (index < m_Mesh->subMeshes.size())
 		return m_Mesh->subMeshes[index].material;
 	else
 		CORE_LOGW("MeshRendererCmpt::GetMaterial: Index out of range");

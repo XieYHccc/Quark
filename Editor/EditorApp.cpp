@@ -61,7 +61,9 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     // Adjust editor camera's aspect ratio
     m_EditorCamera.viewportWidth = Window::Instance()->GetWidth();
     m_EditorCamera.viewportHeight = Window::Instance()->GetHeight();
-    
+    m_EditorCamera.SetPosition(glm::vec3(0, 10, 10));
+
+
     EventManager::Instance().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) {
         OnKeyPressed(e);
     });
@@ -70,25 +72,7 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
 EditorApp::~EditorApp()
 {   
     // Save asset registry
-
-    AssetManager::Get().ImportAsset(std::filesystem::path("Assets/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2"));
-    AssetID newMatId = AssetManager::Get().ImportAsset(std::filesystem::path("Assets/Materials/testMat.qkmaterial"));
-
-    Ref<Material> newMat = CreateRef<Material>();
-    newMat->SetAssetID(newMatId);
-    newMat->baseColorTexture = m_CubeMapTexture;
-    newMat->metallicRoughnessTexture = CreateRef<Texture>();
-    newMat->metallicRoughnessTexture->image = GpuResourceManager::Get().whiteImage;
-    newMat->uniformBufferData.baseColorFactor = glm::vec4(1.0f);
-    newMat->uniformBufferData.metalicFactor = 1.0f;
-    newMat->uniformBufferData.roughNessFactor = 1.0f;
-    newMat->alphaMode = AlphaMode::OPAQUE;
-
-    MaterialSerializer matSerializer;
-    matSerializer.Serialize("Assets/Materials/testMat.qkmaterial", newMat);
-
     AssetManager::Get().SaveAssetRegistry();
-
 
 }
 

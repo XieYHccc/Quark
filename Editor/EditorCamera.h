@@ -30,6 +30,9 @@ public:
 	glm::vec3 GetUpDirection() const;
 
 	void SetViewportSize(float width, float height) { viewportWidth = width; viewportHeight = height; }
+	void SetPosition(const glm::vec3& position) { m_Position = position; }
+	void SetYaw(float yaw) { m_Yaw = yaw; } // in radians
+	void SetPitch(float pitch) { m_Pitch = pitch; } // in radians
 
 private:
 	std::pair<float, float> PanSpeed() const;

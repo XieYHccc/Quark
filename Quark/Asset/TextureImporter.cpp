@@ -161,6 +161,8 @@ Ref<Texture> TextureImporter::ImportStb(const std::string& file_path)
     newTexture->image = Application::Get().GetGraphicDevice()->CreateImage(desc, &init_data);
     newTexture->sampler = GpuResourceManager::Get().linearSampler;
 
+    CORE_LOGI("[TextureImporter] Import texture asset: {0}", file_path)
+
     return newTexture;
 }
 

@@ -1,0 +1,7 @@
+Material:
+  AlphaMode: Opaque
+  BaseColorFactor: [1, 1, 1, 1]
+  MetalicFactor: 1
+  RoughNessFactor: 1
+  BaseColorTexture: 3340958485335397649
+  MetallicRoughnessTexture: 0
