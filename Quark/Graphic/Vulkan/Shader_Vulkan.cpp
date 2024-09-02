@@ -68,14 +68,9 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     SPV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&spv_reflcet_module, &push_constant_count, push_constants.data()))
 
     // Push constants
-    pushConstant_ = {};
     for (auto& x : push_constants)
     {
         CORE_ASSERT(x->size < PUSH_CONSTANT_DATA_SIZE)
-        pushConstant_.stageFlags = m_StageInfo.stage;
-        pushConstant_.offset = std::min(pushConstant_.offset, x->offset);
-        pushConstant_.size = std::max(pushConstant_.size, x->size);
-
         m_ResourceLayout.pushConstant.stageFlags = m_StageInfo.stage;
         m_ResourceLayout.pushConstant.offset = std::min(m_ResourceLayout.pushConstant.offset, x->offset);
         m_ResourceLayout.pushConstant.size = std::max(m_ResourceLayout.pushConstant.size, x->size);
@@ -89,25 +84,17 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
 
         m_ResourceLayout.descriptorSetLayoutMask |= 1 << set;
 
-        auto& descriptor_binding = bindings_[set].emplace_back();
-        descriptor_binding.binding = bind_slot;
-        descriptor_binding.stageFlags = m_StageInfo.stage;
-        descriptor_binding.descriptorCount = b->count;
-        descriptor_binding.descriptorType = (VkDescriptorType)b->descriptor_type;
-
         VkDescriptorSetLayoutBinding& layout_binding = m_ResourceLayout.descriptorSetLayouts[set].bindings.emplace_back();
         layout_binding.binding = bind_slot;
         layout_binding.stageFlags = m_StageInfo.stage;
         layout_binding.descriptorCount = b->count;
         layout_binding.descriptorType = (VkDescriptorType)b->descriptor_type;
 
-        if (descriptor_binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+        if (layout_binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
         {
             // For now, always replace VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER with VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
             // It would be quite messy to track which buffer is dynamic and which is not in the binding code, consider multiple pipeline bind points too
             // But maybe the dynamic uniform buffer is not always best because it occupies more registers (like DX12 root descriptor)?
-            descriptor_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-
             layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
         }
         

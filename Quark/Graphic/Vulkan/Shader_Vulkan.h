@@ -18,17 +18,14 @@ public:
 
     const VkShaderModule GetShaderMoudule() const { return m_ShaderModule; }
     const VkPipelineShaderStageCreateInfo& GetStageInfo() const { return m_StageInfo; }
-    const std::vector<VkDescriptorSetLayoutBinding>& GetBindings(u32 set) const { return bindings_[set]; }
-    const VkPushConstantRange& GetPushConstant() const { return pushConstant_; }
     const ShaderResourceLayout& GetResourceLayout() const { return m_ResourceLayout; }
+
 private:
     Device_Vulkan* m_Device;
     VkShaderModule m_ShaderModule;
     VkPipelineShaderStageCreateInfo m_StageInfo;
 
     // Layout info
-    std::vector<VkDescriptorSetLayoutBinding> bindings_[DESCRIPTOR_SET_MAX_NUM];
-    VkPushConstantRange pushConstant_;
     ShaderResourceLayout m_ResourceLayout;
 };
 

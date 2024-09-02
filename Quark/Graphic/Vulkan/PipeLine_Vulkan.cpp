@@ -226,8 +226,8 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
                     continue;
 
                 combinedLayout.descriptorSetLayoutMask |= 1u << i;
-                const DescriptorSetLayout&  srcSetLayout = shaderResourceLayout.descriptorSetLayouts[i];
-                DescriptorSetLayout&  dstSetLayout = combinedLayout.descriptorSetLayouts[i];
+                const DescriptorSetLayout& srcSetLayout = shaderResourceLayout.descriptorSetLayouts[i];
+                DescriptorSetLayout& dstSetLayout = combinedLayout.descriptorSetLayouts[i];
                
                 for (size_t j = 0; j < srcSetLayout.bindings.size(); ++j) 
                 {
@@ -287,7 +287,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
             }
 
             // push constant
-            VkPushConstantRange shaderPushConstant = internal_shader.GetPushConstant();
+            const VkPushConstantRange& shaderPushConstant = shaderResourceLayout.pushConstant;
             VkPushConstantRange& combinedPushConstant = combinedLayout.pushConstant;
             if (shaderPushConstant.size > 0) 
             {
