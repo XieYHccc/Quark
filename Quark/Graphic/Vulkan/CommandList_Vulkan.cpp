@@ -311,7 +311,7 @@ void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_
         CORE_LOGE("You can not bind a push constant before binding a pipeline.")
         return;
     }
-    if (m_CurrentPipeline->GetLayout()->pushConstant.size == 0) 
+    if (m_CurrentPipeline->GetLayout()->combinedLayout.pushConstant.size == 0) 
     {
         CORE_LOGE("Current pipeline's layout do not have a push constant")
         return;
@@ -321,7 +321,7 @@ void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_
     auto& layout = *m_CurrentPipeline->GetLayout();
     vkCmdPushConstants(m_CmdBuffer,
         layout.handle,
-        layout.pushConstant.stageFlags,
+        layout.combinedLayout.pushConstant.stageFlags,
         offset,
         size,
         data);
@@ -340,8 +340,8 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0) {
         CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : The bounded buffer doesn't has BUFFER_USAGE_UNIFORM_BUFFER_BIT")
     }
-    if ((m_CurrentPipeline->GetLayout()->setLayoutMask & (1u << set)) == 0 ||
-        (m_CurrentPipeline->GetLayout()->setLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
+    if ((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0 ||
+        (m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
         CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : Set: {}, binding: {} is not a uniforom buffer.", set, binding)
     }
 #endif
@@ -375,8 +375,8 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT) == 0) {
         CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : The bounded buffer doesn't has BUFFER_USAGE_STORAGE_BUFFER_BIT")
     }
-    if ((m_CurrentPipeline->GetLayout()->setLayoutMask & (1u << set)) == 0 ||
-        (m_CurrentPipeline->GetLayout()->setLayouts[set].storage_buffer_mask & (1u << binding))== 0) {
+    if ((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0 ||
+        (m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].storage_buffer_mask & (1u << binding)) == 0) {
         CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : Set: {}, binding: {} is not a storage buffer.", set, binding)
     }
 #endif
@@ -434,7 +434,7 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
         CORE_LOGE("BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.")
         return;
     }
-    const auto& render_pass_info = internal_pipeline.GetRenderPassInfo();
+    const auto& render_pass_info = internal_pipeline.GetCompatableRenderPassInfo();
     if (render_pass_info.numColorAttachments != m_CurrentRenderPassInfo->numColorAttachments) {
         CORE_LOGE("BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.")
         return;
@@ -550,9 +550,9 @@ void CommandList_Vulkan::SetViewPort(const Viewport &viewport)
 
 void CommandList_Vulkan::FlushDescriptorSet(u32 set)
 {
-    CORE_DEBUG_ASSERT((m_CurrentPipeline->GetLayout()->setLayoutMask & (1u << set)) != 0)
+    CORE_DEBUG_ASSERT((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
 
-    auto& set_layout = m_CurrentPipeline->GetLayout()->setLayouts[set];
+    auto& set_layout = m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set];
     auto& bindings = m_BindingState.descriptorBindings[set];
 
 	u32 num_dynamic_offsets = 0;
@@ -645,10 +645,10 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
 
 void CommandList_Vulkan::RebindDescriptorSet(u32 set)
 {
-    CORE_DEBUG_ASSERT((m_CurrentPipeline->GetLayout()->setLayoutMask & (1u << set)) != 0)
+    CORE_DEBUG_ASSERT((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
     CORE_DEBUG_ASSERT(m_CurrentSets[set] != nullptr)
 
-    auto& set_layout = m_CurrentPipeline->GetLayout()->setLayouts[set];
+    auto& set_layout = m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set];
     auto& bindings = m_BindingState.descriptorBindings[set];
 
 	u32 num_dynamic_offsets = 0;
@@ -688,7 +688,7 @@ void CommandList_Vulkan::FlushRenderState()
     auto* pipeline_layout = m_CurrentPipeline->GetLayout();
 
     // 1. Flush dirty descriptor set
-    u32 sets_need_update = pipeline_layout->setLayoutMask & m_DirtySetBits;
+    u32 sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_DirtySetBits;
     util::for_each_bit(sets_need_update, [&](u32 set) { FlushDescriptorSet(set); });
     m_DirtySetBits &= ~sets_need_update;
 
@@ -697,7 +697,7 @@ void CommandList_Vulkan::FlushRenderState()
 
     // if only rebound dynamic uniform buffers with different offset,
     // we only need to rebinding descriptor set with different dynamic offsets
-    u32 dynamic_sets_need_update = pipeline_layout->setLayoutMask & m_DirtySetDynamicBits;
+    u32 dynamic_sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_DirtySetDynamicBits;
     util::for_each_bit(dynamic_sets_need_update, [&](u32 set) {RebindDescriptorSet(set);});
     m_DirtySetDynamicBits&= ~dynamic_sets_need_update;
 

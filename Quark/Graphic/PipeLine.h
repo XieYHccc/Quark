@@ -2,7 +2,9 @@
 #include "Quark/Core/Base.h"
 #include "Quark/Graphic/Common.h"
 #include "Quark/Graphic/RenderPassInfo.h"
+
 namespace quark::graphic {
+
 enum class PolygonMode
 {
     Fill, 
@@ -176,18 +178,15 @@ enum class PipeLineBindingPoint {
 
 class PipeLine : public GpuResource{
 public:
-    PipeLine(PipeLineBindingPoint type) : type_(type) {};
+    PipeLine(PipeLineBindingPoint bindingPoint) : m_BindingPoint(bindingPoint) {};
     virtual ~PipeLine() = default;
 
-    PipeLineBindingPoint GetBindingPoint() const { return type_; }
+    PipeLineBindingPoint GetBindingPoint() const { return m_BindingPoint; }
 
     GpuResourceType GetGpuResourceType() const override { return GpuResourceType::PIPELINE; }
 
 protected:
-    Ref<Shader> vertShader_;
-    Ref<Shader> fragShder_;
-    Ref<Shader> computeShader_;
-    PipeLineBindingPoint type_;
+    PipeLineBindingPoint m_BindingPoint;
 };
 
 }

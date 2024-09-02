@@ -287,15 +287,15 @@ void EditorApp::OnRender(TimeStep ts)
 
             // Begin pass
             forward_pass_info.colorAttachments[0] = color_image.get();
-            forward_pass_info.clearColors[0] = {0.5f, 0.5f, 0.5f, 1.f};
+            forward_pass_info.clearColors[0] = {0.22f, 0.22f, 0.22f, 1.f};
             forward_pass_info.depthAttachment = depth_image.get();
             cmd->BeginRenderPass(forward_pass_info);
 
             // Draw skybox
-            cmd->BindPipeLine(*skybox_pipeline);
-            cmd->SetViewPort(viewport);
-            cmd->SetScissor(scissor);
-            m_SceneRenderer->RenderSkybox(cmd);
+            //cmd->BindPipeLine(*skybox_pipeline);
+            //cmd->SetViewPort(viewport);
+            //cmd->SetScissor(scissor);
+            //m_SceneRenderer->RenderSkybox(cmd);
 
             // Draw scene
             cmd->BindPipeLine(*graphic_pipeline);

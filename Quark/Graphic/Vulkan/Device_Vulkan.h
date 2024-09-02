@@ -104,8 +104,8 @@ public:
 public:
     DescriptorSetAllocator* Request_DescriptorSetAllocator(const DescriptorSetLayout& layout);
 
-    PipeLineLayout* Request_PipeLineLayout(const std::array<DescriptorSetLayout, DESCRIPTOR_SET_MAX_NUM>& layouts, VkPushConstantRange push_constant, u32 set_mask);
-    
+    PipeLineLayout* Request_PipeLineLayout(const ShaderResourceLayout& combinedLayout);
+
     PerFrameData& GetCurrentFrame() { return m_Frames[currentFrame]; }
 
 private:

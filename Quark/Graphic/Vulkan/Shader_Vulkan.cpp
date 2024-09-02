@@ -8,45 +8,45 @@ namespace quark::graphic {
 #define SPV_REFLECT_CHECK(x) CORE_ASSERT(x == SPV_REFLECT_RESULT_SUCCESS)
 
 Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const void* shaderCode, size_t codeSize)
-    : Shader(stage), device_(device)
+    : Shader(stage), m_Device(device)
 {
-    CORE_DEBUG_ASSERT(device_ != nullptr)
+    CORE_DEBUG_ASSERT(m_Device != nullptr)
     CORE_LOGD("Creating vulkan shader...")
 
-    VkDevice vk_device = device_->vkDevice;
-    auto& vk_context = device_->vkContext;
+    VkDevice vk_device = m_Device->vkDevice;
+    auto& vk_context = m_Device->vkContext;
 
     // Create shader module
     VkShaderModuleCreateInfo moduleInfo = {};
     moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleInfo.codeSize = codeSize;
     moduleInfo.pCode = (const uint32_t*)shaderCode;
-    if (vkCreateShaderModule(vk_device, &moduleInfo, nullptr, &shaderModule_) != VK_SUCCESS)
+    if (vkCreateShaderModule(vk_device, &moduleInfo, nullptr, &m_ShaderModule) != VK_SUCCESS)
         CORE_LOGE("Failed to create vulkan shader module.")
 
 
     // Fill shader stage info
-    stageInfo_ = {};
-    stageInfo_.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stageInfo_.module = shaderModule_;
-    stageInfo_.pName = "main";
-    stageInfo_.pNext = nullptr;
-    stageInfo_.flags = 0;
+    m_StageInfo = {};
+    m_StageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    m_StageInfo.module = m_ShaderModule;
+    m_StageInfo.pName = "main";
+    m_StageInfo.pNext = nullptr;
+    m_StageInfo.flags = 0;
     switch (stage) 
     {
     case ShaderStage::STAGE_COMPUTE:
-        stageInfo_.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        m_StageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         break;
     case ShaderStage::STAGE_VERTEX:
-        stageInfo_.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        m_StageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
         break;
     case ShaderStage::STAGE_FRAGEMNT:
-        stageInfo_.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        m_StageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         break;
     default:
     {
         CORE_DEBUG_ASSERT("ShaderStage not handled!")
-        stageInfo_.stage = VK_SHADER_STAGE_ALL;
+        m_StageInfo.stage = VK_SHADER_STAGE_ALL;
         break;
     }
     }
@@ -72,23 +72,34 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     for (auto& x : push_constants)
     {
         CORE_ASSERT(x->size < PUSH_CONSTANT_DATA_SIZE)
-        pushConstant_.stageFlags = stageInfo_.stage;
-        pushConstant_.offset = x->offset;
-        pushConstant_.size = x->size;
+        pushConstant_.stageFlags = m_StageInfo.stage;
+        pushConstant_.offset = std::min(pushConstant_.offset, x->offset);
+        pushConstant_.size = std::max(pushConstant_.size, x->size);
+
+        m_ResourceLayout.pushConstant.stageFlags = m_StageInfo.stage;
+        m_ResourceLayout.pushConstant.offset = std::min(m_ResourceLayout.pushConstant.offset, x->offset);
+        m_ResourceLayout.pushConstant.size = std::max(m_ResourceLayout.pushConstant.size, x->size);
     }
 
-    for (auto& binding : bindings) {
-        CORE_DEBUG_ASSERT(binding->set < DESCRIPTOR_SET_MAX_NUM) // only support shaders with 4 sets or less
+    for (auto& b : bindings) {
+        CORE_DEBUG_ASSERT(b->set < DESCRIPTOR_SET_MAX_NUM) // only support shaders with 4 sets or less
 
-        auto bind_slot = binding->binding;
-        auto set = binding->set; 
+        uint32_t bind_slot = b->binding;
+        uint32_t set = b->set; 
+
+        m_ResourceLayout.descriptorSetLayoutMask |= 1 << set;
 
         auto& descriptor_binding = bindings_[set].emplace_back();
-        CORE_ASSERT(binding->count == 1) // limit this to 1 for the simplity of updating VkDescriptor set
         descriptor_binding.binding = bind_slot;
-        descriptor_binding.stageFlags = stageInfo_.stage;
-        descriptor_binding.descriptorCount = binding->count;
-        descriptor_binding.descriptorType = (VkDescriptorType)binding->descriptor_type;
+        descriptor_binding.stageFlags = m_StageInfo.stage;
+        descriptor_binding.descriptorCount = b->count;
+        descriptor_binding.descriptorType = (VkDescriptorType)b->descriptor_type;
+
+        VkDescriptorSetLayoutBinding& layout_binding = m_ResourceLayout.descriptorSetLayouts[set].bindings.emplace_back();
+        layout_binding.binding = bind_slot;
+        layout_binding.stageFlags = m_StageInfo.stage;
+        layout_binding.descriptorCount = b->count;
+        layout_binding.descriptorType = (VkDescriptorType)b->descriptor_type;
 
         if (descriptor_binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
         {
@@ -96,6 +107,8 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
             // It would be quite messy to track which buffer is dynamic and which is not in the binding code, consider multiple pipeline bind points too
             // But maybe the dynamic uniform buffer is not always best because it occupies more registers (like DX12 root descriptor)?
             descriptor_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+
+            layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
         }
         
         // VkImageViewType& view_type = bindingViews_[set].emplace_back();
@@ -134,10 +147,10 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
 
 Shader_Vulkan::~Shader_Vulkan()
 {
-    auto& frame = device_->GetCurrentFrame();
+    auto& frame = m_Device->GetCurrentFrame();
     
-    if (shaderModule_ != VK_NULL_HANDLE) {
-        frame.garbageShaderModules.push_back(shaderModule_);
+    if (m_ShaderModule != VK_NULL_HANDLE) {
+        frame.garbageShaderModules.push_back(m_ShaderModule);
     }
     CORE_LOGD("Vulkan shader destroyed")
 }

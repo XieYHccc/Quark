@@ -107,52 +107,54 @@ constexpr VkBlendOp _ConvertBlendOp(BlendOperation value)
     }
 }
 
-PipeLineLayout::PipeLineLayout(Device_Vulkan* device, const std::array<DescriptorSetLayout, DESCRIPTOR_SET_MAX_NUM>& layouts, const VkPushConstantRange& push_constant, u32 layout_mask)
-    : device(device), pushConstant(push_constant), setLayoutMask(layout_mask)
+PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayout _combinedLayout)
+    : device(_device), combinedLayout(_combinedLayout)
 {
     CORE_DEBUG_ASSERT(this->device != nullptr)
 
-    std::copy(layouts.begin(), layouts.end(), setLayouts);
-
     // Descriptor set layouts
-    std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-    for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++) {
-        if ((setLayoutMask & 1u << i) == 0)
+    std::vector<VkDescriptorSetLayout> vk_descriptorset_layouts;
+    for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; set++) 
+    {
+        if ((combinedLayout.descriptorSetLayoutMask & 1u << set) == 0)
             continue;
-        
-        setAllocators[i] = this->device->Request_DescriptorSetAllocator(setLayouts[i]);
-        descriptor_set_layouts.push_back(setAllocators[i]->GetLayout());
+
+        setAllocators[set] = this->device->Request_DescriptorSetAllocator(combinedLayout.descriptorSetLayouts[set]);
+        vk_descriptorset_layouts.push_back(setAllocators[set]->GetLayout());
     }
 
     // Pipeline layout 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.pSetLayouts = descriptor_set_layouts.data();
-    pipeline_layout_create_info.setLayoutCount = descriptor_set_layouts.size();
-    if (this->pushConstant.size > 0) {
+    pipeline_layout_create_info.pSetLayouts = vk_descriptorset_layouts.data();
+    pipeline_layout_create_info.setLayoutCount = vk_descriptorset_layouts.size();
+    if (combinedLayout.pushConstant.size > 0) 
+    {
         pipeline_layout_create_info.pushConstantRangeCount = 1;
-        pipeline_layout_create_info.pPushConstantRanges = &this->pushConstant;
+        pipeline_layout_create_info.pPushConstantRanges = &combinedLayout.pushConstant;
     }
-    else {
+    else 
+    {
         pipeline_layout_create_info.pushConstantRangeCount = 0;
         pipeline_layout_create_info.pPushConstantRanges = nullptr;
     }
+
     VK_CHECK(vkCreatePipelineLayout(this->device->vkDevice, &pipeline_layout_create_info, nullptr, &handle))
 
     // Create descriptor set update template
-    for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; ++set) {
-        if ((setLayoutMask & (1u << set)) == 0) {
+    for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; ++set) 
+    {
+        if ((combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0)
             continue;
-        }  
 
-    	VkDescriptorUpdateTemplateEntry update_entries[SET_BINDINGS_MAX_NUM];
-		uint32_t update_count = 0;
+        VkDescriptorUpdateTemplateEntry update_entries[SET_BINDINGS_MAX_NUM];
+        uint32_t update_count = 0;
 
-        auto& set_layout = setLayouts[set];
+        auto& set_layout = combinedLayout.descriptorSetLayouts[set];
         for (auto& binding : set_layout.bindings) {
             CORE_DEBUG_ASSERT(binding.binding < SET_BINDINGS_MAX_NUM)
 
-            auto &entry = update_entries[update_count++];
+            auto& entry = update_entries[update_count++];
             entry.dstBinding = binding.binding;
             entry.descriptorType = binding.descriptorType;
             entry.descriptorCount = binding.descriptorCount;
@@ -164,7 +166,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* device, const std::array<Descripto
             case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
                 entry.offset = offsetof(DescriptorBinding, buffer) + sizeof(DescriptorBinding) * binding.binding;
                 break;
-            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER :
+            case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
             case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
             case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
             case VK_DESCRIPTOR_TYPE_SAMPLER:
@@ -175,82 +177,85 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* device, const std::array<Descripto
             }
         }
 
-		VkDescriptorUpdateTemplateCreateInfo info = {VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO };
-		info.pipelineLayout = handle;
-		info.descriptorSetLayout = setAllocators[set]->GetLayout();
-		info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
-		info.set = set;
-		info.descriptorUpdateEntryCount = update_count;
-		info.pDescriptorUpdateEntries = update_entries;
-		info.pipelineBindPoint = (set_layout.set_stage_mask & VK_SHADER_STAGE_COMPUTE_BIT) ?
-				VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
-        
-        if (vkCreateDescriptorUpdateTemplate(device->vkDevice, &info, nullptr, &updateTemplate[set]) != VK_SUCCESS) {
+        VkDescriptorUpdateTemplateCreateInfo info = { VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO };
+        info.pipelineLayout = handle;
+        info.descriptorSetLayout = setAllocators[set]->GetLayout();
+        info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+        info.set = set;
+        info.descriptorUpdateEntryCount = update_count;
+        info.pDescriptorUpdateEntries = update_entries;
+        info.pipelineBindPoint = (set_layout.set_stage_mask & VK_SHADER_STAGE_COMPUTE_BIT)? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+        if (vkCreateDescriptorUpdateTemplate(device->vkDevice, &info, nullptr, &updateTemplate[set]) != VK_SUCCESS)
             CORE_LOGE("Failed to create descriptor update template")
-        }
     }
+
 }
 
 PipeLineLayout::~PipeLineLayout()
 {
-    for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; ++set) {
-        if (setLayoutMask & (1u << set)) {
+    for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; ++set) 
+    {
+        if (combinedLayout.descriptorSetLayoutMask & (1u << set)) 
             vkDestroyDescriptorUpdateTemplate(device->vkDevice, updateTemplate[set], nullptr);
-        }
-
     }
+
     vkDestroyPipelineLayout(device->vkDevice, handle, nullptr);
 
     CORE_LOGD("Pipeline layout destroyed")
 }
 
 PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
-    :PipeLine(PipeLineBindingPoint::GRAPHIC), device_(device), renderPassInfo_(desc.renderPassInfo)
+    :PipeLine(PipeLineBindingPoint::GRAPHIC), m_Device(device), m_CompatableRenderPassInfo(desc.renderPassInfo)
 {
-    CORE_DEBUG_ASSERT(device_)
+    CORE_DEBUG_ASSERT(m_Device)
     CORE_DEBUG_ASSERT(desc.vertShader != nullptr && desc.fragShader != nullptr)
 
     // Combine shader's resource bindings and create pipeline layout
     {
-        std::array<DescriptorSetLayout, DESCRIPTOR_SET_MAX_NUM> combined_layout;
-        VkPushConstantRange combined_push_constant = {};
-        u32 set_mask = 0;
+        ShaderResourceLayout combinedLayout;
         auto insert_shader = [&](Ref<Shader> shader)
         {
-            auto& internal_shader = ToInternal(shader.get());
+            Shader_Vulkan& internal_shader = ToInternal(shader.get());
+            const ShaderResourceLayout& shaderResourceLayout = internal_shader.GetResourceLayout();
+
             // loop each set of bindings
-            for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i) {
-                if (internal_shader.GetBindings(i).empty()) 
+            for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i) 
+            {
+                if ((shaderResourceLayout.descriptorSetLayoutMask & 1u << i) == 0) 
                     continue;
 
-                set_mask |= 1u << i;
-                auto& vk_set_layout_bindings = combined_layout[i].vk_bindings;
-                for (size_t j = 0; j < internal_shader.GetBindings(i).size(); ++j) {
-                    auto& x = internal_shader.GetBindings(i)[j];
-                    auto& y = combined_layout[i].vk_bindings[j];
+                combinedLayout.descriptorSetLayoutMask |= 1u << i;
+                const DescriptorSetLayout&  srcSetLayout = shaderResourceLayout.descriptorSetLayouts[i];
+                DescriptorSetLayout&  dstSetLayout = combinedLayout.descriptorSetLayouts[i];
+               
+                for (size_t j = 0; j < srcSetLayout.bindings.size(); ++j) 
+                {
+                    const VkDescriptorSetLayoutBinding& x = shaderResourceLayout.descriptorSetLayouts[i].bindings[j];
+                    VkDescriptorSetLayoutBinding& y = combinedLayout.descriptorSetLayouts[i].vk_bindings[j];
 
                     y.binding = x.binding;
                     y.descriptorCount = x.descriptorCount;
                     y.descriptorType = x.descriptorType;
                     y.stageFlags |= x.stageFlags;
 
-                    combined_layout[i].set_stage_mask |= x.stageFlags;
+                    dstSetLayout.set_stage_mask |= x.stageFlags;
                     switch (x.descriptorType) {
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-                        combined_layout[i].uniform_buffer_mask |= 1u << x.binding;
+                        dstSetLayout.uniform_buffer_mask |= 1u << x.binding;
                         break;
                     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                        combined_layout[i].storage_buffer_mask |= 1u << x.binding;
+                        dstSetLayout.storage_buffer_mask |= 1u << x.binding;
                         break;
                     case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                        combined_layout[i].sampled_image_mask |= 1u << x.binding;
+                        dstSetLayout.sampled_image_mask |= 1u << x.binding;
                         break;
                     case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                        combined_layout[i].separate_image_mask |= 1u << x.binding;
+                        dstSetLayout.separate_image_mask |= 1u << x.binding;
                         break;
                     case VK_DESCRIPTOR_TYPE_SAMPLER:
-                        combined_layout[i].sampler_mask |= 1u << x.binding;
+                        dstSetLayout.sampler_mask |= 1u << x.binding;
                         break;
                     default:
                         CORE_DEBUG_ASSERT("Descriptor type not handled!")
@@ -258,8 +263,10 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
                     }
                     
                     bool found = false;
-                    for (auto& z : combined_layout[i].bindings) {
-                        if (x.binding == z.binding) {
+                    for (auto& z : combinedLayout.descriptorSetLayouts[i].bindings)
+                    {
+                        if (x.binding == z.binding) 
+                        {
 							// If the asserts fire, it means there are overlapping bindings between shader stages
 							// This is not supported now for performance reasons (less binding management)!
 							// (Overlaps between s/b/t bind points are not a problem because those are shifted by the compiler)
@@ -271,19 +278,22 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
                         }
                     }
 
-                    if (!found) {
-                        combined_layout[i].bindings.push_back(x);
+                    if (!found) 
+                    {
+                        dstSetLayout.bindings.push_back(x);
                         // tmp_layout.imageViewTypes[i].push_back(internal_shader.bindingViews_[i][j]);
                     }
                 }
             }
 
             // push constant
-            auto& push_constant = internal_shader.GetPushConstant();
-            if (push_constant.size > 0) {
-                combined_push_constant.offset = std::min(push_constant.offset, combined_push_constant.offset);
-				combined_push_constant.size = std::max(push_constant.size, combined_push_constant.size);
-				combined_push_constant.stageFlags |= push_constant.stageFlags;
+            VkPushConstantRange shaderPushConstant = internal_shader.GetPushConstant();
+            VkPushConstantRange& combinedPushConstant = combinedLayout.pushConstant;
+            if (shaderPushConstant.size > 0) 
+            {
+                combinedPushConstant.offset = std::min(shaderPushConstant.offset, combinedPushConstant.offset);
+                combinedPushConstant.size = std::max(shaderPushConstant.size, combinedPushConstant.size);
+                combinedPushConstant.stageFlags |= shaderPushConstant.stageFlags;
             }
 
         };
@@ -292,7 +302,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
         insert_shader(desc.fragShader);
 
         // Create Pipeline Layout
-        layout_ = device_->Request_PipeLineLayout(combined_layout, combined_push_constant, set_mask);
+        m_Layout = m_Device->Request_PipeLineLayout(combinedLayout);
     }
 
     // Shaderstage Info
@@ -454,19 +464,19 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
 	pipeline_create_info.pDepthStencilState = &depth_stencil_state_create_info;
 	pipeline_create_info.pColorBlendState = &color_blend_state_create_info;
 	pipeline_create_info.pDynamicState = &dynamic_state_create_info;
-	pipeline_create_info.layout = layout_->handle;
+	pipeline_create_info.layout = m_Layout->handle;
     pipeline_create_info.pNext = &renderingInfo;
     pipeline_create_info.renderPass = nullptr;
-    VK_CHECK(vkCreateGraphicsPipelines(device_->vkDevice, nullptr, 1, &pipeline_create_info, nullptr, &handle_))
+    VK_CHECK(vkCreateGraphicsPipelines(m_Device->vkDevice, nullptr, 1, &pipeline_create_info, nullptr, &m_Handle))
 
     CORE_LOGD("Graphic Pipeline created")
 }
 
 PipeLine_Vulkan::~PipeLine_Vulkan()
 {
-    if (handle_ != VK_NULL_HANDLE) {
-        auto& frame = device_->GetCurrentFrame();
-        frame.garbagePipelines.push_back(handle_);
+    if (m_Handle != VK_NULL_HANDLE) {
+        auto& frame = m_Device->GetCurrentFrame();
+        frame.garbagePipelines.push_back(m_Handle);
     }
 
     CORE_LOGD("Vulkan pipeline destroyed")

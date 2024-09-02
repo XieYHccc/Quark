@@ -2,8 +2,8 @@
 #include "Quark/Core/Util/TemporaryHashMap.h"
 #include "Quark/Graphic/Vulkan/Common_Vulkan.h"
 
-namespace quark::graphic
-{
+namespace quark::graphic {
+
 struct DescriptorBinding {
     union {
         VkDescriptorBufferInfo buffer;
@@ -16,7 +16,7 @@ struct DescriptorSetLayout {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     VkDescriptorSetLayoutBinding vk_bindings[SET_BINDINGS_MAX_NUM];
 
-    // These masks are mostly for debug purpose
+    // These masks here are mostly for debug purpose
     u32 sampled_image_mask = 0;
     u32 storage_image_mask = 0;
     u32 uniform_buffer_mask = 0;

@@ -614,13 +614,13 @@ DataFormat Device_Vulkan::GetSwapChainImageFormat()
     }
 }
 
-PipeLineLayout* Device_Vulkan::Request_PipeLineLayout(const std::array<DescriptorSetLayout, DESCRIPTOR_SET_MAX_NUM>& layouts, VkPushConstantRange push_constant, u32 layout_mask)
+PipeLineLayout* Device_Vulkan::Request_PipeLineLayout(const ShaderResourceLayout& combinedLayout)
 {
     // Compute pipeline layout hash
     size_t hash = 0;
     for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i) {
         for (size_t j = 0; j < SET_BINDINGS_MAX_NUM; ++j) {
-            auto& binding = layouts[i].vk_bindings[j];
+            auto& binding = combinedLayout.descriptorSetLayouts[i].vk_bindings[j];
             util::hash_combine(hash, binding.binding);
             util::hash_combine(hash, binding.descriptorCount);
             util::hash_combine(hash, binding.descriptorType);
@@ -628,18 +628,18 @@ PipeLineLayout* Device_Vulkan::Request_PipeLineLayout(const std::array<Descripto
             // util::hash_combine(hash, pipeline_layout.imageViewTypes[i][j]);
         }
     }
-    util::hash_combine(hash, push_constant.offset);
-    util::hash_combine(hash, push_constant.size);
-    util::hash_combine(hash, push_constant.stageFlags);
-    util::hash_combine(hash, layout_mask);
+    util::hash_combine(hash, combinedLayout.pushConstant.offset);
+    util::hash_combine(hash, combinedLayout.pushConstant.size);
+    util::hash_combine(hash, combinedLayout.pushConstant.stageFlags);
+    util::hash_combine(hash, combinedLayout.descriptorSetLayoutMask);
 
     auto find = cached_pipelineLayouts.find(hash);
-    if (find == cached_pipelineLayouts.end()) { 
+    if (find == cached_pipelineLayouts.end()) {
         // need to create a new pipeline layout
-        auto result = cached_pipelineLayouts.try_emplace(hash, this, layouts, push_constant, layout_mask);
+        auto result = cached_pipelineLayouts.try_emplace(hash, this, combinedLayout);
         return &(result.first->second);
     }
-    else { 
+    else {
         return &find->second;
     }
 }
