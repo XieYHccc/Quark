@@ -61,13 +61,15 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
     basist::transcoder_texture_format targetFormat = basist::transcoder_texture_format::cTFRGBA32;
 
     auto* graphicDevice = Application::Get().GetGraphicDevice();
-    if (graphicDevice->features.textureCompressionBC) {
+    if (graphicDevice->GetDeviceFeatures().textureCompressionBC) 
+    {
         // BC7 is the preferred block compression if available
         if (graphicDevice->isFormatSupported(graphic::DataFormat::BC7_UNORM_BLOCK)) {
             targetFormat = basist::transcoder_texture_format::cTFBC7_RGBA;
             desc.format = graphic::DataFormat::BC7_UNORM_BLOCK;
         } 
-        else {
+        else 
+        {
             if (graphicDevice->isFormatSupported(graphic::DataFormat::BC3_UNORM_BLOCK)) {
                 targetFormat = basist::transcoder_texture_format::cTFBC3_RGBA;
                 desc.format = graphic::DataFormat::BC3_UNORM_BLOCK;

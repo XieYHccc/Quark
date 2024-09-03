@@ -44,6 +44,7 @@ struct MaterialPushConstants
     glm::vec4 colorFactors = glm::vec4(1.f);
 };
 
+// The minimum unit for a single draw call
 struct RenderObject 
 {
     uint32_t indexCount = 0;

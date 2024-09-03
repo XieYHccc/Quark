@@ -26,19 +26,14 @@ struct DeviceFeatures {
 
 class Device {
 public:
-    u32 currentFrame;
-    u32 frameBufferWidth;
-    u32 frameBufferHeight;
-    DeviceProperties properties;
-    DeviceFeatures features;
-    
-public:
     Device() = default;
     virtual ~Device() = default;
 
-    u32 GetResolutionWidth() { return frameBufferWidth;}
-    u32 GetResolutionHeight() { return frameBufferHeight;}
+    uint32_t GetResolutionWidth() { return frameBufferWidth;}
+    uint32_t GetResolutionHeight() { return frameBufferHeight;}
+
     const DeviceProperties& GetDeviceProperties() const { return properties; }
+    const DeviceFeatures& GetDeviceFeatures() const { return features; }
     
     virtual bool Init() = 0;
     virtual void ShutDown() = 0;
@@ -65,6 +60,13 @@ public:
     /*** PROPERTIES ***/
     virtual bool isFormatSupported(DataFormat format) = 0;
     virtual void SetDebugName(const Ref<GpuResource>& resouce, const char* name) = 0;
+
+protected:
+    uint32_t currentFrame;
+    uint32_t frameBufferWidth;
+    uint32_t frameBufferHeight;
+    DeviceProperties properties;
+    DeviceFeatures features;
 };
 
 }

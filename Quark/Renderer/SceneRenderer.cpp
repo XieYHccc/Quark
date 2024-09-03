@@ -15,7 +15,7 @@ SceneRenderer::SceneRenderer(graphic::Device* device)
 {
     // Load Cube mesh
     MeshImporter mesh_loader;
-    m_CubeMesh = mesh_loader.ImportGLTF("Resources/Gltf/cube.gltf");
+    m_CubeMesh = mesh_loader.ImportGLTF("BuiltInResources/Gltf/cube.gltf");
 
     // Create scene uniform buffer
     BufferDesc m_Scenebuffer_desc;

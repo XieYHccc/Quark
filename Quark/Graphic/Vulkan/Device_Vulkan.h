@@ -15,7 +15,9 @@ public:
     // Mostly for static data uploading with dedicated transfer queue
     class CopyCmdAllocator {
     public:
-        struct CopyCmd {
+        struct CopyCmd 
+        {   
+            // TODO: Add a graphic queue command buffer for transitioning and blitting operations
             VkCommandPool cmdPool = VK_NULL_HANDLE;
             VkCommandBuffer cmdBuffer = VK_NULL_HANDLE;
             Ref<Buffer> stageBuffer = nullptr;
@@ -99,8 +101,8 @@ public:
     bool isFormatSupported(DataFormat format) override final;
     void SetDebugName(const Ref<GpuResource>& resouce, const char* name) override final;
 
-    ///////////////////// Vulkan specific ////////////////////////////////
-
+    ///////////////////// Vulkan specific ////////////////////////
+    //////////////////////////////////////////////////////////////
 public:
     DescriptorSetAllocator* Request_DescriptorSetAllocator(const DescriptorSetLayout& layout);
 
@@ -109,18 +111,23 @@ public:
     PerFrameData& GetCurrentFrame() { return m_Frames[currentFrame]; }
 
 private:
-    struct CommandQueue {     // Responsible for queuing commad buffers and submit them in batch
-        Device_Vulkan* device = nullptr;
-        QueueType type = QueueType::QUEUE_TYPE_MAX_ENUM;
-        VkQueue queue = VK_NULL_HANDLE;
-
-        // represent a VkSubmitInfo
-        struct Submitssion {
+    // Represent a physical queue
+    // Responsible for queuing commad buffers and submit them in batch
+    struct CommandQueue 
+    {
+        // represent a VkSubmitInfo2
+        struct Submitssion
+        {
             std::vector<VkCommandBufferSubmitInfo> cmdInfos;
             std::vector<VkSemaphoreSubmitInfo> waitSemaphoreInfos;
             std::vector<VkSemaphoreSubmitInfo> signalSemaphoreInfos;
         };
+
+        Device_Vulkan* device = nullptr;
+        QueueType type = QueueType::QUEUE_TYPE_MAX_ENUM;
+        VkQueue queue = VK_NULL_HANDLE;
         std::vector<Submitssion> submissions;
+
         void init(Device_Vulkan* device, QueueType type);
         void submit(VkFence fence = nullptr);
     };

@@ -8,7 +8,8 @@
 
 namespace quark::graphic {
 
-// This struct is Cached in Device_Vulkan
+// Once we have a list of VkDescriptorSetLayouts and push constant layouts, we now have our PipelineLayout.
+// This is of course, hashed as well based on the hash of descriptor set layouts and push constant ranges.
 struct PipeLineLayout {
     Device_Vulkan* device;
     VkPipelineLayout handle = VK_NULL_HANDLE; 
@@ -17,6 +18,7 @@ struct PipeLineLayout {
     VkDescriptorUpdateTemplate updateTemplate[DESCRIPTOR_SET_MAX_NUM] = {};
     ShaderResourceLayout combinedLayout = {};
 
+    // shaders(vert shader, frag shader...) => combined resource layout => pipeline layout
     PipeLineLayout(Device_Vulkan* device, const ShaderResourceLayout combinedLayout);
     ~PipeLineLayout();
 };

@@ -1,10 +1,10 @@
 ```
-  ____    _    _      __      _____     _  __
- / __ \  | |  | |     /\     |  __ \   | |/ /
-| |  | | | |  | |    /  \    | |__) |  | ' / 
-| |  | | | |  | |   / /\ \   |  _  /   |  <  
-| |__| | | |__| |  / ____ \  | | \ \   | . \ 
- \___\_\  \____/  /_/    \_\ |_|  \_\  |_|\_\
+  ____     _    _       __       _____      _  ___
+ / __ \   | |  | |      /\      |  __ \    | |/  /
+| |  | |  | |  | |     /  \     | |__) |   | '  / 
+| |  | |  | |  | |    / /\ \    |  _  /    |   <  
+| |__| |  | |__| |   / ____ \   | | \ \    | .  \ 
+ \___\_\   \____/   /_/    \_\  |_|  \_\   |_|\__\
                                      
 
                                                                 
@@ -36,13 +36,14 @@ Quark is my personal learning project.
 - KTX2 Transcoding
 
 ## Todo
+- [ ] Shader System
 - [ ] Mouse Picking in Scene Editor
 - [ ] Quark Customized Asset Format
   - [ ] Mesh
   - [ ] Texture
   - [ ] Material
 - [ ] Skeleton Animation
-- [ ] Deferred Renderer
+- [ ] Render Graph System
 - [ ] D3D12 Rendering Backend
 - [ ] PBR Rendering
   - [ ] Directional Light

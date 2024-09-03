@@ -515,11 +515,14 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     vkEndCommandBuffer(internal_cmdList.GetHandle());
     internal_cmdList.state = CommandListState::READY_FOR_SUBMIT;
     
-    if (queue.submissions.empty()) {
+    if (queue.submissions.empty()) 
+    {
         queue.submissions.emplace_back();
     }
 
-    if (!queue.submissions.back().signalSemaphoreInfos.empty() || !queue.submissions.back().waitSemaphoreInfos.empty()) {
+    // The signalSemaphoreInfos should always be empty
+    if (!queue.submissions.back().signalSemaphoreInfos.empty() || !queue.submissions.back().waitSemaphoreInfos.empty()) 
+    {
         // Need to create a new batch
         queue.submissions.emplace_back();
     }
@@ -530,8 +533,10 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     cmd_submit_info.commandBuffer = internal_cmdList.GetHandle();
     cmd_submit_info.pNext = nullptr;
 
-    if (waitedCmdCounts > 0) {
-        for (size_t i = 0; i < waitedCmdCounts; ++i) {
+    if (waitedCmdCounts > 0) 
+    {
+        for (size_t i = 0; i < waitedCmdCounts; ++i) 
+        {
             auto& internal = ToInternal(&waitedCmds[i]);
             auto& semaphore_info = submission.waitSemaphoreInfos.emplace_back();
             semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
@@ -543,7 +548,8 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     }
 
     auto& frame = m_Frames[currentFrame];
-    if (internal_cmdList.IsWaitingForSwapChainImage() && !frame.imageAvailableSemaphoreConsumed) {
+    if (internal_cmdList.IsWaitingForSwapChainImage() && !frame.imageAvailableSemaphoreConsumed) 
+    {
         auto& wait_semaphore_info = submission.waitSemaphoreInfos.emplace_back();
         wait_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
         wait_semaphore_info.semaphore = frame.imageAvailableSemaphore;
@@ -559,7 +565,8 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     }
 
     // Submit right now to make sure the correct order of submissions
-    if (signal) {
+    if (signal) 
+    {
         auto& semaphore_info = submission.signalSemaphoreInfos.emplace_back();
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
         semaphore_info.semaphore = internal_cmdList.GetCmdCompleteSemaphore();

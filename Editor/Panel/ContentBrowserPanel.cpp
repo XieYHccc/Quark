@@ -12,8 +12,8 @@ ContentBrowserPanel::ContentBrowserPanel()
 	:m_CurrentDirectory(s_AssetDirectory)
 {
 	TextureImporter loader;
-	m_FileIcon = loader.ImportStb("Resources/Icons/ContentBrowser/FileIcon.png");
-	m_FolderIcon = loader.ImportStb("Resources/Icons/ContentBrowser/DirectoryIcon.png");
+	m_FileIcon = loader.ImportStb("BuiltInResources/Icons/ContentBrowser/FileIcon.png");
+	m_FolderIcon = loader.ImportStb("BuiltInResources/Icons/ContentBrowser/DirectoryIcon.png");
 	m_FileIconId = UI::Get()->CreateTextureId(m_FileIcon);
 	m_FolderIconId = UI::Get()->CreateTextureId(m_FolderIcon);
 }

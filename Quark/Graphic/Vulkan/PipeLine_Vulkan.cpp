@@ -240,6 +240,8 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
                     y.stageFlags |= x.stageFlags;
 
                     dstSetLayout.set_stage_mask |= x.stageFlags;
+
+                    //TODO: This shouldn't belong here, move to shader reflection code.
                     switch (x.descriptorType) {
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
                     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:

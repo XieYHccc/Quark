@@ -44,7 +44,7 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
 
     // Load cube map
     TextureImporter textureLoader;
-    m_CubeMapTexture = textureLoader.ImportKtx2("Resources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
+    m_CubeMapTexture = textureLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
 
     // Load scene
     m_Scene = CreateScope<Scene>("");
@@ -406,14 +406,14 @@ void EditorApp::CreatePipeline()
     using namespace quark::graphic;
 
     // Sky box shaders
-    skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "Resources/Shaders/Spirv/skybox.vert.spv");
-    skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "Resources/Shaders/Spirv/skybox.frag.spv");
+    skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "BuiltInResources/Shaders/Spirv/skybox.vert.spv");
+    skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
 
     // Scene shaders
     vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(ShaderStage::STAGE_VERTEX,
-        "Resources/Shaders/Spirv/mesh.vert.spv");
+        "BuiltInResources/Shaders/Spirv/mesh.vert.spv");
     frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(ShaderStage::STAGE_FRAGEMNT,
-        "Resources/Shaders/Spirv/mesh.frag.spv");
+        "BuiltInResources/Shaders/Spirv/mesh.frag.spv");
     
     // Scene pipeline
     GraphicPipeLineDesc pipe_desc;

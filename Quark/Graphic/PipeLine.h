@@ -164,7 +164,8 @@ struct GraphicPipeLineDesc {
     std::vector<VertexAttribInfo> vertexAttribInfos;
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
 
-    RenderPassInfo renderPassInfo;
+    RenderPassInfo renderPassInfo;  // Compatable Renderpass info. Only the Format information are actually needed.
+
     // For dynamic rendering (Deprecated)
     // std::vector<DataFormat> colorAttachmentFormats;
     // DataFormat depthAttachmentFormat = DataFormat::UNDEFINED; 
