@@ -23,3 +23,6 @@
 [submodule "ThirdParty/imguizmo"]
 	path = ThirdParty/imguizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "ThirdParty/glslang"]
+	path = ThirdParty/glslang
+	url = https://github.com/KhronosGroup/glslang.git
