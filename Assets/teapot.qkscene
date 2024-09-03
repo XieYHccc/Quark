@@ -17,19 +17,19 @@ Entities:
     NameComponent: Camera
     TransformComponent:
       Position: [7.35889149, 4.95830917, 6.92579079]
-      Rotation: [63.5593033, 46.6919479, 1.98741823e-08]
+      Rotation: [63.5593109, 46.6919479, 0]
       Scale: [1, 1, 1]
-  - Entity: 15136871673449453567
+  - Entity: 5815961188514487367
     Parent: 0
     Children:
-      - Id: 13038737116302135501
-    NameComponent: Teapot
+      []
+    NameComponent: Plane
     TransformComponent:
-      Position: [1.79999995, -0.200000003, 0]
-      Rotation: [51.1000137, -8.30397767e-06, 48.0000038]
-      Scale: [1, 1, 1]
+      Position: [5.19118023, -1.08849776, -6.13818836]
+      Rotation: [1.10000002, -0, 0]
+      Scale: [1.02999973, 1.03001046, 1.03001046]
     MeshComponent:
-      AssetID: 4055062536632250099
+      AssetID: 16653824437552389498
   - Entity: 384267254884713850
     Parent: 7363486925301583441
     Children:
@@ -39,15 +39,17 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
-  - Entity: 13038737116302135501
-    Parent: 15136871673449453567
+  - Entity: 8529890325842747922
+    Parent: 0
     Children:
       []
-    NameComponent: wonidie
+    NameComponent: plane1
     TransformComponent:
-      Position: [0, 0, 0]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
+      Position: [20.8928471, 0.0623354167, -1.46804321]
+      Rotation: [-4.16294241, 4.01860189, 0.170916915]
+      Scale: [0.999999881, 0.999826193, 0.99982208]
+    MeshComponent:
+      AssetID: 16653824437552389498
   - Entity: 7363486925301583441
     Parent: 10190271248827583272
     Children:
@@ -66,3 +68,14 @@ Entities:
       Position: [0, 0, 0]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
+  - Entity: 17983047938396472623
+    Parent: 0
+    Children:
+      []
+    NameComponent: Cube
+    TransformComponent:
+      Position: [1.30726242, 3.29431486, -25.1766014]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      AssetID: 13708746397499321601

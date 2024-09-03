@@ -1,4 +1,19 @@
 Assets:
+  - Id: 4541837899442148147
+    FilePath: Assets/Materials/testMat.qkmaterial
+    Type: Material
   - Id: 4055062536632250099
     FilePath: Assets/Meshes/teapot.gltf
+    Type: Mesh
+  - Id: 2548191969596606402
+    FilePath: Assets/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2
+    Type: Texture
+  - Id: 16653824437552389498
+    FilePath: Assets/Meshes/plane.gltf
+    Type: Mesh
+  - Id: 16459201072281066735
+    FilePath: Assets/Textures/prototype_512x512_grey3.png
+    Type: Texture
+  - Id: 13708746397499321601
+    FilePath: Assets/Meshes/cube.gltf
     Type: Mesh

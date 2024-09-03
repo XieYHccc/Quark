@@ -57,6 +57,13 @@ bool GLSLCompiler::Compile(std::string& outMessage, const std::vector<std::pair<
 	// Initialize glslang library.
 	glslang::InitializeProcess();
 
+
+	if (m_Source.empty())
+	{
+		CORE_LOGE("GLSLCompiler::Compile: Source is empty. Please set source first");
+		return false;
+	}
+
 	EShMessages messages = static_cast<EShMessages>(EShMsgDefault | EShMsgVulkanRules | EShMsgSpvRules);
 	EShLanguage language = FindShaderLanguage(m_ShaderStage);
 
