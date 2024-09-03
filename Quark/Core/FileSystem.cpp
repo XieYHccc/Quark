@@ -41,6 +41,9 @@ bool FileSystem::ReadFileText(const std::string& fileName, std::string& outStrin
         return false;
 
     outString = std::string(data.begin(), data.end());
+
+    // Remove DOS EOL.
+    outString.erase(std::remove_if(std::begin(outString), std::end(outString), [](char c) { return c == '\r'; }), std::end(outString));
     return true;
 }
 

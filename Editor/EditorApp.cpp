@@ -8,6 +8,7 @@
 #include <Quark/Core/Window.h>
 #include <Quark/Core/FileSystem.h>
 #include <Quark/Core/Input.h>
+#include <Quark/Core/Logger.h>
 #include <Quark/Events/KeyEvent.h>
 #include <Quark/Events/EventManager.h>
 #include <Quark/Scene/Components/TransformCmpt.h>
@@ -16,7 +17,8 @@
 #include <Quark/Asset/TextureImporter.h>
 #include <Quark/Asset/AssetManager.h>
 #include <Quark/Asset/MaterialSerializer.h>
-#include "Quark/Renderer/GpuResourceManager.h"
+#include <Quark/Renderer/GpuResourceManager.h>
+#include <Quark/Renderer/GLSLCompiler.h>
 #include <Quark/UI/UI.h>
 
 namespace quark {
@@ -410,10 +412,22 @@ void EditorApp::CreatePipeline()
     skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
 
     // Scene shaders
-    vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(ShaderStage::STAGE_VERTEX,
-        "BuiltInResources/Shaders/Spirv/mesh.vert.spv");
-    frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(ShaderStage::STAGE_FRAGEMNT,
-        "BuiltInResources/Shaders/Spirv/mesh.frag.spv");
+    GLSLCompiler compiler;
+    compiler.SetTarget(GLSLCompiler::Target::VULKAN_VERSION_1_3);
+    compiler.SetSourceFromFile("BuiltInResources/Shaders/mesh.vert", ShaderStage::STAGE_VERTEX);
+    std::vector<uint32_t> spvCode;
+    std::string messages;
+    if (!compiler.Compile(messages, spvCode, {}))
+        LOGE(messages);
+
+    vert_shader = m_GraphicDevice->CreateShaderFromBytes(ShaderStage::STAGE_VERTEX, spvCode.data(), spvCode.size() * sizeof(uint32_t));
+
+    spvCode.clear();
+    messages.clear();
+    compiler.SetSourceFromFile("BuiltInResources/Shaders/mesh.frag", ShaderStage::STAGE_FRAGEMNT);
+    if (!compiler.Compile(messages, spvCode, {}))
+        LOGE(messages);
+    frag_shader = m_GraphicDevice->CreateShaderFromBytes(ShaderStage::STAGE_FRAGEMNT, spvCode.data(), spvCode.size() * sizeof(uint32_t));
     
     // Scene pipeline
     GraphicPipeLineDesc pipe_desc;
