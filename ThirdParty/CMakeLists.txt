@@ -161,3 +161,51 @@ add_library(imguizmo STATIC ${IMGUIZMO_SOURCES})
 target_include_directories(imguizmo SYSTEM PUBLIC ${IMGUIZMO_DIR})
 target_link_libraries(imguizmo imgui)
 set_target_properties(imguizmo PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+
+#glslang
+option(ENABLE_SPVREMAPPER OFF)
+option(ENABLE_GLSLANG_BINARIES OFF)
+set(ENABLE_HLSL ON)
+option(ENABLE_OPT OFF)
+option(BUILD_TESTING OFF)
+option(BUILD_EXTERNAL OFF)
+if(IOS)
+    option(ENABLE_PCH OFF)
+endif ()
+
+add_subdirectory(glslang)
+
+
+if (TARGET GenericCodeGen) #TODO: Will be removed in the future, currently here for compatability
+    set_target_properties(GenericCodeGen PROPERTIES FOLDER "ThirdParty")
+endif()
+if (TARGET MachineIndependent)
+    set_target_properties(MachineIndependent PROPERTIES FOLDER "ThirdParty")
+endif()
+if (TARGET OSDependent)
+    set_target_properties(OSDependent PROPERTIES FOLDER "ThirdParty")
+endif()
+if (TARGET SPIRV)
+    set_target_properties(SPIRV PROPERTIES FOLDER "ThirdParty")
+endif()
+
+if (NOT TARGET glslang-default-resource-limits)
+    add_library(glslang-default-resource-limits
+                glslang/StandAlone/ResourceLimits.cpp)
+
+    target_include_directories(glslang-default-resource-limits
+        SYSTEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/glslang)
+endif()
+
+if(NOT MSVC)
+    target_compile_options(glslang PRIVATE
+        "-Wno-logical-op-parentheses"
+        "-Wno-unused-parameter")
+
+    target_compile_options(SPIRV PRIVATE
+        "-Wno-logical-op-parentheses"
+        "-Wno-unused-parameter")
+endif()
+
+set_target_properties(glslang PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(glslang-default-resource-limits PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)

@@ -15,7 +15,7 @@ bool FileSystem::Exists(const std::string& filepath)
     return std::filesystem::exists(std::filesystem::path(filepath));
 }
 
-bool FileSystem::ReadFile(const std::string& fileName, std::vector<byte>& data, size_t readSize, size_t offset)
+bool FileSystem::ReadFileBinary(const std::string& fileName, std::vector<byte>& data, size_t readSize, size_t offset)
 {
     std::ifstream file(fileName, std::ios::binary | std::ios::ate);
 
@@ -32,6 +32,16 @@ bool FileSystem::ReadFile(const std::string& fileName, std::vector<byte>& data, 
 
     CORE_LOGW("FileSystem::ReadFile: Failed to open file {}", fileName);
     return false;
+}
+
+bool FileSystem::ReadFileText(const std::string& fileName, std::string& outString)
+{
+    std::vector<byte> data;
+    if (!ReadFileBinary(fileName, data))
+        return false;
+
+    outString = std::string(data.begin(), data.end());
+    return true;
 }
 
 std::filesystem::path FileSystem::OpenFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters)

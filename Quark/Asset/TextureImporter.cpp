@@ -22,7 +22,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
 
     // Read in file's binary data
     std::vector<byte> binary_data;
-    if (!FileSystem::ReadFile(file_path, binary_data)) {
+    if (!FileSystem::ReadFileBinary(file_path, binary_data)) {
         CORE_LOGW("TextureImporter::LoadKtx2: Failed to read file {}", file_path);
         return nullptr;
     }
