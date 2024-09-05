@@ -3,6 +3,8 @@
 
 namespace quark {
 
+// Adds support for C style preprocessor macros to glsl shaders
+// enabling you to define or undefine certain symbols
 class CompileOptions {
 public:
 	CompileOptions() = default;
@@ -41,13 +43,24 @@ public:
 
 	bool Compile(std::string& outMessages, std::vector<uint32_t>& outSpirv, const CompileOptions& ops = {});
 
+	void Clear();
 private:
+	void PreProcess();
+
+	// Recursively parse the source and its includes
+	bool ParseSource(const std::string& source, const std::string sourcePath, std::string& outParsedResult);
+
 	std::string m_SourcePath;
 	std::string m_Source;
+	std::string m_PreprocessedSource;
+
+	std::unordered_set<std::string> m_IncludeDependencies;
 
 	Target m_Target = Target::VULKAN_VERSION_1_1;
 
 	graphic::ShaderStage m_ShaderStage = graphic::ShaderStage::MAX_ENUM;
+
+	bool m_IsPreprocessed = false;
 
 
 };

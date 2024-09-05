@@ -3,7 +3,7 @@
 #extension GL_GOOGLE_include_directive : require
 #extension GL_EXT_buffer_reference : require
 
-#include "./include/input_structures.glsl"
+#include "include/input_structures.glsl"
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec3 outColor;
