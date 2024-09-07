@@ -51,6 +51,7 @@ struct RenderObject
     uint32_t firstIndex = 0;
     Ref<graphic::Buffer> indexBuffer;
     Ref<graphic::Buffer> vertexBuffer;
+    Ref<graphic::PipeLine> pipeLine;
     Ref<Material> material;
     math::Aabb aabb = {};
     glm::mat4 transform;

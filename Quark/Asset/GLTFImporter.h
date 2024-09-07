@@ -32,10 +32,6 @@ private:
     tinygltf::Model m_Model;
     Ref<Scene> m_Scene;
     std::string m_FilePath;
-
-    Ref<Texture> m_DefaultColorTexture;
-    Ref<Texture> m_DefaultMetalTexture;
-    Ref<Material> m_DefaultMaterial;
     
     // Supported extensions mapped to whether they are enabled
     static std::unordered_map<std::string, bool> supportedExtensions_;

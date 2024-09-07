@@ -1,20 +1,13 @@
 #pragma once
 #include <iostream>
+#include "Quark/Core/Util/Singleton.h"
 #include "Quark/Events/EventHandler.h"
-
 namespace quark {
 
-class EventManager {
+class EventManager : public util::MakeSingleton<EventManager> {
 public:
     using EventType = Event::EventType;
-
-    static EventManager& Instance() {
-        static EventManager instance;
-        return instance;
-    }
-    
-    void Init() {};
-    void Finalize() {}
+    EventManager() = default;
 
 public:
     template<typename T, typename = std::enable_if_t<std::is_base_of_v<Event, T>>>
@@ -30,10 +23,9 @@ public:
     void TriggerEvent(const Event& evnet);
 
 private:
-    EventManager() = default;
-
     std::vector<std::unique_ptr<Event>> event_queue_;
     std::unordered_map<EventType, std::vector<std::unique_ptr<BaseEventHandler>>> subscribers_;
+
 };
 
 template<typename T, typename>

@@ -11,7 +11,6 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     : Shader(stage), m_Device(device)
 {
     CORE_DEBUG_ASSERT(m_Device != nullptr)
-    CORE_LOGD("Creating vulkan shader...")
 
     VkDevice vk_device = m_Device->vkDevice;
     auto& vk_context = m_Device->vkContext;
@@ -139,7 +138,6 @@ Shader_Vulkan::~Shader_Vulkan()
     if (m_ShaderModule != VK_NULL_HANDLE) {
         frame.garbageShaderModules.push_back(m_ShaderModule);
     }
-    CORE_LOGD("Vulkan shader destroyed")
 }
 
 }

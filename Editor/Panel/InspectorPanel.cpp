@@ -193,8 +193,14 @@ void InspectorPanel::OnImGuiUpdate()
                 {
                     auto cmpt = m_SelectedEntity->AddComponent<MeshRendererCmpt>();
                     auto meshCmpt = m_SelectedEntity->GetComponent<MeshCmpt>();
-
-                    cmpt->SetMesh(meshCmpt->sharedMesh);
+                    
+                    if (meshCmpt)
+                    {
+                        Ref<Mesh> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
+                        cmpt->SetMesh(mesh);
+                        for (size_t i = 0; i < mesh->subMeshes.size(); i++)
+                            cmpt->SetMaterial(i, AssetManager::Get().GetDefaultMaterial());
+                    }
                 }
 				ImGui::CloseCurrentPopup();
 			}
@@ -326,7 +332,7 @@ void InspectorPanel::OnImGuiUpdate()
 						if (ImGui::MenuItem(metadata.filePath.string().c_str()))
 						{
                             Ref<Material> materialAsset = AssetManager::Get().GetAsset<Material>(id);
-                            component.SetMaterial(materialAsset, i);
+                            component.SetMaterial(i, materialAsset);
 							break;
 						}
 					}

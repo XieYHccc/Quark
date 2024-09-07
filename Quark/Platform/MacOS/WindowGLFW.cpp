@@ -74,13 +74,13 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         int frame_width = 0;
         int frame_height = 0;
         glfwGetFramebufferSize(window, &frame_width, &frame_height);
-        EventManager::Instance().TriggerEvent(WindowResizeEvent(frame_width, frame_height));
+        EventManager::Get().TriggerEvent(WindowResizeEvent(frame_width, frame_height));
     });
 
     glfwSetWindowCloseCallback(window_, [](GLFWwindow* window)
     {
         std::unique_ptr<WindowCloseEvent> closeEvent = std::make_unique<WindowCloseEvent>();
-        EventManager::Instance().QueueEvent(std::move(closeEvent));
+        EventManager::Get().QueueEvent(std::move(closeEvent));
     });
     
     glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -90,15 +90,15 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
 
         switch (action) {
         case GLFW_PRESS: {
-            EventManager::Instance().TriggerEvent(KeyPressedEvent(key, 0));
+            EventManager::Get().TriggerEvent(KeyPressedEvent(key, 0));
             break;
         }
         case GLFW_RELEASE: {
-            EventManager::Instance().TriggerEvent(KeyReleasedEvent(key));
+            EventManager::Get().TriggerEvent(KeyReleasedEvent(key));
             break;
         }
         case GLFW_REPEAT: {
-            EventManager::Instance().TriggerEvent(KeyPressedEvent(key, 1));
+            EventManager::Get().TriggerEvent(KeyPressedEvent(key, 1));
             break;
         }
         }
@@ -109,11 +109,11 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         // Record Mouse position
         ((InputGLFW*)Input::Get())->RecordMousePosition(xpos, ypos);
 
-        EventManager::Instance().TriggerEvent(MouseMovedEvent((float)xpos, (float)ypos));
+        EventManager::Get().TriggerEvent(MouseMovedEvent((float)xpos, (float)ypos));
     });
 
     glfwSetScrollCallback(window_, [](GLFWwindow* window, double xOffset, double yOffset) {
-        EventManager::Instance().TriggerEvent(MouseScrolledEvent((float)xOffset, (float)yOffset));
+        EventManager::Get().TriggerEvent(MouseScrolledEvent((float)xOffset, (float)yOffset));
     });
 
     glfwSetMouseButtonCallback(window_, [](GLFWwindow* window, int button, int action, int mods) {
@@ -121,10 +121,10 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         ((InputGLFW*)Input::Get())->RecordKey(button, action);
 
         if (action == GLFW_PRESS) {
-            EventManager::Instance().TriggerEvent(MouseButtonPressedEvent(button));
+            EventManager::Get().TriggerEvent(MouseButtonPressedEvent(button));
         }
         else if (action == GLFW_RELEASE) {
-            EventManager::Instance().TriggerEvent(MouseButtonReleasedEvent(button));   
+            EventManager::Get().TriggerEvent(MouseButtonReleasedEvent(button));   
         }
     });
 }

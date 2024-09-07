@@ -6,6 +6,7 @@ namespace quark {
 
 using namespace graphic;
 
+
 void GpuResourceManager::Init()
 {
 
@@ -87,6 +88,51 @@ void GpuResourceManager::Init()
         cubeMapSampler = Application::Get().GetGraphicDevice()->CreateSampler(desc);
 
     }
+    
+    // Depth stencil states
+	{
+        depthDisabledState.enableDepthTest = false;
+        depthDisabledState.enableDepthWrite = false;
+
+        depthTestState.enableDepthTest = true;
+        depthTestState.enableDepthWrite = false;
+        depthTestState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
+        depthTestWriteState.enableStencil = false;
+
+        depthTestWriteState.enableDepthTest = true;
+        depthTestWriteState.enableDepthWrite = true;
+        depthTestWriteState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
+        depthTestWriteState.enableStencil = false;
+	}
+
+    // Rasterization state
+	{
+		defaultFillRasterizationState.cullMode = CullMode::NONE;
+		defaultFillRasterizationState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
+        defaultFillRasterizationState.polygonMode = PolygonMode::Fill;
+		defaultFillRasterizationState.enableDepthClamp = false;
+		defaultFillRasterizationState.enableAntialiasedLine = false;
+		defaultFillRasterizationState.SampleCount = SampleCount::SAMPLES_1;
+		defaultFillRasterizationState.lineWidth = 1.f;
+
+        wireframeRasterizationState.cullMode = CullMode::NONE;
+        wireframeRasterizationState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
+        wireframeRasterizationState.polygonMode = PolygonMode::Line;
+        wireframeRasterizationState.enableDepthClamp = false;
+        wireframeRasterizationState.enableAntialiasedLine = false;
+        wireframeRasterizationState.SampleCount = SampleCount::SAMPLES_1;
+        wireframeRasterizationState.lineWidth = 1.5f;
+	}
+
+    // Render Pass
+    {
+        defaultOneColorWithDepthRenderPassInfo.numColorAttachments = 1;
+        defaultOneColorWithDepthRenderPassInfo.colorAttachmentFormats[0] = DataFormat::B8G8R8A8_UNORM;
+        defaultOneColorWithDepthRenderPassInfo.depthAttachmentFormat = DataFormat::D32_SFLOAT;
+
+    }
+
+    CORE_LOGI("[GpuResourceManager]: Initialized");
 }
 
 void GpuResourceManager::Shutdown()

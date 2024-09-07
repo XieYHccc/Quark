@@ -378,7 +378,6 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         device_->copyAllocator.submit(transitCmd);
     }
     
-    CORE_LOGD("Vulkan image created")
 }
 
 Image_Vulkan::~Image_Vulkan()
@@ -454,7 +453,6 @@ Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
 
     VK_CHECK(vkCreateSampler(device_->vkDevice, &info, nullptr, &handle_))
 
-    CORE_LOGD("Vulkan sampler Created")
 }
 
 Sampler_Vulkan::~Sampler_Vulkan()

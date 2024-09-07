@@ -7,6 +7,7 @@
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/StringUtils.h"
+#include "Quark/Renderer/GpuResourceManager.h"
 #include "Quark/Asset/AssetExtensions.h"
 #include "Quark/Asset/MeshImporter.h"
 #include "Quark/Asset/TextureImporter.h"
@@ -48,7 +49,10 @@ static std::string AssetTypeToString(AssetType type)
 
 AssetManager::AssetManager()
 {
+	CreateDefaultAssets();
 	LoadAssetRegistry();
+
+	CORE_LOGI("[AssetManager] Initialized");
 }
 
 Ref<Asset> AssetManager::GetAsset(AssetID id)
@@ -292,6 +296,34 @@ void AssetManager::SaveAssetRegistry()
 
 void AssetManager::ReloadAssets()
 {
+
+}
+
+void AssetManager::CreateDefaultAssets()
+{
+	// Create defalult texture
+	m_DefaultColorTexture = CreateRef<Texture>();
+	m_DefaultColorTexture->image = GpuResourceManager::Get().whiteImage;
+	m_DefaultColorTexture->sampler = GpuResourceManager::Get().linearSampler;
+	m_DefaultColorTexture->SetDebugName("Default color texture");
+	
+	m_DefaultMetalTexture = CreateRef<Texture>();
+	m_DefaultMetalTexture->image = GpuResourceManager::Get().whiteImage;
+	m_DefaultMetalTexture->sampler = GpuResourceManager::Get().linearSampler;
+	m_DefaultMetalTexture->SetDebugName("Default metalic roughness texture");
+
+	m_DefaultMaterial = CreateRef<Material>();
+	m_DefaultMaterial->alphaMode = AlphaMode::OPAQUE;
+	m_DefaultMaterial->baseColorTexture = m_DefaultColorTexture;
+	m_DefaultMaterial->metallicRoughnessTexture = m_DefaultMetalTexture;
+	m_DefaultMaterial->uniformBufferData.baseColorFactor = glm::vec4(1.0f);
+	m_DefaultMaterial->uniformBufferData.metalicFactor = 1.0f;
+	m_DefaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
+
+	// All default assets' id is 1
+	m_DefaultColorTexture->SetAssetID(1);
+	m_DefaultMetalTexture->SetAssetID(1);
+	m_DefaultMaterial->SetAssetID(1);
 
 }
 

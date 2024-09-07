@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include "Quark/Asset/Asset.h"
 #include "Quark/Asset/Texture.h"
+#include "Quark/Renderer/ShaderManager.h"
 
 namespace quark {
 enum class AlphaMode {
@@ -22,8 +23,13 @@ struct Material : public Asset {
     Ref<Texture> metallicRoughnessTexture;
     Ref<Texture> normalTexture;
     
+    ShaderProgram* shaderProgram = nullptr;
+
+    // (deprecated) we are using push constant to send uniform buffer
     Ref<graphic::Buffer> uniformBuffer;
     size_t uniformBufferOffset = 0;
+
+
 };
 
 }

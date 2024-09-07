@@ -91,6 +91,7 @@ struct VertexAttribInfo
 };
 
 struct PipelineColorBlendState {
+    // Currently logic op is not in use.
     bool enable_logic_op = false;
     LogicOperation logic_op = LogicOperation::CLEAR;
 

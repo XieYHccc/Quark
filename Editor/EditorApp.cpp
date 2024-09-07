@@ -66,7 +66,7 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     m_EditorCamera.SetPosition(glm::vec3(0, 10, 10));
 
 
-    EventManager::Instance().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) {
+    EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) {
         OnKeyPressed(e);
     });
 }

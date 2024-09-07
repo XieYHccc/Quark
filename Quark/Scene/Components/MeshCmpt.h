@@ -7,7 +7,7 @@ struct MeshCmpt : public Component {
     // Use mesh if it exists, otherwise use sharedMesh
     //Ref<Mesh> sharedMesh;
     Ref<Mesh> sharedMesh;
-    Scope<Mesh> uniqueMesh;
+    Ref<Mesh> uniqueMesh;
     QK_COMPONENT_TYPE_DECL(MeshCmpt)
     using Component::Component;
 };

@@ -10,6 +10,7 @@
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Renderer/GpuResourceManager.h"
+#include "Quark/Renderer/ShaderManager.h"
 
 #ifdef USE_VULKAN_DRIVER
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
@@ -23,37 +24,38 @@ Application::Application(const AppInitSpecs& specs)
 {
     s_Instance = this;
     
+    // Init moudules, the order is important
     Logger::Init();
 
-    AssetManager::CreateSingleton();
-    
-    EventManager::Instance().Init();
+    EventManager::CreateSingleton();
 
     Window::Create();
-    Window::Instance()->Init(specs.title,specs.isFullScreen,  specs.width, specs.height);
+    Window::Instance()->Init(specs.title, specs.isFullScreen, specs.width, specs.height);
 
     CORE_ASSERT(NFD::Init() == NFD_OKAY)
 
     Input::CreateSingleton();
     Input::Get()->Init();
 
-    // Init graphic device
 #ifdef  USE_VULKAN_DRIVER
     m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
     m_GraphicDevice->Init();
 #endif
 
-    // Init default render resources
     GpuResourceManager::CreateSingleton();
     GpuResourceManager::Get().Init();
+
+    ShaderManager::CreateSingleton();
+
+    AssetManager::CreateSingleton();
 
     // Init UI system
     UI::CreateSingleton();
     UI::Get()->Init(m_GraphicDevice.get(), specs.uiSpecs);
 
     // Register application callback functions
-    EventManager::Instance().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
-    EventManager::Instance().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event);});
+    EventManager::Get().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
+    EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event); });
 
 }
 
@@ -63,6 +65,8 @@ Application::~Application() {
     UI::FreeSingleton();
 
     AssetManager::FreeSingleton();
+
+    ShaderManager::FreeSingleton();
 
     GpuResourceManager::Get().Shutdown();
     GpuResourceManager::FreeSingleton();
@@ -78,8 +82,8 @@ Application::~Application() {
     Window::Instance()->Finalize();
     Window::Destroy();
 
-    // destroy event manager
-    EventManager::Instance().Finalize();
+    EventManager::FreeSingleton();
+
 }
 
 void Application::Run()
@@ -102,7 +106,7 @@ void Application::Run()
         }
 
         // Dispatch events
-        EventManager::Instance().DispatchEvents();
+        EventManager::Get().DispatchEvents();
 
         m_Status.lastFrameDuration = m_Timer.ElapsedSeconds() - start_frame;
         m_Status.fps = 1.f / m_Status.lastFrameDuration;

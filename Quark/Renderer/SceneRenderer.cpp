@@ -4,6 +4,7 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
+#include "Quark/Scene/Components/MeshRendererCmpt.h"
 #include "Quark/Graphic/Device.h"
 #include "Quark/Asset/MeshImporter.h"
 
@@ -37,26 +38,31 @@ void SceneRenderer::UpdateRenderObjects()
     m_DrawContext.transparentObjects.clear();
 
     // Fill render objects
-    const auto& mesh_transform_cmpts = m_Scene->GetComponents<MeshCmpt, TransformCmpt>();
-    for (const auto [mesh_cmpt, transform_cmpt] : mesh_transform_cmpts) {
+    const auto& cmpts = m_Scene->GetComponents<MeshCmpt, MeshRendererCmpt,TransformCmpt>();
+    for (const auto [mesh_cmpt, mesh_renderer_cmpt,transform_cmpt] : cmpts) {
         auto* mesh = mesh_cmpt->uniqueMesh ? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
 
         if (!mesh) continue;
-        for (const auto& submesh : mesh->subMeshes) {
+
+        for (size_t i = 0; const auto & submesh : mesh->subMeshes) {
             RenderObject new_renderObject;
             new_renderObject.aabb = submesh.aabb;
             new_renderObject.firstIndex = submesh.startIndex;
             new_renderObject.indexCount = submesh.count;
-            new_renderObject.indexBuffer = mesh->indexBuffer;
-            new_renderObject.vertexBuffer = mesh->vertexBuffer;
-            new_renderObject.material = submesh.material;
+            new_renderObject.indexBuffer = mesh->GetIndexBuffer();
+            new_renderObject.vertexBuffer = mesh->GetVertexBuffer();
+            new_renderObject.material = mesh_renderer_cmpt->GetMaterial(i);
             new_renderObject.transform = transform_cmpt->GetWorldMatrix();
-
+            new_renderObject.pipeLine = mesh_renderer_cmpt->GetGraphicsPipeLine(i);
             if (new_renderObject.material->alphaMode == AlphaMode::OPAQUE)
                 m_DrawContext.opaqueObjects.push_back(new_renderObject);
             else
                 m_DrawContext.transparentObjects.push_back(new_renderObject);
+
+            i++;
         }
+
+
     }
 }
 
@@ -108,8 +114,8 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
     cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
     cmd_list->BindImage(0, 1, *m_CubeMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd_list->BindSampler(0, 1, *m_CubeMap->sampler);
-    cmd_list->BindVertexBuffer(0, *m_CubeMesh->vertexBuffer, 0);
-    cmd_list->BindIndexBuffer(*m_CubeMesh->indexBuffer, 0, IndexBufferFormat::UINT32);
+    cmd_list->BindVertexBuffer(0, *m_CubeMesh->GetVertexBuffer(), 0);
+    cmd_list->BindIndexBuffer(*m_CubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
     cmd_list->DrawIndexed(m_CubeMesh->indices.size(), 1, 0, 0, 0);
 }
 

@@ -16,13 +16,21 @@ public:
     inline static Ref<graphic::Sampler> nearestSampler;
     inline static Ref<graphic::Sampler> cubeMapSampler;
 
+    inline static graphic::PipelineDepthStencilState depthTestWriteState;
+    inline static graphic::PipelineDepthStencilState depthDisabledState;
+    inline static graphic::PipelineDepthStencilState depthTestState;
+
+    inline static graphic::RasterizationState defaultFillRasterizationState;
+    inline static graphic::RasterizationState wireframeRasterizationState;
+
+    inline static graphic::RenderPassInfo defaultOneColorWithDepthRenderPassInfo;
+
+
     GpuResourceManager() = default;
     ~GpuResourceManager() = default;
 
     void Init();
     void Shutdown();
-
-    Ref<graphic::Buffer> RequestMaterialUniformBuffer(size_t& outOffset);
 
 };
 }

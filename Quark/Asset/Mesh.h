@@ -47,36 +47,48 @@ struct SubMeshDescriptor {
     uint32_t startIndex = 0;
     uint32_t count = 0;
     math::Aabb aabb = {};
-    Ref<Material> material = nullptr;
 };
 
 class Mesh : public Asset {
 public:
+    // If isDynamic is true, These data will be freed after uploading to GPU
+    // These attributes' lacation in shaders are fixed in Quark
+    std::vector<uint32_t> indices;
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec4> colors;
+
+    std::vector<SubMeshDescriptor> subMeshes;
+    std::vector<Vertex> vertices;
+
+    math::Aabb aabb = {};
+
+    bool isDynamic = false;
+
+public:
     Mesh();
     Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<SubMeshDescriptor>& subMeshes, bool isDynamic = false);
 
-    void CreateRenderResources();
+    uint32_t GetMeshAttributeMask() const;
+
+    void UpdateGpuBuffers(); // Carefully call this unless you know what you are doing
+
     void ReCalculateNormals();
     void ReCalculateAabbs();
-    
-    std::vector<SubMeshDescriptor> subMeshes;
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
-    math::Aabb aabb = {};
-    bool isDynamic = false;
-
-    // Gpu resources
-    Ref<graphic::Buffer> vertexBuffer;
-    Ref<graphic::Buffer> attributeBuffer;
-    Ref<graphic::Buffer> indexBuffer;
 
 private:
-    std::vector<uint32_t> m_Indices;
+    Ref<graphic::Buffer> GetVertexBuffer() const { return m_VertexBuffer; }
+    Ref<graphic::Buffer> GetIndexBuffer() const { return m_IndexBuffer; }
 
-    std::vector<glm::vec3> m_Positions;
-    std::vector<glm::vec2> m_UVs;
-    std::vector<glm::vec3> m_Normals;
-    std::vector<glm::vec4> m_Colors;
+    // Gpu resources
+    Ref<graphic::Buffer> m_VertexBuffer;
+    Ref<graphic::Buffer> m_IndexBuffer;
+    
+    // Overlapped vertex data. will be freed after uploading to GPU if this is a static mesh
+    std::vector<uint8_t> m_OverlappedVertexData;
+
+    friend class SceneRenderer;
 
 };
 }

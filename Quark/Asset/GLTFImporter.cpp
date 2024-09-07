@@ -14,6 +14,7 @@
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Renderer/GpuResourceManager.h"
 #include "Quark/Asset/TextureImporter.h"
+#include "Quark/Asset/AssetManager.h"
 
 namespace quark {
 using namespace quark::graphic;
@@ -81,16 +82,7 @@ inline SamplerAddressMode convert_wrap_mode(int wrap)
 GLTFImporter::GLTFImporter()
     :m_GraphicDevice(Application::Get().GetGraphicDevice())
 {
-    // Create defalult texture
-    m_DefaultColorTexture = CreateRef<Texture>();
-    m_DefaultColorTexture->image = GpuResourceManager::Get().whiteImage;
-    m_DefaultColorTexture->sampler = GpuResourceManager::Get().linearSampler;
-    m_DefaultColorTexture->SetDebugName("Default color texture");
 
-    m_DefaultMetalTexture = CreateRef<Texture>();
-    m_DefaultMetalTexture->image = GpuResourceManager::Get().whiteImage;
-    m_DefaultMetalTexture->sampler = GpuResourceManager::Get().linearSampler;
-    m_DefaultMetalTexture->SetDebugName("Default metalic roughness texture");
 }
 
 Ref<Scene> GLTFImporter::Import(const std::string &filename)
@@ -180,7 +172,7 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
         textures_[texture_index] = newTexture;
     }
 
-    // Using dynamic uniform buffer for material uniform data
+    // (deprecated)Using dynamic uniform buffer for material uniform data
     size_t min_ubo_alignment = m_GraphicDevice->GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
     size_t dynamic_alignment = sizeof(Material::UniformBufferBlock);
 	if (min_ubo_alignment > 0)
@@ -211,20 +203,8 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
         materials_.push_back(newMaterial);
     }
 
-    // Create default material
-    {
-        m_DefaultMaterial = CreateRef<Material>();
-        m_DefaultMaterial->alphaMode = AlphaMode::OPAQUE;
-        m_DefaultMaterial->baseColorTexture = m_DefaultColorTexture;
-        m_DefaultMaterial->metallicRoughnessTexture = m_DefaultMetalTexture;
-        m_DefaultMaterial->uniformBuffer = materialUniformBuffer;
-        m_DefaultMaterial->uniformBufferOffset = m_Model.materials.size() * dynamic_alignment;
-        
-        auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (m_Model.materials.size() * dynamic_alignment));
-        *ubo = m_DefaultMaterial->uniformBufferData;
-
-        materials_.push_back(m_DefaultMaterial);
-    }
+    // Add default material
+    materials_.push_back(AssetManager::Get().GetDefaultMaterial());
 
     // data copy
     std::copy(ubo_data, ubo_data + buffer_size, mapped_data);
@@ -382,8 +362,8 @@ Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
     }
     
     // Default textures
-    newMaterial->baseColorTexture = m_DefaultColorTexture;
-    newMaterial->metallicRoughnessTexture = m_DefaultMetalTexture;
+    newMaterial->baseColorTexture = AssetManager::Get().GetDefaultColorTexture();
+    newMaterial->metallicRoughnessTexture = AssetManager::Get().GetDefaultMetalTexture();
 
     find = mat.values.find("metallicRoughnessTexture");
     if (find != mat.values.end()) {
@@ -554,10 +534,10 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
         }
 
         auto& new_submesh = submeshes.emplace_back();
-        new_submesh.aabb = {min_pos, max_pos},
-        new_submesh.count = index_num,
-        new_submesh.startIndex = start_index,
-        new_submesh.material = p.material > -1? materials_[p.material] : materials_.back();
+        new_submesh.aabb = { min_pos, max_pos };
+        new_submesh.count = index_num;
+        new_submesh.startIndex = start_index;
+        // new_submesh.material = p.material > -1? materials_[p.material] : materials_.back();
 
     }
 

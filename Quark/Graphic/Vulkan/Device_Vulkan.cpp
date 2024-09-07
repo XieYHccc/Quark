@@ -297,7 +297,7 @@ bool Device_Vulkan::Init()
     copyAllocator.init(this);
 
     // Register callback functions
-    EventManager::Instance().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event);});
+    EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event);});
     CORE_LOGI("==========Vulkan Backend Initialized========")
     return true;
 }
@@ -411,7 +411,7 @@ Ref<Buffer> Device_Vulkan::CreateBuffer(const BufferDesc &desc, const void* init
 
 Ref<Image> Device_Vulkan::CreateImage(const ImageDesc &desc, const ImageInitData* init_data)
 {
-    
+    CORE_LOGD("[Device Vulkan]: Vulkan image created")
     return CreateRef<Image_Vulkan>(this, desc, init_data);
 }
 
@@ -451,11 +451,13 @@ Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std:
 
 Ref<PipeLine> Device_Vulkan::CreateGraphicPipeLine(const GraphicPipeLineDesc &desc)
 {
+    CORE_LOGD("[Device_Vulkan]: Graphic Pipeline created")
     return CreateRef<PipeLine_Vulkan>(this, desc);
 }
 
 Ref<Sampler> Device_Vulkan::CreateSampler(const SamplerDesc &desc)
 {
+    CORE_LOGD("[Device_Vulkan]: Vulkan sampler Created")
     return CreateRef<Sampler_Vulkan>(this, desc);
 }
 

@@ -9,6 +9,7 @@
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
+#include "Quark/Scene/Components/MeshRendererCmpt.h"
 
 namespace quark {
 	
@@ -83,6 +84,25 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 		out << YAML::EndMap;
 	}
 		
+	if (entity->HasComponent<MeshRendererCmpt>())
+	{
+		auto* meshRendererCmpt = entity->GetComponent<MeshRendererCmpt>();
+		out << YAML::Key << "MeshRendererComponent";
+		out << YAML::BeginMap; // MeshRendererComponent
+
+		out << YAML::Key << "Materials";
+		out << YAML::BeginSeq;
+
+		for (const auto mat : meshRendererCmpt->GetMaterials())
+		{
+			out << YAML::BeginMap;
+			QK_SERIALIZE_PROPERTY_ASSET(AssetID, mat, out);
+			out << YAML::EndMap;
+		}
+
+		out << YAML::EndSeq;
+		out << YAML::EndMap; // MeshRendererComponent
+	}
 	out << YAML::EndMap; // Entity
 }
 
@@ -186,6 +206,38 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 				
 				mc->sharedMesh = mesh;
 				mc->uniqueMesh = nullptr;
+			}
+
+			auto meshRendererCmpt = entity["MeshRendererComponent"];
+			if (meshRendererCmpt)
+			{
+				auto* mrc = deserializedEntity->AddComponent<MeshRendererCmpt>();
+				auto* mc = deserializedEntity->GetComponent<MeshCmpt>();
+				CORE_ASSERT(mc)
+
+				Ref<Mesh> mesh = mc->uniqueMesh ? mc->uniqueMesh : mc->sharedMesh;
+				mrc->SetMesh(mesh);
+
+				auto materials = meshRendererCmpt["Materials"];
+				size_t i = 0;
+				for (auto mat : materials)
+				{
+					AssetID assetId = mat["AssetID"].as<AssetID>();
+
+					if (assetId == 1)	// Default material
+					{
+						mrc->SetMaterial(i, AssetManager::Get().GetDefaultMaterial());
+					}
+					else
+					{
+						auto material = AssetManager::Get().GetAsset<Material>(assetId);
+						CORE_ASSERT(material)
+						mrc->SetMaterial(i, material);
+					}
+
+					i++;
+				}
+				CORE_ASSERT(i == mesh->subMeshes.size())
 			}
 		}
 

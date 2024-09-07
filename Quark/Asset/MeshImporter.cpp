@@ -25,11 +25,6 @@ namespace std {
 
 namespace quark {
 
-MeshImporter::MeshImporter()
-	: graphicDevice_(Application::Get().GetGraphicDevice())
-{
-
-}
 
 Ref<Mesh> MeshImporter::ImportGLTF(const std::string& filepath) {
 	GLTFImporter gltf_importer;

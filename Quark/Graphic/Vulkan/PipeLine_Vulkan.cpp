@@ -471,7 +471,6 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     pipeline_create_info.renderPass = nullptr;
     VK_CHECK(vkCreateGraphicsPipelines(m_Device->vkDevice, nullptr, 1, &pipeline_create_info, nullptr, &m_Handle))
 
-    CORE_LOGD("Graphic Pipeline created")
 }
 
 PipeLine_Vulkan::~PipeLine_Vulkan()

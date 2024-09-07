@@ -117,7 +117,7 @@ void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
         ImGui_ImplVulkan_Init(&init_info);
     }
 
-    CORE_LOGI("UI system initialized in vulkan backend")
+    CORE_LOGI("[UI]: Initialized in vulkan backend")
 }
 
 void UI_Vulkan::Finalize()

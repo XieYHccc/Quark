@@ -10,7 +10,7 @@ namespace quark {
 CameraCmpt::CameraCmpt(float _aspect, float _fov, float _zNear, float _zFar)
     : aspect(_aspect), fov(_fov), zNear(_zNear), zFar(_zFar)
 {
-    EventManager::Instance().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& e) {
+    EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& e) {
         aspect = static_cast<float>(e.width) / e.height;
     });
 

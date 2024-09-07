@@ -5,11 +5,9 @@
 namespace quark {
 class MeshImporter {
 public:
-    MeshImporter();
+    MeshImporter() = default;
 
     Ref<Mesh> ImportGLTF(const std::string& filepath);
     Ref<Mesh> ImportOBJ(const std::string& filepath);
-private:
-    graphic::Device* graphicDevice_;
 };
 }
