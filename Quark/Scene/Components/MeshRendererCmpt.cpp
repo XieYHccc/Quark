@@ -75,9 +75,11 @@ Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 {
 	m_CachedVertexAttribs.clear();
+	m_CachedVertexBindInfos.clear();
 
 	size_t offset = 0;
 
+	// TODO: Add support for dynamic mesh
 	// Position
 	if (meshAttribsMask & MESH_ATTRIBUTE_POSITION_BIT)
 	{
@@ -121,13 +123,19 @@ void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 		attrib.offset = offset;
 		offset += sizeof(decltype(m_Mesh->colors)::value_type);
 	}
+
+	graphic::VertexBindInfo bindInfo = {};
+	bindInfo.binding = 0;
+	bindInfo.stride = offset;
+	bindInfo.inputRate = graphic::VertexBindInfo::INPUT_RATE_VERTEX;
+	m_CachedVertexBindInfos.push_back(bindInfo);
 }
 
 void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 {
 	ShaderProgramVariant* programVariant = m_Materials[index]->shaderProgram->GetOrCreateVariant(m_CachedProgramVatriantKey);
 
-	// TODO: Remove hardcoded states after resruct Material class
+	// TODO: Remove hardcoded states after restruct Material class
 	graphic::PipelineDepthStencilState dss = m_Materials[index]->alphaMode == AlphaMode::OPAQUE ?
 		GpuResourceManager::Get().depthTestWriteState : GpuResourceManager::Get().depthTestState;
 
@@ -136,7 +144,8 @@ void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 
 	m_GraphicsPipeLines[index] = programVariant->GetOrCreatePipeLine(dss, cbs,
 		GpuResourceManager::Get().defaultFillRasterizationState,
-		GpuResourceManager::Get().defaultOneColorWithDepthRenderPassInfo);
+		GpuResourceManager::Get().defaultOneColorWithDepthRenderPassInfo,
+		m_CachedVertexAttribs, m_CachedVertexBindInfos);
 }
 
 }

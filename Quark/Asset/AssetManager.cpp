@@ -319,7 +319,10 @@ void AssetManager::CreateDefaultAssets()
 	m_DefaultMaterial->uniformBufferData.baseColorFactor = glm::vec4(1.0f);
 	m_DefaultMaterial->uniformBufferData.metalicFactor = 1.0f;
 	m_DefaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
-
+	// TODO: Remove hardcoded shader
+	m_DefaultMaterial->shaderProgram = ShaderManager::Get().GetOrCreateGraphicsProgram("BuiltInResources/Shaders/mesh.vert", "BuiltInResources/Shaders/mesh.frag");
+	m_DefaultMaterial->SetDebugName("Default material");
+	
 	// All default assets' id is 1
 	m_DefaultColorTexture->SetAssetID(1);
 	m_DefaultMetalTexture->SetAssetID(1);

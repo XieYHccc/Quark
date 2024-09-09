@@ -37,7 +37,9 @@ private:
 	std::vector<Ref<graphic::PipeLine>> m_GraphicsPipeLines;
 
 	VariantSignatureKey m_CachedProgramVatriantKey = {};
+	
 	std::vector<graphic::VertexAttribInfo> m_CachedVertexAttribs;
+	std::vector<graphic::VertexBindInfo> m_CachedVertexBindInfos;
 
 	friend class SceneRenderer;
 };

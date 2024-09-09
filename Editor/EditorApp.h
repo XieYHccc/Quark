@@ -32,8 +32,8 @@ public:
     void SetUpRenderPass();
 
 public:
-    Ref<quark::graphic::Shader> vert_shader;
-    Ref<quark::graphic::Shader> frag_shader;
+    // Ref<quark::graphic::Shader> vert_shader;
+    // Ref<quark::graphic::Shader> frag_shader;
     Ref<quark::graphic::Shader> skybox_vert_shader;
     Ref<quark::graphic::Shader> skybox_frag_shader;
     

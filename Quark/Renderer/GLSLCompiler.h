@@ -4,31 +4,31 @@
 
 namespace quark {
 
-// Adds support for C style preprocessor macros to glsl shaders
-// enabling you to define or undefine certain symbols
-class CompileOptions {
-public:
-	CompileOptions() = default;
-
-	void AddDefinitions(const std::vector<std::string>& definitions);
-	void AddDefine(const std::string& def);
-	void AddUndefine(const std::string& undef);
-
-	const std::string& GetPreamble() const { return m_Preamble; }
-	const std::vector<std::string>& GetProcesses() const { return m_Processes; }
-
-private:
-	void FixLine(std::string& line);
-
-	std::string m_Preamble;
-	std::vector<std::string> m_Processes;
-
-};
 
 /// Helper class to generate SPIRV code from GLSL source
 /// Currently only support compiling for one shader stage and vulkan 1.3
 class GLSLCompiler {
 public:
+	// Adds support for C style preprocessor macros to glsl shaders
+	// enabling you to define or undefine certain symbols
+	class CompileOptions {
+	public:
+		CompileOptions() = default;
+
+		void AddDefinitions(const std::vector<std::string>& definitions);
+		void AddDefine(const std::string& def);
+		void AddUndefine(const std::string& undef);
+
+		const std::string& GetPreamble() const { return m_Preamble; }
+		const std::vector<std::string>& GetProcesses() const { return m_Processes; }
+
+	private:
+		void FixLine(std::string& line);
+
+		std::string m_Preamble;
+		std::vector<std::string> m_Processes;
+
+	};
 	enum class Target
 	{
 		VULKAN_VERSION_1_3,

@@ -155,13 +155,21 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
             return A.material < B.material;
     });
 
-    // Bind scene uniform buffer
-    cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
-
     Ref<Material> lastMaterial = nullptr;
+    Ref<PipeLine> lastPipeline = nullptr;
     Ref<graphic::Buffer> lastIndexBuffer = nullptr;
     auto draw = [&] (const RenderObject& obj) 
     {
+        // Bind Pipeline
+        if (obj.pipeLine != lastPipeline) 
+        {
+            lastPipeline = obj.pipeLine;
+            cmd_list->BindPipeLine(*lastPipeline);
+
+            // Bind scene uniform buffer
+            cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
+        }
+
         // Bind material
         if (obj.material != lastMaterial) 
         {

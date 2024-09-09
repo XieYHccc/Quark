@@ -30,7 +30,7 @@ static EShLanguage FindShaderLanguage(graphic::ShaderStage stage)
 	}
 }
 
-void CompileOptions::AddDefinitions(const std::vector<std::string>& definitions)
+void GLSLCompiler::CompileOptions::AddDefinitions(const std::vector<std::string>& definitions)
 {
 	for (auto& def : definitions)
 	{
@@ -38,7 +38,7 @@ void CompileOptions::AddDefinitions(const std::vector<std::string>& definitions)
 	}
 }
 
-void CompileOptions::AddDefine(const std::string& def)
+void GLSLCompiler::CompileOptions::AddDefine(const std::string& def)
 {
 	m_Processes.push_back("define-macro ");
 	m_Processes.back().append(def);
@@ -57,7 +57,7 @@ void CompileOptions::AddDefine(const std::string& def)
 
 }
 
-void CompileOptions::AddUndefine(const std::string& undef)
+void GLSLCompiler::CompileOptions::AddUndefine(const std::string& undef)
 {
 	std::string tmpUndef = undef;
 	FixLine(tmpUndef);
@@ -70,7 +70,7 @@ void CompileOptions::AddUndefine(const std::string& undef)
 }
 
 
-void CompileOptions::FixLine(std::string& line)
+void GLSLCompiler::CompileOptions::FixLine(std::string& line)
 {
 	// Can't go past a newline in the line
 	const size_t end = line.find_first_of("\n");

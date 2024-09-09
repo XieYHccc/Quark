@@ -300,7 +300,7 @@ void EditorApp::OnRender(TimeStep ts)
             //m_SceneRenderer->RenderSkybox(cmd);
 
             // Draw scene
-            cmd->BindPipeLine(*graphic_pipeline);
+            // cmd->BindPipeLine(*graphic_pipeline);
             cmd->SetViewPort(viewport);
             cmd->SetScissor(scissor);
             auto geometry_start = m_Timer.ElapsedMillis();
@@ -411,28 +411,28 @@ void EditorApp::CreatePipeline()
     skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "BuiltInResources/Shaders/Spirv/skybox.vert.spv");
     skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
 
-    // Scene shaders
-    GLSLCompiler compiler;
-    compiler.SetTarget(GLSLCompiler::Target::VULKAN_VERSION_1_3);
-    compiler.SetSourceFromFile("BuiltInResources/Shaders/mesh.vert", ShaderStage::STAGE_VERTEX);
-    std::vector<uint32_t> spvCode;
-    std::string messages;
-    if (!compiler.Compile(messages, spvCode, {}))
-        LOGE(messages);
+    // // Scene shaders
+    // GLSLCompiler compiler;
+    // compiler.SetTarget(GLSLCompiler::Target::VULKAN_VERSION_1_1);
+    // compiler.SetSourceFromFile("BuiltInResources/Shaders/mesh.vert", ShaderStage::STAGE_VERTEX);
+    // std::vector<uint32_t> spvCode;
+    // std::string messages;
+    // if (!compiler.Compile(messages, spvCode, {}))
+    //     LOGE(messages);
 
-    vert_shader = m_GraphicDevice->CreateShaderFromBytes(ShaderStage::STAGE_VERTEX, spvCode.data(), spvCode.size() * sizeof(uint32_t));
+    // vert_shader = m_GraphicDevice->CreateShaderFromBytes(ShaderStage::STAGE_VERTEX, spvCode.data(), spvCode.size() * sizeof(uint32_t));
 
-    spvCode.clear();
-    messages.clear();
-    compiler.SetSourceFromFile("BuiltInResources/Shaders/mesh.frag", ShaderStage::STAGE_FRAGEMNT);
-    if (!compiler.Compile(messages, spvCode, {}))
-        LOGE(messages);
-    frag_shader = m_GraphicDevice->CreateShaderFromBytes(ShaderStage::STAGE_FRAGEMNT, spvCode.data(), spvCode.size() * sizeof(uint32_t));
+    // spvCode.clear();
+    // messages.clear();
+    // compiler.SetSourceFromFile("BuiltInResources/Shaders/mesh.frag", ShaderStage::STAGE_FRAGEMNT);
+    // if (!compiler.Compile(messages, spvCode, {}))
+    //     LOGE(messages);
+    // frag_shader = m_GraphicDevice->CreateShaderFromBytes(ShaderStage::STAGE_FRAGEMNT, spvCode.data(), spvCode.size() * sizeof(uint32_t));
     
     // Scene pipeline
     GraphicPipeLineDesc pipe_desc;
-    pipe_desc.vertShader = vert_shader;
-    pipe_desc.fragShader = frag_shader;
+    // pipe_desc.vertShader = vert_shader;
+    // pipe_desc.fragShader = frag_shader;
     pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
     pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
     pipe_desc.renderPassInfo = forward_pass_info;
@@ -442,7 +442,7 @@ void EditorApp::CreatePipeline()
     pipe_desc.rasterState.cullMode = CullMode::NONE;
     pipe_desc.rasterState.polygonMode = PolygonMode::Fill;
     pipe_desc.rasterState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
-    graphic_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
+    // graphic_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 
     // Sky box pipeline
     pipe_desc.vertShader = skybox_vert_shader;

@@ -29,7 +29,7 @@ struct Material : public Asset {
     Ref<graphic::Buffer> uniformBuffer;
     size_t uniformBufferOffset = 0;
 
-
+    
 };
 
 }

@@ -1,4 +1,6 @@
 Material:
+  VertexShader: BuiltInResources/Shaders/mesh.vert
+  FragmentShader: BuiltInResources/Shaders/mesh.frag
   AlphaMode: Opaque
   BaseColorFactor: [1, 1, 1, 1]
   MetalicFactor: 1

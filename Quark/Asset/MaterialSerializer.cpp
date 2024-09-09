@@ -44,14 +44,20 @@ std::string MaterialSerializer::SerializeToYaml(const Ref<Material>& materialAss
     {
         out << YAML::BeginMap;
 
+        // Shaders
+        QK_SERIALIZE_PROPERTY(VertexShader, materialAsset->shaderProgram->GetVertShaderPath(), out);
+        QK_SERIALIZE_PROPERTY(FragmentShader, materialAsset->shaderProgram->GetFragShaderPath(), out);
+
         QK_SERIALIZE_PROPERTY(AlphaMode, AlphaModetoString(materialAsset->alphaMode), out);
 
+        // Uniforms
         QK_SERIALIZE_PROPERTY(BaseColorFactor, materialAsset->uniformBufferData.baseColorFactor, out);
         QK_SERIALIZE_PROPERTY(MetalicFactor, materialAsset->uniformBufferData.metalicFactor, out);
         QK_SERIALIZE_PROPERTY(RoughNessFactor, materialAsset->uniformBufferData.roughNessFactor, out);
 
         CORE_DEBUG_ASSERT(materialAsset->baseColorTexture->image && materialAsset->metallicRoughnessTexture->image)
 
+        // Textures
         if (materialAsset->baseColorTexture->image != GpuResourceManager::Get().whiteImage)
             QK_SERIALIZE_PROPERTY(BaseColorTexture, materialAsset->baseColorTexture->GetAssetID(), out);
         else 
@@ -120,6 +126,15 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
     QK_DESERIALIZE_PROPERTY(AlphaMode, AlphaMode, materialNode, std::string("Opaque"));
 
     outMaterial->alphaMode = AlphaMode == "Opaque" ? AlphaMode::OPAQUE : AlphaMode::TRANSPARENT;
+
+    std::string vertexShaderPath;
+    QK_DESERIALIZE_PROPERTY(VertexShader, vertexShaderPath, materialNode, std::string(""));
+
+    std::string fragmentShaderPath;
+    QK_DESERIALIZE_PROPERTY(FragmentShader, fragmentShaderPath, materialNode, std::string(""));
+
+    CORE_ASSERT(!vertexShaderPath.empty() && !fragmentShaderPath.empty())
+    outMaterial->shaderProgram = ShaderManager::Get().GetOrCreateGraphicsProgram(vertexShaderPath, fragmentShaderPath);
 
     return true;
 }

@@ -1,7 +1,9 @@
 #include "Editor/Panel/InspectorPanel.h"
 
+#include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <imgui_internal.h>
+
 #include <Quark/Asset/AssetManager.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/Components/MeshCmpt.h>
@@ -97,6 +99,7 @@ static bool DrawVec3Control(const char* label, glm::vec3& vector, float reset = 
 InspectorPanel::InspectorPanel()
 {
     m_SelectedEntity = nullptr;
+    m_SelectedMaterial = nullptr;
     m_Scene = nullptr;
     m_Rename = false;
     m_Buf[0] = '\0';
@@ -149,7 +152,15 @@ void InspectorPanel::OnImGuiUpdate()
 {
     if (ImGui::Begin("InspectorPanel"))
     {
-        if (m_SelectedEntity == nullptr) {
+        if (m_InspectorViewType == InspectorViewType::MATERIAL)
+        {
+            UpdateMaterialView();
+            ImGui::End();
+            return;
+        }
+
+        if (m_SelectedEntity == nullptr) 
+        {
             ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "No selected node");
             ImGui::End();
             return;
@@ -257,7 +268,7 @@ void InspectorPanel::OnImGuiUpdate()
 			ImGui::PopItemWidth();
 
 			ImGui::SameLine();
-			if (ImGui::Button("Set", ImVec2(80.f, 25.f)))
+			if (ImGui::Button("Set", ImVec2(60.f, 25.f)))
 				ImGui::OpenPopup("Set Mesh");
 
             if (ImGui::BeginPopup("Set Mesh"))
@@ -311,17 +322,18 @@ void InspectorPanel::OnImGuiUpdate()
 		{
 			for (size_t i = 0; auto mat : component.GetMaterials())
 			{
-				ImGui::Text("Material %d", i);
+                std::filesystem::path materialAssetPath = mat->GetAssetID() != 1 ?
+					AssetManager::Get().GetAssetMetadata(mat->GetAssetID()).filePath : std::filesystem::path("Default material");
 
-				std::filesystem::path materialAssetPath = mat? 
-					AssetManager::Get().GetAssetMetadata(mat->GetAssetID()).filePath : std::filesystem::path("None");
+				ImGui::Text("Material %zu", i);
+                if (ImGui::Button(materialAssetPath.string().c_str()))
+                {
+                    m_SelectedMaterial = mat;
+                    SetInspectorViewType(InspectorViewType::MATERIAL);
+                }
 
-				ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 125.f);
-				ImGui::LabelText("##Name", "%s", materialAssetPath.string().c_str());
-				ImGui::PopItemWidth();
-
-				ImGui::SameLine();
-				if (ImGui::Button("Set", ImVec2(80.f, 25.f)))
+                ImGui::SameLine();
+				if (ImGui::Button("Set", ImVec2{ 60, 25 }))
 					ImGui::OpenPopup("Set Material");
 
 				if (ImGui::BeginPopup("Set Material"))
@@ -345,6 +357,34 @@ void InspectorPanel::OnImGuiUpdate()
     }
 
     ImGui::End();
+}
+
+void InspectorPanel::UpdateMaterialView()
+{
+    if (!m_SelectedMaterial)
+        return;
+
+    if (ImGui::Button("Back to entity view"))
+        m_InspectorViewType = InspectorViewType::ENTITY;
+
+    ImGui::ColorEdit4("Base Color Factor", glm::value_ptr(m_SelectedMaterial->uniformBufferData.baseColorFactor));
+    ImGui::SliderFloat("Metallic Factor", &m_SelectedMaterial->uniformBufferData.metalicFactor, 0.f, 1.f);
+    ImGui::SliderFloat("Roughness Factor", &m_SelectedMaterial->uniformBufferData.roughNessFactor, 0.f, 1.f);
+
+    // Alpha Mode
+    static const char* alphaModes[] = { "Opaque",  "Transparent" };
+    int currentAlphaMode = static_cast<int>(m_SelectedMaterial->alphaMode);
+    if (ImGui::Combo("Alpha Mode", &currentAlphaMode, alphaModes, IM_ARRAYSIZE(alphaModes))) 
+        m_SelectedMaterial->alphaMode = static_cast<AlphaMode>(currentAlphaMode);
+
+    // Textures
+    std::string baseColorTexturePath = "Defalut Color Texture";
+    if (m_SelectedMaterial->baseColorTexture->GetAssetID() != 1)
+        baseColorTexturePath = AssetManager::Get().GetAssetMetadata(m_SelectedMaterial->baseColorTexture->GetAssetID()).filePath.string();
+
+    ImGui::Text("Base Color Texture");
+    ImGui::SameLine();
+    ImGui::Button(baseColorTexturePath.c_str());
 }
 
 }

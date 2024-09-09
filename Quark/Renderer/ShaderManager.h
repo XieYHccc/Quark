@@ -14,9 +14,10 @@ struct VariantSignatureKey
 	uint64_t GetHash() const;
 };
 
+// A ShaderTemplateVariant instance contains a gpu shader resource
 struct ShaderTemplateVariant
 {
-
+	Ref<graphic::Shader> gpuShaderHandle;
 };
 
 class ShaderTemplate 
@@ -26,10 +27,14 @@ public:
 	
 	ShaderTemplateVariant* GetOrCreateVariant(const VariantSignatureKey& key);
 
+	std::string GetPath() const { return m_Path; }
+
 private:
 	std::string m_Path;
 	graphic::ShaderStage m_Stage;
 	GLSLCompiler m_Compiler;
+
+	std::unordered_map<uint64_t, Scope<ShaderTemplateVariant>> m_Variants;
 
 };
 
@@ -38,15 +43,18 @@ private:
 class ShaderProgramVariant 
 {
 public:
-	ShaderProgramVariant(graphic::Device* device, ShaderTemplateVariant* vert, ShaderTemplateVariant* frag);
-	ShaderProgramVariant(graphic::Device* device, ShaderTemplateVariant* compute);
+	ShaderProgramVariant(ShaderTemplateVariant* vert, ShaderTemplateVariant* frag);
+	ShaderProgramVariant(ShaderTemplateVariant* compute);
 
-	Ref<graphic::PipeLine> GetOrCreatePipeLine(const graphic::PipelineDepthStencilState& ds, const graphic::PipelineColorBlendState& cb, const graphic::RasterizationState& rs, const graphic::RenderPassInfo& compatablerp);
+	Ref<graphic::PipeLine> GetOrCreatePipeLine(const graphic::PipelineDepthStencilState& ds, 
+		const graphic::PipelineColorBlendState& cb,
+		const graphic::RasterizationState& rs,
+		const graphic::RenderPassInfo& compatablerp,
+		const std::vector<graphic::VertexAttribInfo>& attribs,
+		const std::vector<graphic::VertexBindInfo>& vertBindInfo);
 
 private:
 	ShaderTemplateVariant* m_Stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
-
-	VariantSignatureKey m_Signature;
 
 	std::unordered_map<uint64_t, Ref<graphic::PipeLine>> m_PipeLines;
 };
@@ -55,14 +63,19 @@ private:
 class ShaderProgram 
 {
 public:
-
 	ShaderProgram(ShaderTemplate* compute);
 	ShaderProgram(ShaderTemplate* vert, ShaderTemplate* frag);
 
 	ShaderProgramVariant* GetOrCreateVariant(const VariantSignatureKey& key);
 
-private:
+	void SetStage(graphic::ShaderStage stage, ShaderTemplate* tmp);
+	ShaderTemplate* GetStage(graphic::ShaderStage stage) { return m_Stages[util::ecast(stage)]; }
 
+	std::string GetVertShaderPath() const { return m_Stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->GetPath(); }
+	std::string GetFragShaderPath() const { return m_Stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->GetPath(); }
+	std::string GetComputeShaderPath() const { return m_Stages[util::ecast(graphic::ShaderStage::STAGE_COMPUTE)]->GetPath(); }
+
+private:
 	ShaderTemplate* m_Stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
 
 	std::unordered_map<uint64_t, Scope<ShaderProgramVariant>> m_Variants;
@@ -78,7 +91,7 @@ public:
 
 private:
 	ShaderTemplate* GetOrCreateShaderTemplate(const std::string& path, graphic::ShaderStage stage);
-
+	
 	std::unordered_map<uint64_t, Scope<ShaderTemplate>> m_ShaderTemplates;
 	std::unordered_map<uint64_t, Scope<ShaderProgram>> m_ShaderPrograms;
 };
