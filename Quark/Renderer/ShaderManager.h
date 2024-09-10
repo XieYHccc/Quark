@@ -68,9 +68,6 @@ public:
 
 	ShaderProgramVariant* GetOrCreateVariant(const VariantSignatureKey& key);
 
-	void SetStage(graphic::ShaderStage stage, ShaderTemplate* tmp);
-	ShaderTemplate* GetStage(graphic::ShaderStage stage) { return m_Stages[util::ecast(stage)]; }
-
 	std::string GetVertShaderPath() const { return m_Stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->GetPath(); }
 	std::string GetFragShaderPath() const { return m_Stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->GetPath(); }
 	std::string GetComputeShaderPath() const { return m_Stages[util::ecast(graphic::ShaderStage::STAGE_COMPUTE)]->GetPath(); }
@@ -91,7 +88,7 @@ public:
 
 private:
 	ShaderTemplate* GetOrCreateShaderTemplate(const std::string& path, graphic::ShaderStage stage);
-	
+
 	std::unordered_map<uint64_t, Scope<ShaderTemplate>> m_ShaderTemplates;
 	std::unordered_map<uint64_t, Scope<ShaderProgram>> m_ShaderPrograms;
 };

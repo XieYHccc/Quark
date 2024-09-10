@@ -16,10 +16,8 @@ public:
     InspectorPanel();
 
     void OnImGuiUpdate() override;
-
     void SetScene(Ref<Scene> scene) { m_Scene = scene; }
     void SetSelectedEntity(Entity* entity) { m_SelectedEntity = entity; }
-
     void SetInspectorViewType(InspectorViewType type) { m_InspectorViewType = type; }
 
 private:

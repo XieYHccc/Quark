@@ -144,13 +144,18 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
             opaque_draws.push_back(i);
     }
 
-    // Sort render objects by material and mesh
+    // Sort render objects by material,pipleine and mesh
     std::sort(opaque_draws.begin(), opaque_draws.end(), [&](const u32& iA, const u32& iB) 
     {
         const RenderObject& A = m_DrawContext.opaqueObjects[iA];
         const RenderObject& B = m_DrawContext.opaqueObjects[iB];
         if (A.material == B.material)
-            return A.indexBuffer < B.indexBuffer;
+        {
+            if (A.pipeLine == B.pipeLine)
+                return A.indexBuffer < B.indexBuffer;
+            else
+                return A.pipeLine < B.pipeLine;
+        }
         else
             return A.material < B.material;
     });
@@ -158,6 +163,7 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
     Ref<Material> lastMaterial = nullptr;
     Ref<PipeLine> lastPipeline = nullptr;
     Ref<graphic::Buffer> lastIndexBuffer = nullptr;
+
     auto draw = [&] (const RenderObject& obj) 
     {
         // Bind Pipeline

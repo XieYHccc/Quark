@@ -25,15 +25,6 @@ ShaderProgram::ShaderProgram(ShaderTemplate* vert, ShaderTemplate* frag)
 	m_Stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)] = frag;
 }
 
-void ShaderProgram::SetStage(graphic::ShaderStage stage, ShaderTemplate *tmp)
-{
-	if (m_Stages[util::ecast(stage)] == tmp)
-		return;
-	
-	m_Stages[util::ecast(stage)] = tmp;
-	m_Variants.clear();
-}
-
 ShaderProgramVariant* ShaderProgram::GetOrCreateVariant(const VariantSignatureKey& key)
 {
 	uint64_t hash = key.GetHash();
