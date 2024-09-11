@@ -1,5 +1,6 @@
 #include "Quark/qkpch.h"
 #include "Quark/Renderer/SceneRenderer.h"
+#include "Quark/Renderer/GpuResourceManager.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
@@ -19,11 +20,11 @@ SceneRenderer::SceneRenderer(graphic::Device* device)
     m_CubeMesh = mesh_loader.ImportGLTF("BuiltInResources/Gltf/cube.gltf");
 
     // Create scene uniform buffer
-    BufferDesc m_Scenebuffer_desc;
-    m_Scenebuffer_desc.domain = BufferMemoryDomain::CPU;
-    m_Scenebuffer_desc.size = sizeof(SceneUniformBufferBlock);
-    m_Scenebuffer_desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    m_DrawContext.sceneUniformBuffer = m_GraphicDevice->CreateBuffer(m_Scenebuffer_desc);
+    BufferDesc desc;
+    desc.domain = BufferMemoryDomain::CPU;
+    desc.size = sizeof(SceneUniformBufferBlock);
+    desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    m_DrawContext.sceneUniformBuffer = m_GraphicDevice->CreateBuffer(desc);
 
     // prepare light information
     m_DrawContext.sceneUboData.ambientColor = glm::vec4(.1f);
@@ -62,8 +63,41 @@ void SceneRenderer::UpdateRenderObjects()
             i++;
         }
 
-
     }
+}
+
+void SceneRenderer::CreateSkyBoxPipeLine()
+{
+    Ref<graphic::Shader> skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "BuiltInResources/Shaders/Spirv/skybox.vert.spv");
+    Ref<graphic::Shader> skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
+
+    GraphicPipeLineDesc pipe_desc;
+    pipe_desc.vertShader = skybox_vert_shader;
+    pipe_desc.fragShader = skybox_frag_shader;
+    pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
+    pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
+    pipe_desc.renderPassInfo = GpuResourceManager::Get().defaultOneColorWithDepthRenderPassInfo;
+    pipe_desc.depthStencilState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
+    pipe_desc.rasterState.cullMode = CullMode::NONE;
+    pipe_desc.rasterState.polygonMode = PolygonMode::Fill;
+    pipe_desc.rasterState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
+    pipe_desc.depthStencilState.enableDepthTest = false;
+    pipe_desc.depthStencilState.enableDepthWrite = false;
+
+    VertexBindInfo vert_bind_info;
+    vert_bind_info.binding = 0;
+    vert_bind_info.stride = 32; // Hardcoded stride, since we know cube mesh's attrib layout
+    vert_bind_info.inputRate = VertexBindInfo::INPUT_RATE_VERTEX;
+    pipe_desc.vertexBindInfos.push_back(vert_bind_info);
+
+    VertexAttribInfo pos_attrib;
+    pos_attrib.binding = 0;
+    pos_attrib.format = VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+    pos_attrib.location = 0;
+    pos_attrib.offset = 0;
+    pipe_desc.vertexAttribInfos.push_back(pos_attrib);
+
+    m_SkyboxPipeLine = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 }
 
 void SceneRenderer::UpdateDrawContext()
@@ -111,6 +145,10 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
 {
     CORE_DEBUG_ASSERT(m_CubeMap)
 
+    if (!m_SkyboxPipeLine)
+        CreateSkyBoxPipeLine();
+
+    cmd_list->BindPipeLine(*m_SkyboxPipeLine);
     cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
     cmd_list->BindImage(0, 1, *m_CubeMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd_list->BindSampler(0, 1, *m_CubeMap->sampler);
@@ -144,7 +182,8 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
             opaque_draws.push_back(i);
     }
 
-    // Sort render objects by material,pipleine and mesh
+    // Sort render objects by material, pipleine and mesh
+    // The number of materials > the number of pipelines > the number of meshes
     std::sort(opaque_draws.begin(), opaque_draws.end(), [&](const u32& iA, const u32& iB) 
     {
         const RenderObject& A = m_DrawContext.opaqueObjects[iA];
@@ -167,7 +206,7 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
     auto draw = [&] (const RenderObject& obj) 
     {
         // Bind Pipeline
-        if (obj.pipeLine != lastPipeline) 
+        if (obj.pipeLine != lastPipeline)
         {
             lastPipeline = obj.pipeLine;
             cmd_list->BindPipeLine(*lastPipeline);
@@ -177,10 +216,10 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
         }
 
         // Bind material
-        if (obj.material != lastMaterial) 
+        if (obj.material != lastMaterial)
         {
             lastMaterial = obj.material;
-            // cmd_list->BindUniformBuffer(1, 0, *lastMaterial->uniformBuffer, lastMaterial->uniformBufferOffset, sizeof(Material::UniformBufferBlock));
+            // (deprecated)cmd_list->BindUniformBuffer(1, 0, *lastMaterial->uniformBuffer, lastMaterial->uniformBufferOffset, sizeof(Material::UniformBufferBlock));
             cmd_list->BindImage(1, 1, *lastMaterial->baseColorTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
             cmd_list->BindSampler(1, 1, *lastMaterial->baseColorTexture->sampler);
             cmd_list->BindImage(1, 2, *lastMaterial->metallicRoughnessTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
@@ -190,21 +229,22 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
             materialPushConstants.colorFactors = obj.material->uniformBufferData.baseColorFactor;
             materialPushConstants.metallicFactor = obj.material->uniformBufferData.metalicFactor;
             materialPushConstants.roughnessFactor = obj.material->uniformBufferData.roughNessFactor;
-            cmd_list->PushConstant(&materialPushConstants, sizeof(ModelPushConstants), sizeof(MaterialPushConstants));
+            cmd_list->PushConstant(&materialPushConstants, sizeof(glm::mat4), sizeof(MaterialPushConstants));
         }
         
         // Bind index buffer
         if (obj.indexBuffer != lastIndexBuffer) 
         {
+            cmd_list->BindVertexBuffer(0, *obj.vertexBuffer, 0);
             cmd_list->BindIndexBuffer(*obj.indexBuffer, 0, IndexBufferFormat::UINT32);
             lastIndexBuffer = obj.indexBuffer;
         }
 
-        // Bind push constant
+        // Push model constant
         ModelPushConstants push_constant;
         push_constant.worldMatrix = obj.transform;
         push_constant.vertexBufferGpuAddress = obj.vertexBuffer->GetGpuAddress();
-        cmd_list->PushConstant(&push_constant, 0, sizeof(ModelPushConstants));
+        cmd_list->PushConstant(&push_constant, 0, 64);  // only push model matrix
 
         cmd_list->DrawIndexed(obj.indexCount, 1, obj.firstIndex, 0, 0);
     };

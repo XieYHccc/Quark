@@ -44,16 +44,18 @@ public:
     ///////////////////////// Vulkan specific /////////////////////////
 
     void ResetAndBeginCmdBuffer();
+    bool IsWaitingForSwapChainImage() const { return m_WaitForSwapchainImage; }
+
     const VkCommandBuffer GetHandle() const { return m_CmdBuffer; }
     const VkSemaphore GetCmdCompleteSemaphore() const { return m_CmdCompleteSemaphore; }
-    std::uint32_t GetSwapChainWaitStages() const { return m_SwapChainWaitStages; }
-    bool IsWaitingForSwapChainImage() const { return m_WaitForSwapchainImage; }
+    uint32_t GetSwapChainWaitStages() const { return m_SwapChainWaitStages; }
+
     
 private:
     void FlushDescriptorSet(u32 set);
     void FlushRenderState();
-    void RebindDescriptorSet(u32 set);
-    void ResetBindingStatus();
+    void RebindDescriptorSet(u32 set);  // Rebind if only the buffer offset changed
+    void ResetBindingState();
 
 private:
     struct BindingState
@@ -76,6 +78,7 @@ private:
 
 
     Device_Vulkan* m_GraphicDevice;
+
     VkSemaphore m_CmdCompleteSemaphore = VK_NULL_HANDLE;
     VkCommandBuffer m_CmdBuffer = VK_NULL_HANDLE;
     VkCommandPool m_CmdPool = VK_NULL_HANDLE;
@@ -92,11 +95,11 @@ private:
     VkDescriptorSet m_CurrentSets[DESCRIPTOR_SET_MAX_NUM] = {};
     VkViewport m_Viewport = {};
     VkRect2D m_Scissor = {};
-    BindingState m_BindingState;
+    BindingState m_BindingState = {};
 
-    uint32_t m_DirtySetBits = 0;
-    uint32_t m_DirtySetDynamicBits = 0;
-    uint32_t m_DirtyVertexBufferBits = 0;
+    uint32_t m_DirtySetMask = 0;
+    uint32_t m_DirtySetDynamicMask = 0;
+    uint32_t m_DirtyVertexBufferMask = 0;
 };
 
 CONVERT_TO_VULKAN_INTERNAL_FUNC(CommandList)

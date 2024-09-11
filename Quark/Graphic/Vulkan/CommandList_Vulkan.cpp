@@ -67,12 +67,8 @@ void CommandList_Vulkan::ResetAndBeginCmdBuffer()
     m_MemoryBarriers.clear();
     state = CommandListState::IN_RECORDING;
 
-    m_DirtySetBits = 0;
-    m_DirtySetDynamicBits = 0;
-    m_DirtyVertexBufferBits = 0;
-    m_BindingState = {};
     m_CurrentPipeline = nullptr;
-
+    ResetBindingState();
 }
 
 CommandList_Vulkan::~CommandList_Vulkan()
@@ -172,17 +168,16 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
     }
 }
 
-void CommandList_Vulkan::ResetBindingStatus()
+void CommandList_Vulkan::ResetBindingState()
 {
     m_BindingState = {};
 
-    for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++) {
+    for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++)
         m_CurrentSets[i] = VK_NULL_HANDLE;
-    }
 
-    m_DirtySetBits = 0;
-    m_DirtyVertexBufferBits = 0;
-    m_DirtySetDynamicBits= 0;
+    m_DirtySetMask = 0;
+    m_DirtyVertexBufferMask = 0;
+    m_DirtySetDynamicMask = 0;
 }
 
 void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
@@ -200,7 +195,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     state = CommandListState::IN_RENDERPASS;
     m_CurrentRenderPassInfo = &info;
     m_CurrentPipeline = nullptr;
-    ResetBindingStatus();
+    ResetBindingState();
 
     VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
     rendering_info.layerCount = 1;
@@ -351,14 +346,14 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
 
     if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size) {
         if (b.dynamicOffset != offset) {
-            m_DirtySetDynamicBits|= 1u << set;
+            m_DirtySetDynamicMask|= 1u << set;
             b.dynamicOffset = offset;
         }
     }
     else {
         b.buffer = {internal_buffer.GetHandle(), 0, size};
         b.dynamicOffset = offset;
-        m_DirtySetBits |= 1u << set;
+        m_DirtySetMask |= 1u << set;
     }
 
 }
@@ -389,7 +384,7 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
 
     b.buffer = {internal_buffer.GetHandle(), offset, size};
     b.dynamicOffset = 0;
-    m_DirtySetBits |= 1u << set;
+    m_DirtySetMask |= 1u << set;
 
 
 }
@@ -420,7 +415,7 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
 
     b.image.imageView = internal_image.GetView();
     b.image.imageLayout = ConvertImageLayout(layout);
-    m_DirtySetBits |= 1u << set;
+    m_DirtySetMask |= 1u << set;
     
 }
 
@@ -430,42 +425,53 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
     CORE_DEBUG_ASSERT(internal_pipeline.GetHandle() != VK_NULL_HANDLE)
 
 #ifdef QK_DEBUG_BUILD
-    if (m_CurrentRenderPassInfo == nullptr) {
+    if (m_CurrentRenderPassInfo == nullptr) 
+    {
         CORE_LOGE("BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.")
         return;
     }
+
     const auto& render_pass_info = internal_pipeline.GetCompatableRenderPassInfo();
-    if (render_pass_info.numColorAttachments != m_CurrentRenderPassInfo->numColorAttachments) {
+    if (render_pass_info.numColorAttachments != m_CurrentRenderPassInfo->numColorAttachments) 
+    {
         CORE_LOGE("BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.")
         return;
     }
 
-    if (render_pass_info.depthAttachmentFormat != m_CurrentRenderPassInfo->depthAttachmentFormat) {
+    if (render_pass_info.depthAttachmentFormat != m_CurrentRenderPassInfo->depthAttachmentFormat)
+    {
         CORE_LOGE("BindPipeLine()::The pipeline's depth attachment is not equal to the current render pass.")
         return;
     }
 
-    for (size_t i = 0; i < render_pass_info.numColorAttachments; i++) {
-        if (render_pass_info.colorAttachmentFormats[i] != m_CurrentRenderPassInfo->colorAttachments[i]->GetDesc().format) {
+    for (size_t i = 0; i < render_pass_info.numColorAttachments; i++) 
+    {
+        if (render_pass_info.colorAttachmentFormats[i] != m_CurrentRenderPassInfo->colorAttachments[i]->GetDesc().format) 
+        {
             CORE_LOGE("BindPipeLine()::The pipeline's color attachment format[{}] is not equal to the current render pass.", i)
             return;
-        
         }
     }
 #endif
 
-    if (m_CurrentPipeline == &internal_pipeline) {
+    if (m_CurrentPipeline == &internal_pipeline)
         return;
-    }
     
     if (internal_pipeline.GetBindingPoint() == PipeLineBindingPoint::GRAPHIC)
         vkCmdBindPipeline(m_CmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, internal_pipeline.GetHandle());
     else
         vkCmdBindPipeline(m_CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.GetHandle());
 
-    // Reset status
+    // Change tracking state
     m_CurrentPipeline = &internal_pipeline;
-    ResetBindingStatus();
+    m_DirtySetMask = 0;
+    m_DirtySetDynamicMask = 0;
+
+    memset(m_BindingState.descriptorBindings, 0, sizeof(m_BindingState.descriptorBindings));
+
+    for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++)
+        m_CurrentSets[i] = VK_NULL_HANDLE;
+
 }
 
 void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sampler)
@@ -486,7 +492,7 @@ void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sample
         return;
 
     b.image.sampler = internal_sampler.GetHandle();
-    m_DirtySetBits |= 1u << set;
+    m_DirtySetMask |= 1u << set;
 }
 
 void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const IndexBufferFormat format)
@@ -524,7 +530,7 @@ void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64
 
     vertex_buffer_binding_state.buffers[binding] = internal_buffer.GetHandle();
     vertex_buffer_binding_state.offsets[binding] = offset;
-    m_DirtyVertexBufferBits |= 1u << binding;
+    m_DirtyVertexBufferMask |= 1u << binding;
 
 }
 
@@ -654,8 +660,10 @@ void CommandList_Vulkan::RebindDescriptorSet(u32 set)
 	u32 num_dynamic_offsets = 0;
 	uint32_t dynamic_offsets[SET_BINDINGS_MAX_NUM];
 
-    util::for_each_bit(set_layout.uniform_buffer_mask, [&](u32 binding) {
-        for (size_t i = 0; i < set_layout.vk_bindings[binding].descriptorCount; ++i) {
+    util::for_each_bit(set_layout.uniform_buffer_mask, [&](u32 binding) 
+    {
+        for (size_t i = 0; i < set_layout.vk_bindings[binding].descriptorCount; ++i) 
+        {
             CORE_DEBUG_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
             dynamic_offsets[num_dynamic_offsets++] = bindings[binding + i].dynamicOffset;
         }
@@ -688,30 +696,29 @@ void CommandList_Vulkan::FlushRenderState()
     auto* pipeline_layout = m_CurrentPipeline->GetLayout();
 
     // 1. Flush dirty descriptor set
-    u32 sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_DirtySetBits;
+    u32 sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_DirtySetMask;
     util::for_each_bit(sets_need_update, [&](u32 set) { FlushDescriptorSet(set); });
-    m_DirtySetBits &= ~sets_need_update;
+    m_DirtySetMask &= ~sets_need_update;
 
     // If we update a set, we also bind dynamically
-    m_DirtySetDynamicBits&= ~sets_need_update;
+    m_DirtySetDynamicMask&= ~sets_need_update;
 
     // if only rebound dynamic uniform buffers with different offset,
     // we only need to rebinding descriptor set with different dynamic offsets
-    u32 dynamic_sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_DirtySetDynamicBits;
+    u32 dynamic_sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_DirtySetDynamicMask;
     util::for_each_bit(dynamic_sets_need_update, [&](u32 set) {RebindDescriptorSet(set);});
-    m_DirtySetDynamicBits&= ~dynamic_sets_need_update;
+    m_DirtySetDynamicMask&= ~dynamic_sets_need_update;
 
     // 2.Flush dirty vertex buffer
     auto& vertex_buffer_bindings = m_BindingState.vertexBufferBindingState;
-    util::for_each_bit_range(m_DirtyVertexBufferBits, [&](u32 first_binding, u32 count) {
+    util::for_each_bit_range(m_DirtyVertexBufferMask, [&](u32 first_binding, u32 count) {
 #ifdef QK_DEBUG_BUILD
-        for (size_t binding = first_binding; binding < count; ++binding) {
+        for (size_t binding = first_binding; binding < count; ++binding)
             CORE_DEBUG_ASSERT(vertex_buffer_bindings.buffers[binding] != VK_NULL_HANDLE)
-        }
 #endif
         vkCmdBindVertexBuffers(m_CmdBuffer, first_binding, count, vertex_buffer_bindings.buffers + first_binding, vertex_buffer_bindings.offsets + first_binding);
     });
-    m_DirtyVertexBufferBits = 0;
+    m_DirtyVertexBufferMask = 0;
 
 }
 

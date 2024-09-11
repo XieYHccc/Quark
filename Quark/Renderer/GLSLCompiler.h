@@ -29,6 +29,7 @@ public:
 		std::vector<std::string> m_Processes;
 
 	};
+
 	enum class Target
 	{
 		VULKAN_VERSION_1_3,
@@ -45,6 +46,7 @@ public:
 	bool Compile(std::string& outMessages, std::vector<uint32_t>& outSpirv, const CompileOptions& ops = {});
 
 	void Clear();
+
 private:
 	void PreProcess();
 

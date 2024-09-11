@@ -33,15 +33,15 @@ struct ModelPushConstants
 {
     // Per geometry
     glm::mat4 worldMatrix = glm::mat4(1.f);
-    u64 vertexBufferGpuAddress;
+    u64 vertexBufferGpuAddress; // deprecated currently
 };
 
 struct MaterialPushConstants
 {
     // Per material
+    glm::vec4 colorFactors = glm::vec4(1.f);
     float metallicFactor = 1.f;
     float roughnessFactor = 1.f;
-    glm::vec4 colorFactors = glm::vec4(1.f);
 };
 
 // The minimum unit for a single draw call
@@ -72,11 +72,14 @@ public:
 
 private:
     void UpdateRenderObjects();
+    void CreateSkyBoxPipeLine();
 
     graphic::Device* m_GraphicDevice;
+
     Ref<Scene> m_Scene;
     Ref<Texture> m_CubeMap;
     Ref<Mesh> m_CubeMesh;
+    Ref<graphic::PipeLine> m_SkyboxPipeLine;
 
     // Data need to be updated every frame
     struct DrawContext 

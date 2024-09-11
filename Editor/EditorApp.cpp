@@ -292,17 +292,15 @@ void EditorApp::OnRender(TimeStep ts)
             forward_pass_info.clearColors[0] = {0.22f, 0.22f, 0.22f, 1.f};
             forward_pass_info.depthAttachment = depth_image.get();
             cmd->BeginRenderPass(forward_pass_info);
+            cmd->SetViewPort(viewport);
+            cmd->SetScissor(scissor);
 
             // Draw skybox
-            //cmd->BindPipeLine(*skybox_pipeline);
-            //cmd->SetViewPort(viewport);
-            //cmd->SetScissor(scissor);
-            //m_SceneRenderer->RenderSkybox(cmd);
+            // cmd->BindPipeLine(*skybox_pipeline);
+            m_SceneRenderer->RenderSkybox(cmd);
 
             // Draw scene
             // cmd->BindPipeLine(*graphic_pipeline);
-            cmd->SetViewPort(viewport);
-            cmd->SetScissor(scissor);
             auto geometry_start = m_Timer.ElapsedMillis();
             m_SceneRenderer->RenderScene(cmd);
             cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
@@ -408,8 +406,8 @@ void EditorApp::CreatePipeline()
     using namespace quark::graphic;
 
     // Sky box shaders
-    skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "BuiltInResources/Shaders/Spirv/skybox.vert.spv");
-    skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
+    // skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "BuiltInResources/Shaders/Spirv/skybox.vert.spv");
+    // skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
 
     // // Scene shaders
     // GLSLCompiler compiler;
@@ -430,40 +428,40 @@ void EditorApp::CreatePipeline()
     // frag_shader = m_GraphicDevice->CreateShaderFromBytes(ShaderStage::STAGE_FRAGEMNT, spvCode.data(), spvCode.size() * sizeof(uint32_t));
     
     // Scene pipeline
-    GraphicPipeLineDesc pipe_desc;
+    // GraphicPipeLineDesc pipe_desc;
     // pipe_desc.vertShader = vert_shader;
     // pipe_desc.fragShader = frag_shader;
-    pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
-    pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-    pipe_desc.renderPassInfo = forward_pass_info;
-    pipe_desc.depthStencilState.enableDepthTest = true;
-    pipe_desc.depthStencilState.enableDepthWrite = true;
-    pipe_desc.depthStencilState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
-    pipe_desc.rasterState.cullMode = CullMode::NONE;
-    pipe_desc.rasterState.polygonMode = PolygonMode::Fill;
-    pipe_desc.rasterState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
-    // graphic_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
+    //pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
+    //pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
+    //pipe_desc.renderPassInfo = forward_pass_info;
+    //pipe_desc.depthStencilState.enableDepthTest = true;
+    //pipe_desc.depthStencilState.enableDepthWrite = true;
+    //pipe_desc.depthStencilState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
+    //pipe_desc.rasterState.cullMode = CullMode::NONE;
+    //pipe_desc.rasterState.polygonMode = PolygonMode::Fill;
+    //pipe_desc.rasterState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
+    //// graphic_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 
-    // Sky box pipeline
-    pipe_desc.vertShader = skybox_vert_shader;
-    pipe_desc.fragShader = skybox_frag_shader;
-    pipe_desc.depthStencilState.enableDepthTest = false;
-    pipe_desc.depthStencilState.enableDepthWrite = false;
+    //// Sky box pipeline
+    //pipe_desc.vertShader = skybox_vert_shader;
+    //pipe_desc.fragShader = skybox_frag_shader;
+    //pipe_desc.depthStencilState.enableDepthTest = false;
+    //pipe_desc.depthStencilState.enableDepthWrite = false;
 
-    VertexBindInfo vert_bind_info;
-    vert_bind_info.binding = 0;
-    vert_bind_info.stride = sizeof(Vertex);
-    vert_bind_info.inputRate = VertexBindInfo::INPUT_RATE_VERTEX;
-    pipe_desc.vertexBindInfos.push_back(vert_bind_info);
+    //VertexBindInfo vert_bind_info;
+    //vert_bind_info.binding = 0;
+    //vert_bind_info.stride = sizeof(glm::vec3);
+    //vert_bind_info.inputRate = VertexBindInfo::INPUT_RATE_VERTEX;
+    //pipe_desc.vertexBindInfos.push_back(vert_bind_info);
 
-    VertexAttribInfo pos_attrib;
-    pos_attrib.binding = 0;
-    pos_attrib.format = VertexAttribInfo::ATTRIB_FORMAT_VEC3;
-    pos_attrib.location = 0;
-    pos_attrib.offset = offsetof(Vertex, position);
-    pipe_desc.vertexAttribInfos.push_back(pos_attrib);
+    //VertexAttribInfo pos_attrib;
+    //pos_attrib.binding = 0;
+    //pos_attrib.format = VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+    //pos_attrib.location = 0;
+    //pos_attrib.offset = 0;
+    //pipe_desc.vertexAttribInfos.push_back(pos_attrib);
 
-    skybox_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
+    //skybox_pipeline = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 }   
 
 void EditorApp::CreateColorDepthAttachments()

@@ -214,7 +214,7 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const VariantSignature
 		std::vector<uint32_t> spirv;
 		if (!m_Compiler.Compile(messages, spirv, ops))
 		{
-			CORE_LOGE("[ShaderTemplate]: Failed to compile shader: {}", m_Path);
+			CORE_LOGE("[ShaderTemplate]: Failed to compile shader: {}: {}", m_Path, messages);
 			return nullptr;
 		}
 

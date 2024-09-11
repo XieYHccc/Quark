@@ -30,7 +30,7 @@ public:
 	AssetID GetAssetID() const { return m_AssetID; }
 	AssetID SetAssetID(AssetID id) { return m_AssetID = id; }
 	
-	void SetDebugName(const std::string& name) { m_DebugName = name; }
+	void SetName(const std::string& name) { m_Name = name; }
 
 	bool operator==(const Asset& other) const
 	{
@@ -43,7 +43,7 @@ public:
 
 private:
 	AssetID m_AssetID;
-	std::string m_DebugName;
+	std::string m_Name;
 
 	friend class AssetManager; // If the Asset is reloaded from AssetManager, AssetManager should be able to set the ID of the Asset
 };

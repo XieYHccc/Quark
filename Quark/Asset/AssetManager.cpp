@@ -305,12 +305,12 @@ void AssetManager::CreateDefaultAssets()
 	m_DefaultColorTexture = CreateRef<Texture>();
 	m_DefaultColorTexture->image = GpuResourceManager::Get().whiteImage;
 	m_DefaultColorTexture->sampler = GpuResourceManager::Get().linearSampler;
-	m_DefaultColorTexture->SetDebugName("Default color texture");
+	m_DefaultColorTexture->SetName("Default color texture");
 	
 	m_DefaultMetalTexture = CreateRef<Texture>();
 	m_DefaultMetalTexture->image = GpuResourceManager::Get().whiteImage;
 	m_DefaultMetalTexture->sampler = GpuResourceManager::Get().linearSampler;
-	m_DefaultMetalTexture->SetDebugName("Default metalic roughness texture");
+	m_DefaultMetalTexture->SetName("Default metalic roughness texture");
 
 	m_DefaultMaterial = CreateRef<Material>();
 	m_DefaultMaterial->alphaMode = AlphaMode::OPAQUE;
@@ -320,8 +320,9 @@ void AssetManager::CreateDefaultAssets()
 	m_DefaultMaterial->uniformBufferData.metalicFactor = 1.0f;
 	m_DefaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
 	// TODO: Remove hardcoded shader
-	m_DefaultMaterial->shaderProgram = ShaderManager::Get().GetOrCreateGraphicsProgram("BuiltInResources/Shaders/mesh.vert", "BuiltInResources/Shaders/mesh.frag");
-	m_DefaultMaterial->SetDebugName("Default material");
+	m_DefaultMaterial->shaderProgram = ShaderManager::Get().GetOrCreateGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
+		"BuiltInResources/Shaders/static_mesh.frag");
+	m_DefaultMaterial->SetName("Default material");
 	
 	// All default assets' id is 1
 	m_DefaultColorTexture->SetAssetID(1);

@@ -19,7 +19,7 @@
 namespace quark {
 using namespace quark::graphic;
 
-std::unordered_map<std::string, bool> GLTFImporter::supportedExtensions_ = {
+std::unordered_map<std::string, bool> GLTFImporter::s_SupportedExtensions = {
     {"KHR_lights_punctual", false}};
 
 static bool loadImageDataFunc(tinygltf::Image* image, const int imageIndex, std::string* error, std::string* warning, int req_width, int req_height, const unsigned char* bytes, int size, void* userData)
@@ -95,14 +95,13 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
 
     bool binary = false; //TODO: Support glb loading
     size_t extpos = filename.rfind('.', filename.length());
-    if (extpos != std::string::npos) {
+    if (extpos != std::string::npos)
         binary = (filename.substr(extpos + 1, filename.length() - extpos) == "glb");
-    }
 
     size_t pos = filename.find_last_of('/');
-    if (pos == std::string::npos) {
+    if (pos == std::string::npos) 
         pos = filename.find_last_of('\\');
-    }
+
     m_FilePath = filename.substr(0, pos);
 
     // TODO:
@@ -120,18 +119,21 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
         return nullptr;
 
 	// Check extensions
-	for (auto &used_extension : m_Model.extensionsUsed) {
-		auto it = supportedExtensions_.find(used_extension);
+	for (auto &used_extension : m_Model.extensionsUsed) 
+    {
+		auto it = s_SupportedExtensions.find(used_extension);
 
 		// Check if extension isn't supported by the GLTFImporter
-		if (it == supportedExtensions_.end()) {
+		if (it == s_SupportedExtensions.end()) 
+        {
 			// If extension is required then we shouldn't allow the scene to be loaded
 			if (std::find(m_Model.extensionsRequired.begin(), m_Model.extensionsRequired.end(), used_extension) != m_Model.extensionsRequired.end())
 				CORE_ASSERT_MSG(0, "Cannot load glTF file. Contains a required unsupported extension: " + used_extension)
 			else
 				CORE_LOGW("glTF file contains an unsupported extension, unexpected results may occur: {}", used_extension)
 		}
-		else {
+		else 
+        {
 			// Extension is supported, so enable it
 			LOGI("glTF file contains extension: {}", used_extension);
 			it->second = true;
@@ -141,21 +143,22 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
     m_Scene = CreateRef<Scene>("gltf scene"); // name would be overwritten later..
 
     // Load samplers
-    samplers_.resize(m_Model.samplers.size());
-    for (size_t sampler_index = 0; sampler_index < m_Model.samplers.size(); sampler_index++) {
-        samplers_[sampler_index] = ParseSampler(m_Model.samplers[sampler_index]);
-    }
+    m_Samplers.resize(m_Model.samplers.size());
+    for (size_t sampler_index = 0; sampler_index < m_Model.samplers.size(); sampler_index++)
+        m_Samplers[sampler_index] = ParseSampler(m_Model.samplers[sampler_index]);
 
     // Load images
-    images_.resize(m_Model.images.size());
-    for (size_t image_index = 0; image_index < m_Model.images.size(); image_index++) {
+    m_Images.resize(m_Model.images.size());
+    for (size_t image_index = 0; image_index < m_Model.images.size(); image_index++)
+    {
         Ref<Image> newImage = ParseImage(m_Model.images[image_index]);
-        images_[image_index] = newImage;
+        m_Images[image_index] = newImage;
     }
 
     // Load textures
-    textures_.resize(m_Model.textures.size());
-    for (size_t texture_index = 0; texture_index < m_Model.textures.size(); texture_index++) {
+    m_Textures.resize(m_Model.textures.size());
+    for (size_t texture_index = 0; texture_index < m_Model.textures.size(); texture_index++)
+    {
         auto newTexture = CreateRef<Texture>();
 
         // Default values
@@ -163,58 +166,58 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
         newTexture->sampler = GpuResourceManager::Get().linearSampler;
 
         if (m_Model.textures[texture_index].source > -1) {
-            newTexture->image = images_[m_Model.textures[texture_index].source];
+            newTexture->image = m_Images[m_Model.textures[texture_index].source];
         }
         if (m_Model.textures[texture_index].sampler > -1) {
-            newTexture->sampler = samplers_[m_Model.textures[texture_index].sampler];
+            newTexture->sampler = m_Samplers[m_Model.textures[texture_index].sampler];
         }
 
-        textures_[texture_index] = newTexture;
+        m_Textures[texture_index] = newTexture;
     }
 
     // (deprecated)Using dynamic uniform buffer for material uniform data
-    size_t min_ubo_alignment = m_GraphicDevice->GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
-    size_t dynamic_alignment = sizeof(Material::UniformBufferBlock);
-	if (min_ubo_alignment > 0)
-		dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
+ //   size_t min_ubo_alignment = m_GraphicDevice->GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
+ //   size_t dynamic_alignment = sizeof(Material::UniformBufferBlock);
+	//if (min_ubo_alignment > 0)
+	//	dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
 
-	size_t buffer_size = (m_Model.materials.size() + 1) * dynamic_alignment; // additional 1 is for default material
-    auto* ubo_data = (Material::UniformBufferBlock*)util::memalign_alloc(dynamic_alignment, buffer_size);
-    CORE_DEBUG_ASSERT(ubo_data)
+	//size_t buffer_size = (m_Model.materials.size() + 1) * dynamic_alignment; // additional 1 is for default material
+ //   auto* ubo_data = (Material::UniformBufferBlock*)util::memalign_alloc(dynamic_alignment, buffer_size);
+ //   CORE_DEBUG_ASSERT(ubo_data)
 
-    // Create uniform buffer for material's uniform data
-    BufferDesc uniform_buffer_desc = {
-        .size = buffer_size,
-        .domain = BufferMemoryDomain::CPU,
-        .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
-    };
+ //   // Create uniform buffer for material's uniform data
+ //   BufferDesc uniform_buffer_desc = {
+ //       .size = buffer_size,
+ //       .domain = BufferMemoryDomain::CPU,
+ //       .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
+ //   };
 
-    Ref<graphic::Buffer> materialUniformBuffer = m_GraphicDevice->CreateBuffer(uniform_buffer_desc);
-    auto* mapped_data = (Material::UniformBufferBlock*)materialUniformBuffer->GetMappedDataPtr();
+    //Ref<graphic::Buffer> materialUniformBuffer = m_GraphicDevice->CreateBuffer(uniform_buffer_desc);
+    //auto* mapped_data = (Material::UniformBufferBlock*)materialUniformBuffer->GetMappedDataPtr();
 
     // Load materials
-    materials_.reserve(m_Model.materials.size() + 1); // one more default material
-    for (size_t material_index = 0; material_index < m_Model.materials.size(); material_index++) {
+    m_Materials.reserve(m_Model.materials.size() + 1); // one more default material
+    for (size_t material_index = 0; material_index < m_Model.materials.size(); material_index++) 
+    {
         auto newMaterial = ParseMaterial(m_Model.materials[material_index]);
-        auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (material_index * dynamic_alignment));
-        *ubo = newMaterial->uniformBufferData;
-        newMaterial->uniformBuffer = materialUniformBuffer;
-        newMaterial->uniformBufferOffset = material_index * dynamic_alignment;
-        materials_.push_back(newMaterial);
+        // auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (material_index * dynamic_alignment));
+        // *ubo = newMaterial->uniformBufferData;
+        // newMaterial->uniformBuffer = materialUniformBuffer;
+        // newMaterial->uniformBufferOffset = material_index * dynamic_alignment;
+        m_Materials.push_back(newMaterial);
     }
 
     // Add default material
-    materials_.push_back(AssetManager::Get().GetDefaultMaterial());
+    m_Materials.push_back(AssetManager::Get().GetDefaultMaterial());
 
     // data copy
-    std::copy(ubo_data, ubo_data + buffer_size, mapped_data);
-    util::memalign_free(ubo_data);
+    // std::copy(ubo_data, ubo_data + buffer_size, mapped_data);
+    // util::memalign_free(ubo_data);
 
     // Load meshes
-    meshes_.reserve(m_Model.meshes.size());
-    for (const auto& gltf_mesh : m_Model.meshes) {
-        meshes_.push_back(ParseMesh(gltf_mesh));
-    }
+    m_Meshes.reserve(m_Model.meshes.size());
+    for (const auto& gltf_mesh : m_Model.meshes)
+        m_Meshes.push_back(ParseMesh(gltf_mesh));
 
     // TODO: scene handling with no default scene
     // TODO: Support gltf file with multiple scenes
@@ -223,21 +226,23 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
     m_Scene->SetSceneName(gltf_scene.name);
 
     // Load nodes
-    entities_.reserve(m_Model.nodes.size());
-    for (const auto& gltf_node : m_Model.nodes) {
+    m_Entities.reserve(m_Model.nodes.size());
+    for (const auto& gltf_node : m_Model.nodes) 
+    {
         auto* newNode = ParseNode(gltf_node);
-        entities_.push_back(newNode);
+        m_Entities.push_back(newNode);
     }
 
     // Loop node again to establish hierachy
-    for (size_t i = 0; i < m_Model.nodes.size(); i++) {
+    for (size_t i = 0; i < m_Model.nodes.size(); i++) 
+    {
         for (const auto& child : m_Model.nodes[i].children)
-            entities_[i]->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[child]);
+            m_Entities[i]->GetComponent<RelationshipCmpt>()->AddChildEntity(m_Entities[child]);
     }
 
     // Add root nodes manually
     // for (const auto& node : gltf_scene.nodes) {
-    //     m_Scene->GetRootEntity()->GetComponent<RelationshipCmpt>()->AddChildEntity(entities_[node]);
+    //     m_Scene->GetRootEntity()->GetComponent<RelationshipCmpt>()->AddChildEntity(m_Entities[node]);
     // }
 
     return m_Scene;
@@ -250,26 +255,34 @@ Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
 	// Parse transform component
     TransformCmpt* transform = newObj->GetComponent<TransformCmpt>();
 
-	if (gltf_node.translation.size() == 3) {
+	if (gltf_node.translation.size() == 3)
+    {
 		glm::vec3 translation = glm::make_vec3(gltf_node.translation.data());
 		transform->SetPosition(translation);
 	}
-	if (gltf_node.rotation.size() == 4) {
+
+	if (gltf_node.rotation.size() == 4)
+    {
 		glm::quat q = glm::make_quat(gltf_node.rotation.data());
 		transform->SetQuat(q);
 	}
-	if (gltf_node.scale.size() == 3) {
+
+	if (gltf_node.scale.size() == 3)
+    {
 		glm::vec3 scale = glm::make_vec3(gltf_node.scale.data());
 		transform->SetScale(scale);
 	}
-	if (gltf_node.matrix.size() == 16) {
+
+	if (gltf_node.matrix.size() == 16)
+    {
 		transform->SetTRSMatrix(glm::make_mat4x4(gltf_node.matrix.data()));
 	};
 
     // Parse mesh component
-    if (gltf_node.mesh > -1) {
+    if (gltf_node.mesh > -1) 
+    {
         MeshCmpt* mesh_cmpt = newObj->AddComponent<MeshCmpt>();
-        mesh_cmpt->sharedMesh = meshes_[gltf_node.mesh];
+        mesh_cmpt->sharedMesh = m_Meshes[gltf_node.mesh];
     }
 
     //TODO: Parse camera component
@@ -279,7 +292,8 @@ Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
 
 Ref<graphic::Sampler> GLTFImporter::ParseSampler(const tinygltf::Sampler &gltf_sampler)
 {
-    SamplerDesc desc = {
+    SamplerDesc desc = 
+    {
         .minFilter = convert_min_filter(gltf_sampler.minFilter),
         .magFliter = convert_mag_filter(gltf_sampler.magFilter),
         .addressModeU = convert_wrap_mode(gltf_sampler.wrapS),
@@ -336,7 +350,7 @@ Ref<graphic::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
 Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
 {
     auto newMaterial = CreateRef<Material>();
-    newMaterial->SetDebugName(mat.name);
+    newMaterial->SetName(mat.name);
     newMaterial->alphaMode = AlphaMode::OPAQUE;
     auto find = mat.additionalValues.find("alphaMode");
     if (find != mat.additionalValues.end()) {
@@ -367,12 +381,12 @@ Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
 
     find = mat.values.find("metallicRoughnessTexture");
     if (find != mat.values.end()) {
-        newMaterial->metallicRoughnessTexture = textures_[find->second.TextureIndex()];
+        newMaterial->metallicRoughnessTexture = m_Textures[find->second.TextureIndex()];
     }
 
     find = mat.values.find("baseColorTexture");
     if (find != mat.values.end()) {
-        newMaterial->baseColorTexture = textures_[find->second.TextureIndex()];
+        newMaterial->baseColorTexture = m_Textures[find->second.TextureIndex()];
     }
 
     return newMaterial;
@@ -380,33 +394,38 @@ Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
 
 Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 {
+    Ref<Mesh> newMesh = CreateRef<Mesh>();
+    newMesh->SetName(gltf_mesh.name);
 
-    vertices_.clear();
-    indices_.clear();
+    size_t vertexCount = 0;
+    size_t indexCount = 0;
 
-    size_t vertex_count = 0;
-    size_t index_count = 0;
+    // Get vertex count and index count upfront
+    for (const auto& p : gltf_mesh.primitives) 
+    {
+        vertexCount += m_Model.accessors[p.attributes.find("POSITION")->second].count;
 
-    // Get vertex count and index count up-front
-    for (const auto& p : gltf_mesh.primitives) {
-        vertex_count += m_Model.accessors[p.attributes.find("POSITION")->second].count;
-        if (p.indices > -1) {
-            index_count += m_Model.accessors[p.indices].count;
-        }
+        if (p.indices > -1)
+            indexCount += m_Model.accessors[p.indices].count;
     }
-    vertices_.reserve(vertex_count);
-    indices_.reserve(index_count);
+
+    newMesh->positions.reserve(vertexCount);
+    newMesh->uvs.reserve(vertexCount);
+    newMesh->normals.reserve(vertexCount);
+    newMesh->colors.reserve(vertexCount);
+    newMesh->indices.reserve(indexCount);
 
     std::vector<SubMeshDescriptor> submeshes;
     submeshes.reserve(gltf_mesh.primitives.size());
     
     // loop primitives
-    for (auto& p : gltf_mesh.primitives) {
-        u32 start_index = indices_.size();
-        u32 start_vertex = vertices_.size();
+    for (auto& p : gltf_mesh.primitives) 
+    {
+        u32 start_index = newMesh->indices.size();
+        u32 start_vertex = newMesh->positions.size();
         u32 index_num = 0;
-        glm::vec3 min_pos{};
-        glm::vec3 max_pos{};
+        glm::vec3 min_pos = {};
+        glm::vec3 max_pos = {};
 
         // Vertices
         {
@@ -427,13 +446,15 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
             max_pos = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
             CORE_DEBUG_ASSERT(min_pos != max_pos)
             
-            if (p.attributes.find("NORMAL") != p.attributes.end()) {
+            if (p.attributes.find("NORMAL") != p.attributes.end()) 
+            {
                 const tinygltf::Accessor& normAccessor = m_Model.accessors[p.attributes.find("NORMAL")->second];
                 const tinygltf::BufferView& normView = m_Model.bufferViews[normAccessor.bufferView];
                 buffer_normals= reinterpret_cast<const float *>(&(m_Model.buffers[normView.buffer].data[normAccessor.byteOffset + normView.byteOffset]));
             }
 
-            if (p.attributes.find("TEXCOORD_0") != p.attributes.end()) {
+            if (p.attributes.find("TEXCOORD_0") != p.attributes.end()) 
+            {
                 const tinygltf::Accessor &uvAccessor = m_Model.accessors[p.attributes.find("TEXCOORD_0")->second];
                 const tinygltf::BufferView &uvView = m_Model.bufferViews[uvAccessor.bufferView];
                 buffer_texCoords = reinterpret_cast<const float *>(&(m_Model.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
@@ -452,51 +473,58 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
             }
 
             // Create vertices
-            for (size_t i = 0; i < posAccessor.count; i++) {
-                Vertex v = {};
-                v.position = glm::make_vec3(&buffer_pos[i * 3]);
-				v.normal = glm::normalize(buffer_normals ? glm::make_vec3(&buffer_normals[i * 3]) : glm::vec3(0.0f));
-				v.uv_x = buffer_texCoords? buffer_texCoords[i * 2] : 0.f;
-                v.uv_y = buffer_texCoords? buffer_texCoords[i * 2 + 1] : 0.f;
-                if (buffer_colors) {
-                    if (colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT) {
+            for (size_t i = 0; i < posAccessor.count; i++) 
+            {
+                newMesh->positions.push_back(glm::make_vec3(&buffer_pos[i * 3]));
+
+                if (buffer_normals) 
+                    newMesh->normals.push_back(glm::normalize(glm::make_vec3(&buffer_normals[i * 3])));
+
+                if (buffer_texCoords)
+                    newMesh->uvs.push_back(glm::make_vec2(&buffer_texCoords[i * 2]));
+
+                if (buffer_colors) 
+                {
+                    glm::vec4 color = glm::vec4(1.0f);
+
+                    if (colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT) 
+                    {
                         const float NORMALIZATION_FACTOR = 65535.0f;
                         const uint16_t* buf = static_cast<const uint16_t*>(buffer_colors);
+
                         switch (numColorComponents) {
                         case 3: 
-                            v.color = glm::vec4(buf[i * 3] / NORMALIZATION_FACTOR,
-                                buf[i * 3 + 1] / NORMALIZATION_FACTOR,
-                                buf[i * 3 + 2] / NORMALIZATION_FACTOR,
-                                1.f);
+                            color = glm::vec4(buf[i * 3] / NORMALIZATION_FACTOR,
+								buf[i * 3 + 1] / NORMALIZATION_FACTOR,
+								buf[i * 3 + 2] / NORMALIZATION_FACTOR,
+								1.f);
                             break;
                         case 4:
-                            v.color = glm::vec4(buf[i * 4] / NORMALIZATION_FACTOR,
+                            color = glm::vec4(buf[i * 4] / NORMALIZATION_FACTOR,
                                 buf[i * 4 + 1] / NORMALIZATION_FACTOR,
                                 buf[i * 4 + 2] / NORMALIZATION_FACTOR,
                                 buf[i * 4 + 3] / NORMALIZATION_FACTOR);
                             break;
                         default:
                             CORE_ASSERT_MSG(0, "Invalid number of color components")
+                        }
                     }
-                    }
-                    else {
+                    else 
+                    {
                         const float* buf = static_cast<const float*>(buffer_colors);
                         switch (numColorComponents) {
                         case 3: 
-                            v.color = glm::vec4(glm::make_vec3(&buf[i * 3]), 1.0f);
+                            color = glm::vec4(glm::make_vec3(&buf[i * 3]), 1.0f);
                             break;
                         case 4:
-                            v.color = glm::make_vec4(&buf[i * 4]);
+                            color = glm::make_vec4(&buf[i * 4]);
                             break;
                         default:
                             CORE_ASSERT_MSG(0, "Invalid number of color components")
+                        }
                     }
-                    }
+                    newMesh->colors.push_back(color);
                 }
-                else
-                    v.color = glm::vec4(1.0f);
-
-                vertices_.push_back(v);
             }
         }
 
@@ -508,23 +536,25 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 
             index_num = static_cast<uint32_t>(accessor.count);
             const void* data_ptr = &(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
-            switch (accessor.componentType) {
+
+            switch (accessor.componentType) 
+            {
             case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
                 const uint32_t* buf = static_cast<const uint32_t*>(data_ptr);
                 for (size_t index = 0; index < accessor.count; index++)
-                    indices_.push_back(buf[index] + start_vertex);
+                    newMesh->indices.push_back(buf[index] + start_vertex);
                 break;
             }
             case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
                 const uint16_t* buf = static_cast<const uint16_t*>(data_ptr);
                 for (size_t index = 0; index < accessor.count; index++)
-                    indices_.push_back(static_cast<uint32_t>(buf[index]) + start_vertex);
+                    newMesh->indices.push_back(static_cast<uint32_t>(buf[index]) + start_vertex);
                 break;
             }
             case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
                 const uint8_t* buf = static_cast<const uint8_t*>(data_ptr);
                 for (size_t index = 0; index < accessor.count; index++)
-                    indices_.push_back(static_cast<uint32_t>(buf[index]) + start_vertex);
+                    newMesh->indices.push_back(static_cast<uint32_t>(buf[index]) + start_vertex);
                 break;
             }
             default:
@@ -533,17 +563,18 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 			}
         }
 
-        auto& new_submesh = submeshes.emplace_back();
-        new_submesh.aabb = { min_pos, max_pos };
-        new_submesh.count = index_num;
-        new_submesh.startIndex = start_index;
-        // new_submesh.material = p.material > -1? materials_[p.material] : materials_.back();
+        auto& newSubmesh = submeshes.emplace_back();
+        newSubmesh.aabb = { min_pos, max_pos };
+        newSubmesh.count = index_num;
+        newSubmesh.startIndex = start_index;
+        // new_submesh.material = p.material > -1? m_Materials[p.material] : m_Materials.back();
 
     }
 
-    // Create mesh
-    auto newMesh = CreateRef<Mesh>(vertices_, indices_, submeshes, false);
-    newMesh->SetDebugName(gltf_mesh.name);
+    newMesh->subMeshes = submeshes;
+    newMesh->isDynamic = false;
+    newMesh->ReCalculateAabb();
+    newMesh->UpdateGpuBuffers();
 
     return newMesh;
 }

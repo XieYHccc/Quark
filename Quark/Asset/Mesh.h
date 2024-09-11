@@ -6,18 +6,18 @@
 #include "Quark/Asset/Material.h"
 
 namespace quark {
-struct Vertex {
-    glm::vec3 position;
-    float uv_x;
-    glm::vec3 normal;
-    float uv_y;
-    glm::vec4 color;
-
-    bool operator==(const Vertex &other) const {
-        return position == other.position && color == other.color && normal == other.normal &&
-                uv_x == other.uv_x && uv_y == other.uv_y;
-    }
-};
+//struct Vertex {
+//    glm::vec3 position;
+//    float uv_x;
+//    glm::vec3 normal;
+//    float uv_y;
+//    glm::vec4 color;
+//
+//    bool operator==(const Vertex &other) const {
+//        return position == other.position && color == other.color && normal == other.normal &&
+//                uv_x == other.uv_x && uv_y == other.uv_y;
+//    }
+//};
 
 enum class MeshAttribute : unsigned
 {
@@ -60,20 +60,20 @@ public:
     std::vector<glm::vec4> colors;
 
     std::vector<SubMeshDescriptor> subMeshes;
-    std::vector<Vertex> vertices;
+    //std::vector<Vertex> vertices;
 
     math::Aabb aabb = {};
 
     bool isDynamic = false;
 
 public:
-    Mesh();
-    Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<SubMeshDescriptor>& subMeshes, bool isDynamic = false);
+    Mesh() = default;
+    //Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<SubMeshDescriptor>& subMeshes, bool isDynamic = false);
 
     uint32_t GetMeshAttributeMask() const;
 
     void UpdateGpuBuffers(); // Carefully call this unless you know what you are doing
-
+    void ReCalculateAabb();
     void ReCalculateNormals();
     void ReCalculateAabbs();
 

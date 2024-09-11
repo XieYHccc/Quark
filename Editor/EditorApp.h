@@ -34,11 +34,11 @@ public:
 public:
     // Ref<quark::graphic::Shader> vert_shader;
     // Ref<quark::graphic::Shader> frag_shader;
-    Ref<quark::graphic::Shader> skybox_vert_shader;
-    Ref<quark::graphic::Shader> skybox_frag_shader;
-    
-    Ref<quark::graphic::PipeLine> graphic_pipeline;
-    Ref<quark::graphic::PipeLine> skybox_pipeline;
+    //Ref<quark::graphic::Shader> skybox_vert_shader;
+    //Ref<quark::graphic::Shader> skybox_frag_shader;
+    //
+    //Ref<quark::graphic::PipeLine> graphic_pipeline;
+    //Ref<quark::graphic::PipeLine> skybox_pipeline;
 
     quark::graphic::RenderPassInfo forward_pass_info; // First pass
     quark::graphic::RenderPassInfo ui_pass_info;   // Second pass

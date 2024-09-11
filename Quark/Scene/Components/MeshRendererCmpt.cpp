@@ -83,7 +83,7 @@ void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 	// Position
 	if (meshAttribsMask & MESH_ATTRIBUTE_POSITION_BIT)
 	{
-		graphic::VertexAttribInfo attrib = m_CachedVertexAttribs.emplace_back();
+		graphic::VertexAttribInfo& attrib = m_CachedVertexAttribs.emplace_back();
 		attrib.location = 0;
 		attrib.binding = 0;
 		attrib.format = graphic::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
@@ -94,7 +94,7 @@ void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 	// UV
 	if (meshAttribsMask & MESH_ATTRIBUTE_UV_BIT)
 	{
-		graphic::VertexAttribInfo attrib = m_CachedVertexAttribs.emplace_back();
+		graphic::VertexAttribInfo& attrib = m_CachedVertexAttribs.emplace_back();
 		attrib.location = 1;
 		attrib.binding = 0;
 		attrib.format = graphic::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
@@ -105,7 +105,7 @@ void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 	// Normal
 	if (meshAttribsMask & MESH_ATTRIBUTE_NORMAL_BIT)
 	{
-		graphic::VertexAttribInfo attrib = m_CachedVertexAttribs.emplace_back();
+		graphic::VertexAttribInfo& attrib = m_CachedVertexAttribs.emplace_back();
 		attrib.location = 2;
 		attrib.binding = 0;
 		attrib.format = graphic::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
@@ -116,7 +116,7 @@ void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 	// Vertex Color
 	if (meshAttribsMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
 	{
-		graphic::VertexAttribInfo attrib = m_CachedVertexAttribs.emplace_back();
+		graphic::VertexAttribInfo& attrib = m_CachedVertexAttribs.emplace_back();
 		attrib.location = 3;
 		attrib.binding = 0;
 		attrib.format = graphic::VertexAttribInfo::ATTRIB_FORMAT_VEC4;

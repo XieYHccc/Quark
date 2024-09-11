@@ -14,7 +14,6 @@ class Device;
 }
 
 class Scene;
-class GameObject;
 class Entity;
 class GLTFImporter {
 public:
@@ -29,22 +28,22 @@ private:
     Entity* ParseNode(const tinygltf::Node& gltf_node);
 
     graphic::Device* m_GraphicDevice;
+
     tinygltf::Model m_Model;
+
     Ref<Scene> m_Scene;
     std::string m_FilePath;
-    
-    // Supported extensions mapped to whether they are enabled
-    static std::unordered_map<std::string, bool> supportedExtensions_;
 
     // Temporary storage for indexing
-    std::vector<Vertex> vertices_;
-    std::vector<uint32_t> indices_;
-    std::vector<Ref<graphic::Sampler>> samplers_;
-    std::vector<Ref<graphic::Image>> images_;
-    std::vector<Ref<Texture>> textures_;
-    std::vector<Ref<Material>> materials_;
-    std::vector<Ref<Mesh>> meshes_;
-    std::vector<Entity*> entities_;
+    std::vector<Ref<graphic::Sampler>> m_Samplers;
+    std::vector<Ref<graphic::Image>> m_Images;
+    std::vector<Ref<Texture>> m_Textures;
+    std::vector<Ref<Material>> m_Materials;
+    std::vector<Ref<Mesh>> m_Meshes;
+    std::vector<Entity*> m_Entities;
+
+    // Supported extensions mapped to whether they are enabled
+    static std::unordered_map<std::string, bool> s_SupportedExtensions;
 
 };
 
