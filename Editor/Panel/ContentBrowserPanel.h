@@ -18,7 +18,5 @@ private:
 
 	Ref<Texture> m_FolderIcon;
 	Ref<Texture> m_FileIcon;
-	ImTextureID m_FolderIconId;
-	ImTextureID m_FileIconId;
 };
 }

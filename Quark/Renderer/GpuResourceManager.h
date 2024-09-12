@@ -1,36 +1,50 @@
 #pragma once
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Graphic/Device.h"
-
+#include "Quark/Renderer/ShaderLibrary.h"
 namespace quark {
 
 // This class is responsible for managing some global gpu resources
 class GpuResourceManager : public util::MakeSingleton<GpuResourceManager> {
 public:
-    // Default resources
-    inline static Ref<graphic::Image> whiteImage;
-    inline static Ref<graphic::Image> blackImage;
-    inline static Ref<graphic::Image> checkboardImage;
+    // defalut resources and settings
+    graphic::DataFormat format_depthAttachment_main = graphic::DataFormat::D32_SFLOAT;
+    graphic::DataFormat format_colorAttachment_main = graphic::DataFormat::R16G16B16A16_SFLOAT;
 
-    inline static Ref<graphic::Sampler> linearSampler;
-    inline static Ref<graphic::Sampler> nearestSampler;
-    inline static Ref<graphic::Sampler> cubeMapSampler;
+    // default images
+    Ref<graphic::Image> image_white;
+    Ref<graphic::Image> image_black;
+    Ref<graphic::Image> image_checkboard;
 
-    inline static graphic::PipelineDepthStencilState depthTestWriteState;
-    inline static graphic::PipelineDepthStencilState depthDisabledState;
-    inline static graphic::PipelineDepthStencilState depthTestState;
+    // default samplers
+    Ref<graphic::Sampler> sampler_linear;
+    Ref<graphic::Sampler> sampler_nearst;
+    Ref<graphic::Sampler> sampler_cube;
 
-    inline static graphic::RasterizationState defaultFillRasterizationState;
-    inline static graphic::RasterizationState wireframeRasterizationState;
+    // defalut depth stencil states
+    graphic::PipelineDepthStencilState depthStencilState_depthWrite;
+    graphic::PipelineDepthStencilState depthStencilState_disabled;
+    graphic::PipelineDepthStencilState depthStencilState_depthTestOnly;
 
-    inline static graphic::RenderPassInfo defaultOneColorWithDepthRenderPassInfo;
+    // defalut rasterization states
+    graphic::RasterizationState rasterizationState_fill;
+    graphic::RasterizationState rasterizationState_wireframe;
 
+    // vertex input layout
+    graphic::VertexInputLayout vertexInputLayout_skybox;
+
+    graphic::RenderPassInfo renderPassInfo_simpleMainPass;
 
     GpuResourceManager() = default;
     ~GpuResourceManager() = default;
 
+
     void Init();
     void Shutdown();
 
+    ShaderLibrary& GetShaderLibrary() { return *m_ShaderLibrary; }
+
+private:
+    Scope<ShaderLibrary> m_ShaderLibrary;
 };
 }

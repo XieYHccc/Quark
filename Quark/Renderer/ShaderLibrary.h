@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include "Quark/Core/Util/EnumCast.h"
-#include "Quark/Core/Util/Singleton.h"
 #include "Quark/Graphic/Device.h"
 #include "Quark/Renderer/GLSLCompiler.h"
 
@@ -50,8 +49,7 @@ public:
 		const graphic::PipelineColorBlendState& cb,
 		const graphic::RasterizationState& rs,
 		const graphic::RenderPassInfo& compatablerp,
-		const std::vector<graphic::VertexAttribInfo>& attribs,
-		const std::vector<graphic::VertexBindInfo>& vertBindInfo);
+		const graphic::VertexInputLayout& input);
 
 private:
 	ShaderTemplateVariant* m_Stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
@@ -78,10 +76,10 @@ private:
 	std::unordered_map<uint64_t, Scope<ShaderProgramVariant>> m_Variants;
 };
 
-class ShaderManager : public util::MakeSingleton<ShaderManager>
+class ShaderLibrary
 {
 public:
-	ShaderManager();
+	ShaderLibrary();
 
 	ShaderProgram* GetOrCreateGraphicsProgram(const std::string& vert_path, const std::string& frag_path);
 	ShaderProgram* GetOrCreateComputeProgram(const std::string& comp_path);

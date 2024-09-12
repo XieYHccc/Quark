@@ -5,12 +5,14 @@
 
 namespace quark {
 
-enum UiInitFlagBit{
+enum UiInitFlagBit
+{
     UI_INIT_FLAG_DOCKING = 1 << 0,
     UI_INIT_FLAG_VIEWPORTS = 1 << 1,
 };  
 
-struct UiInitSpecs {
+struct UiInitSpecs 
+{
     std::uint32_t flags;
 };
 
@@ -27,8 +29,8 @@ public:
     virtual void EndFrame() = 0;
     virtual void Render(graphic::CommandList* cmd) = 0;
 
-    virtual ImTextureID CreateTextureId(const Ref<Texture>& texture) = 0;
-    virtual ImTextureID CreateTextureId(const graphic::Image& image, const graphic::Sampler& sampler) = 0;
+    virtual ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) = 0;
+    virtual ImTextureID GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler) = 0;
 
 };
 

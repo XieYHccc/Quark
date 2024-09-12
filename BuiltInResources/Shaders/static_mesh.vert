@@ -1,45 +1,49 @@
 #version 450
 
 #extension GL_GOOGLE_include_directive : require
-#extension GL_EXT_buffer_reference : require
 
 #include "include/input_structures.glsl"
 
-layout (location = 0) out vec3 outNormal;
-layout (location = 1) out vec3 outColor;
-layout (location = 2) out vec2 outUV;
+layout(location = 0) in vec3 inPosition;
 
-struct Vertex {
+#ifdef HAVE_UV
+layout(location = 1) in vec2 inUV;
+layout(location = 1) out vec2 vUV;
+#endif
 
-	vec3 position;
-	float uv_x;
-	vec3 normal;
-	float uv_y;
-	vec4 color;
-}; 
+#ifdef HAVE_NORMAL
+layout(location = 2) in vec3 inNormal;
+layout(location = 2) out vec3 vNormal;
+#endif
 
-layout(buffer_reference, std430) readonly buffer VertexBuffer{ 
-	Vertex vertices[];
-};
+#ifdef HAVE_VERTEX_COLOR
+layout(location = 3) in vec4 inColor;
+layout(location = 3) out vec4 vColor;
+#endif
 
 //push constants block
-layout( push_constant ) uniform PushConstants
+layout(push_constant, std430) uniform PushConstants
 {
 	mat4 modelMatrix;
-	VertexBuffer vertexBuffer;
-
 } modelData;
 
 void main() 
 {
-	Vertex v = modelData.vertexBuffer.vertices[gl_VertexIndex];
-	
-	vec4 position = vec4(v.position, 1.0f);
-
+	vec4 position = vec4(inPosition, 1.0f);
 	gl_Position =  sceneData.viewproj * modelData.modelMatrix * position;
 
-	outNormal = (modelData.modelMatrix * vec4(v.normal, 0.f)).xyz;
-	outColor = v.color.xyz;
-	outUV.x = v.uv_x;
-	outUV.y = v.uv_y;
+#ifdef HAVE_NORMAL
+	mat3 normalTransform = mat3(modelData.modelMatrix[0].xyz, modelData.modelMatrix[1].xyz, modelData.modelMatrix[2].xyz);
+	vNormal = normalize(normalTransform * inNormal);
+#endif
+
+#ifdef HAVE_UV
+	vUV = inUV;
+#endif
+
+#ifdef HAVE_VERTEX_COLOR
+	vColor = inColor;
+#endif
+
+
 }

@@ -162,8 +162,8 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
         auto newTexture = CreateRef<Texture>();
 
         // Default values
-        newTexture->image = GpuResourceManager::Get().whiteImage;
-        newTexture->sampler = GpuResourceManager::Get().linearSampler;
+        newTexture->image = GpuResourceManager::Get().image_white;
+        newTexture->sampler = GpuResourceManager::Get().sampler_linear;
 
         if (m_Model.textures[texture_index].source > -1) {
             newTexture->image = m_Images[m_Model.textures[texture_index].source];
@@ -344,7 +344,7 @@ Ref<graphic::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
     
     CORE_LOGE("GLTFImporter::ParseImage::Failed to load image: {}", gltf_image.uri)
 
-    return GpuResourceManager::Get().checkboardImage;
+    return GpuResourceManager::Get().image_checkboard;
 }
 
 Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
@@ -409,20 +409,20 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
             indexCount += m_Model.accessors[p.indices].count;
     }
 
-    newMesh->positions.reserve(vertexCount);
-    newMesh->uvs.reserve(vertexCount);
-    newMesh->normals.reserve(vertexCount);
-    newMesh->colors.reserve(vertexCount);
+    newMesh->vertex_positions.reserve(vertexCount);
+    newMesh->vertex_uvs.reserve(vertexCount);
+    newMesh->vertex_normals.reserve(vertexCount);
+    newMesh->vertex_colors.reserve(vertexCount);
     newMesh->indices.reserve(indexCount);
 
-    std::vector<SubMeshDescriptor> submeshes;
+    std::vector<Mesh::SubMeshDescriptor> submeshes;
     submeshes.reserve(gltf_mesh.primitives.size());
     
     // loop primitives
     for (auto& p : gltf_mesh.primitives) 
     {
         u32 start_index = newMesh->indices.size();
-        u32 start_vertex = newMesh->positions.size();
+        u32 start_vertex = newMesh->vertex_positions.size();
         u32 index_num = 0;
         glm::vec3 min_pos = {};
         glm::vec3 max_pos = {};
@@ -475,13 +475,13 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
             // Create vertices
             for (size_t i = 0; i < posAccessor.count; i++) 
             {
-                newMesh->positions.push_back(glm::make_vec3(&buffer_pos[i * 3]));
+                newMesh->vertex_positions.push_back(glm::make_vec3(&buffer_pos[i * 3]));
 
                 if (buffer_normals) 
-                    newMesh->normals.push_back(glm::normalize(glm::make_vec3(&buffer_normals[i * 3])));
+                    newMesh->vertex_normals.push_back(glm::normalize(glm::make_vec3(&buffer_normals[i * 3])));
 
                 if (buffer_texCoords)
-                    newMesh->uvs.push_back(glm::make_vec2(&buffer_texCoords[i * 2]));
+                    newMesh->vertex_uvs.push_back(glm::make_vec2(&buffer_texCoords[i * 2]));
 
                 if (buffer_colors) 
                 {
@@ -523,7 +523,7 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
                             CORE_ASSERT_MSG(0, "Invalid number of color components")
                         }
                     }
-                    newMesh->colors.push_back(color);
+                    newMesh->vertex_colors.push_back(color);
                 }
             }
         }
@@ -567,14 +567,13 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
         newSubmesh.aabb = { min_pos, max_pos };
         newSubmesh.count = index_num;
         newSubmesh.startIndex = start_index;
+        newSubmesh.startVertex = start_vertex;
         // new_submesh.material = p.material > -1? m_Materials[p.material] : m_Materials.back();
 
     }
 
     newMesh->subMeshes = submeshes;
-    newMesh->isDynamic = false;
-    newMesh->ReCalculateAabb();
-    newMesh->UpdateGpuBuffers();
+    newMesh->CalculateAabbs();
 
     return newMesh;
 }

@@ -2,7 +2,6 @@
 #include <glm/glm.hpp>
 #include "Quark/Asset/Asset.h"
 #include "Quark/Asset/Texture.h"
-#include "Quark/Renderer/ShaderManager.h"
 
 namespace quark {
 enum class AlphaMode {
@@ -10,8 +9,10 @@ enum class AlphaMode {
     TRANSPARENT
 };
 
+class ShaderProgram;
 struct Material : public Asset {
-    struct UniformBufferBlock {
+    struct UniformBufferBlock 
+    {
         glm::vec4 baseColorFactor = glm::vec4(1.0f);
         float metalicFactor = 1.f;
         float roughNessFactor = 1.f;

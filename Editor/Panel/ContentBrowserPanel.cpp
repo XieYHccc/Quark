@@ -14,8 +14,6 @@ ContentBrowserPanel::ContentBrowserPanel()
 	TextureImporter loader;
 	m_FileIcon = loader.ImportStb("BuiltInResources/Icons/ContentBrowser/FileIcon.png");
 	m_FolderIcon = loader.ImportStb("BuiltInResources/Icons/ContentBrowser/DirectoryIcon.png");
-	m_FileIconId = UI::Get()->CreateTextureId(m_FileIcon);
-	m_FolderIconId = UI::Get()->CreateTextureId(m_FolderIcon);
 }
 
 void ContentBrowserPanel::OnImGuiUpdate()
@@ -46,7 +44,9 @@ void ContentBrowserPanel::OnImGuiUpdate()
 	{
 		const auto& path = directoryEntry.path();
 		std::string filenameString = path.filename().string();
-		ImTextureID textureId = directoryEntry.is_directory() ? m_FolderIconId : m_FileIconId;
+
+		ImTextureID textureId = directoryEntry.is_directory() ? 
+			UI::Get()->GetOrCreateTextureId(m_FolderIcon) : UI::Get()->GetOrCreateTextureId(m_FileIcon);
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 		ImGui::ImageButton(filenameString.c_str(), textureId, { thumbnailSize, thumbnailSize }, { 0, 1 }, { 1, 0 });

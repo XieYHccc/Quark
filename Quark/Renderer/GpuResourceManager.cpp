@@ -34,10 +34,10 @@ void GpuResourceManager::Init()
         initData.rowPitch = 4;
         initData.slicePitch = 1 * 1 * 4;
 
-        whiteImage = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
+        image_white = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
 
         initData.data = &black;
-        blackImage = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
+        image_black = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
 
     }
 
@@ -58,7 +58,7 @@ void GpuResourceManager::Init()
         initData.rowPitch = 32 * 4;
         initData.slicePitch = 32 * 32 * 4;
 
-        checkboardImage = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
+        image_checkboard = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
     }
 
 
@@ -71,12 +71,12 @@ void GpuResourceManager::Init()
         desc.addressModeV = SamplerAddressMode::REPEAT;
         desc.addressModeW = SamplerAddressMode::REPEAT;
 
-        linearSampler = Application::Get().GetGraphicDevice()->CreateSampler(desc);
+        sampler_linear = Application::Get().GetGraphicDevice()->CreateSampler(desc);
 
         desc.minFilter = SamplerFilter::NEAREST;
         desc.magFliter = SamplerFilter::NEAREST;
 
-        nearestSampler = Application::Get().GetGraphicDevice()->CreateSampler(desc);
+        sampler_nearst = Application::Get().GetGraphicDevice()->CreateSampler(desc);
 
         // Cubemap sampler
         desc.minFilter = SamplerFilter::LINEAR;
@@ -85,65 +85,85 @@ void GpuResourceManager::Init()
         desc.addressModeV = SamplerAddressMode::CLAMPED_TO_EDGE;
         desc.addressModeW = SamplerAddressMode::CLAMPED_TO_EDGE;
 
-        cubeMapSampler = Application::Get().GetGraphicDevice()->CreateSampler(desc);
+        sampler_cube = Application::Get().GetGraphicDevice()->CreateSampler(desc);
 
     }
     
     // Depth stencil states
 	{
-        depthDisabledState.enableDepthTest = false;
-        depthDisabledState.enableDepthWrite = false;
+        depthStencilState_disabled.enableDepthTest = false;
+        depthStencilState_disabled.enableDepthWrite = false;
 
-        depthTestState.enableDepthTest = true;
-        depthTestState.enableDepthWrite = false;
-        depthTestState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
-        depthTestWriteState.enableStencil = false;
+        depthStencilState_depthTestOnly.enableDepthTest = true;
+        depthStencilState_depthTestOnly.enableDepthWrite = false;
+        depthStencilState_depthTestOnly.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
 
-        depthTestWriteState.enableDepthTest = true;
-        depthTestWriteState.enableDepthWrite = true;
-        depthTestWriteState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
-        depthTestWriteState.enableStencil = false;
+        depthStencilState_depthWrite.enableStencil = false;
+        depthStencilState_depthWrite.enableDepthTest = true;
+        depthStencilState_depthWrite.enableDepthWrite = true;
+        depthStencilState_depthWrite.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
+        depthStencilState_depthWrite.enableStencil = false;
 	}
 
     // Rasterization state
 	{
-		defaultFillRasterizationState.cullMode = CullMode::NONE;
-		defaultFillRasterizationState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
-        defaultFillRasterizationState.polygonMode = PolygonMode::Fill;
-		defaultFillRasterizationState.enableDepthClamp = false;
-		defaultFillRasterizationState.enableAntialiasedLine = false;
-		defaultFillRasterizationState.SampleCount = SampleCount::SAMPLES_1;
-		defaultFillRasterizationState.lineWidth = 1.f;
+		rasterizationState_fill.cullMode = CullMode::NONE;
+        rasterizationState_fill.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
+        rasterizationState_fill.polygonMode = PolygonMode::Fill;
+        rasterizationState_fill.enableDepthClamp = false;
+        rasterizationState_fill.enableAntialiasedLine = false;
+        rasterizationState_fill.SampleCount = SampleCount::SAMPLES_1;
+        rasterizationState_fill.lineWidth = 1.f;
 
-        wireframeRasterizationState.cullMode = CullMode::NONE;
-        wireframeRasterizationState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
-        wireframeRasterizationState.polygonMode = PolygonMode::Line;
-        wireframeRasterizationState.enableDepthClamp = false;
-        wireframeRasterizationState.enableAntialiasedLine = false;
-        wireframeRasterizationState.SampleCount = SampleCount::SAMPLES_1;
-        wireframeRasterizationState.lineWidth = 1.5f;
+        rasterizationState_wireframe.cullMode = CullMode::NONE;
+        rasterizationState_wireframe.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
+        rasterizationState_wireframe.polygonMode = PolygonMode::Line;
+        rasterizationState_wireframe.enableDepthClamp = false;
+        rasterizationState_wireframe.enableAntialiasedLine = false;
+        rasterizationState_wireframe.SampleCount = SampleCount::SAMPLES_1;
+        rasterizationState_wireframe.lineWidth = 1.5f;
 	}
 
     // Render Pass
     {
-        defaultOneColorWithDepthRenderPassInfo.numColorAttachments = 1;
-        defaultOneColorWithDepthRenderPassInfo.colorAttachmentFormats[0] = DataFormat::B8G8R8A8_UNORM;
-        defaultOneColorWithDepthRenderPassInfo.depthAttachmentFormat = DataFormat::D32_SFLOAT;
+        renderPassInfo_simpleMainPass.numColorAttachments = 1;
+        renderPassInfo_simpleMainPass.colorAttachmentFormats[0] = format_colorAttachment_main;
+        renderPassInfo_simpleMainPass.depthAttachmentFormat = format_depthAttachment_main;
+    }
 
+    // vertex input layout
+    {
+        VertexInputLayout::VertexBindInfo vert_bind_info;
+        vert_bind_info.binding = 0; // position buffer
+        vert_bind_info.stride = 12; // hardcoded stride, since we know cube mesh's attrib layout
+        vert_bind_info.inputRate = VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+
+        VertexInputLayout::VertexAttribInfo pos_attrib;
+        pos_attrib.binding = 0;
+        pos_attrib.format = VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+        pos_attrib.location = 0;
+        pos_attrib.offset = 0;
+
+        vertexInputLayout_skybox.vertexBindInfos.push_back(vert_bind_info);
+        vertexInputLayout_skybox.vertexAttribInfos.push_back(pos_attrib);
     }
 
     CORE_LOGI("[GpuResourceManager]: Initialized");
+
+    m_ShaderLibrary = CreateScope<ShaderLibrary>();
 }
 
 void GpuResourceManager::Shutdown()
 {
-    whiteImage.reset();
-    blackImage.reset();
-    checkboardImage.reset();
+    m_ShaderLibrary.reset();
 
-    linearSampler.reset();
-    nearestSampler.reset();
-    cubeMapSampler.reset();
+    image_white.reset();
+    image_black.reset();
+    image_checkboard.reset();
+
+    sampler_linear.reset();
+    sampler_nearst.reset();
+    sampler_cube.reset();
 }
 
 

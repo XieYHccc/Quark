@@ -316,32 +316,43 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info = {};
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_create_info.pNext = nullptr;
-    std::vector<VkVertexInputBindingDescription> bindings(desc.vertexBindInfos.size());
-    std::vector<VkVertexInputAttributeDescription> attributes(desc.vertexAttribInfos.size());
-    if (!desc.vertexAttribInfos.empty() && !desc.vertexBindInfos.empty()) {
+
+    const graphic::VertexInputLayout& vertexInputLayout = desc.vertexInputLayout;
+    std::vector<VkVertexInputBindingDescription> bindings(vertexInputLayout.vertexBindInfos.size());
+    std::vector<VkVertexInputAttributeDescription> attributes(vertexInputLayout.vertexAttribInfos.size());
+    if (vertexInputLayout.isValid()) {
         for (size_t i = 0; i < bindings.size(); i++)
         {
-            bindings[i].binding = desc.vertexBindInfos[i].binding;
-            bindings[i].stride = desc.vertexBindInfos[i].stride;
+            bindings[i].binding = vertexInputLayout.vertexBindInfos[i].binding;
+            bindings[i].stride = vertexInputLayout.vertexBindInfos[i].stride;
 
-            if (desc.vertexBindInfos[i].inputRate == VertexBindInfo::INPUT_RATE_VERTEX)
+            if (vertexInputLayout.vertexBindInfos[i].inputRate == VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX)
                 bindings[i].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-            if (desc.vertexBindInfos[i].inputRate == VertexBindInfo::INPUT_RATE_INSTANCE)
+            if (vertexInputLayout.vertexBindInfos[i].inputRate == VertexInputLayout::VertexBindInfo::INPUT_RATE_INSTANCE)
                 bindings[i].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
         }
 
         for (size_t i = 0; i < attributes.size(); i++)
         {
-            attributes[i].binding = desc.vertexAttribInfos[i].binding;
-            attributes[i].location = desc.vertexAttribInfos[i].location;
-            attributes[i].offset = desc.vertexAttribInfos[i].offset;
-            
-            if(desc.vertexAttribInfos[i].format == VertexAttribInfo::ATTRIB_FORMAT_VEC2)
+            attributes[i].binding = vertexInputLayout.vertexAttribInfos[i].binding;
+            attributes[i].location = vertexInputLayout.vertexAttribInfos[i].location;
+            attributes[i].offset = vertexInputLayout.vertexAttribInfos[i].offset;
+           
+            switch (vertexInputLayout.vertexAttribInfos[i].format)
+            {
+            case VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2:
                 attributes[i].format = VK_FORMAT_R32G32_SFLOAT;
-            if (desc.vertexAttribInfos[i].format == VertexAttribInfo::ATTRIB_FORMAT_VEC3)
+				break;
+            case VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3:
                 attributes[i].format = VK_FORMAT_R32G32B32_SFLOAT;
-            if (desc.vertexAttribInfos[i].format == VertexAttribInfo::ATTRIB_FORMAT_VEC4)
+                break;
+            case VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4:
                 attributes[i].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+                break;
+            default:
+                CORE_ASSERT(0)
+                break;
+            }
         }
         
         vertex_input_create_info.vertexBindingDescriptionCount = (uint32_t)bindings.size();

@@ -51,7 +51,8 @@ void SceneRenderer::UpdateRenderObjects()
             new_renderObject.firstIndex = submesh.startIndex;
             new_renderObject.indexCount = submesh.count;
             new_renderObject.indexBuffer = mesh->GetIndexBuffer();
-            new_renderObject.vertexBuffer = mesh->GetVertexBuffer();
+            new_renderObject.attributeBuffer = mesh->GetAttributeBuffer();
+            new_renderObject.positionBuffer = mesh->GetPositionBuffer();
             new_renderObject.material = mesh_renderer_cmpt->GetMaterial(i);
             new_renderObject.transform = transform_cmpt->GetWorldMatrix();
             new_renderObject.pipeLine = mesh_renderer_cmpt->GetGraphicsPipeLine(i);
@@ -76,26 +77,11 @@ void SceneRenderer::CreateSkyBoxPipeLine()
     pipe_desc.fragShader = skybox_frag_shader;
     pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
     pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-    pipe_desc.renderPassInfo = GpuResourceManager::Get().defaultOneColorWithDepthRenderPassInfo;
+    pipe_desc.rasterState = GpuResourceManager::Get().rasterizationState_fill;
+    pipe_desc.depthStencilState = GpuResourceManager::Get().depthStencilState_disabled;
     pipe_desc.depthStencilState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
-    pipe_desc.rasterState.cullMode = CullMode::NONE;
-    pipe_desc.rasterState.polygonMode = PolygonMode::Fill;
-    pipe_desc.rasterState.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
-    pipe_desc.depthStencilState.enableDepthTest = false;
-    pipe_desc.depthStencilState.enableDepthWrite = false;
-
-    VertexBindInfo vert_bind_info;
-    vert_bind_info.binding = 0;
-    vert_bind_info.stride = 32; // Hardcoded stride, since we know cube mesh's attrib layout
-    vert_bind_info.inputRate = VertexBindInfo::INPUT_RATE_VERTEX;
-    pipe_desc.vertexBindInfos.push_back(vert_bind_info);
-
-    VertexAttribInfo pos_attrib;
-    pos_attrib.binding = 0;
-    pos_attrib.format = VertexAttribInfo::ATTRIB_FORMAT_VEC3;
-    pos_attrib.location = 0;
-    pos_attrib.offset = 0;
-    pipe_desc.vertexAttribInfos.push_back(pos_attrib);
+    pipe_desc.renderPassInfo = GpuResourceManager::Get().renderPassInfo_simpleMainPass;
+    pipe_desc.vertexInputLayout = GpuResourceManager::Get().vertexInputLayout_skybox;
 
     m_SkyboxPipeLine = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 }
@@ -152,7 +138,7 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
     cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
     cmd_list->BindImage(0, 1, *m_CubeMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd_list->BindSampler(0, 1, *m_CubeMap->sampler);
-    cmd_list->BindVertexBuffer(0, *m_CubeMesh->GetVertexBuffer(), 0);
+    cmd_list->BindVertexBuffer(0, *m_CubeMesh->GetPositionBuffer(), 0);
     cmd_list->BindIndexBuffer(*m_CubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
     cmd_list->DrawIndexed(m_CubeMesh->indices.size(), 1, 0, 0, 0);
 }
@@ -235,7 +221,8 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
         // Bind index buffer
         if (obj.indexBuffer != lastIndexBuffer) 
         {
-            cmd_list->BindVertexBuffer(0, *obj.vertexBuffer, 0);
+            cmd_list->BindVertexBuffer(0, *obj.positionBuffer, 0);
+            cmd_list->BindVertexBuffer(1, *obj.attributeBuffer, 0);
             cmd_list->BindIndexBuffer(*obj.indexBuffer, 0, IndexBufferFormat::UINT32);
             lastIndexBuffer = obj.indexBuffer;
         }
@@ -243,7 +230,7 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
         // Push model constant
         ModelPushConstants push_constant;
         push_constant.worldMatrix = obj.transform;
-        push_constant.vertexBufferGpuAddress = obj.vertexBuffer->GetGpuAddress();
+        push_constant.vertexBufferGpuAddress = obj.attributeBuffer->GetGpuAddress();
         cmd_list->PushConstant(&push_constant, 0, 64);  // only push model matrix
 
         cmd_list->DrawIndexed(obj.indexCount, 1, obj.firstIndex, 0, 0);

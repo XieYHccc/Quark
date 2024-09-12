@@ -119,7 +119,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
         {
             Ref<Texture> newTexture = CreateRef<Texture>();
             newTexture->image = graphicDevice->CreateImage(desc, initData.data());
-            newTexture->sampler = isCubemap? GpuResourceManager::Get().cubeMapSampler : GpuResourceManager::Get().linearSampler;
+            newTexture->sampler = isCubemap? GpuResourceManager::Get().sampler_cube : GpuResourceManager::Get().sampler_linear;
             ktxTranscoder.clear();
             return newTexture;
         }
@@ -161,7 +161,7 @@ Ref<Texture> TextureImporter::ImportStb(const std::string& file_path)
 
     Ref<Texture> newTexture = CreateRef<Texture>();
     newTexture->image = Application::Get().GetGraphicDevice()->CreateImage(desc, &init_data);
-    newTexture->sampler = GpuResourceManager::Get().linearSampler;
+    newTexture->sampler = GpuResourceManager::Get().sampler_linear;
 
     CORE_LOGI("[TextureImporter] Import texture asset: {0}", file_path)
 
@@ -234,7 +234,7 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
 
     Ref<Texture> newTexture = CreateRef<Texture>();
     newTexture->image = Application::Get().GetGraphicDevice()->CreateImage(desc, initData.data());
-    newTexture->sampler = isCubeMap ? GpuResourceManager::Get().cubeMapSampler : GpuResourceManager::Get().linearSampler;
+    newTexture->sampler = isCubeMap ? GpuResourceManager::Get().sampler_cube : GpuResourceManager::Get().sampler_linear;
 
     return newTexture;
 }

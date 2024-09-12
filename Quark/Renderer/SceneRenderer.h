@@ -50,7 +50,8 @@ struct RenderObject
     uint32_t indexCount = 0;
     uint32_t firstIndex = 0;
     Ref<graphic::Buffer> indexBuffer;
-    Ref<graphic::Buffer> vertexBuffer;
+    Ref<graphic::Buffer> attributeBuffer;
+    Ref<graphic::Buffer> positionBuffer;
     Ref<graphic::PipeLine> pipeLine;
     Ref<Material> material;
     math::Aabb aabb = {};

@@ -3,27 +3,48 @@
 #extension GL_GOOGLE_include_directive : require
 #include "include/input_structures.glsl"
 
-layout (location = 0) in vec3 inNormal;
-layout (location = 1) in vec3 inColor;
-layout (location = 2) in vec2 inUV;
+#ifdef HAVE_UV
+layout(location = 1) in vec2 vUV;
+#endif
+
+#ifdef HAVE_NORMAL
+layout(location = 2) in vec3 vNormal;
+#endif
+
+#ifdef HAVE_VERTEX_COLOR
+layout(location = 3) in vec4 vColor;
+#endif
 
 layout (location = 0) out vec4 outFragColor;
 
-
-//push constants block
-layout( push_constant ) uniform PushConstants
+layout(push_constant, std430) uniform PushConstants
 {
-	layout(offset = 72) float metalicFactor;
-	layout(offset = 76) float roughnessFactor;
-	layout(offset = 80) vec4 colorFactors;
+	layout(offset = 64) vec4 baseColor;
+	layout(offset = 80) float roughness;
+	layout(offset = 84) float metallic;
 } materialData;
 
 void main() 
 {
-	float lightValue = max(dot(inNormal, sceneData.sunlightDirection.xyz), 0.1f);
+	vec3 baseColor = vec3(1.0, 1.0, 1.0);
+	
+#ifdef HAVE_UV
+	baseColor *= (materialData.baseColor.xyz * texture(colorTex, vUV).xyz);
+#endif
 
-	vec3 color = inColor * materialData.colorFactors.xyz * texture(colorTex,inUV).xyz;
-	vec3 ambient = color *  sceneData.ambientColor.xyz;
+#ifdef HAVE_VERTEX_COLOR
+    baseColor *= vColor;
+#endif
 
-	outFragColor = vec4(color * lightValue *  sceneData.sunlightColor.w + ambient ,1.0f);
+#ifdef HAVE_NORMAL
+	vec3 normal = normalize(vNormal);
+#else
+	const vec3 normal = vec3(0.0, 1.0, 0.0);
+#endif
+
+	float lightValue = max(dot(normal, sceneData.sunlightDirection.xyz), 0.1f);
+
+	vec3 ambient = baseColor * sceneData.ambientColor.xyz;
+
+	outFragColor = vec4(baseColor * lightValue * sceneData.sunlightColor.w + ambient ,1.0f);
 }

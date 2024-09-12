@@ -74,61 +74,64 @@ Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 
 void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 {
-	m_CachedVertexAttribs.clear();
-	m_CachedVertexBindInfos.clear();
-
-	size_t offset = 0;
+	m_CachedVertexInputLayout = {};
 
 	// TODO: Add support for dynamic mesh
 	// Position
 	if (meshAttribsMask & MESH_ATTRIBUTE_POSITION_BIT)
 	{
-		graphic::VertexAttribInfo& attrib = m_CachedVertexAttribs.emplace_back();
+		graphic::VertexInputLayout::VertexAttribInfo& attrib = m_CachedVertexInputLayout.vertexAttribInfos.emplace_back();
 		attrib.location = 0;
 		attrib.binding = 0;
-		attrib.format = graphic::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
-		attrib.offset = offset;
-		offset += sizeof(decltype(m_Mesh->positions)::value_type);
+		attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+		attrib.offset = 0;
 	}
+
+	size_t offset = 0;
 
 	// UV
 	if (meshAttribsMask & MESH_ATTRIBUTE_UV_BIT)
 	{
-		graphic::VertexAttribInfo& attrib = m_CachedVertexAttribs.emplace_back();
+		graphic::VertexInputLayout::VertexAttribInfo& attrib = m_CachedVertexInputLayout.vertexAttribInfos.emplace_back();
 		attrib.location = 1;
-		attrib.binding = 0;
-		attrib.format = graphic::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
+		attrib.binding = 1;
+		attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
 		attrib.offset = offset;
-		offset += sizeof(decltype(m_Mesh->uvs)::value_type);
+		offset += sizeof(decltype(m_Mesh->vertex_uvs)::value_type);
 	}
 
 	// Normal
 	if (meshAttribsMask & MESH_ATTRIBUTE_NORMAL_BIT)
 	{
-		graphic::VertexAttribInfo& attrib = m_CachedVertexAttribs.emplace_back();
+		graphic::VertexInputLayout::VertexAttribInfo& attrib = m_CachedVertexInputLayout.vertexAttribInfos.emplace_back();
 		attrib.location = 2;
-		attrib.binding = 0;
-		attrib.format = graphic::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+		attrib.binding = 1;
+		attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
 		attrib.offset = offset;
-		offset += sizeof(decltype(m_Mesh->normals)::value_type);
+		offset += sizeof(decltype(m_Mesh->vertex_normals)::value_type);
 	}
 
 	// Vertex Color
 	if (meshAttribsMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
 	{
-		graphic::VertexAttribInfo& attrib = m_CachedVertexAttribs.emplace_back();
+		graphic::VertexInputLayout::VertexAttribInfo& attrib = m_CachedVertexInputLayout.vertexAttribInfos.emplace_back();
 		attrib.location = 3;
-		attrib.binding = 0;
-		attrib.format = graphic::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
+		attrib.binding = 1;
+		attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
 		attrib.offset = offset;
-		offset += sizeof(decltype(m_Mesh->colors)::value_type);
+		offset += sizeof(decltype(m_Mesh->vertex_colors)::value_type);
 	}
 
-	graphic::VertexBindInfo bindInfo = {};
+	graphic::VertexInputLayout::VertexBindInfo bindInfo = {};
 	bindInfo.binding = 0;
+	bindInfo.stride = sizeof(decltype(m_Mesh->vertex_positions)::value_type);
+	bindInfo.inputRate = graphic::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+	m_CachedVertexInputLayout.vertexBindInfos.push_back(bindInfo);
+
+	bindInfo.binding = 1;
 	bindInfo.stride = offset;
-	bindInfo.inputRate = graphic::VertexBindInfo::INPUT_RATE_VERTEX;
-	m_CachedVertexBindInfos.push_back(bindInfo);
+	bindInfo.inputRate = graphic::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+	m_CachedVertexInputLayout.vertexBindInfos.push_back(bindInfo);
 }
 
 void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
@@ -137,15 +140,15 @@ void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 
 	// TODO: Remove hardcoded states after restruct Material class
 	graphic::PipelineDepthStencilState dss = m_Materials[index]->alphaMode == AlphaMode::OPAQUE ?
-		GpuResourceManager::Get().depthTestWriteState : GpuResourceManager::Get().depthTestState;
+		GpuResourceManager::Get().depthStencilState_depthWrite: GpuResourceManager::Get().depthStencilState_depthTestOnly;
 
 	graphic::PipelineColorBlendState cbs = m_Materials[index]->alphaMode == AlphaMode::OPAQUE ?
 		graphic::PipelineColorBlendState::create_disabled(1) : graphic::PipelineColorBlendState::create_blend(1);
 
 	m_GraphicsPipeLines[index] = programVariant->GetOrCreatePipeLine(dss, cbs,
-		GpuResourceManager::Get().defaultFillRasterizationState,
-		GpuResourceManager::Get().defaultOneColorWithDepthRenderPassInfo,
-		m_CachedVertexAttribs, m_CachedVertexBindInfos);
+		GpuResourceManager::Get().rasterizationState_fill,
+		GpuResourceManager::Get().renderPassInfo_simpleMainPass, //TODO: Remove hardcoded render pass when we have render graph system
+		m_CachedVertexInputLayout);
 }
 
 }

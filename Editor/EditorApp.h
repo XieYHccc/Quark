@@ -28,26 +28,16 @@ public:
     void SaveSceneAs();
 
     void CreateColorDepthAttachments();
-    void CreatePipeline();
-    void SetUpRenderPass();
+    void CreateRenderPasses();
 
 public:
-    // Ref<quark::graphic::Shader> vert_shader;
-    // Ref<quark::graphic::Shader> frag_shader;
-    //Ref<quark::graphic::Shader> skybox_vert_shader;
-    //Ref<quark::graphic::Shader> skybox_frag_shader;
-    //
-    //Ref<quark::graphic::PipeLine> graphic_pipeline;
-    //Ref<quark::graphic::PipeLine> skybox_pipeline;
-
     quark::graphic::RenderPassInfo forward_pass_info; // First pass
     quark::graphic::RenderPassInfo ui_pass_info;   // Second pass
 
+    Ref<quark::graphic::Image> depth_attachment;
+    Ref<quark::graphic::Image> color_attachment;
+
     Ref<quark::Texture> m_CubeMapTexture;
-    Ref<quark::graphic::Image> depth_image;
-    Ref<quark::graphic::Image> color_image;
-    graphic::DataFormat depth_format = quark::graphic::DataFormat::D32_SFLOAT;
-    graphic::DataFormat color_format; // Same with swapchain format
     
     Ref<Scene> m_Scene;
     Scope<SceneRenderer> m_SceneRenderer;
@@ -55,8 +45,9 @@ public:
 
     glm::vec2 m_ViewportSize;
     glm::vec2 m_ViewportBounds[2];
-    ImTextureID m_ColorAttachmentId;
-    bool m_ViewportFocused, m_ViewportHovered;
+
+    bool m_ViewportFocused;
+    bool m_ViewportHovered;
     int m_GizmoType = -1;
 
     // UI window
@@ -65,7 +56,7 @@ public:
     ContentBrowserPanel m_ContentBrowserPanel;
     
     // Debug
-    float cmdListRecordTime = 0;
+    float m_CmdListRecordTime = 0;
 };
 
 }

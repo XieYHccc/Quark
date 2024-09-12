@@ -1,5 +1,5 @@
 #include "Quark/qkpch.h"
-#include "Quark/Renderer/ShaderManager.h"
+#include "Quark/Renderer/ShaderLibrary.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Asset/Mesh.h"
@@ -48,12 +48,12 @@ ShaderProgramVariant* ShaderProgram::GetOrCreateVariant(const VariantSignatureKe
 	return nullptr;
 }
 
-ShaderManager::ShaderManager()
+ShaderLibrary::ShaderLibrary()
 {
-	CORE_LOGI("[ShaderManager]: Initialized");
+	CORE_LOGI("[ShaderLibrary]: Initialized");
 }
 
-ShaderProgram* ShaderManager::GetOrCreateGraphicsProgram(const std::string& vert_path, const std::string& frag_path)
+ShaderProgram* ShaderLibrary::GetOrCreateGraphicsProgram(const std::string& vert_path, const std::string& frag_path)
 {
 	util::Hasher h;
 	h.string(vert_path);
@@ -79,12 +79,12 @@ ShaderProgram* ShaderManager::GetOrCreateGraphicsProgram(const std::string& vert
 
 }
 
-ShaderProgram* ShaderManager::GetOrCreateComputeProgram(const std::string& comp_path)
+ShaderProgram* ShaderLibrary::GetOrCreateComputeProgram(const std::string& comp_path)
 {
 	return nullptr;
 }
 
-ShaderTemplate* ShaderManager::GetOrCreateShaderTemplate(const std::string& path, graphic::ShaderStage stage)
+ShaderTemplate* ShaderLibrary::GetOrCreateShaderTemplate(const std::string& path, graphic::ShaderStage stage)
 {
 	util::Hasher h;
 	h.string(path);
@@ -107,8 +107,7 @@ Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::
 																 const graphic::PipelineColorBlendState& cb, 
 																 const graphic::RasterizationState& rs, 
 																 const graphic::RenderPassInfo& compatablerp,
-																 const std::vector<graphic::VertexAttribInfo>& attribs,
-																 const std::vector<graphic::VertexBindInfo>& vertBindInfo)
+																 const graphic::VertexInputLayout& input)
 {
 	util::Hasher h;
 
@@ -138,14 +137,14 @@ Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::
 		h.u32(util::ecast(compatablerp.colorAttachmentFormats[i]));
 	}
 
-	for (const auto& attrib : attribs) 
+	for (const auto& attrib : input.vertexAttribInfos) 
 	{
 		h.u32(util::ecast(attrib.format));
 		h.u32(attrib.offset);
 		h.u32(attrib.binding);
 	}
 
-	for (const auto& b : vertBindInfo)
+	for (const auto& b : input.vertexBindInfos)
 	{
 		h.u32(b.binding);
 		h.u32(b.stride);
@@ -169,8 +168,7 @@ Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::
 		desc.rasterState = rs;
 		desc.topologyType = graphic::TopologyType::TRANGLE_LIST;
 		desc.renderPassInfo = compatablerp;
-		desc.vertexAttribInfos = attribs;
-		desc.vertexBindInfos = vertBindInfo;
+		desc.vertexInputLayout = input;
 
 		Ref<graphic::PipeLine> newPipeline = Application::Get().GetGraphicDevice()->CreateGraphicPipeLine(desc);
 		m_PipeLines[hash] = newPipeline;

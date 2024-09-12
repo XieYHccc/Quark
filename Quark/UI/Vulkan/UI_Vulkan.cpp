@@ -1,13 +1,16 @@
 #include "Quark/qkpch.h"
 #include "Quark/UI/Vulkan/UI_Vulkan.h"
+
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
 #define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 #include <backends/imgui_impl_vulkan.h>
+
 #include "Quark/Core/Window.h"
-#include "Quark/Graphic/Vulkan/CommandList_Vulkan.h"
+#include "Quark/Core/Util/Hash.h"
 #include "Quark/Events/EventManager.h"
+#include "Quark/Graphic/Vulkan/CommandList_Vulkan.h"
 
 namespace quark {
 
@@ -15,7 +18,7 @@ void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
 {
     CORE_DEBUG_ASSERT(device)
 
-    device_ = static_cast<graphic::Device_Vulkan*>(device);
+    m_device = static_cast<graphic::Device_Vulkan*>(device);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -92,7 +95,7 @@ void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
         pool_info.maxSets = 100;
         pool_info.poolSizeCount = (uint32_t)std::size(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;
-        VK_CHECK(vkCreateDescriptorPool(device_->vkDevice, &pool_info, nullptr, &descriptorPool_))
+        VK_CHECK(vkCreateDescriptorPool(m_device->vkDevice, &pool_info, nullptr, &m_descriptorPool))
     }
 
     // Vulkan backend
@@ -100,20 +103,22 @@ void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
         ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)Window::Instance()->GetNativeWindow(), true);
 
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = device_->vkContext->instance;
-        init_info.PhysicalDevice = device_->vkContext->physicalDevice;
-        init_info.Device = device_->vkDevice;
-        init_info.Queue = device_->vkContext->graphicQueue;
-        init_info.QueueFamily = device_->vkContext->graphicQueueIndex;
-        init_info.DescriptorPool = descriptorPool_;
+        init_info.Instance = m_device->vkContext->instance;
+        init_info.PhysicalDevice = m_device->vkContext->physicalDevice;
+        init_info.Device = m_device->vkDevice;
+        init_info.Queue = m_device->vkContext->graphicQueue;
+        init_info.QueueFamily = m_device->vkContext->graphicQueueIndex;
+        init_info.DescriptorPool = m_descriptorPool;
         init_info.MinImageCount = 3;
         init_info.ImageCount = 3;
         init_info.UseDynamicRendering = true;
         init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT; // TODO: MSAA
         init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        colorFormat_ = graphic::ConvertDataFormat(device_->GetSwapChainImageFormat());
-        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorFormat_;
+        
+        // This format pointer must be cached due to some weird state tracking of imgui
+        m_colorFormat = graphic::ConvertDataFormat(m_device->GetSwapChainImageFormat());
+        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_colorFormat;
         ImGui_ImplVulkan_Init(&init_info);
     }
 
@@ -122,11 +127,11 @@ void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
 
 void UI_Vulkan::Finalize()
 {
-    vkDeviceWaitIdle(device_->vkDevice);
+    vkDeviceWaitIdle(m_device->vkDevice);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-    vkDestroyDescriptorPool(device_->vkDevice, descriptorPool_, nullptr);
+    vkDestroyDescriptorPool(m_device->vkDevice, m_descriptorPool, nullptr);
     
 }
 
@@ -167,20 +172,52 @@ void UI_Vulkan::Render(graphic::CommandList* cmd)
 	}
 }
 
-ImTextureID UI_Vulkan::CreateTextureId(const Ref<Texture>& texture)
+ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<Texture>& texture)
 {
-    VkSampler samp = graphic::ToInternal(texture->sampler.get()).GetHandle();
-    VkImageView view = graphic::ToInternal(texture->image.get()).GetView();
+    util::Hasher h;
+    h.pointer(texture->image.get());
+    h.pointer(texture->sampler.get());
+    util::Hash hash = h.get();
 
-    return (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    auto it = m_textureIdMap.find(hash);
+    if (it != m_textureIdMap.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        VkSampler samp = graphic::ToInternal(texture->sampler.get()).GetHandle();
+        VkImageView view = graphic::ToInternal(texture->image.get()).GetView();
+
+        ImTextureID newId = (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        m_textureIdMap[hash] = newId;
+
+        return newId;
+    }
 }
 
 
-ImTextureID UI_Vulkan::CreateTextureId(const graphic::Image& image, const graphic::Sampler& sampler)
+ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler)
 {
-    VkSampler samp = graphic::ToInternal(&sampler).GetHandle();
-    VkImageView view = graphic::ToInternal(&image).GetView();
+    util::Hasher h;
+    h.pointer(image.get());
+    h.pointer(sampler.get());
+    util::Hash hash = h.get();
 
-    return (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    auto it = m_textureIdMap.find(hash);
+    if (it != m_textureIdMap.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        VkSampler samp = graphic::ToInternal(sampler.get()).GetHandle();
+        VkImageView view = graphic::ToInternal(image.get()).GetView();
+
+        ImTextureID newId = (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        m_textureIdMap[hash] = newId;
+
+        return newId;
+    }
 }
 }

@@ -62,34 +62,6 @@ enum class BlendFactor {
     MAX_ENUM
 };
 
-struct VertexBindInfo
-{
-	enum InputRate
-	{
-		INPUT_RATE_VERTEX,
-		INPUT_RATE_INSTANCE
-	};
-
-	u32 binding;
-	u32 stride;
-	InputRate inputRate;
-};
-
-struct VertexAttribInfo
-{
-	enum AttribFormat
-	{
-		ATTRIB_FORMAT_VEC2,
-		ATTRIB_FORMAT_VEC3,
-		ATTRIB_FORMAT_VEC4,
-	};
-
-	u32 binding;
-	u32 location;
-	u32 offset;
-	AttribFormat format;
-};
-
 struct PipelineColorBlendState {
     // Currently logic op is not in use.
     bool enable_logic_op = false;
@@ -155,16 +127,50 @@ struct PipelineDepthStencilState {
     bool enableStencil = false;
 };
 
+struct VertexInputLayout
+{
+    struct VertexBindInfo
+    {
+        enum InputRate
+        {
+            INPUT_RATE_VERTEX,
+            INPUT_RATE_INSTANCE
+        };
+
+        u32 binding;
+        u32 stride;
+        InputRate inputRate;
+    };
+
+    struct VertexAttribInfo
+    {
+        enum AttribFormat
+        {
+            ATTRIB_FORMAT_VEC2,
+            ATTRIB_FORMAT_VEC3,
+            ATTRIB_FORMAT_VEC4,
+        };
+
+        u32 binding;
+        u32 location;
+        u32 offset;
+        AttribFormat format;
+    };
+
+    std::vector<VertexBindInfo> vertexBindInfos;
+    std::vector<VertexAttribInfo> vertexAttribInfos;
+
+    bool isValid() const { return !vertexAttribInfos.empty() && !vertexBindInfos.empty(); }
+};
+
 struct GraphicPipeLineDesc {
     Ref<Shader> vertShader;
     Ref<Shader> fragShader;
     PipelineColorBlendState blendState = {};
     RasterizationState rasterState = {};
     PipelineDepthStencilState depthStencilState = {};
-    std::vector<VertexBindInfo> vertexBindInfos;
-    std::vector<VertexAttribInfo> vertexAttribInfos;
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
-
+    VertexInputLayout vertexInputLayout;
     RenderPassInfo renderPassInfo;  // Compatable Renderpass info. Only the Format information are actually needed.
 
     // For dynamic rendering (Deprecated)
@@ -173,7 +179,8 @@ struct GraphicPipeLineDesc {
 };
 
 
-enum class PipeLineBindingPoint {
+enum class PipeLineBindingPoint 
+{
     GRAPHIC,
     COMPUTE
 };

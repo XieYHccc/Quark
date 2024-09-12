@@ -2,7 +2,7 @@
 #include "Quark/Ecs/Component.h"
 #include "Quark/Asset/Mesh.h"
 #include "Quark/Asset/Material.h"
-#include "Quark/Renderer/ShaderManager.h"
+#include "Quark/Renderer/ShaderLibrary.h"
 
 namespace quark {
 
@@ -22,7 +22,6 @@ private:
 	// Calls from SceneRenderer
 	Ref<graphic::PipeLine> GetGraphicsPipeLine(uint32_t index);
 
-private:
 	void UpdateCachedVertexAttribs(uint32_t meshAttribsMask);
 	void UpdateGraphicsPipeLine(uint32_t index);
 
@@ -36,10 +35,9 @@ private:
 	// A mesh could be processed through multiple render pass and multiple pipelines
 	std::vector<Ref<graphic::PipeLine>> m_GraphicsPipeLines;
 
-	VariantSignatureKey m_CachedProgramVatriantKey = {};
-	
-	std::vector<graphic::VertexAttribInfo> m_CachedVertexAttribs;
-	std::vector<graphic::VertexBindInfo> m_CachedVertexBindInfos;
+	VariantSignatureKey m_CachedProgramVatriantKey;
+
+	graphic::VertexInputLayout m_CachedVertexInputLayout;
 
 	friend class SceneRenderer;
 };

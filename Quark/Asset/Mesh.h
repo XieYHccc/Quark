@@ -43,50 +43,60 @@ enum MeshAttributeFlagBits
     MESH_ATTRIBUTE_VERTEX_COLOR_BIT = 1u << util::ecast(MeshAttribute::VERTEX_COLOR)
 };
 
-struct SubMeshDescriptor {
-    uint32_t startIndex = 0;
-    uint32_t count = 0;
-    math::Aabb aabb = {};
-};
-
 class Mesh : public Asset {
 public:
-    // If isDynamic is true, These data will be freed after uploading to GPU
-    // These attributes' lacation in shaders are fixed in Quark
-    std::vector<uint32_t> indices;
-    std::vector<glm::vec3> positions;
-    std::vector<glm::vec2> uvs;
-    std::vector<glm::vec3> normals;
-    std::vector<glm::vec4> colors;
-
+    struct SubMeshDescriptor 
+    {
+        uint32_t startVertex = 0;
+        uint32_t startIndex = 0; // This is not relative to the startVertex
+        uint32_t count = 0;
+        math::Aabb aabb = {};
+    };
     std::vector<SubMeshDescriptor> subMeshes;
-    //std::vector<Vertex> vertices;
+
+    std::vector<uint32_t> indices;
+    std::vector<glm::vec3> vertex_positions;
+    std::vector<glm::vec2> vertex_uvs;
+    std::vector<glm::vec3> vertex_normals;
+    std::vector<glm::vec4> vertex_colors;
 
     math::Aabb aabb = {};
-
-    bool isDynamic = false;
 
 public:
     Mesh() = default;
-    //Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<SubMeshDescriptor>& subMeshes, bool isDynamic = false);
 
     uint32_t GetMeshAttributeMask() const;
+    size_t GetVertexCount() const { return vertex_positions.size(); }
+    size_t GetPositionBufferStride() const;
+    size_t GetAttributeBufferStride() const;
 
-    void UpdateGpuBuffers(); // Carefully call this unless you know what you are doing
-    void ReCalculateAabb();
-    void ReCalculateNormals();
-    void ReCalculateAabbs();
+    void SetDynamic(bool isDynamic) { this->m_IsDynamic = isDynamic; }
+    bool IsDynamic() const { return m_IsDynamic; }
+
+    void CalculateAabbs();
+    void CalculateNormals();
 
 private:
-    Ref<graphic::Buffer> GetVertexBuffer() const { return m_VertexBuffer; }
-    Ref<graphic::Buffer> GetIndexBuffer() const { return m_IndexBuffer; }
+    // Called from renderer
+    Ref<graphic::Buffer> GetAttributeBuffer();
+    Ref<graphic::Buffer> GetPositionBuffer();
+    Ref<graphic::Buffer> GetIndexBuffer();
 
+    void UpdateGpuBuffers();
+    bool IsVertexDataArraysValid() const;
+
+private:
     // Gpu resources
-    Ref<graphic::Buffer> m_VertexBuffer;
+    Ref<graphic::Buffer> m_PositionBuffer;
+    Ref<graphic::Buffer> m_AttributeBuffer;
     Ref<graphic::Buffer> m_IndexBuffer;
-    
-    // Overlapped vertex data. will be freed after uploading to GPU if this is a static mesh
-    std::vector<uint8_t> m_OverlappedVertexData;
+
+    // Overlapped vertex data
+    std::vector<uint8_t> m_CachedAttributeData;
+
+    uint32_t m_CachedAttributesMask = 0;
+
+    bool m_IsDynamic = false;
 
     friend class SceneRenderer;
 

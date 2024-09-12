@@ -17,15 +17,17 @@ public:
     void EndFrame() override;
     void Render(graphic::CommandList* cmd) override;
 
-    ImTextureID CreateTextureId(const Ref<Texture>& texture) override;
-    ImTextureID CreateTextureId(const graphic::Image& image, const graphic::Sampler& sampler) override;
+    ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) override;
+    ImTextureID GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler) override;
+
 private:
+    graphic::Device_Vulkan* m_device;
+
+    VkDescriptorPool m_descriptorPool;
+    VkFormat m_colorFormat;
+
+    std::unordered_map<uint64_t, ImTextureID> m_textureIdMap;
     
-    graphic::Device_Vulkan* device_;
-    VkDescriptorPool descriptorPool_;
-    VkFormat colorFormat_;
-    // VkPipelineLayout pipelineLayout_;
-    // VkPipeline pipeline_;
 
 };
 

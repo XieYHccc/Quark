@@ -31,6 +31,7 @@ public:
 	AssetID SetAssetID(AssetID id) { return m_AssetID = id; }
 	
 	void SetName(const std::string& name) { m_Name = name; }
+	std::string GetName() const { return m_Name; }
 
 	bool operator==(const Asset& other) const
 	{

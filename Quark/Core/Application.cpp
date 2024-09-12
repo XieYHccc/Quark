@@ -10,7 +10,7 @@
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Renderer/GpuResourceManager.h"
-#include "Quark/Renderer/ShaderManager.h"
+#include "Quark/Renderer/ShaderLibrary.h"
 
 #ifdef USE_VULKAN_DRIVER
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
@@ -31,7 +31,6 @@ Application::Application(const AppInitSpecs& specs)
 
     Window::Create();
     Window::Instance()->Init(specs.title, specs.isFullScreen, specs.width, specs.height);
-
     CORE_ASSERT(NFD::Init() == NFD_OKAY)
 
     Input::CreateSingleton();
@@ -44,8 +43,6 @@ Application::Application(const AppInitSpecs& specs)
 
     GpuResourceManager::CreateSingleton();
     GpuResourceManager::Get().Init();
-
-    ShaderManager::CreateSingleton();
 
     AssetManager::CreateSingleton();
 
@@ -65,8 +62,6 @@ Application::~Application() {
     UI::FreeSingleton();
 
     AssetManager::FreeSingleton();
-
-    ShaderManager::FreeSingleton();
 
     GpuResourceManager::Get().Shutdown();
     GpuResourceManager::FreeSingleton();
