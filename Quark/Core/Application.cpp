@@ -4,7 +4,6 @@
 
 #include "Quark/Core/Application.h"
 #include "Quark/Core/KeyMouseCodes.h"
-#include "Quark/Core/Window.h"
 #include "Quark/Core/Input.h"
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"
@@ -16,11 +15,15 @@
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
 #endif
 
+#if defined(QK_PLATFORM_WINDOWS) || defined(QK_PLATFORM_MACOS)
+#include "Quark/Platform/MacOS/WindowGLFW.h"
+#endif
+
 namespace quark {
 
 Application* Application::s_Instance = nullptr;
 
-Application::Application(const AppInitSpecs& specs) 
+Application::Application(const ApplicationSpecification& specs) 
 {
     s_Instance = this;
     
@@ -29,9 +32,20 @@ Application::Application(const AppInitSpecs& specs)
 
     EventManager::CreateSingleton();
 
-    Window::Create();
-    Window::Instance()->Init(specs.title, specs.isFullScreen, specs.width, specs.height);
-    CORE_ASSERT(NFD::Init() == NFD_OKAY)
+    // Create Window
+    {
+        WindowSpecification windowSpec;
+        windowSpec.width = specs.width;
+        windowSpec.height = specs.height;
+        windowSpec.title = specs.title;
+        windowSpec.is_fullscreen = specs.isFullScreen;
+
+#if defined(QK_PLATFORM_WINDOWS) || defined(QK_PLATFORM_MACOS)
+        m_Window = CreateScope<WindowGLFW>(windowSpec);
+        m_Window->Init();
+#endif
+        NFD::Init();
+    }
 
     Input::CreateSingleton();
     Input::Get()->Init();
@@ -74,8 +88,11 @@ Application::~Application() {
     Input::FreeSingleton();
 
     // Destroy window
-    Window::Instance()->Finalize();
-    Window::Destroy();
+    m_Window->ShutDown();
+    m_Window.reset();
+
+    //Application::Get().GetWindow()->Finalize();
+    //Window::Destroy();
 
     EventManager::FreeSingleton();
 

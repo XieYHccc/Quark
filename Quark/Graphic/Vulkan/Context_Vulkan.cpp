@@ -1,7 +1,9 @@
 #include "Quark/qkpch.h"
 #include "Quark/Graphic/Vulkan/Context_Vulkan.h"
+
 #include <GLFW/glfw3.h>
-#include "Quark/Core/Window.h"
+
+#include "Quark/Core/Application.h"
 
 namespace quark::graphic {
 
@@ -166,7 +168,7 @@ void VulkanContext::CreateDebugMessenger()
 void VulkanContext::CreateSurface()
 {
     // surface的具体创建过程是要区分平台的，这里直接用GLFW封装好的接口来创建
-    VK_CHECK(glfwCreateWindowSurface(instance, (GLFWwindow*)Window::Instance()->GetNativeWindow(), nullptr, &surface))
+    VK_CHECK(glfwCreateWindowSurface(instance, (GLFWwindow*)Application::Get().GetWindow()->GetNativeWindow(), nullptr, &surface))
     CORE_LOGI("Vulkan surface created") 
 }
 
@@ -365,8 +367,8 @@ void VulkanContext::SelectPhysicalDevice()
 
 void VulkanContext::CreateSwapChain()
 {
-    u32 window_width = Window::Instance()->GetFrambufferWidth();
-    u32 window_height = Window::Instance()->GetFrambufferWidth();
+    u32 window_width = Application::Get().GetWindow()->GetFrambufferWidth();
+    u32 window_height = Application::Get().GetWindow()->GetFrambufferWidth();
 
     SwapChainSupportDetail swapchain_support = GetSwapchainSupportDetails();
 

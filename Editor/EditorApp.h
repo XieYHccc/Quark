@@ -11,9 +11,9 @@
 #include "Editor/Panel/ContentBrowserPanel.h"
 
 namespace quark {
-class EditorApp : public quark::Application  {  
+class EditorApp : public quark::Application {
 public:
-    EditorApp(const quark::AppInitSpecs& specs);
+    EditorApp(const ApplicationSpecification& specs);
     ~EditorApp();
 
     void OnUpdate(TimeStep ts) override final;
@@ -27,18 +27,18 @@ public:
     void OpenScene(const std::filesystem::path& path);
     void SaveSceneAs();
 
+private:
     void CreateColorDepthAttachments();
     void CreateRenderPasses();
 
-public:
-    quark::graphic::RenderPassInfo forward_pass_info; // First pass
-    quark::graphic::RenderPassInfo ui_pass_info;   // Second pass
+    graphic::RenderPassInfo forward_pass_info; // First pass
+    graphic::RenderPassInfo ui_pass_info;   // Second pass
 
-    Ref<quark::graphic::Image> depth_attachment;
-    Ref<quark::graphic::Image> color_attachment;
+    Ref<graphic::Image> depth_attachment;
+    Ref<graphic::Image> color_attachment;
 
-    Ref<quark::Texture> m_CubeMapTexture;
-    
+    Ref<Texture> m_CubeMapTexture;
+
     Ref<Scene> m_Scene;
     Scope<SceneRenderer> m_SceneRenderer;
     EditorCamera m_EditorCamera;
@@ -54,7 +54,7 @@ public:
     SceneHeirarchyPanel m_HeirarchyPanel;
     InspectorPanel m_InspectorPanel;
     ContentBrowserPanel m_ContentBrowserPanel;
-    
+
     // Debug
     float m_CmdListRecordTime = 0;
 };

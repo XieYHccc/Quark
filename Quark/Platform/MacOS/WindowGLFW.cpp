@@ -8,16 +8,14 @@
 
 namespace quark {
 
-WindowGLFW::WindowGLFW()
+WindowGLFW::WindowGLFW(const WindowSpecification& spec)
+    : Window(spec)
 {
 
 }
 
-void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u32 height)
+void WindowGLFW::Init()
 {
-    width_ = width;
-    height_ = height;
-    isFullscreen_ = is_fullscreen;
 
     // Initialize and configure glfw window 
     if (!glfwInit())
@@ -34,28 +32,30 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
 #endif
 
     // Create GLFW window
-    monitor_ = glfwGetPrimaryMonitor();
-    const GLFWvidmode* mode = glfwGetVideoMode(monitor_);
-    monitorWidth_ = mode->width;
-    monitorHeight_ = mode->height;
+    m_glfwMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(m_glfwMonitor);
+    m_monitorWidth = mode->width;
+    m_monitorHeight = mode->height;
 
-    if (is_fullscreen) {
-        width_ = mode->width;
-        height_ = mode->height;
+    if (m_fullscreen) 
+    {
+        m_width = mode->width;
+        m_height = mode->height;
     }
 
-    window_ = glfwCreateWindow(width_, height_, title.c_str(), is_fullscreen? monitor_ : nullptr, nullptr);
-    if (!window_) {
-        std::cerr << "Cannot create GLFW window.\n";
+    m_glfwWindow = glfwCreateWindow(m_width, m_height, m_title.c_str(), m_fullscreen? m_glfwMonitor : nullptr, nullptr);
+    if (!m_glfwWindow) 
+    {
+        CORE_LOGC("Cannot create GLFW window.")
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
     
 #ifdef USE_OPENGL_DRIVER
-    glfwMakeContextCurrent(window_);
+    glfwMakeContextCurrent(m_glfwWindow);
 #endif
 
-    glfwSetWindowUserPointer(window_, reinterpret_cast<void*>(this));
+    glfwSetWindowUserPointer(m_glfwWindow, reinterpret_cast<void*>(this));
 
 #ifdef USE_OPENGL_DRIVER
     // Initialize glad: load all OpenGL function pointers
@@ -66,24 +66,25 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
 #endif
 
     // Set GLFW callbacks
-    glfwSetWindowSizeCallback(window_, [](GLFWwindow* window, int width, int height) 
+    glfwSetWindowSizeCallback(m_glfwWindow, [](GLFWwindow* window, int width, int height) 
     {
         auto& owner = *(WindowGLFW*)glfwGetWindowUserPointer(window);
-        owner.width_ = width;
-        owner.height_ = height;
+        owner.m_width = width;
+        owner.m_height = height;
+
         int frame_width = 0;
         int frame_height = 0;
         glfwGetFramebufferSize(window, &frame_width, &frame_height);
         EventManager::Get().TriggerEvent(WindowResizeEvent(frame_width, frame_height));
     });
 
-    glfwSetWindowCloseCallback(window_, [](GLFWwindow* window)
+    glfwSetWindowCloseCallback(m_glfwWindow, [](GLFWwindow* window)
     {
         std::unique_ptr<WindowCloseEvent> closeEvent = std::make_unique<WindowCloseEvent>();
         EventManager::Get().QueueEvent(std::move(closeEvent));
     });
     
-    glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+    glfwSetKeyCallback(m_glfwWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         // Record Key status
         ((InputGLFW*)Input::Get())->RecordKey(key, action);
@@ -104,7 +105,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         }
     });
 
-    glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos)
+    glfwSetCursorPosCallback(m_glfwWindow, [](GLFWwindow* window, double xpos, double ypos)
     {   
         // Record Mouse position
         ((InputGLFW*)Input::Get())->RecordMousePosition(xpos, ypos);
@@ -112,11 +113,11 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
         EventManager::Get().TriggerEvent(MouseMovedEvent((float)xpos, (float)ypos));
     });
 
-    glfwSetScrollCallback(window_, [](GLFWwindow* window, double xOffset, double yOffset) {
+    glfwSetScrollCallback(m_glfwWindow, [](GLFWwindow* window, double xOffset, double yOffset) {
         EventManager::Get().TriggerEvent(MouseScrolledEvent((float)xOffset, (float)yOffset));
     });
 
-    glfwSetMouseButtonCallback(window_, [](GLFWwindow* window, int button, int action, int mods) {
+    glfwSetMouseButtonCallback(m_glfwWindow, [](GLFWwindow* window, int button, int action, int mods) {
         // Record Mouse button status
         ((InputGLFW*)Input::Get())->RecordKey(button, action);
 
@@ -129,7 +130,7 @@ void WindowGLFW::Init(const std::string& title, bool is_fullscreen, u32 width, u
     });
 }
 
-void WindowGLFW::Finalize()
+void WindowGLFW::ShutDown()
 {
     glfwTerminate();
 }
@@ -138,7 +139,7 @@ void WindowGLFW::Finalize()
 u32 WindowGLFW::GetFrambufferWidth() const
 {   
     int width, height;
-    glfwGetFramebufferSize(window_, &width, &height);
+    glfwGetFramebufferSize(m_glfwWindow, &width, &height);
 
     return width;
 }
@@ -146,7 +147,7 @@ u32 WindowGLFW::GetFrambufferWidth() const
 u32 WindowGLFW::GetFrambufferHeight() const
 {
     int width, height;
-    glfwGetFramebufferSize(window_, &width, &height);
+    glfwGetFramebufferSize(m_glfwWindow, &width, &height);
 
     return height;
 }

@@ -1,7 +1,7 @@
 #include "Quark/qkpch.h"
 #define VMA_IMPLEMENTATION
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
-#include "Quark/Core/Window.h"
+#include "Quark/Core/Application.h"
 #include "Quark/Core/Math/Util.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Events/EventManager.h"
@@ -268,8 +268,8 @@ bool Device_Vulkan::Init()
     // Default values
     m_RecreateSwapchain = false;
     currentFrame = 0;
-    frameBufferWidth = Window::Instance()->GetFrambufferWidth();
-    frameBufferHeight = Window::Instance()->GetFrambufferHeight();
+    frameBufferWidth = Application::Get().GetWindow()->GetFrambufferWidth();
+    frameBufferHeight = Application::Get().GetWindow()->GetFrambufferHeight();
     vkContext = CreateScope<VulkanContext>(); // TODO: Make configurable
     vkDevice = vkContext->logicalDevice; // Borrow from context
     vmaAllocator = vkContext->vmaAllocator;

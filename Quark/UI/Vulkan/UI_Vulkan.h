@@ -10,7 +10,7 @@ public:
     UI_Vulkan() = default;
     ~UI_Vulkan() = default;
 
-    void Init(graphic::Device* device, const UiInitSpecs& specs) override;
+    void Init(graphic::Device* device, const UiSpecification& specs) override;
     void Finalize() override;
 
     void BeginFrame() override;

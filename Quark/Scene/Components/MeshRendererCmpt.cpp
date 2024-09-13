@@ -46,7 +46,6 @@ Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 		UpdateCachedVertexAttribs(m_CachedProgramVatriantKey.meshAttributeMask);
 
 		UpdateGraphicsPipeLine(index);
-
 	}
 	else
 	{
@@ -57,7 +56,6 @@ Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 		{
 			m_CachedProgramVatriantKey.meshAttributeMask = m_Mesh->GetMeshAttributeMask();
 			UpdateCachedVertexAttribs(m_CachedProgramVatriantKey.meshAttributeMask);
-
 			requireNewPipeline = true;
 		}
 
@@ -65,7 +63,6 @@ Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 		{
 			UpdateGraphicsPipeLine(index);
 		}
-
 	}
 
 	return m_GraphicsPipeLines[index];

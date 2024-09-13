@@ -1,6 +1,6 @@
 #include "Quark/qkpch.h"
 #include "Quark/Platform/MacOS/InputGLFW.h"
-#include "Quark/Core/Window.h"
+#include "Quark/Core/Application.h"
 
 namespace quark {
 
@@ -16,7 +16,7 @@ Input* util::MakeSingletonPtr<Input>::CreateSingleton()
 
 void InputGLFW::Init()
 {
-    window_ = static_cast<GLFWwindow*>(Window::Instance()->GetNativeWindow());
+    window_ = static_cast<GLFWwindow*>(Application::Get().GetWindow()->GetNativeWindow());
     CORE_DEBUG_ASSERT(window_ != nullptr);
 
     double xpos, ypos;

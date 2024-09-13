@@ -9,28 +9,23 @@
 
 namespace quark {
 
-struct AppInitSpecs {
+struct ApplicationSpecification {
     std::string title = "Quark Application";
     std::uint32_t width = 1200;
     std::uint32_t height = 800;
     bool isFullScreen = false;
-    UiInitSpecs uiSpecs;
+    UiSpecification uiSpecs;
 };  
 
 class Application {
 public:
     static Application& Get() { return *s_Instance; }
     
-    Application(const AppInitSpecs& specs);
+    Application(const ApplicationSpecification& specs);
     virtual ~Application();
-    Application(const Application&) = delete;
-    const Application& operator=(const Application&) = delete;
 
     void Run();
 
-    graphic::Device* GetGraphicDevice() { return m_GraphicDevice.get();}
-
-private:
     // Update Game Logic per frame
     virtual void OnUpdate(TimeStep ts) = 0;
 
@@ -44,21 +39,23 @@ private:
     void OnWindowClose(const WindowCloseEvent& event);
     void OnWindowResize(const WindowResizeEvent& event);
 
+    graphic::Device* GetGraphicDevice() { return m_GraphicDevice.get(); }
+    Window* GetWindow() { return m_Window.get(); }
+
 protected:
-    struct AppStatus 
+    struct ApplicationStatus
     {
-        f32 fps { 0 };
-        bool isRunning { true };
-        bool isMinimized { false };
-        f64 lastFrameDuration { 0 };
-    };
+        float fps = 0;
+        bool isRunning = true;
+        bool isMinimized = false;
+        double lastFrameDuration = 0; // in seconds
+    } m_Status;
 
     Timer m_Timer;
-    AppStatus m_Status;
 
     Scope<graphic::Device> m_GraphicDevice;
     Scope<Window> m_Window;
-    
+
 private:
     static Application* s_Instance;
 };

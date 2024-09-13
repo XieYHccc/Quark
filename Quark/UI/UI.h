@@ -11,9 +11,9 @@ enum UiInitFlagBit
     UI_INIT_FLAG_VIEWPORTS = 1 << 1,
 };  
 
-struct UiInitSpecs 
+struct UiSpecification 
 {
-    std::uint32_t flags;
+    uint32_t flags;
 };
 
 class UI : public util::MakeSingletonPtr<UI>{
@@ -22,7 +22,7 @@ public:
     UI() = default;
     virtual ~UI() = default;
 
-    virtual void Init(graphic::Device* device, const UiInitSpecs& sepcs) = 0;
+    virtual void Init(graphic::Device* device, const UiSpecification& sepcs) = 0;
     virtual void Finalize() = 0;
 
     virtual void BeginFrame() = 0;
@@ -31,7 +31,6 @@ public:
 
     virtual ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) = 0;
     virtual ImTextureID GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler) = 0;
-
 };
 
 template <>

@@ -5,7 +5,7 @@
 #include <imgui.h>
 #include <ImGuizmo.h>
 
-#include <Quark/Core/Window.h>
+#include <Quark/Core/Application.h>
 #include <Quark/Core/FileSystem.h>
 #include <Quark/Core/Input.h>
 #include <Quark/Core/Logger.h>
@@ -24,7 +24,7 @@
 namespace quark {
 Application* CreateApplication()
 {    
-    AppInitSpecs specs;
+    ApplicationSpecification specs;
     specs.uiSpecs.flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS;
     specs.title = "Quark Editor";
     specs.width = 1600;
@@ -34,7 +34,7 @@ Application* CreateApplication()
     return new EditorApp(specs);
 }
 
-EditorApp::EditorApp(const AppInitSpecs& specs)
+EditorApp::EditorApp(const ApplicationSpecification& specs)
     : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1280, 720, 0.1, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
 {
     // Create Render structures
@@ -58,8 +58,8 @@ EditorApp::EditorApp(const AppInitSpecs& specs)
     m_SceneRenderer->SetCubeMap(m_CubeMapTexture);
 
     // Adjust editor camera's aspect ratio
-    m_EditorCamera.viewportWidth = Window::Instance()->GetWidth();
-    m_EditorCamera.viewportHeight = Window::Instance()->GetHeight();
+    m_EditorCamera.viewportWidth = Application::Get().GetWindow()->GetWidth();
+    m_EditorCamera.viewportHeight = Application::Get().GetWindow()->GetHeight();
     m_EditorCamera.SetPosition(glm::vec3(0, 10, 10));
 
 
@@ -404,8 +404,8 @@ void EditorApp::CreateColorDepthAttachments()
         // Create depth image
         ImageDesc image_desc;
         image_desc.type = ImageType::TYPE_2D;
-        image_desc.width = uint32_t(Window::Instance()->GetMonitorWidth() * Window::Instance()->GetRatio());
-        image_desc.height = uint32_t(Window::Instance()->GetMonitorHeight() * Window::Instance()->GetRatio());
+        image_desc.width = uint32_t(Application::Get().GetWindow()->GetMonitorWidth() * Application::Get().GetWindow()->GetRatio());
+        image_desc.height = uint32_t(Application::Get().GetWindow()->GetMonitorHeight() * Application::Get().GetWindow()->GetRatio());
         image_desc.depth = 1;
         image_desc.format = GpuResourceManager::Get().format_depthAttachment_main;
         image_desc.arraySize = 1;

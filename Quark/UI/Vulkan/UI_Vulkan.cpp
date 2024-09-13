@@ -7,14 +7,14 @@
 #define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 #include <backends/imgui_impl_vulkan.h>
 
-#include "Quark/Core/Window.h"
+#include "Quark/Core/Application.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Events/EventManager.h"
 #include "Quark/Graphic/Vulkan/CommandList_Vulkan.h"
 
 namespace quark {
 
-void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
+void UI_Vulkan::Init(graphic::Device* device, const UiSpecification& specs)
 {
     CORE_DEBUG_ASSERT(device)
 
@@ -100,7 +100,7 @@ void UI_Vulkan::Init(graphic::Device* device, const UiInitSpecs& specs)
 
     // Vulkan backend
     {
-        ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)Window::Instance()->GetNativeWindow(), true);
+        ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)Application::Get().GetWindow()->GetNativeWindow(), true);
 
         ImGui_ImplVulkan_InitInfo init_info = {};
         init_info.Instance = m_device->vkContext->instance;
