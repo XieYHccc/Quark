@@ -28,11 +28,12 @@ Quark is my personal learning project.
 1. Make Sure the "VULKAN_SDK" envirsonment variable have been setted on your platform
     - Go to https://www.lunarg.com/vulkan-sdk and download the vulkan sdk
 2. ```git clone --recursive https://github.com/XieYHccc/Quark.git ```
-3. ```mkdir build```
-4. ```cd build```
-5. ```cmake ..```
-6. ```make``` or open .sln
-7. On windows you need to copy "Assets" and "BuildInResources" directories to the folder where Editor.exe exist.(Kinda ugly, will be imporved in the future)
+3. ```cd Quark```
+4. ```mkdir build```
+5. ```cd build```
+6. ```cmake ..```
+7. ```make``` or open .sln
+8. On windows you need to copy "Assets" and "BuildInResources" directories to the folder where Editor.exe exist.(Kinda ugly, will be imporved in the future)
 
 ## Feature
 
@@ -47,7 +48,7 @@ Quark is my personal learning project.
 - KTX2 Transcoding
 
 ## Todo
-- [ ] Shader System
+- [x] Shader System
 - [ ] Mouse Picking in Scene Editor
 - [ ] Quark Customized Asset Format
   - [ ] Mesh
