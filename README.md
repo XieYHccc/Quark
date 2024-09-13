@@ -19,9 +19,20 @@ Quark is my personal learning project.
 ## Environment
 
 - Windows, MacOS
-- C++17+( have been tested on MSVC and Clang)
+- C++20( have been tested on MSVC and Clang)
 - CMake 3.10 +
-- Vulkan1.3+
+- Vulkan1.2+
+
+
+## Build Editor
+1. Make Sure the "VULKAN_SDK" envirsonment variable have been setted on your platform
+    - Go to https://www.lunarg.com/vulkan-sdk and download the vulkan sdk
+2. ```git clone --recursive https://github.com/XieYHccc/Quark.git ```
+3. ```mkdir build```
+4. ```cd build```
+5. ```cmake ..```
+6. ```make``` or open .sln
+7. On windows you need to copy "Assets" and "BuildInResources" directories to the folder where Editor.exe exist.(Kinda ugly, will be imporved in the future)
 
 ## Feature
 
