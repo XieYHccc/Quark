@@ -524,14 +524,14 @@ void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64
 
     auto& vertex_buffer_binding_state = m_BindingState.vertexBufferBindingState;
     if (vertex_buffer_binding_state.buffers[binding] == internal_buffer.GetHandle() &&
-        vertex_buffer_binding_state.offsets[binding] == offset) {
+        vertex_buffer_binding_state.offsets[binding] == offset) 
+    {
         return;
     }
 
     vertex_buffer_binding_state.buffers[binding] = internal_buffer.GetHandle();
     vertex_buffer_binding_state.offsets[binding] = offset;
     m_DirtyVertexBufferMask |= 1u << binding;
-
 }
 
 void CommandList_Vulkan::SetScissor(const Scissor &scissor)

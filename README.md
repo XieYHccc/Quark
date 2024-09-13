@@ -25,7 +25,7 @@ Quark is my personal learning project.
 
 
 ## Build Editor
-1. Make Sure the "VULKAN_SDK" envirsonment variable have been setted on your platform
+1. Make sure the "VULKAN_SDK" environment variable have been setted correctly
     - Go to https://www.lunarg.com/vulkan-sdk and download the vulkan sdk
 2. ```git clone --recursive https://github.com/XieYHccc/Quark.git ```
 3. ```cd Quark```
