@@ -17,7 +17,7 @@ Scene::~Scene()
 {   
 }
 
-const std::string& Scene::GetSceneName() const
+std::string Scene::GetSceneName() const
 {
     return m_SceneName;
 }
@@ -39,6 +39,30 @@ void Scene::DeleteEntity(Entity* entity)
 
     // Delete entity
     m_Registry.DeleteEntity(entity);
+}
+
+void Scene::AttachChild(Entity* child, Entity* parent)
+{
+    auto* childRelationshipCmpt = child->GetComponent<RelationshipCmpt>();
+	auto* parentRelationshipCmpt = parent->GetComponent<RelationshipCmpt>();
+
+	if (childRelationshipCmpt->GetParentEntity())
+	{
+		auto* oldParentRelationshipCmpt = childRelationshipCmpt->GetParentEntity()->GetComponent<RelationshipCmpt>();
+		oldParentRelationshipCmpt->RemoveChildEntity(child);
+	}
+
+	parentRelationshipCmpt->AddChildEntity(child);
+}
+
+void Scene::DetachChild(Entity* child)
+{
+    auto* relationshipCmpt = child->GetComponent<RelationshipCmpt>();
+    if (relationshipCmpt->GetParentEntity())
+	{
+		auto* parentRelationshipCmpt = relationshipCmpt->GetParentEntity()->GetComponent<RelationshipCmpt>();
+		parentRelationshipCmpt->RemoveChildEntity(child);
+	}
 }
 
 Entity* Scene::CreateEntity(const std::string& name, Entity* parent)

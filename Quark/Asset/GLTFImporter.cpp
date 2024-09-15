@@ -258,24 +258,24 @@ Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
 	if (gltf_node.translation.size() == 3)
     {
 		glm::vec3 translation = glm::make_vec3(gltf_node.translation.data());
-		transform->SetPosition(translation);
+		transform->SetLocalPosition(translation);
 	}
 
 	if (gltf_node.rotation.size() == 4)
     {
 		glm::quat q = glm::make_quat(gltf_node.rotation.data());
-		transform->SetQuat(q);
+		transform->SetLocalRotate(q);
 	}
 
 	if (gltf_node.scale.size() == 3)
     {
 		glm::vec3 scale = glm::make_vec3(gltf_node.scale.data());
-		transform->SetScale(scale);
+		transform->SetLocalScale(scale);
 	}
 
 	if (gltf_node.matrix.size() == 16)
     {
-		transform->SetTRSMatrix(glm::make_mat4x4(gltf_node.matrix.data()));
+		transform->SetLocalMatrix(glm::make_mat4x4(gltf_node.matrix.data()));
 	};
 
     // Parse mesh component

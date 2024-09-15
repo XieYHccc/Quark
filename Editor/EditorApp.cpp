@@ -173,7 +173,7 @@ void EditorApp::OnImGuiUpdate()
         glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
 
         auto* tc = selectedEntity->GetComponent<TransformCmpt>();
-        glm::mat4 transform = tc->GetWorldMatrix();
+        glm::mat4 transform = tc->GetLocalMatrix();
 
         bool snap = Input::Get()->IsKeyPressed(Key::LeftControl, true);
         float snapValue = 0.5f; // Snap to 0.5m for translation/scale
@@ -192,9 +192,9 @@ void EditorApp::OnImGuiUpdate()
             glm::vec3 translation, rotation, scale;
             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
 
-            tc->SetPosition(translation);
-            tc->SetEuler(glm::radians(rotation));
-            tc->SetScale(scale);
+            tc->SetLocalPosition(translation);
+            tc->SetLocalRotate(glm::radians(rotation));
+            tc->SetLocalScale(scale);
         }
     }
 

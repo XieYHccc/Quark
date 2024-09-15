@@ -224,9 +224,9 @@ void InspectorPanel::OnImGuiUpdate()
         {
             auto* transformCmpt = m_SelectedEntity->GetComponent<TransformCmpt>();
             if (transformCmpt) {
-                glm::vec3 position = transformCmpt->GetPosition();
-                glm::vec3 scale = transformCmpt->GetScale();
-                glm::vec3 eulerAngles = glm::degrees(glm::eulerAngles(transformCmpt->GetQuat()));
+                glm::vec3 position = transformCmpt->GetLocalPosition();
+                glm::vec3 scale = transformCmpt->GetLocalScale();
+                glm::vec3 eulerAngles = glm::degrees(glm::eulerAngles(transformCmpt->GetLocalRotate()));
 
                 const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_FramePadding |
                     ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -234,20 +234,20 @@ void InspectorPanel::OnImGuiUpdate()
                 if (ImGui::TreeNodeEx((void*)TransformCmpt::GetStaticComponentType(), treeNodeFlags, "Transform"))
                 {
                     if (DrawVec3Control("Position", position))
-                        transformCmpt->SetPosition(position);
+                        transformCmpt->SetLocalPosition(position);
 
                     if (DrawVec3Control("Rotation", eulerAngles))
                     {
                         if (eulerAngles.x <= 90 && eulerAngles.y <= 90 && eulerAngles.z <= 90
                             && eulerAngles.x >= -90 && eulerAngles.y >= -90 && eulerAngles.z >= -90) {
-                            transformCmpt->SetEuler(glm::radians(eulerAngles));
+                            transformCmpt->SetLocalRotate(glm::radians(eulerAngles));
                         }
                         else
                             CORE_LOGW("Rotation values must be less than 90 degrees");
                     }
 
                     if (DrawVec3Control("Scale", scale))
-                        transformCmpt->SetScale(scale);
+                        transformCmpt->SetLocalScale(scale);
 
                     ImGui::TreePop();
                 }

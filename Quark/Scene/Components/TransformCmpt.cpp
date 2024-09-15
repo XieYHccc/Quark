@@ -3,6 +3,7 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+#include "Quark/Core/Math/Util.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
@@ -10,74 +11,217 @@
 namespace quark {
 
 TransformCmpt::TransformCmpt() :
-    quaternion_(1.f, 0.f, 0.f, 0.f),
-    position_(0.f),
-    scale_(1.f),
-    TRSMatrix_(1.f),
-    TRSMatrixIsDirty(true)
+    m_localQuat(1.f, 0.f, 0.f, 0.f),
+    m_localPosition(0.f),
+    m_localScale(1.f),
+    m_worldMatrix(1.f),
+    m_parentWorldMatrix(1.f)
 {
 
 }
 
-glm::mat4& TransformCmpt::GetTRSMatrix()
+glm::mat4 TransformCmpt::GetLocalMatrix()
 {
-    if (TRSMatrixIsDirty) {
-        CalculateTRSMatrix();
-        TRSMatrixIsDirty = false;
+    glm::mat4 scale = glm::scale(m_localScale);
+    glm::mat4 rotate = glm::toMat4(m_localQuat);
+    glm::mat4 translate = glm::translate(m_localPosition);
+    return translate * rotate * scale;
+}
+
+void TransformCmpt::SetLocalRotate(const glm::quat &quat)
+{
+    SetDirty(true);
+    PropagateDirtyFlagToChilds();
+
+    m_localQuat = quat;
+}
+
+void TransformCmpt::SetLocalRotate(const glm::vec3& euler_angle)
+{
+    SetDirty(true);
+    PropagateDirtyFlagToChilds();
+
+    m_localQuat = glm::quat(euler_angle); 
+}
+
+void TransformCmpt::SetLocalPosition(const glm::vec3& position)
+{
+    SetDirty(true);
+    PropagateDirtyFlagToChilds();
+
+    m_localPosition = position;
+}
+
+void TransformCmpt::SetLocalScale(const glm::vec3& scale)
+{
+    SetDirty(true);
+    PropagateDirtyFlagToChilds();
+
+    m_localScale = scale;
+}
+
+void TransformCmpt::SetLocalMatrix(const glm::mat4 &trs)
+{
+    SetDirty(true);
+    PropagateDirtyFlagToChilds();
+
+    math::DecomposeTransform(trs, m_localPosition , m_localQuat, m_localScale);
+}
+
+glm::vec3 TransformCmpt::GetWorldPosition()
+{
+    if (IsParentDirty())
+    {
+        UpdateWorldMatrix_Parent();
+		SetParentDirty(false);
+        SetDirty(false);
     }
-    return TRSMatrix_;
+
+    if (IsDirty())
+    {
+        UpdateWorldMatrix();
+        SetDirty(false);
+    }
+
+    return glm::vec3(m_worldMatrix[3]);
 }
 
-void TransformCmpt::CalculateTRSMatrix()
+glm::quat TransformCmpt::GetWorldRotate()
 {
-    glm::mat4 scale = glm::scale(scale_);
-    glm::mat4 rotate = glm::toMat4(quaternion_);
-    glm::mat4 translate = glm::translate(position_);
-    TRSMatrix_ = translate * rotate * scale;
+    if (IsParentDirty())
+    {
+        UpdateWorldMatrix_Parent();
+        SetParentDirty(false);
+        SetDirty(false);
+    }
 
+    if (IsDirty())
+    {
+        UpdateWorldMatrix();
+        SetDirty(false);
+    }
+
+    glm::vec3 translate;
+    glm::vec3 scale;
+    glm::quat rotate;
+    math::DecomposeTransform(m_worldMatrix, translate, rotate, scale);
+
+    return rotate;
 }
 
-void TransformCmpt::SetQuat(const glm::quat &quat)
+glm::vec3 TransformCmpt::GetWorldScale()
 {
-    quaternion_ = quat;
-    TRSMatrixIsDirty = true;
+    if (IsParentDirty())
+    {
+        UpdateWorldMatrix_Parent();
+        SetParentDirty(false);
+        SetDirty(false);
+    }
+
+    if (IsDirty())
+    {
+        UpdateWorldMatrix();
+        SetDirty(false);
+    }
+
+    glm::vec3 translate;
+    glm::vec3 scale;
+    glm::quat rotate;
+    math::DecomposeTransform(m_worldMatrix, translate, rotate, scale);
+
+    return scale;
 }
 
-void TransformCmpt::SetEuler(const glm::vec3& euler_angle)
+const glm::mat4& TransformCmpt::GetWorldMatrix()
 {
-    quaternion_ = glm::quat(euler_angle); 
-    TRSMatrixIsDirty = true;
+    if (IsParentDirty())
+    {
+        UpdateWorldMatrix_Parent();
+        SetParentDirty(false);
+        SetDirty(false);
+    }
+
+    if (IsDirty())
+    {
+        UpdateWorldMatrix();
+        SetDirty(false);
+    }
+
+    return m_worldMatrix;
 }
 
-void TransformCmpt::SetPosition(const glm::vec3& position)
+void TransformCmpt::Translate(const glm::vec3& translation)
 {
-    position_ = position;
-    TRSMatrixIsDirty = true;
+    SetDirty(true);
+    PropagateDirtyFlagToChilds();
+
+    m_localPosition.x += translation.x;
+    m_localPosition.y += translation.y;
+    m_localPosition.z += translation.z;
 }
 
-void TransformCmpt::SetScale(const glm::vec3& scale)
+void TransformCmpt::Rotate(const glm::quat& rotation)
 {
-    scale_ = scale;
-    TRSMatrixIsDirty = true;
+    SetDirty(true);
+    PropagateDirtyFlagToChilds();
+
+    glm::quat result = rotation * m_localQuat;
+    m_localQuat = glm::normalize(result);
 }
 
-void TransformCmpt::SetTRSMatrix(const glm::mat4 &trs)
+void TransformCmpt::Scale(const glm::vec3& scale)
 {
-    TRSMatrix_ = trs;
-    TRSMatrixIsDirty = false;
+    SetDirty(true);
+    PropagateDirtyFlagToChilds();
+
+    m_localScale.x *= scale.x;
+    m_localScale.y *= scale.y;
+    m_localScale.z *= scale.z;
 }
 
-glm::mat4 TransformCmpt::GetWorldMatrix()
+void TransformCmpt::UpdateWorldMatrix()
+{
+    m_worldMatrix = GetLocalMatrix() * m_parentWorldMatrix;
+}
+
+void TransformCmpt::UpdateWorldMatrix_Parent()
 {
     Entity* parent = GetEntity()->GetComponent<RelationshipCmpt>()->GetParentEntity();
+    CORE_ASSERT(parent);
 
-    if (parent == nullptr) {
-        return GetTRSMatrix();
-    }
-    else {
-        auto* parent_transform = parent->GetComponent<TransformCmpt>();
-        return parent_transform->GetWorldMatrix() * GetTRSMatrix();
-    }
+    auto* parent_transform = parent->GetComponent<TransformCmpt>();
+    UpdateWorldMatrix();
 }
+
+void TransformCmpt::SetDirty(bool b)
+{
+    if (b)
+		m_flags |= Flags::DIRTY;
+	else
+		m_flags &= ~Flags::DIRTY;
+}
+
+void TransformCmpt::SetParentDirty(bool b)
+{
+	if (b)
+		m_flags |= Flags::PARENT_DIRTY;
+	else
+		m_flags &= ~Flags::PARENT_DIRTY;
+}
+
+void TransformCmpt::PropagateDirtyFlagToChilds()
+{
+    auto* relationshipCmpt = GetEntity()->GetComponent<RelationshipCmpt>();
+	for (auto* child : relationshipCmpt->GetChildEntities())
+	{
+		auto* transform = child->GetComponent<TransformCmpt>();
+        if (!transform->IsParentDirty())
+        {
+            transform->SetParentDirty(true);
+            transform->PropagateDirtyFlagToChilds();
+        }
+	}
+}
+
 
 }

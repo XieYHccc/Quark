@@ -42,7 +42,7 @@ void MoveControlCmpt::ProcessMouseMove(float xoffset, float yoffset)
     // make sure that when pitch is out of bounds, screen doesn't get flipped
     m_Pitch = std::clamp(m_Pitch, -1.5f, 1.5f);
 
-    transform->SetEuler(glm::vec3(m_Pitch, m_Yaw, 0));
+    transform->SetLocalRotate(glm::vec3(m_Pitch, m_Yaw, 0));
 }
 
 void MoveControlCmpt::ProcessKeyInput(float deltaTime)
@@ -61,8 +61,9 @@ void MoveControlCmpt::ProcessKeyInput(float deltaTime)
     if (Input::Get()->IsKeyPressed(Key::D, true))
         move.x = 1;
     move = move * m_MoveSpeed * deltaTime;
-
-    transform->SetPosition(transform->GetPosition() + glm::rotate(transform->GetQuat(), move));
+    move = glm::rotate(transform->GetLocalRotate(), move);
+    transform->Translate(move);
+    // transform->SetLocalPosition(transform->GetPosition() + glm::rotate(transform->GetQuat(), move));
 }
 
 }

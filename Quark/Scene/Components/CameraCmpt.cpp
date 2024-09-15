@@ -21,7 +21,7 @@ glm::mat4 CameraCmpt::GetViewMatrix()
     // view matrix transform geometry from world space to eye/view space
     // 没有相机这一概念的时候相当于相机位于原点朝向（0, 0, -1), view space 就是 world space.
     auto* transform = GetEntity()->GetComponent<TransformCmpt>();
-    return glm::inverse(transform->GetTRSMatrix());
+    return glm::inverse(transform->GetLocalMatrix());
 }
 
 glm::mat4 CameraCmpt::GetProjectionMatrix()

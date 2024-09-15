@@ -53,9 +53,9 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 		out << YAML::BeginMap; // TransformComponent
 
 		auto* transformCmpt = entity->GetComponent<TransformCmpt>();
-		out << YAML::Key << "Position" << YAML::Value << transformCmpt->GetPosition();
-		out << YAML::Key << "Rotation" << YAML::Value << glm::degrees(glm::eulerAngles(transformCmpt->GetQuat()));
-		out << YAML::Key << "Scale" << YAML::Value << transformCmpt->GetScale();
+		out << YAML::Key << "Position" << YAML::Value << transformCmpt->GetLocalPosition();
+		out << YAML::Key << "Rotation" << YAML::Value << glm::degrees(glm::eulerAngles(transformCmpt->GetLocalRotate()));
+		out << YAML::Key << "Scale" << YAML::Value << transformCmpt->GetLocalScale();
 
 		out << YAML::EndMap; // TransformComponent
 	}
@@ -182,9 +182,9 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 			{
 				// Entity always has transform component
 				auto* tc = deserializedEntity->GetComponent<TransformCmpt>();
-				tc->SetPosition(transformCmpt["Position"].as<glm::vec3>());
-				tc->SetQuat(glm::quat(glm::radians(transformCmpt["Rotation"].as<glm::vec3>())));
-				tc->SetScale(transformCmpt["Scale"].as<glm::vec3>());
+				tc->SetLocalPosition(transformCmpt["Position"].as<glm::vec3>());
+				tc->SetLocalRotate(glm::quat(glm::radians(transformCmpt["Rotation"].as<glm::vec3>())));
+				tc->SetLocalScale(transformCmpt["Scale"].as<glm::vec3>());
 			}
 
 			auto cameraCmpt = entity["CameraComponent"];

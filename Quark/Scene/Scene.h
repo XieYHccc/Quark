@@ -15,16 +15,24 @@ public:
     ~Scene();
 
     void SetSceneName(const std::string& name);
-    const std::string& GetSceneName() const;
+    std::string GetSceneName() const;
 
     void OnUpdate();
 
+    // Updating Systems
+    void RunTransformUpdateSystem();
+
+    // Entity
     Entity* CreateEntity(const std::string& name = "", Entity* parent = nullptr);
     Entity* CreateEntityWithID(UUID id, const std::string& name = "", Entity* parent = nullptr);
     Entity* GetEntityWithID(UUID id);
+
     void DeleteEntity(Entity* entity);
 
     std::vector<Entity*>& GetEntities() { return m_Registry.GetEntities(); }
+
+    void AttachChild(Entity* child, Entity* parent);
+    void DetachChild(Entity* child);
 
     template<typename... Ts>
     ComponentGroupVector<Ts...>& GetComponents() 
@@ -44,7 +52,7 @@ public:
         return m_Registry.GetEntityGroup<Ts...>()->GetEntities();
     }
 
-    /***    Cameras    ***/
+    // Cameras
     void SetMainCameraEntity(Entity* cam) { m_MainCameraEntity = cam; }
     Entity* GetMainCameraEntity();
 

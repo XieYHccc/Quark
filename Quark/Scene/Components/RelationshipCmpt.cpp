@@ -45,6 +45,7 @@ void RelationshipCmpt::RemoveChildEntity(Entity* child)
     if (it != children.end())
     {
         children.erase(it);
+        childRelationship->m_ParentEntity = nullptr;
         return;
     }
 
