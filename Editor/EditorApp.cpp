@@ -255,6 +255,7 @@ void EditorApp::OnRender(TimeStep ts)
 
     // Rendering commands
     auto graphic_device = Application::Get().GetGraphicDevice();
+
     if (graphic_device->BeiginFrame(ts)) {
         auto cmd = graphic_device->BeginCommandList();
         auto* swap_chain_image = graphic_device->GetPresentImage();
