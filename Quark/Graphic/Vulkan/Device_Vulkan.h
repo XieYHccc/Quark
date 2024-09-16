@@ -16,14 +16,20 @@ public:
     class CopyCmdAllocator {
     public:
         struct CopyCmd 
-        {   
-            // TODO: Add a graphic queue command buffer for transitioning and blitting operations
-            VkCommandPool cmdPool = VK_NULL_HANDLE;
-            VkCommandBuffer cmdBuffer = VK_NULL_HANDLE;
+        {   // command buffer for data transfering
+            VkCommandPool transferCmdPool = VK_NULL_HANDLE;
+            VkCommandBuffer transferCmdBuffer = VK_NULL_HANDLE;
+
+            // command buffer for image layout transitioning and image blitting
+            VkCommandPool transitionCmdPool = VK_NULL_HANDLE;
+            VkCommandBuffer transitionCmdBuffer = VK_NULL_HANDLE;
+
             Ref<Buffer> stageBuffer = nullptr;
+
+            VkSemaphore semaphores[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
             VkFence fence = VK_NULL_HANDLE;
 
-            bool isValid() const { return cmdBuffer; }
+            bool isValid() const { return transferCmdBuffer && transitionCmdBuffer; }
         };
 
         void init(Device_Vulkan* device);
@@ -108,7 +114,7 @@ public:
 
     PipeLineLayout* Request_PipeLineLayout(const ShaderResourceLayout& combinedLayout);
 
-    PerFrameData& GetCurrentFrame() { return m_Frames[currentFrame]; }
+    PerFrameData& GetCurrentFrame() { return m_Frames[m_elapsedFrame % MAX_FRAME_NUM_IN_FLIGHT]; }
 
 private:
     void ResizeSwapchain();
@@ -129,6 +135,7 @@ private:
         QueueType type = QueueType::QUEUE_TYPE_MAX_ENUM;
         VkQueue queue = VK_NULL_HANDLE;
         std::vector<Submitssion> submissions;
+        std::mutex locker;
 
         void init(Device_Vulkan* device, QueueType type);
         void submit(VkFence fence = nullptr);

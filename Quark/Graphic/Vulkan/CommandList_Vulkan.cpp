@@ -24,11 +24,9 @@ CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
         break;
     case QUEUE_TYPE_ASYNC_COMPUTE:
         poolInfo.queueFamilyIndex = vulkan_context->computeQueueIndex;
-        CORE_ASSERT(0)
         break;
     case QUEUE_TYPE_ASYNC_TRANSFER:
         poolInfo.queueFamilyIndex = vulkan_context->transferQueueIndex;
-        CORE_ASSERT(0)
         break;
     default:
         CORE_ASSERT_MSG(0, "Queue Type not handled."); // queue type not handled

@@ -29,11 +29,11 @@ public:
     Device() = default;
     virtual ~Device() = default;
 
-    uint32_t GetResolutionWidth() { return frameBufferWidth;}
-    uint32_t GetResolutionHeight() { return frameBufferHeight;}
+    uint32_t GetResolutionWidth() { return m_frameBufferWidth;}
+    uint32_t GetResolutionHeight() { return m_frameBufferHeight;}
 
-    const DeviceProperties& GetDeviceProperties() const { return properties; }
-    const DeviceFeatures& GetDeviceFeatures() const { return features; }
+    const DeviceProperties& GetDeviceProperties() const { return m_properties; }
+    const DeviceFeatures& GetDeviceFeatures() const { return m_features; }
     
     virtual bool Init() = 0;
     virtual void ShutDown() = 0;
@@ -62,11 +62,11 @@ public:
     virtual void SetDebugName(const Ref<GpuResource>& resouce, const char* name) = 0;
 
 protected:
-    uint32_t currentFrame;
-    uint32_t frameBufferWidth;
-    uint32_t frameBufferHeight;
-    DeviceProperties properties;
-    DeviceFeatures features;
+    uint32_t m_elapsedFrame = 0;
+    uint32_t m_frameBufferWidth;
+    uint32_t m_frameBufferHeight;
+    DeviceProperties m_properties;
+    DeviceFeatures m_features;
 };
 
 }

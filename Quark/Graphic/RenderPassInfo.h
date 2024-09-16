@@ -63,7 +63,6 @@ struct FrameBufferInfo
     Image* resolveAttatchments[MAX_COLOR_ATTHACHEMNT_NUM];
     u32 numResolveAttachments = 0;
 
-
     Image* depthAttachment = nullptr;
     AttachmentLoadOp depthAttachmentLoadOp = AttachmentLoadOp::CLEAR;
     AttachmentStoreOp depthAttachmentStoreOp = AttachmentStoreOp::STORE;

@@ -4,6 +4,7 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Math/Util.h"
 #include "Quark/Core/Util/Hash.h"
+#include "Quark/Core/FileSystem.h"
 #include "Quark/Events/EventManager.h"
 #include "Quark/Graphic/Vulkan/Shader_Vulkan.h"
 
@@ -158,8 +159,11 @@ void Device_Vulkan::CopyCmdAllocator::destroy()
     vkQueueWaitIdle(m_Device->m_Queues[QUEUE_TYPE_ASYNC_TRANSFER].queue);
     for (auto& x : m_FreeList)
     {
-        vkDestroyCommandPool(m_Device->vkDevice, x.cmdPool, nullptr);
+        vkDestroyCommandPool(m_Device->vkDevice, x.transferCmdPool, nullptr);
+        vkDestroyCommandPool(m_Device->vkDevice, x.transitionCmdPool, nullptr);
         vkDestroyFence(m_Device->vkDevice, x.fence, nullptr);
+        vkDestroySemaphore(m_Device->vkDevice, x.semaphores[0], nullptr);
+        vkDestroySemaphore(m_Device->vkDevice, x.semaphores[1], nullptr);
     }
 
     m_FreeList.clear();
@@ -167,40 +171,58 @@ void Device_Vulkan::CopyCmdAllocator::destroy()
 
 Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::allocate(VkDeviceSize required_buffer_size)
 {
-    CopyCmd newCmd;
+    CopyCmd cmd;
 
     // Try to find a suitable staging buffer in free list
     m_Locker.lock();
-    for (size_t i = 0; i < m_FreeList.size(); ++i) {
-        if (m_FreeList[i].stageBuffer->GetDesc().size > required_buffer_size) {
-            newCmd = std::move(m_FreeList[i]);
-            std::swap(m_FreeList[i], m_FreeList.back());
-            m_FreeList.pop_back();
-            break;
+    for (size_t i = 0; i < m_FreeList.size(); ++i) 
+    {
+        if (m_FreeList[i].stageBuffer->GetDesc().size >= required_buffer_size) 
+        {
+            if (vkGetFenceStatus(m_Device->vkDevice, m_FreeList[i].fence) == VK_SUCCESS)
+            {
+                cmd = std::move(m_FreeList[i]);
+                std::swap(m_FreeList[i], m_FreeList.back());
+                m_FreeList.pop_back();
+                break;
+            }
         }
     }
     m_Locker.unlock();
 
-    if (!newCmd.isValid()) {    // No suitable staging buffer founded
+    if (!cmd.isValid()) // No suitable staging buffer founded
+    { 
         // Create command pool
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
         poolInfo.queueFamilyIndex = m_Device->vkContext->transferQueueIndex;
-        VK_CHECK(vkCreateCommandPool(m_Device->vkDevice, &poolInfo, nullptr, &newCmd.cmdPool))
+        VK_CHECK(vkCreateCommandPool(m_Device->vkDevice, &poolInfo, nullptr, &cmd.transferCmdPool))
+
+        poolInfo.queueFamilyIndex = m_Device->vkContext->graphicQueueIndex;
+        VK_CHECK(vkCreateCommandPool(m_Device->vkDevice, &poolInfo, nullptr, &cmd.transitionCmdPool))
 
         // Allocate command buffer
         VkCommandBufferAllocateInfo commandBufferInfo = {};
         commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         commandBufferInfo.commandBufferCount = 1;
         commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        commandBufferInfo.commandPool = newCmd.cmdPool;
-        VK_CHECK(vkAllocateCommandBuffers(m_Device->vkDevice, &commandBufferInfo, &newCmd.cmdBuffer))
+        commandBufferInfo.commandPool = cmd.transferCmdPool;
+        VK_CHECK(vkAllocateCommandBuffers(m_Device->vkDevice, &commandBufferInfo, &cmd.transferCmdBuffer))
+
+        commandBufferInfo.commandPool = cmd.transitionCmdPool;
+        VK_CHECK(vkAllocateCommandBuffers(m_Device->vkDevice, &commandBufferInfo, &cmd.transitionCmdBuffer))
 
         // Create fence
         VkFenceCreateInfo fenceInfo = {};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        VK_CHECK(vkCreateFence(m_Device->vkDevice, &fenceInfo, nullptr, &newCmd.fence))
+        VK_CHECK(vkCreateFence(m_Device->vkDevice, &fenceInfo, nullptr, &cmd.fence))
+
+        // Create Semaphores
+        VkSemaphoreCreateInfo semaphoreInfo = {};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VK_CHECK(vkCreateSemaphore(m_Device->vkDevice, &semaphoreInfo, nullptr, &cmd.semaphores[0]));
+        VK_CHECK(vkCreateSemaphore(m_Device->vkDevice, &semaphoreInfo, nullptr, &cmd.semaphores[1]));
 
         // Create staging buffer
         BufferDesc bufferDesc;
@@ -208,57 +230,110 @@ Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::alloca
         bufferDesc.size = math::GetNextPowerOfTwo(required_buffer_size);
         bufferDesc.size = std::max(bufferDesc.size, uint64_t(65536));
         bufferDesc.usageBits = BUFFER_USAGE_TRANSFER_FROM_BIT;
-        newCmd.stageBuffer = m_Device->CreateBuffer(bufferDesc);
+        cmd.stageBuffer = m_Device->CreateBuffer(bufferDesc);
 
-        m_Device->SetDebugName(newCmd.stageBuffer, "CopyCmdAllocator staging buffer");
+        m_Device->SetDebugName(cmd.stageBuffer, "CopyCmdAllocator staging buffer");
     }
 
-    // Reset fence
-    VK_CHECK(vkResetFences(m_Device->vkDevice, 1, &newCmd.fence))
-
     // Begin command buffer in valid state:
-	VK_CHECK(vkResetCommandPool(m_Device->vkDevice, newCmd.cmdPool, 0))
+	VK_CHECK(vkResetCommandPool(m_Device->vkDevice, cmd.transferCmdPool, 0))
+    VK_CHECK(vkResetCommandPool(m_Device->vkDevice, cmd.transitionCmdPool, 0))
+
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     beginInfo.pInheritanceInfo = nullptr;
-    VK_CHECK(vkBeginCommandBuffer(newCmd.cmdBuffer, &beginInfo))
-    
-    return newCmd;
+    VK_CHECK(vkBeginCommandBuffer(cmd.transferCmdBuffer, &beginInfo))
+    VK_CHECK(vkBeginCommandBuffer(cmd.transitionCmdBuffer, &beginInfo))
+
+    // Reset fence
+    VK_CHECK(vkResetFences(m_Device->vkDevice, 1, &cmd.fence))
+    return cmd;
 }
 
 void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
 {
-    VK_CHECK(vkEndCommandBuffer(cmd.cmdBuffer))
+    VK_CHECK(vkEndCommandBuffer(cmd.transferCmdBuffer))
+    VK_CHECK(vkEndCommandBuffer(cmd.transitionCmdBuffer))
 
-    VkCommandBufferSubmitInfo cmd_submit_info = {};
-    cmd_submit_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-    cmd_submit_info.commandBuffer = cmd.cmdBuffer;
+    VkSubmitInfo2 submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
 
-    VkSubmitInfo2 submit_info = {};
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-    submit_info.commandBufferInfoCount = 1;
-    submit_info.pCommandBufferInfos = &cmd_submit_info;
-    submit_info.waitSemaphoreInfoCount = 0;
-    submit_info.pWaitSemaphoreInfos = nullptr;
-    submit_info.signalSemaphoreInfoCount = 0;
-    submit_info.pSignalSemaphoreInfos = nullptr;
-    m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(m_Device->vkContext->transferQueue, 1, &submit_info, cmd.fence);
+    VkCommandBufferSubmitInfo cbSubmitInfo = {};
+    cbSubmitInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+    cbSubmitInfo.commandBuffer = cmd.transferCmdBuffer;
 
-    // wait the fence and push cmd back to free list
-    vkWaitForFences(m_Device->vkDevice, 1, &cmd.fence, VK_TRUE, 9999999999); //TODO: try to use semaphores and do not block CPU
+    VkSemaphoreSubmitInfo signalSemaphoreInfo = {};
+    signalSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+
+    VkSemaphoreSubmitInfo waitSemaphoreInfo = {};
+    waitSemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+
+    // Submit to transfer queue
+    {
+        cbSubmitInfo.commandBuffer = cmd.transferCmdBuffer;
+        signalSemaphoreInfo.semaphore = cmd.semaphores[0]; // signal for graphics queue
+        signalSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        submitInfo.commandBufferInfoCount = 1;
+        submitInfo.pCommandBufferInfos = &cbSubmitInfo;
+        submitInfo.signalSemaphoreInfoCount = 1;
+        submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
+
+        std::scoped_lock lock(m_Device->m_Queues[QUEUE_TYPE_ASYNC_TRANSFER].locker);
+        m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+            m_Device->m_Queues[QUEUE_TYPE_ASYNC_TRANSFER].queue, 1, &submitInfo, VK_NULL_HANDLE);
+    }
+
+    // Submit to graphics queue
+    {
+        waitSemaphoreInfo.semaphore = cmd.semaphores[0]; // wait for copy queue
+        waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        cbSubmitInfo.commandBuffer = cmd.transitionCmdBuffer;
+        signalSemaphoreInfo.semaphore = cmd.semaphores[1]; // signal for compute queue
+        signalSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        submitInfo.waitSemaphoreInfoCount = 1;
+        submitInfo.pWaitSemaphoreInfos = &waitSemaphoreInfo;
+        submitInfo.commandBufferInfoCount = 1;
+        submitInfo.pCommandBufferInfos = &cbSubmitInfo;
+        submitInfo.signalSemaphoreInfoCount = 1;
+        submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
+
+        std::scoped_lock lock(m_Device->m_Queues[QUEUE_TYPE_GRAPHICS].locker);
+        m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+			m_Device->m_Queues[QUEUE_TYPE_GRAPHICS].queue, 1, &submitInfo, VK_NULL_HANDLE);
+    }
+
+    // insert semaphore to compute queue to make sure the copy and transition is done
+    // this must be final submit in this function because it will also signal a fence for state tracking by CPU!
+	{
+		waitSemaphoreInfo.semaphore = cmd.semaphores[1]; // wait for graphics queue
+		waitSemaphoreInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+		submitInfo.waitSemaphoreInfoCount = 1;
+		submitInfo.pWaitSemaphoreInfos = &waitSemaphoreInfo;
+        submitInfo.commandBufferInfoCount = 0;
+        submitInfo.pCommandBufferInfos = nullptr;
+		submitInfo.signalSemaphoreInfoCount = 0;
+		submitInfo.pSignalSemaphoreInfos = nullptr;
+
+		std::scoped_lock lock(m_Device->m_Queues[QUEUE_TYPE_ASYNC_COMPUTE].locker);
+		m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+			m_Device->m_Queues[QUEUE_TYPE_ASYNC_COMPUTE].queue, 1, &submitInfo, cmd.fence);
+	}
 
     std::scoped_lock lock(m_Locker);
     m_FreeList.push_back(cmd);
 }
 
-
 void Device_Vulkan::OnWindowResize(const WindowResizeEvent &event)
 {
-    frameBufferWidth = event.width;
-    frameBufferHeight = event.height;
+    m_frameBufferWidth = event.width;
+    m_frameBufferHeight = event.height;
     m_RecreateSwapchain = true;
-    CORE_LOGD("Device_Vulkan hook window resize event. Width: {} Height: {}", frameBufferWidth, frameBufferHeight)
+    CORE_LOGD("Device_Vulkan hook window resize event. Width: {} Height: {}", m_frameBufferWidth, m_frameBufferHeight)
 }
 
 bool Device_Vulkan::Init()
@@ -267,23 +342,22 @@ bool Device_Vulkan::Init()
 
     // Default values
     m_RecreateSwapchain = false;
-    currentFrame = 0;
-    frameBufferWidth = Application::Get().GetWindow()->GetFrambufferWidth();
-    frameBufferHeight = Application::Get().GetWindow()->GetFrambufferHeight();
+    m_elapsedFrame = 0;
+    m_frameBufferWidth = Application::Get().GetWindow()->GetFrambufferWidth();
+    m_frameBufferHeight = Application::Get().GetWindow()->GetFrambufferHeight();
     vkContext = CreateScope<VulkanContext>(); // TODO: Make configurable
     vkDevice = vkContext->logicalDevice; // Borrow from context
     vmaAllocator = vkContext->vmaAllocator;
 
     // Store device properties in public interface
-    properties.limits.minUniformBufferOffsetAlignment = vkContext->properties2.properties.limits.minUniformBufferOffsetAlignment;
-    features.textureCompressionBC = vkContext->features2.features.textureCompressionBC;
-    features.textureCompressionASTC_LDR = vkContext->features2.features.textureCompressionASTC_LDR;;
-    features.textureCompressionETC2 = vkContext->features2.features.textureCompressionETC2;
+    m_properties.limits.minUniformBufferOffsetAlignment = vkContext->properties2.properties.limits.minUniformBufferOffsetAlignment;
+    m_features.textureCompressionBC = vkContext->features2.features.textureCompressionBC;
+    m_features.textureCompressionASTC_LDR = vkContext->features2.features.textureCompressionASTC_LDR;;
+    m_features.textureCompressionETC2 = vkContext->features2.features.textureCompressionETC2;
     
     // Create frame data
-    for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
         m_Frames[i].init(this);
-    }
 
     // Setup command queues
     m_Queues[QUEUE_TYPE_GRAPHICS].init(this, QUEUE_TYPE_GRAPHICS);
@@ -317,9 +391,8 @@ void Device_Vulkan::ShutDown()
     copyAllocator.destroy();
 
     // Destroy frames data
-    for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
         m_Frames[i].destroy();
-    }
 
     // Destroy vulkan context
     vkContext.reset();
@@ -329,28 +402,27 @@ void Device_Vulkan::ShutDown()
 bool Device_Vulkan::BeiginFrame(TimeStep ts)
 {
     // Move to next frame
-    currentFrame = (currentFrame + 1) % MAX_FRAME_NUM_IN_FLIGHT;
+    m_elapsedFrame++;
 
     // Resize the swapchain if needed. 
-    if (m_RecreateSwapchain) {
+    if (m_RecreateSwapchain) 
+    {
         ResizeSwapchain();
         m_RecreateSwapchain = false;
     }
 
-    auto& frame = m_Frames[currentFrame];
+    auto& frame = GetCurrentFrame();
     
     // Wait for in-flight fences
-    if (!frame.waitedFences.empty()) {
+    if (!frame.waitedFences.empty())
         vkWaitForFences(vkDevice, frame.waitedFences.size(), frame.waitedFences.data(), true, 1000000000);
-    }
     
     // Reset per frame data
     frame.reset();
 
     // Put unused (more than 8 frames) descriptor set back to vacant pool
-    for (auto& [k, value] : cached_descriptorSetAllocator) {
+    for (auto& [k, value] : cached_descriptorSetAllocator)
         value.BeginFrame();   
-    }
 
     // Acquire a swapchain image 
     VkResult result = vkAcquireNextImageKHR(
@@ -361,11 +433,13 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
         nullptr,
         &m_CurrentSwapChainImageIdx);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) 
+    {
         // Trigger swapchain recreation, then boot out of the render loop.
         ResizeSwapchain();
         return false;
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
+    {
         CORE_ASSERT_MSG(0, "Failed to acquire swapchain image!");
         return false;
     }
@@ -379,7 +453,9 @@ bool Device_Vulkan::EndFrame(TimeStep ts)
 
     // Submit queued command lists with fence which would block the next next frame
     for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; ++i) {
-        if (frame.cmdListCount[i] > 0) { // This queue is in use in this frame
+
+        if (frame.cmdListCount[i] > 0) 
+        { // This queue is in use in this frame
             m_Queues[i].submit(frame.queueFences[i]);
             frame.waitedFences.push_back(frame.queueFences[i]);
         }
@@ -397,10 +473,9 @@ bool Device_Vulkan::EndFrame(TimeStep ts)
 	presentInfo.pImageIndices = &m_CurrentSwapChainImageIdx;
 	VkResult presentResult = vkQueuePresentKHR(vkContext->graphicQueue, &presentInfo);
 
-    if (presentResult != VK_SUCCESS && presentResult != VK_ERROR_OUT_OF_DATE_KHR
-		&& presentResult != VK_SUBOPTIMAL_KHR) {
+    if (presentResult != VK_SUCCESS && presentResult != VK_ERROR_OUT_OF_DATE_KHR && presentResult != VK_SUBOPTIMAL_KHR)
         CORE_DEBUG_ASSERT(0)
-    }
+
     return true;
 }
 
@@ -426,22 +501,12 @@ Ref<Shader> Device_Vulkan::CreateShaderFromBytes(ShaderStage stage, const void* 
 
 Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path)
 {
-    // open the file. With cursor at the end
-    std::ifstream file(file_path, std::ios::ate | std::ios::binary);
-
-    if (!file.is_open()) {
-        CORE_LOGE("Failed to open shader file: {}", file_path)
-        return nullptr;
-    }
-    size_t fileSize = (size_t)file.tellg();
-    std::vector<uint8_t> buffer(fileSize);
-
-    file.seekg(0);
-    file.read((char*)buffer.data(), fileSize);
-    file.close();
+    std::vector<uint8_t> buffer;
+    FileSystem::ReadFileBinary(file_path, buffer);
 
     auto new_shader = CreateShaderFromBytes(stage, buffer.data(), buffer.size());
-    if (new_shader == nullptr) {
+    if (new_shader == nullptr) 
+    {
         CORE_LOGE("Faile to create shader from file: {}", file_path)
         return nullptr;
     }
@@ -498,7 +563,8 @@ CommandList* Device_Vulkan::BeginCommandList(QueueType type)
     auto& frame = GetCurrentFrame();
     auto& cmdLists = frame.cmdLists[type];
     u32 cmd_count = frame.cmdListCount[type]++;
-    if (cmd_count >= cmdLists.size()) {
+    if (cmd_count >= cmdLists.size()) 
+    {
         // Create a new Command list is needed
         cmdLists.emplace_back(new CommandList_Vulkan(this, type));
     }
@@ -549,7 +615,7 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
         }
     }
 
-    auto& frame = m_Frames[currentFrame];
+    auto& frame = GetCurrentFrame();
     if (internal_cmdList.IsWaitingForSwapChainImage() && !frame.imageAvailableSemaphoreConsumed) 
     {
         auto& wait_semaphore_info = submission.waitSemaphoreInfos.emplace_back();

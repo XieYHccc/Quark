@@ -87,7 +87,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
             copyRegion.size = desc.size;
             copyRegion.srcOffset = 0;
             copyRegion.dstOffset = 0;
-            vkCmdCopyBuffer(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).m_Handle, m_Handle, 1, &copyRegion);
+            vkCmdCopyBuffer(copyCmd.transferCmdBuffer, ToInternal(copyCmd.stageBuffer.get()).m_Handle, m_Handle, 1, &copyRegion);
 
             // Submit this command which would block CPU
             m_Device->copyAllocator.submit(copyCmd);

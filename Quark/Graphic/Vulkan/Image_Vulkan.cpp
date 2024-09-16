@@ -317,15 +317,14 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
-        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.cmdBuffer, &dependencyInfo);
+        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.transferCmdBuffer, &dependencyInfo);
 
         // Copy to image
-        vkCmdCopyBufferToImage(copyCmd.cmdBuffer, ToInternal(copyCmd.stageBuffer.get()).GetHandle(), handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copys.size(), copys.data());
+        vkCmdCopyBufferToImage(copyCmd.transferCmdBuffer, ToInternal(copyCmd.stageBuffer.get()).GetHandle(), handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copys.size(), copys.data());
         
         // Generate mipmaps? //TODO: change to use graphic queue to generate mipmaps
-        if (desc.generateMipMaps) {
-            GenerateMipMap(desc, copyCmd.cmdBuffer); // After generating, image is in the layout of VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        }
+        if (desc.generateMipMaps) 
+            GenerateMipMap(desc, copyCmd.transitionCmdBuffer); // After generating, image is in the layout of VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
         // Transit image layout to required init layout
         if (desc.initialLayout != ImageLayout::UNDEFINED)
@@ -338,7 +337,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
             barrier.oldLayout = desc.generateMipMaps ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             barrier.newLayout = ConvertImageLayout(desc_.initialLayout);
 
-            vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.cmdBuffer, &dependencyInfo);
+            vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.transitionCmdBuffer, &dependencyInfo);
         }
 
         // submit and block cpu
@@ -362,18 +361,16 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         barrier.subresourceRange.levelCount = create_info.mipLevels;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        if (IsFormatSupportDepth(desc.format)) {
+        if (IsFormatSupportDepth(desc.format))
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        }
-        else {
+        else
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        }
 
         VkDependencyInfo dependencyInfo = {};
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
-        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(transitCmd.cmdBuffer, &dependencyInfo);
+        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(transitCmd.transitionCmdBuffer, &dependencyInfo);
 
         device_->copyAllocator.submit(transitCmd);
     }
