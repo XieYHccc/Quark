@@ -206,7 +206,7 @@ PipeLineLayout::~PipeLineLayout()
 }
 
 PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
-    :PipeLine(PipeLineBindingPoint::GRAPHIC), m_Device(device), m_CompatableRenderPassInfo(desc.renderPassInfo)
+    :PipeLine(PipeLineBindingPoint::GRAPHIC), m_Device(device), m_CompatableRenderPassInfo(desc.renderPassInfo2)
 {
     CORE_DEBUG_ASSERT(m_Device)
     CORE_DEBUG_ASSERT(desc.vertShader != nullptr && desc.fragShader != nullptr)
@@ -398,7 +398,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     // Multisampling
     VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
     multisample_state_create_info.sampleShadingEnable = VK_FALSE;
-    multisample_state_create_info.rasterizationSamples = (VkSampleCountFlagBits)desc.rasterState.SampleCount;
+    multisample_state_create_info.rasterizationSamples = (VkSampleCountFlagBits)desc.renderPassInfo2.sampleCount;
     multisample_state_create_info.minSampleShading = 1.0f;
     multisample_state_create_info.pSampleMask = 0;
     multisample_state_create_info.alphaToCoverageEnable = VK_FALSE;
@@ -414,8 +414,10 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     depth_stencil_state_create_info.depthBoundsTestEnable = VK_FALSE;
 
     // Blend state
+    CORE_ASSERT(desc.blendState.attachments.size() == desc.renderPassInfo2.numColorAttachments)
     std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachment_states(desc.blendState.attachments.size());
-    for (size_t i = 0; i < color_blend_attachment_states.size(); ++i) {
+    for (size_t i = 0; i < color_blend_attachment_states.size(); ++i) 
+    {
         auto& color_blend_state = desc.blendState;
         color_blend_attachment_states[i].blendEnable = (color_blend_state.attachments[i].enable_blend? VK_TRUE : VK_FALSE);
         color_blend_attachment_states[i].srcColorBlendFactor = _ConvertBlendFactor(color_blend_state.attachments[i].srcColorBlendFactor);
@@ -449,20 +451,18 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     dynamic_state_create_info.pDynamicStates = dynamic_states;
 
     // Rendering info : we are using dynamic rendering instead of renderpass and framebuffer
-    const auto& renderPassInfo = desc.renderPassInfo;
+    const auto& renderPassInfo2 = desc.renderPassInfo2;
     std::vector<VkFormat> vk_color_attachment_format;
-    vk_color_attachment_format.resize(renderPassInfo.numColorAttachments);
-    for (size_t i = 0; i < desc.renderPassInfo.numColorAttachments; i++) {
-        vk_color_attachment_format[i] = ConvertDataFormat(renderPassInfo.colorAttachmentFormats[i]);
-    }
+    vk_color_attachment_format.resize(renderPassInfo2.numColorAttachments);
+    for (size_t i = 0; i < renderPassInfo2.numColorAttachments; i++)
+        vk_color_attachment_format[i] = ConvertDataFormat(renderPassInfo2.colorAttachmentFormats[i]);
     
     VkPipelineRenderingCreateInfo renderingInfo = {};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
     renderingInfo.colorAttachmentCount = vk_color_attachment_format.size();
     renderingInfo.pColorAttachmentFormats = vk_color_attachment_format.data();
-    if (IsFormatSupportDepth(renderPassInfo.depthAttachmentFormat)) {
-        renderingInfo.depthAttachmentFormat = ConvertDataFormat(renderPassInfo.depthAttachmentFormat);
-    }
+    if (IsFormatSupportDepth(renderPassInfo2.depthAttachmentFormat))
+        renderingInfo.depthAttachmentFormat = ConvertDataFormat(renderPassInfo2.depthAttachmentFormat);
 
     // Finally, fill pipeline create info
     VkGraphicsPipelineCreateInfo pipeline_create_info = {};

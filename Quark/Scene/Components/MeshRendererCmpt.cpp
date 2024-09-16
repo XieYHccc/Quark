@@ -9,25 +9,25 @@ void MeshRendererCmpt::SetMesh(const Ref<Mesh>& mesh)
 	m_Mesh = mesh;
 	m_Materials.resize(mesh->subMeshes.size());
 	m_GraphicsPipeLines.resize(mesh->subMeshes.size());
-	
 }
 
 void MeshRendererCmpt::SetMaterial(uint32_t index, const Ref<Material>& mat)
 {
-	if(index < m_Materials.size() )
+	if (index < m_Materials.size())
+	{
 		m_Materials[index] = mat;
+		m_DirtyMaterialMask |= 1 << index;
+	}
 	else
 		CORE_LOGW("MeshRendererCmpt::SetMaterial: Index out of range");
 }
 
 Ref<Material> MeshRendererCmpt::GetMaterial(uint32_t index)
 {
-	if (index < m_Materials.size())
-		return m_Materials[index];
-	else
-		CORE_LOGW("MeshRendererCmpt::GetMaterial: Index out of range");
-
-	return nullptr;
+	CORE_DEBUG_ASSERT(index < m_Materials.size())
+	CORE_DEBUG_ASSERT(m_Materials[index] != nullptr)
+	
+	return m_Materials[index];
 }
 
 Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
@@ -56,6 +56,12 @@ Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 		{
 			m_CachedProgramVatriantKey.meshAttributeMask = m_Mesh->GetMeshAttributeMask();
 			UpdateCachedVertexAttribs(m_CachedProgramVatriantKey.meshAttributeMask);
+			requireNewPipeline = true;
+		}
+
+		if ((m_DirtyMaterialMask & (1u < index)) != 0)
+		{
+			m_DirtyMaterialMask &= ~(1u << index);
 			requireNewPipeline = true;
 		}
 
@@ -133,18 +139,20 @@ void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 
 void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 {
-	ShaderProgramVariant* programVariant = m_Materials[index]->shaderProgram->GetOrCreateVariant(m_CachedProgramVatriantKey);
+	Ref<Material> mat = GetMaterial(index);
+
+	ShaderProgramVariant* programVariant = mat->shaderProgram->GetOrCreateVariant(m_CachedProgramVatriantKey);
 
 	// TODO: Remove hardcoded states after restruct Material class
-	graphic::PipelineDepthStencilState dss = m_Materials[index]->alphaMode == AlphaMode::OPAQUE ?
+	graphic::PipelineDepthStencilState dss = mat->alphaMode == AlphaMode::OPAQUE ?
 		GpuResourceManager::Get().depthStencilState_depthWrite: GpuResourceManager::Get().depthStencilState_depthTestOnly;
 
-	graphic::PipelineColorBlendState cbs = m_Materials[index]->alphaMode == AlphaMode::OPAQUE ?
+	graphic::PipelineColorBlendState cbs = mat->alphaMode == AlphaMode::OPAQUE ?
 		graphic::PipelineColorBlendState::create_disabled(1) : graphic::PipelineColorBlendState::create_blend(1);
 
 	m_GraphicsPipeLines[index] = programVariant->GetOrCreatePipeLine(dss, cbs,
 		GpuResourceManager::Get().rasterizationState_fill,
-		GpuResourceManager::Get().renderPassInfo_simpleMainPass, //TODO: Remove hardcoded render pass when we have render graph system
+		GpuResourceManager::Get().renderPassInfo2_simpleColorDepthPass, //TODO: Remove hardcoded render pass when we have render graph system
 		m_CachedVertexInputLayout);
 }
 

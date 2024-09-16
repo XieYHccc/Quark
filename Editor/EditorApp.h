@@ -29,13 +29,12 @@ public:
 
 private:
     void CreateColorDepthAttachments();
-    void CreateRenderPasses();
 
-    graphic::RenderPassInfo forward_pass_info; // First pass
-    graphic::RenderPassInfo ui_pass_info;   // Second pass
+    graphic::RenderPassInfo2 m_ForwardPassInfo; // First pass
+    graphic::RenderPassInfo2 m_UiPassInfo;   // Second pass
 
-    Ref<graphic::Image> depth_attachment;
-    Ref<graphic::Image> color_attachment;
+    Ref<graphic::Image> m_depth_attachment;
+    Ref<graphic::Image> m_color_attachment;
 
     Ref<Texture> m_CubeMapTexture;
 

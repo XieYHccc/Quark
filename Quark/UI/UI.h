@@ -27,7 +27,7 @@ public:
 
     virtual void BeginFrame() = 0;
     virtual void EndFrame() = 0;
-    virtual void Render(graphic::CommandList* cmd) = 0;
+    virtual void OnRender(graphic::CommandList* cmd) = 0;
 
     virtual ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) = 0;
     virtual ImTextureID GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler) = 0;

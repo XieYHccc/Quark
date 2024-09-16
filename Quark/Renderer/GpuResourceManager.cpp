@@ -9,6 +9,7 @@ using namespace graphic;
 
 void GpuResourceManager::Init()
 {
+    graphic::Device* device = Application::Get().GetGraphicDevice();
 
     ImageDesc desc = {};
     desc.depth = 1;
@@ -34,10 +35,10 @@ void GpuResourceManager::Init()
         initData.rowPitch = 4;
         initData.slicePitch = 1 * 1 * 4;
 
-        image_white = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
+        image_white = device->CreateImage(desc, &initData);
 
         initData.data = &black;
-        image_black = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
+        image_black = device->CreateImage(desc, &initData);
 
     }
 
@@ -58,7 +59,7 @@ void GpuResourceManager::Init()
         initData.rowPitch = 32 * 4;
         initData.slicePitch = 32 * 32 * 4;
 
-        image_checkboard = Application::Get().GetGraphicDevice()->CreateImage(desc, &initData);
+        image_checkboard = device->CreateImage(desc, &initData);
     }
 
 
@@ -71,12 +72,12 @@ void GpuResourceManager::Init()
         desc.addressModeV = SamplerAddressMode::REPEAT;
         desc.addressModeW = SamplerAddressMode::REPEAT;
 
-        sampler_linear = Application::Get().GetGraphicDevice()->CreateSampler(desc);
+        sampler_linear = device->CreateSampler(desc);
 
         desc.minFilter = SamplerFilter::NEAREST;
         desc.magFliter = SamplerFilter::NEAREST;
 
-        sampler_nearst = Application::Get().GetGraphicDevice()->CreateSampler(desc);
+        sampler_nearst = device->CreateSampler(desc);
 
         // Cubemap sampler
         desc.minFilter = SamplerFilter::LINEAR;
@@ -85,7 +86,7 @@ void GpuResourceManager::Init()
         desc.addressModeV = SamplerAddressMode::CLAMPED_TO_EDGE;
         desc.addressModeW = SamplerAddressMode::CLAMPED_TO_EDGE;
 
-        sampler_cube = Application::Get().GetGraphicDevice()->CreateSampler(desc);
+        sampler_cube = device->CreateSampler(desc);
 
     }
     
@@ -126,9 +127,21 @@ void GpuResourceManager::Init()
 
     // Render Pass
     {
-        renderPassInfo_simpleMainPass.numColorAttachments = 1;
-        renderPassInfo_simpleMainPass.colorAttachmentFormats[0] = format_colorAttachment_main;
-        renderPassInfo_simpleMainPass.depthAttachmentFormat = format_depthAttachment_main;
+        // renderPassInfo_simpleMainPass.numColorAttachments = 1;
+        // renderPassInfo_simpleMainPass.colorAttachmentFormats[0] = format_colorAttachment_main;
+        // renderPassInfo_simpleMainPass.depthAttachmentFormat = format_depthAttachment_main;
+
+        renderPassInfo2_simpleColorPass.numColorAttachments = 1;
+        renderPassInfo2_simpleColorPass.colorAttachmentFormats[0] = format_colorAttachment_main;
+        renderPassInfo2_simpleColorPass.sampleCount = SampleCount::SAMPLES_1;
+
+        renderPassInfo2_simpleColorDepthPass.numColorAttachments = 1;
+        renderPassInfo2_simpleColorDepthPass.colorAttachmentFormats[0] = format_colorAttachment_main;
+        renderPassInfo2_simpleColorDepthPass.depthAttachmentFormat = format_depthAttachment_main;
+        renderPassInfo2_simpleColorDepthPass.sampleCount = SampleCount::SAMPLES_1;
+
+        renderPassInfo2_uiPass.numColorAttachments = 1;
+        renderPassInfo2_uiPass.colorAttachmentFormats[0] = Application::Get().GetGraphicDevice()->GetPresentImageFormat();
     }
 
     // vertex input layout
@@ -146,6 +159,24 @@ void GpuResourceManager::Init()
 
         vertexInputLayout_skybox.vertexBindInfos.push_back(vert_bind_info);
         vertexInputLayout_skybox.vertexAttribInfos.push_back(pos_attrib);
+    }
+
+    // Pipelines
+    {
+        Ref<graphic::Shader> skybox_vert_shader = device->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "BuiltInResources/Shaders/Spirv/skybox.vert.spv");
+        Ref<graphic::Shader> skybox_frag_shader = device->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
+
+        GraphicPipeLineDesc pipe_desc;
+        pipe_desc.vertShader = skybox_vert_shader;
+        pipe_desc.fragShader = skybox_frag_shader;
+        pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
+        pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
+        pipe_desc.rasterState = rasterizationState_fill;
+        pipe_desc.depthStencilState = depthStencilState_disabled;
+        pipe_desc.renderPassInfo2 = renderPassInfo2_simpleColorDepthPass;
+        pipe_desc.vertexInputLayout = vertexInputLayout_skybox;
+
+        pipeline_skybox = device->CreateGraphicPipeLine(pipe_desc);
     }
 
     CORE_LOGI("[GpuResourceManager]: Initialized");

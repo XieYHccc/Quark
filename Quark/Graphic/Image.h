@@ -2,7 +2,8 @@
 #include "Quark/Graphic/Common.h"
 
 namespace quark::graphic {
-enum ImageUsageBits {
+enum ImageUsageBits 
+{
     IMAGE_USAGE_SAMPLING_BIT = (1 << 0),
     IMAGE_USAGE_COLOR_ATTACHMENT_BIT = (1 << 1),
     IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT = (1 << 2),
@@ -12,13 +13,15 @@ enum ImageUsageBits {
     IMAGE_USAGE_INPUT_ATTACHMENT_BIT = (1 << 6),
 };
 
-enum class ImageType {
+enum class ImageType 
+{
     TYPE_2D,
     TYPE_3D,
     TYPE_CUBE,
 };
 
-enum class ImageLayout {
+enum class ImageLayout 
+{
     UNDEFINED,
     GENERAL,    // usuallly used for shader read and write
     COLOR_ATTACHMENT_OPTIMAL,
@@ -43,7 +46,8 @@ enum class SamplerAddressMode
     CLAMPED_TO_EDGE = 3
 };
 
-struct ImageDesc {
+struct ImageDesc 
+{
     u32 width = 0;
     u32 height = 0;
     u32 depth = 1;  // for 3d image
@@ -57,7 +61,8 @@ struct ImageDesc {
     bool generateMipMaps = false;
 };
 
-struct ImageInitData {
+struct ImageInitData 
+{
     const void* data = nullptr;
     // For uncompressed textures the pitch is the number of bytes between rows of texels. 
     // For compressed textures it is the number of bytes between rows of blocks.

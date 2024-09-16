@@ -4,6 +4,11 @@
 #include "Quark/Renderer/ShaderLibrary.h"
 namespace quark {
 
+enum class RenderingState
+{
+
+};
+
 // This class is responsible for managing some global gpu resources
 class GpuResourceManager : public util::MakeSingleton<GpuResourceManager> {
 public:
@@ -21,6 +26,9 @@ public:
     Ref<graphic::Sampler> sampler_nearst;
     Ref<graphic::Sampler> sampler_cube;
 
+    // pipelines
+    Ref<graphic::PipeLine> pipeline_skybox;
+
     // defalut depth stencil states
     graphic::PipelineDepthStencilState depthStencilState_depthWrite;
     graphic::PipelineDepthStencilState depthStencilState_disabled;
@@ -33,7 +41,10 @@ public:
     // vertex input layout
     graphic::VertexInputLayout vertexInputLayout_skybox;
 
-    graphic::RenderPassInfo renderPassInfo_simpleMainPass;
+    // graphic::RenderPassInfo
+    graphic::RenderPassInfo2 renderPassInfo2_simpleColorPass;
+    graphic::RenderPassInfo2 renderPassInfo2_simpleColorDepthPass;
+    graphic::RenderPassInfo2 renderPassInfo2_uiPass;
 
     GpuResourceManager() = default;
     ~GpuResourceManager() = default;

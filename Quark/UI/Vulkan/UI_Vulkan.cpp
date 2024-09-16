@@ -117,7 +117,7 @@ void UI_Vulkan::Init(graphic::Device* device, const UiSpecification& specs)
         init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
         
         // This format pointer must be cached due to some weird state tracking of imgui
-        m_colorFormat = graphic::ConvertDataFormat(m_device->GetSwapChainImageFormat());
+        m_colorFormat = graphic::ConvertDataFormat(m_device->GetPresentImageFormat());
         init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_colorFormat;
         ImGui_ImplVulkan_Init(&init_info);
     }
@@ -156,7 +156,7 @@ void UI_Vulkan::EndFrame()
     ImGui::Render();
 }
 
-void UI_Vulkan::Render(graphic::CommandList* cmd)
+void UI_Vulkan::OnRender(graphic::CommandList* cmd)
 {
     auto& internal = graphic::ToInternal(cmd);
 

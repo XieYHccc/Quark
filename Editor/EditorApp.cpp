@@ -38,7 +38,8 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1280, 720, 0.1, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
 {
     // Create Render structures
-    CreateRenderPasses();
+    m_ForwardPassInfo = GpuResourceManager::Get().renderPassInfo2_simpleColorDepthPass;   // use defalut render pass
+    m_UiPassInfo = GpuResourceManager::Get().renderPassInfo2_uiPass;
     CreateColorDepthAttachments();
 
     // Load cube map
@@ -147,7 +148,7 @@ void EditorApp::OnImGuiUpdate()
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
-    ImTextureID colorAttachmentId = UI::Get()->GetOrCreateTextureId(color_attachment, GpuResourceManager::Get().sampler_linear);
+    ImTextureID colorAttachmentId = UI::Get()->GetOrCreateTextureId(m_color_attachment, GpuResourceManager::Get().sampler_linear);
     ImGui::Image(colorAttachmentId, ImVec2{ m_ViewportSize.x, m_ViewportSize.y });
 
     if (ImGui::BeginDragDropTarget())
@@ -261,7 +262,7 @@ void EditorApp::OnRender(TimeStep ts)
         // Geometry pass
         {
             graphic::PipelineImageBarrier image_barrier;
-            image_barrier.image = color_attachment.get();
+            image_barrier.image = m_color_attachment.get();
             image_barrier.srcStageBits = graphic::PIPELINE_STAGE_ALL_GRAPHICS_BIT;
             image_barrier.srcMemoryAccessBits = 0;
             image_barrier.dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -274,8 +275,8 @@ void EditorApp::OnRender(TimeStep ts)
             graphic::Viewport viewport;
             viewport.x = 0;
             viewport.y = 0;
-            viewport.width = (float)color_attachment->GetDesc().width;
-            viewport.height = (float)color_attachment->GetDesc().height;
+            viewport.width = (float)m_color_attachment->GetDesc().width;
+            viewport.height = (float)m_color_attachment->GetDesc().height;
             viewport.minDepth = 0;
             viewport.maxDepth = 1;
 
@@ -286,10 +287,17 @@ void EditorApp::OnRender(TimeStep ts)
             scissor.offset.y = 0;
 
             // Begin pass
-            forward_pass_info.colorAttachments[0] = color_attachment.get();
-            forward_pass_info.clearColors[0] = {0.22f, 0.22f, 0.22f, 1.f};
-            forward_pass_info.depthAttachment = depth_attachment.get();
-            cmd->BeginRenderPass(forward_pass_info);
+            graphic::FrameBufferInfo fb_info;
+            fb_info.colorAttatchemtsLoadOp[0] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            fb_info.colorAttachments[0] = { m_color_attachment.get() };
+            fb_info.clearColors[0] = { 0.22f, 0.22f, 0.22f, 1.f };
+            fb_info.depthAttachment = m_depth_attachment.get();
+            fb_info.depthAttachmentLoadOp = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.depthAttachmentStoreOp = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            fb_info.ClearDepthStencil.depth_stencil = { 1.f, 0 };
+
+            cmd->BeginRenderPass(m_ForwardPassInfo, fb_info);
             cmd->SetViewPort(viewport);
             cmd->SetScissor(scissor);
 
@@ -317,7 +325,7 @@ void EditorApp::OnRender(TimeStep ts)
             cmd->PipeLineBarriers(nullptr, 0, &swapchain_image_barrier, 1, nullptr, 0);
 
             graphic::PipelineImageBarrier color_attachment_barrier;
-            color_attachment_barrier.image = color_attachment.get();
+            color_attachment_barrier.image = m_color_attachment.get();
             color_attachment_barrier.srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             color_attachment_barrier.srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             color_attachment_barrier.dstStageBits = graphic::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
@@ -326,9 +334,13 @@ void EditorApp::OnRender(TimeStep ts)
             color_attachment_barrier.layoutAfter = graphic::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
             cmd->PipeLineBarriers(nullptr, 0, &color_attachment_barrier, 1, nullptr, 0);
 
-            ui_pass_info.colorAttachments[0] = swap_chain_image;
-            cmd->BeginRenderPass(ui_pass_info);
-            UI::Get()->Render(cmd);
+            graphic::FrameBufferInfo fb_info;
+            fb_info.colorAttatchemtsLoadOp[0] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            fb_info.colorAttachments[0] = swap_chain_image;
+
+            cmd->BeginRenderPass(m_UiPassInfo, fb_info);
+            UI::Get()->OnRender(cmd);
             cmd->EndRenderPass();
         }
 
@@ -412,36 +424,13 @@ void EditorApp::CreateColorDepthAttachments()
         image_desc.mipLevels = 1;
         image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         image_desc.usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        depth_attachment = m_GraphicDevice->CreateImage(image_desc);
+        m_depth_attachment = m_GraphicDevice->CreateImage(image_desc);
 
         // Create color image
         image_desc.format = GpuResourceManager::Get().format_colorAttachment_main;
         image_desc.initialLayout = ImageLayout::UNDEFINED;
         image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
-        color_attachment = m_GraphicDevice->CreateImage(image_desc);
-}
-
-void EditorApp::CreateRenderPasses()
-{   
-    // First pass : geometry pass
-    forward_pass_info = {};
-    forward_pass_info.numColorAttachments = 1;
-    forward_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-    forward_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
-    forward_pass_info.colorAttachmentFormats[0] = GpuResourceManager::Get().format_colorAttachment_main;
-    forward_pass_info.depthAttachment = depth_attachment.get();
-    forward_pass_info.depthAttachmentLoadOp = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-    forward_pass_info.depthAttachmentStoreOp = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
-    forward_pass_info.ClearDepthStencil.depth_stencil = {1.f, 0};
-    forward_pass_info.depthAttachmentFormat = GpuResourceManager::Get().format_depthAttachment_main;
-
-    // Second pass : UI pass
-    ui_pass_info = {};
-    ui_pass_info.numColorAttachments = 1;
-    ui_pass_info.colorAttatchemtsLoadOp[0] = graphic::RenderPassInfo::AttachmentLoadOp::CLEAR;
-    ui_pass_info.colorAttatchemtsStoreOp[0] = graphic::RenderPassInfo::AttachmentStoreOp::STORE;
-    ui_pass_info.colorAttachmentFormats[0] = m_GraphicDevice->GetSwapChainImageFormat();
-
+        m_color_attachment = m_GraphicDevice->CreateImage(image_desc);
 }
 
 }

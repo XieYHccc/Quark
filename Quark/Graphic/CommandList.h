@@ -97,7 +97,10 @@ public:
     virtual void SetScissor(const Scissor& scissor) = 0;
 
     virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) = 0;
-    virtual void BeginRenderPass(const RenderPassInfo& info) = 0;
+    
+    // RenderPassInfo2 here is used to check the formats compatibilies between renderpass and framebuffer
+    virtual void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) = 0;
+    // virtual void BeginRenderPass(const RenderPassInfo& info) = 0;
     virtual void EndRenderPass() = 0;
     
     QueueType GetQueueType() const { return m_QueueType; }

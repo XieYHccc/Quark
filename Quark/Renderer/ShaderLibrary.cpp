@@ -106,11 +106,12 @@ ShaderTemplate* ShaderLibrary::GetOrCreateShaderTemplate(const std::string& path
 Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::PipelineDepthStencilState& ds,
 																 const graphic::PipelineColorBlendState& cb, 
 																 const graphic::RasterizationState& rs, 
-																 const graphic::RenderPassInfo& compatablerp,
+																 const graphic::RenderPassInfo2& compatablerp,
 																 const graphic::VertexInputLayout& input)
 {
 	util::Hasher h;
 
+	// hash depth stencil state
 	h.u32(static_cast<uint32_t>(ds.enableDepthTest));
 	h.u32(static_cast<uint32_t>(ds.enableDepthWrite));
 	h.u32(util::ecast(ds.depthCompareOp));
@@ -118,7 +119,7 @@ Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::
 	h.u32(util::ecast(rs.cullMode));
 	h.u32(util::ecast(rs.frontFaceType));
 
-	CORE_ASSERT(cb.attachments.size() == compatablerp.numColorAttachments)
+	// hash blend state
 	for (size_t i = 0; i < compatablerp.numColorAttachments; i++) 
 	{
 		const auto& att = cb.attachments[i];
@@ -133,10 +134,12 @@ Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::
 			h.u32(util::ecast(att.srcAlphaBlendFactor));
 			h.u32(util::ecast(att.dstAlphaBlendFactor));
 		}
-
-		h.u32(util::ecast(compatablerp.colorAttachmentFormats[i]));
 	}
 
+	// hash render pass info
+	h.u64(compatablerp.GetHash());
+
+	// hash vertex input layout
 	for (const auto& attrib : input.vertexAttribInfos) 
 	{
 		h.u32(util::ecast(attrib.format));
@@ -167,7 +170,7 @@ Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::
 		desc.blendState = cb;
 		desc.rasterState = rs;
 		desc.topologyType = graphic::TopologyType::TRANGLE_LIST;
-		desc.renderPassInfo = compatablerp;
+		desc.renderPassInfo2 = compatablerp;
 		desc.vertexInputLayout = input;
 
 		Ref<graphic::PipeLine> newPipeline = Application::Get().GetGraphicDevice()->CreateGraphicPipeLine(desc);

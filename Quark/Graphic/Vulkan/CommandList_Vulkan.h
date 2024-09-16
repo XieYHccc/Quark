@@ -38,7 +38,9 @@ public:
     void SetScissor(const Scissor& scissor) override;
 
     void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* imageBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) override;
-    void BeginRenderPass(const RenderPassInfo& info) override;
+    
+    void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo);
+    // void BeginRenderPass(const RenderPassInfo& info) override;
     void EndRenderPass() override;
 
     ///////////////////////// Vulkan specific /////////////////////////
@@ -90,8 +92,9 @@ private:
     uint32_t m_SwapChainWaitStages = 0;
 
     // Rendering state 
-    const RenderPassInfo* m_CurrentRenderPassInfo = nullptr;
+    //const RenderPassInfo* m_CurrentRenderPassInfo = nullptr;
     const PipeLine_Vulkan* m_CurrentPipeline = nullptr;
+    RenderPassInfo2 m_CurrentRenderPassInfo2 = {};
     VkDescriptorSet m_CurrentSets[DESCRIPTOR_SET_MAX_NUM] = {};
     VkViewport m_Viewport = {};
     VkRect2D m_Scissor = {};

@@ -30,6 +30,18 @@ ComponentType GetType() override {\
     return GetStaticComponentType();\
 }
 
+template <typename T, typename Tup>
+inline T* GetComponent(Tup& t)
+{
+    return std::get<T*>(t);
+}
+
+template <typename T>
+inline T* Get(const std::tuple<T*>& t)
+{
+    return std::get<0>(t);
+}
+
 template <typename... Ts>
 using ComponentGroup = std::tuple<Ts*...>;
 

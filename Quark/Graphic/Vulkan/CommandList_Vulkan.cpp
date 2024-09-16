@@ -180,77 +180,76 @@ void CommandList_Vulkan::ResetBindingState()
     m_DirtySetDynamicMask = 0;
 }
 
-void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
+void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo)
 {
-    CORE_DEBUG_ASSERT(info.numColorAttachments < RenderPassInfo::MAX_COLOR_ATTHACHEMNT_NUM)
-    CORE_DEBUG_ASSERT(info.numResolveAttachments < RenderPassInfo::MAX_COLOR_ATTHACHEMNT_NUM)
+    CORE_DEBUG_ASSERT(renderPassInfo.numColorAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
+    CORE_DEBUG_ASSERT(frameBufferInfo.numResolveAttachments < renderPassInfo.numColorAttachments)
 
 #if QK_DEBUG_BUILD
-    if (state != CommandListState::IN_RECORDING) {
-        CORE_LOGE("You must call BeginRenderPass() in recording state.")
-    }
+        if (state != CommandListState::IN_RECORDING)
+            CORE_LOGE("You must call BeginRenderPass() in recording state.")
 #endif
 
     // Change state
     state = CommandListState::IN_RENDERPASS;
-    m_CurrentRenderPassInfo = &info;
+    m_CurrentRenderPassInfo2 = renderPassInfo;
     m_CurrentPipeline = nullptr;
     ResetBindingState();
 
-    VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
+    VkRenderingInfo rendering_info = { VK_STRUCTURE_TYPE_RENDERING_INFO };
     rendering_info.layerCount = 1;
     rendering_info.renderArea.offset.x = 0;
     rendering_info.renderArea.offset.y = 0;
     rendering_info.renderArea.extent.width = 0;
     rendering_info.renderArea.extent.height = 0;
-    rendering_info.colorAttachmentCount = info.numColorAttachments;
+    rendering_info.colorAttachmentCount = renderPassInfo.numColorAttachments;
 
-    VkRenderingAttachmentInfo color_attachments[RenderPassInfo::MAX_COLOR_ATTHACHEMNT_NUM] = {};
+    VkRenderingAttachmentInfo color_attachments[MAX_COLOR_ATTHACHEMNT_NUM] = {};
     VkRenderingAttachmentInfo depth_attachment = {};
 
-    auto convertLoadOp = [](RenderPassInfo::AttachmentLoadOp op) -> VkAttachmentLoadOp {
+    auto convertLoadOp = [](FrameBufferInfo::AttachmentLoadOp op) -> VkAttachmentLoadOp {
         switch (op) {
         default:
-        case RenderPassInfo::AttachmentLoadOp::CLEAR:
+        case FrameBufferInfo::AttachmentLoadOp::CLEAR:
             return VK_ATTACHMENT_LOAD_OP_CLEAR;
-        case RenderPassInfo::AttachmentLoadOp::LOAD:
+        case FrameBufferInfo::AttachmentLoadOp::LOAD:
             return VK_ATTACHMENT_LOAD_OP_LOAD;
-        case RenderPassInfo::AttachmentLoadOp::DONTCARE:
+        case FrameBufferInfo::AttachmentLoadOp::DONTCARE:
             return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         }
-    };
+        };
 
-    auto convertStoreOp = [](RenderPassInfo::AttachmentStoreOp op) ->VkAttachmentStoreOp {
+    auto convertStoreOp = [](FrameBufferInfo::AttachmentStoreOp op) ->VkAttachmentStoreOp {
         switch (op) {
         default:
-        case RenderPassInfo::AttachmentStoreOp::STORE:
+        case FrameBufferInfo::AttachmentStoreOp::STORE:
             return VK_ATTACHMENT_STORE_OP_STORE;
-        case RenderPassInfo::AttachmentStoreOp::DONTCARE:
+        case FrameBufferInfo::AttachmentStoreOp::DONTCARE:
             return VK_ATTACHMENT_STORE_OP_DONT_CARE;
         }
-    };
+        };
 
     // Color Attachments
-    for (size_t i = 0; i < info.numColorAttachments; ++i) {
-        const auto image = info.colorAttachments[i];
+    for (size_t i = 0; i < renderPassInfo.numColorAttachments; ++i) {
+        const auto* image = frameBufferInfo.colorAttachments[i];
         const ImageDesc& image_desc = image->GetDesc();
         auto& internal_image = ToInternal(image);
 
         rendering_info.renderArea.extent.width = std::max(rendering_info.renderArea.extent.width, image_desc.width);
-		rendering_info.renderArea.extent.height = std::max(rendering_info.renderArea.extent.height, image_desc.height);
+        rendering_info.renderArea.extent.height = std::max(rendering_info.renderArea.extent.height, image_desc.height);
 
         color_attachments[i].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         color_attachments[i].imageView = internal_image.GetView();
         color_attachments[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        color_attachments[i].loadOp = convertLoadOp(info.colorAttatchemtsLoadOp[i]);
-        color_attachments[i].storeOp = convertStoreOp(info.colorAttatchemtsStoreOp[i]);
-        color_attachments[i].clearValue.color.float32[0] = info.clearColors[i].color[0];
-        color_attachments[i].clearValue.color.float32[1] = info.clearColors[i].color[1];
-        color_attachments[i].clearValue.color.float32[2] = info.clearColors[i].color[2];
-        color_attachments[i].clearValue.color.float32[3] = info.clearColors[i].color[3];
+        color_attachments[i].loadOp = convertLoadOp(frameBufferInfo.colorAttatchemtsLoadOp[i]);
+        color_attachments[i].storeOp = convertStoreOp(frameBufferInfo.colorAttatchemtsStoreOp[i]);
+        color_attachments[i].clearValue.color.float32[0] = frameBufferInfo.clearColors[i].color[0];
+        color_attachments[i].clearValue.color.float32[1] = frameBufferInfo.clearColors[i].color[1];
+        color_attachments[i].clearValue.color.float32[2] = frameBufferInfo.clearColors[i].color[2];
+        color_attachments[i].clearValue.color.float32[3] = frameBufferInfo.clearColors[i].color[3];
 
         // internal swapchain image state tracking
-        if (internal_image.IsSwapChainImage()) 
+        if (internal_image.IsSwapChainImage())
         {
             m_WaitForSwapchainImage = true;
             m_SwapChainWaitStages |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -258,31 +257,135 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
     }
 
     // Resolve attatchments
-    for (size_t i = 0; i < info.numResolveAttachments; ++i) {
-        color_attachments[i].resolveImageView = ToInternal(info.resolveAttatchments[i]).GetView();
+    for (size_t i = 0; i < frameBufferInfo.numResolveAttachments; ++i) {
+        color_attachments[i].resolveImageView = ToInternal(frameBufferInfo.resolveAttatchments[i]).GetView();
         color_attachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_attachments[i].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
     }
 
     // Depth attatchment
-    if (info.depthAttachment != nullptr) {
+    if (frameBufferInfo.depthAttachment != nullptr) {
         depth_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        depth_attachment.imageView = ToInternal(info.depthAttachment).GetView();
+        depth_attachment.imageView = ToInternal(frameBufferInfo.depthAttachment).GetView();
         depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        depth_attachment.loadOp = convertLoadOp(info.depthAttachmentLoadOp);
-        depth_attachment.storeOp = convertStoreOp(info.depthAttachmentStoreOp);
-        depth_attachment.clearValue.depthStencil.depth = info.ClearDepthStencil.depth_stencil.depth;
+        depth_attachment.loadOp = convertLoadOp(frameBufferInfo.depthAttachmentLoadOp);
+        depth_attachment.storeOp = convertStoreOp(frameBufferInfo.depthAttachmentStoreOp);
+        depth_attachment.clearValue.depthStencil.depth = frameBufferInfo.ClearDepthStencil.depth_stencil.depth;
 
     }
 
-    rendering_info.pColorAttachments = info.numColorAttachments > 0? color_attachments : nullptr;
-    rendering_info.pDepthAttachment = info.depthAttachment ? &depth_attachment : nullptr;
+    rendering_info.pColorAttachments = renderPassInfo.numColorAttachments > 0 ? color_attachments : nullptr;
+    rendering_info.pDepthAttachment = frameBufferInfo.depthAttachment ? &depth_attachment : nullptr;
     //TODO: Support stencil test
     rendering_info.pStencilAttachment = nullptr;
     rendering_info.pNext = nullptr;
 
-    m_GraphicDevice->vkContext->extendFunction.pVkCmdBeginRenderingKHR(m_CmdBuffer, &rendering_info);   
+    m_GraphicDevice->vkContext->extendFunction.pVkCmdBeginRenderingKHR(m_CmdBuffer, &rendering_info);
 }
+
+//void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
+//{
+//    CORE_DEBUG_ASSERT(info.numColorAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
+//    CORE_DEBUG_ASSERT(info.numResolveAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
+//
+//#if QK_DEBUG_BUILD
+//    if (state != CommandListState::IN_RECORDING) {
+//        CORE_LOGE("You must call BeginRenderPass() in recording state.")
+//    }
+//#endif
+//
+//    // Change state
+//    state = CommandListState::IN_RENDERPASS;
+//    //m_CurrentRenderPassInfo = &info;
+//    m_CurrentPipeline = nullptr;
+//    ResetBindingState();
+//
+//    VkRenderingInfo rendering_info = {VK_STRUCTURE_TYPE_RENDERING_INFO};
+//    rendering_info.layerCount = 1;
+//    rendering_info.renderArea.offset.x = 0;
+//    rendering_info.renderArea.offset.y = 0;
+//    rendering_info.renderArea.extent.width = 0;
+//    rendering_info.renderArea.extent.height = 0;
+//    rendering_info.colorAttachmentCount = info.numColorAttachments;
+//
+//    VkRenderingAttachmentInfo color_attachments[MAX_COLOR_ATTHACHEMNT_NUM] = {};
+//    VkRenderingAttachmentInfo depth_attachment = {};
+//
+//    auto convertLoadOp = [](RenderPassInfo::AttachmentLoadOp op) -> VkAttachmentLoadOp {
+//        switch (op) {
+//        default:
+//        case RenderPassInfo::AttachmentLoadOp::CLEAR:
+//            return VK_ATTACHMENT_LOAD_OP_CLEAR;
+//        case RenderPassInfo::AttachmentLoadOp::LOAD:
+//            return VK_ATTACHMENT_LOAD_OP_LOAD;
+//        case RenderPassInfo::AttachmentLoadOp::DONTCARE:
+//            return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+//        }
+//    };
+//
+//    auto convertStoreOp = [](RenderPassInfo::AttachmentStoreOp op) ->VkAttachmentStoreOp {
+//        switch (op) {
+//        default:
+//        case RenderPassInfo::AttachmentStoreOp::STORE:
+//            return VK_ATTACHMENT_STORE_OP_STORE;
+//        case RenderPassInfo::AttachmentStoreOp::DONTCARE:
+//            return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+//        }
+//    };
+//
+//    // Color Attachments
+//    for (size_t i = 0; i < info.numColorAttachments; ++i) {
+//        const auto image = info.colorAttachments[i];
+//        const ImageDesc& image_desc = image->GetDesc();
+//        auto& internal_image = ToInternal(image);
+//
+//        rendering_info.renderArea.extent.width = std::max(rendering_info.renderArea.extent.width, image_desc.width);
+//		rendering_info.renderArea.extent.height = std::max(rendering_info.renderArea.extent.height, image_desc.height);
+//
+//        color_attachments[i].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+//        color_attachments[i].imageView = internal_image.GetView();
+//        color_attachments[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+//        color_attachments[i].loadOp = convertLoadOp(info.colorAttatchemtsLoadOp[i]);
+//        color_attachments[i].storeOp = convertStoreOp(info.colorAttatchemtsStoreOp[i]);
+//        color_attachments[i].clearValue.color.float32[0] = info.clearColors[i].color[0];
+//        color_attachments[i].clearValue.color.float32[1] = info.clearColors[i].color[1];
+//        color_attachments[i].clearValue.color.float32[2] = info.clearColors[i].color[2];
+//        color_attachments[i].clearValue.color.float32[3] = info.clearColors[i].color[3];
+//
+//        // internal swapchain image state tracking
+//        if (internal_image.IsSwapChainImage()) 
+//        {
+//            m_WaitForSwapchainImage = true;
+//            m_SwapChainWaitStages |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+//        }
+//    }
+//
+//    // Resolve attatchments
+//    for (size_t i = 0; i < info.numResolveAttachments; ++i) {
+//        color_attachments[i].resolveImageView = ToInternal(info.resolveAttatchments[i]).GetView();
+//        color_attachments[i].resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+//        color_attachments[i].resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
+//    }
+//
+//    // Depth attatchment
+//    if (info.depthAttachment != nullptr) {
+//        depth_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+//        depth_attachment.imageView = ToInternal(info.depthAttachment).GetView();
+//        depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+//        depth_attachment.loadOp = convertLoadOp(info.depthAttachmentLoadOp);
+//        depth_attachment.storeOp = convertStoreOp(info.depthAttachmentStoreOp);
+//        depth_attachment.clearValue.depthStencil.depth = info.ClearDepthStencil.depth_stencil.depth;
+//
+//    }
+//
+//    rendering_info.pColorAttachments = info.numColorAttachments > 0? color_attachments : nullptr;
+//    rendering_info.pDepthAttachment = info.depthAttachment ? &depth_attachment : nullptr;
+//    //TODO: Support stencil test
+//    rendering_info.pStencilAttachment = nullptr;
+//    rendering_info.pNext = nullptr;
+//
+//    m_GraphicDevice->vkContext->extendFunction.pVkCmdBeginRenderingKHR(m_CmdBuffer, &rendering_info);   
+//}
 
 void CommandList_Vulkan::EndRenderPass()
 {   
@@ -425,32 +528,23 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
     CORE_DEBUG_ASSERT(internal_pipeline.GetHandle() != VK_NULL_HANDLE)
 
 #ifdef QK_DEBUG_BUILD
-    if (m_CurrentRenderPassInfo == nullptr) 
+    if (!m_CurrentRenderPassInfo2.IsValid()) 
     {
         CORE_LOGE("BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.")
         return;
     }
 
     const auto& render_pass_info = internal_pipeline.GetCompatableRenderPassInfo();
-    if (render_pass_info.numColorAttachments != m_CurrentRenderPassInfo->numColorAttachments) 
+    if (render_pass_info.numColorAttachments != m_CurrentRenderPassInfo2.numColorAttachments) 
     {
         CORE_LOGE("BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.")
         return;
     }
 
-    if (render_pass_info.depthAttachmentFormat != m_CurrentRenderPassInfo->depthAttachmentFormat)
+    if (render_pass_info.depthAttachmentFormat != m_CurrentRenderPassInfo2.depthAttachmentFormat)
     {
         CORE_LOGE("BindPipeLine()::The pipeline's depth attachment is not equal to the current render pass.")
         return;
-    }
-
-    for (size_t i = 0; i < render_pass_info.numColorAttachments; i++) 
-    {
-        if (render_pass_info.colorAttachmentFormats[i] != m_CurrentRenderPassInfo->colorAttachments[i]->GetDesc().format) 
-        {
-            CORE_LOGE("BindPipeLine()::The pipeline's color attachment format[{}] is not equal to the current render pass.", i)
-            return;
-        }
     }
 #endif
 

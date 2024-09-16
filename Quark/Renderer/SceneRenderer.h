@@ -73,14 +73,12 @@ public:
 
 private:
     void UpdateRenderObjects();
-    void CreateSkyBoxPipeLine();
 
     graphic::Device* m_GraphicDevice;
 
     Ref<Scene> m_Scene;
     Ref<Texture> m_CubeMap;
     Ref<Mesh> m_CubeMesh;
-    Ref<graphic::PipeLine> m_SkyboxPipeLine;
 
     // Data need to be updated every frame
     struct DrawContext 

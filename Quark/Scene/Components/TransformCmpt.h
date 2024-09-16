@@ -59,6 +59,8 @@ private:
 
     glm::mat4 m_worldMatrix;
     glm::mat4 m_parentWorldMatrix;
+
+    friend class Scene;
 };
 
 } // namespace quark

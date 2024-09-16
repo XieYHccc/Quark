@@ -96,7 +96,7 @@ public:
     void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) override final;
 
     Image* GetPresentImage() override final { return m_SwapChainImages[m_CurrentSwapChainImageIdx].get(); }
-    DataFormat GetSwapChainImageFormat() override final;
+    DataFormat GetPresentImageFormat() override final;
 
     bool isFormatSupported(DataFormat format) override final;
     void SetDebugName(const Ref<GpuResource>& resouce, const char* name) override final;
@@ -111,6 +111,8 @@ public:
     PerFrameData& GetCurrentFrame() { return m_Frames[currentFrame]; }
 
 private:
+    void ResizeSwapchain();
+
     // Represent a physical queue
     // Responsible for queuing commad buffers and submit them in batch
     struct CommandQueue 
@@ -132,12 +134,12 @@ private:
         void submit(VkFence fence = nullptr);
     };
 
-    void ResizeSwapchain();
-
     std::vector<Ref<Image>> m_SwapChainImages; // Owned by Context' swapchain, no lifetime management here
-    u32 m_CurrentSwapChainImageIdx;
+    uint32_t m_CurrentSwapChainImageIdx;
+
     PerFrameData m_Frames[MAX_FRAME_NUM_IN_FLIGHT];
     CommandQueue m_Queues[QUEUE_TYPE_MAX_ENUM];
+
     bool m_RecreateSwapchain;
 
 };

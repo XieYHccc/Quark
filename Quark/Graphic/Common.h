@@ -9,6 +9,7 @@ namespace quark::graphic {
 #define SET_BINDINGS_MAX_NUM 16
 #define PUSH_CONSTANT_DATA_SIZE 128
 #define VERTEX_BUFFER_MAX_NUM 8
+#define MAX_COLOR_ATTHACHEMNT_NUM 8
 
 // Forward declaraton
 class Device;

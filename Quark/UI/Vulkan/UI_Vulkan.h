@@ -15,7 +15,7 @@ public:
 
     void BeginFrame() override;
     void EndFrame() override;
-    void Render(graphic::CommandList* cmd) override;
+    void OnRender(graphic::CommandList* cmd) override;
 
     ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) override;
     ImTextureID GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler) override;

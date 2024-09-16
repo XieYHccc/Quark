@@ -31,12 +31,13 @@ public:
 
     VkPipeline GetHandle() const { return m_Handle; }
     const PipeLineLayout* GetLayout() const { return m_Layout; }
-    const RenderPassInfo& GetCompatableRenderPassInfo() const { return m_CompatableRenderPassInfo; }
+    const RenderPassInfo2& GetCompatableRenderPassInfo() const { return m_CompatableRenderPassInfo; }
+
 private:
     Device_Vulkan* m_Device;
     VkPipeline m_Handle = VK_NULL_HANDLE;
     PipeLineLayout* m_Layout = nullptr; // no lifetime management here
-    RenderPassInfo m_CompatableRenderPassInfo;
+    RenderPassInfo2 m_CompatableRenderPassInfo;
 };
 
 CONVERT_TO_VULKAN_INTERNAL_FUNC(PipeLine)

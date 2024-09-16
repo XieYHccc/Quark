@@ -20,8 +20,8 @@ Quark is my personal learning project.
 
 - Windows, MacOS
 - C++20( have been tested on MSVC and Clang)
-- CMake 3.10 +
-- Vulkan1.2+
+- CMake 3.10+
+- Vulkan 1.2+
 
 
 ## Build Editor

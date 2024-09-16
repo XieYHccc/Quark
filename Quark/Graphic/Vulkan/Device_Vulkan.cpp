@@ -593,7 +593,7 @@ void Device_Vulkan::ResizeSwapchain()
         desc.height = vkContext->swapChainExtent.height;
         desc.width = vkContext->swapChainExtent.width;
         desc.depth = 1;
-        desc.format = GetSwapChainImageFormat();
+        desc.format = GetPresentImageFormat();
 
         Ref<Image> newImage = CreateRef<Image_Vulkan>(desc);
         auto& internal_image = ToInternal(newImage.get());
@@ -607,7 +607,7 @@ void Device_Vulkan::ResizeSwapchain()
 
 }
 
-DataFormat Device_Vulkan::GetSwapChainImageFormat()
+DataFormat Device_Vulkan::GetPresentImageFormat()
 {
     VkFormat format = vkContext->surfaceFormat.format;
 

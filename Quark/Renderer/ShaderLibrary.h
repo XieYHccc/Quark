@@ -48,7 +48,7 @@ public:
 	Ref<graphic::PipeLine> GetOrCreatePipeLine(const graphic::PipelineDepthStencilState& ds, 
 		const graphic::PipelineColorBlendState& cb,
 		const graphic::RasterizationState& rs,
-		const graphic::RenderPassInfo& compatablerp,
+		const graphic::RenderPassInfo2& compatablerp,
 		const graphic::VertexInputLayout& input);
 
 private:

@@ -17,20 +17,23 @@ enum class FrontFaceType
     COUNTER_CLOCKWISE
 };
 
-enum class TopologyType {
+enum class TopologyType 
+{
     TRANGLE_LIST,
     LINE_LIST,
     POINT_LIST,
     MAX_ENUM
 };
 
-enum class CullMode{
+enum class CullMode 
+{
     NONE,
     FRONT,
     BACK,
 };
 
-enum class BlendOperation {
+enum class BlendOperation 
+{
     ADD,
     SUBTRACT,
     REVERSE_SUBTRACT,
@@ -39,7 +42,8 @@ enum class BlendOperation {
     MAX_ENUM
 };
 
-enum class BlendFactor {
+enum class BlendFactor 
+{
     ZERO,
     ONE,
     SRC_COLOR,
@@ -62,12 +66,14 @@ enum class BlendFactor {
     MAX_ENUM
 };
 
-struct PipelineColorBlendState {
+struct PipelineColorBlendState 
+{
     // Currently logic op is not in use.
     bool enable_logic_op = false;
     LogicOperation logic_op = LogicOperation::CLEAR;
 
-    struct Attachment {
+    struct Attachment 
+    {
         bool enable_blend = false;
         BlendFactor srcColorBlendFactor = BlendFactor::ZERO;
         BlendFactor dstColorBlendFactor = BlendFactor::ZERO;
@@ -81,7 +87,8 @@ struct PipelineColorBlendState {
         bool writeA = true;
     };
 
-    static PipelineColorBlendState create_disabled(int p_attachments = 1) {
+    static PipelineColorBlendState create_disabled(int p_attachments = 1) 
+    {
         PipelineColorBlendState bs;
         for (int i = 0; i < p_attachments; i++) {
             bs.attachments.push_back(Attachment());
@@ -89,7 +96,8 @@ struct PipelineColorBlendState {
         return bs;
     }
 
-    static PipelineColorBlendState create_blend(int p_attachments = 1) {
+    static PipelineColorBlendState create_blend(int p_attachments = 1) 
+    {
         PipelineColorBlendState bs;
         for (int i = 0; i < p_attachments; i++) {
             Attachment ba;
@@ -107,7 +115,8 @@ struct PipelineColorBlendState {
     std::vector<Attachment> attachments; // One per render target texture.
 };
 
-struct RasterizationState {
+struct RasterizationState 
+{
     CullMode cullMode = CullMode::NONE;
     FrontFaceType frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
     PolygonMode polygonMode = PolygonMode::Fill;
@@ -117,7 +126,8 @@ struct RasterizationState {
     float lineWidth = 1.f;
 };
 
-struct PipelineDepthStencilState {
+struct PipelineDepthStencilState 
+{
     bool enableDepthTest = false;
     bool enableDepthWrite = false;
     CompareOperation depthCompareOp = CompareOperation::LESS_OR_EQUAL;
@@ -171,11 +181,8 @@ struct GraphicPipeLineDesc {
     PipelineDepthStencilState depthStencilState = {};
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
     VertexInputLayout vertexInputLayout;
-    RenderPassInfo renderPassInfo;  // Compatable Renderpass info. Only the Format information are actually needed.
-
-    // For dynamic rendering (Deprecated)
-    // std::vector<DataFormat> colorAttachmentFormats;
-    // DataFormat depthAttachmentFormat = DataFormat::UNDEFINED; 
+    // RenderPassInfo renderPassInfo;  // Compatable Renderpass info. Only the Format informations are actually needed when createing pipeline.
+    RenderPassInfo2 renderPassInfo2;
 };
 
 
@@ -185,7 +192,7 @@ enum class PipeLineBindingPoint
     COMPUTE
 };
 
-class PipeLine : public GpuResource{
+class PipeLine : public GpuResource {
 public:
     PipeLine(PipeLineBindingPoint bindingPoint) : m_BindingPoint(bindingPoint) {};
     virtual ~PipeLine() = default;

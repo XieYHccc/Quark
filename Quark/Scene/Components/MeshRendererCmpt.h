@@ -30,11 +30,13 @@ private:
 	
 	// The count of materials should be equal to the count of submeshes in the mesh
 	std::vector<Ref<Material>> m_Materials;
+	uint32_t m_DirtyMaterialMask = 0;
 
 	// TODO: Change this when we have a render graph system
 	// A mesh could be processed through multiple render pass and multiple pipelines
 	std::vector<Ref<graphic::PipeLine>> m_GraphicsPipeLines;
 
+	// Local rendering state
 	VariantSignatureKey m_CachedProgramVatriantKey;
 
 	graphic::VertexInputLayout m_CachedVertexInputLayout;

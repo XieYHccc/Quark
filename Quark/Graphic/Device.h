@@ -55,7 +55,7 @@ public:
 
 	/*** SWAPCHAIN ***/
     virtual Image* GetPresentImage() = 0; // Owned by device.
-    virtual DataFormat GetSwapChainImageFormat() = 0;
+    virtual DataFormat GetPresentImageFormat() = 0;
 
     /*** PROPERTIES ***/
     virtual bool isFormatSupported(DataFormat format) = 0;

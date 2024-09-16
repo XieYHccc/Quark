@@ -124,7 +124,29 @@ Entity* Scene::GetMainCameraEntity()
 
 void Scene::OnUpdate()
 {
+    RunTransformUpdateSystem();
+}
 
+void Scene::RunTransformUpdateSystem()
+{
+    auto& groupVector = GetComponents<TransformCmpt>();
+
+    for (auto& group : groupVector)
+    {
+        TransformCmpt* t = GetComponent<TransformCmpt>(group);
+
+        if (t->IsParentDirty())
+        {
+            t->UpdateWorldMatrix_Parent();
+            t->SetParentDirty(false);
+            t->SetDirty(false);
+        }
+        else if (t->IsDirty())
+        {
+            t->UpdateWorldMatrix();
+            t->SetDirty(false);
+        }
+    }
 }
 
 

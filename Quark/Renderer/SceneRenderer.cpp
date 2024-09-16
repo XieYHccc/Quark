@@ -40,7 +40,7 @@ void SceneRenderer::UpdateRenderObjects()
 
     // Fill render objects
     const auto& cmpts = m_Scene->GetComponents<MeshCmpt, MeshRendererCmpt,TransformCmpt>();
-    for (const auto [mesh_cmpt, mesh_renderer_cmpt,transform_cmpt] : cmpts) {
+    for (const auto [mesh_cmpt, mesh_renderer_cmpt, transform_cmpt] : cmpts) {
         auto* mesh = mesh_cmpt->uniqueMesh ? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
 
         if (!mesh) continue;
@@ -65,25 +65,6 @@ void SceneRenderer::UpdateRenderObjects()
         }
 
     }
-}
-
-void SceneRenderer::CreateSkyBoxPipeLine()
-{
-    Ref<graphic::Shader> skybox_vert_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "BuiltInResources/Shaders/Spirv/skybox.vert.spv");
-    Ref<graphic::Shader> skybox_frag_shader = m_GraphicDevice->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
-
-    GraphicPipeLineDesc pipe_desc;
-    pipe_desc.vertShader = skybox_vert_shader;
-    pipe_desc.fragShader = skybox_frag_shader;
-    pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
-    pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-    pipe_desc.rasterState = GpuResourceManager::Get().rasterizationState_fill;
-    pipe_desc.depthStencilState = GpuResourceManager::Get().depthStencilState_disabled;
-    pipe_desc.depthStencilState.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
-    pipe_desc.renderPassInfo = GpuResourceManager::Get().renderPassInfo_simpleMainPass;
-    pipe_desc.vertexInputLayout = GpuResourceManager::Get().vertexInputLayout_skybox;
-
-    m_SkyboxPipeLine = m_GraphicDevice->CreateGraphicPipeLine(pipe_desc);
 }
 
 void SceneRenderer::UpdateDrawContext()
@@ -131,10 +112,8 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
 {
     CORE_DEBUG_ASSERT(m_CubeMap)
 
-    if (!m_SkyboxPipeLine)
-        CreateSkyBoxPipeLine();
-
-    cmd_list->BindPipeLine(*m_SkyboxPipeLine);
+    Ref<graphic::PipeLine> skyboxPipeLine = GpuResourceManager::Get().pipeline_skybox;
+    cmd_list->BindPipeLine(*skyboxPipeLine);
     cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
     cmd_list->BindImage(0, 1, *m_CubeMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd_list->BindSampler(0, 1, *m_CubeMap->sampler);
