@@ -16,6 +16,8 @@ public:
 	static bool WriteFileBinary(const std::string& fileName, const std::vector<byte>& data);
 	static bool ReadFileText(const std::string& fileName, std::string& outString);
 
+	static std::string GetExtension(const std::string& filepath);
+	static std::string GetExtension(const std::filesystem::path& filepath);
 public:
 	struct FileDialogFilterItem
 	{

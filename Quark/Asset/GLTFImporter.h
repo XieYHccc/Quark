@@ -40,7 +40,6 @@ private:
     std::vector<Ref<Texture>> m_Textures;
     std::vector<Ref<Material>> m_Materials;
     std::vector<Ref<Mesh>> m_Meshes;
-    std::vector<Entity*> m_Entities;
 
     // Supported extensions mapped to whether they are enabled
     static std::unordered_map<std::string, bool> s_SupportedExtensions;

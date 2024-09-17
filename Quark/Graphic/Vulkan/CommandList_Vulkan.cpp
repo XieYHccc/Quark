@@ -268,7 +268,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, 
         depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depth_attachment.loadOp = convertLoadOp(frameBufferInfo.depthAttachmentLoadOp);
         depth_attachment.storeOp = convertStoreOp(frameBufferInfo.depthAttachmentStoreOp);
-        depth_attachment.clearValue.depthStencil.depth = frameBufferInfo.ClearDepthStencil.depth_stencil.depth;
+        depth_attachment.clearValue.depthStencil.depth = frameBufferInfo.clearDepthStencil.depth_stencil.depth;
 
     }
 

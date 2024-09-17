@@ -11,6 +11,10 @@ void GpuResourceManager::Init()
 {
     graphic::Device* device = Application::Get().GetGraphicDevice();
 
+    m_ShaderLibrary = CreateScope<ShaderLibrary>();
+
+    // format_colorAttachment_main = Application::Get().GetGraphicDevice()->GetPresentImageFormat();
+
     ImageDesc desc = {};
     desc.depth = 1;
     desc.format = DataFormat::R8G8B8A8_UNORM;
@@ -163,25 +167,14 @@ void GpuResourceManager::Init()
 
     // Pipelines
     {
-        Ref<graphic::Shader> skybox_vert_shader = device->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_VERTEX, "BuiltInResources/Shaders/Spirv/skybox.vert.spv");
-        Ref<graphic::Shader> skybox_frag_shader = device->CreateShaderFromSpvFile(graphic::ShaderStage::STAGE_FRAGEMNT, "BuiltInResources/Shaders/Spirv/skybox.frag.spv");
+        ShaderProgramVariant* precompiledSkyboxVariant = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant();
 
-        GraphicPipeLineDesc pipe_desc;
-        pipe_desc.vertShader = skybox_vert_shader;
-        pipe_desc.fragShader = skybox_frag_shader;
-        pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
-        pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-        pipe_desc.rasterState = rasterizationState_fill;
-        pipe_desc.depthStencilState = depthStencilState_disabled;
-        pipe_desc.renderPassInfo2 = renderPassInfo2_simpleColorDepthPass;
-        pipe_desc.vertexInputLayout = vertexInputLayout_skybox;
-
-        pipeline_skybox = device->CreateGraphicPipeLine(pipe_desc);
+        pipeline_skybox = precompiledSkyboxVariant->GetOrCreatePipeLine(depthStencilState_disabled,
+            PipelineColorBlendState::create_disabled(1), rasterizationState_fill,
+            renderPassInfo2_simpleColorDepthPass, vertexInputLayout_skybox);
     }
 
     CORE_LOGI("[GpuResourceManager]: Initialized");
-
-    m_ShaderLibrary = CreateScope<ShaderLibrary>();
 }
 
 void GpuResourceManager::Shutdown()
@@ -196,6 +189,5 @@ void GpuResourceManager::Shutdown()
     sampler_nearst.reset();
     sampler_cube.reset();
 }
-
 
 }

@@ -320,8 +320,7 @@ void AssetManager::CreateDefaultAssets()
 	m_DefaultMaterial->uniformBufferData.metalicFactor = 1.0f;
 	m_DefaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
 	// TODO: Remove hardcoded shader
-	m_DefaultMaterial->shaderProgram = GpuResourceManager::Get().GetShaderLibrary().GetOrCreateGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
-		"BuiltInResources/Shaders/static_mesh.frag");
+	m_DefaultMaterial->shaderProgram = GpuResourceManager::Get().GetShaderLibrary().defaultStaticMeshProgram;
 	m_DefaultMaterial->SetName("Default material");
 	
 	// All default assets' id is 1

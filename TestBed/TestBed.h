@@ -3,33 +3,35 @@
 #include <Quark/Scene/Scene.h>
 #include <Quark/Renderer/SceneRenderer.h>
 
-class TestBed : public Application  {  
+namespace quark {
+    class TestBed : public Application {
 public:
-    TestBed(const AppInitSpecs& specs);
+    TestBed(const ApplicationSpecification& specs);
     ~TestBed();
 
-    virtual void Update(f32 deltaTime) override final;
-    virtual void Render(f32 deltaTime) override final;
-    virtual void UpdateUI() override final;
-    
+    virtual void OnUpdate(TimeStep deltaTime) override final;
+    virtual void OnRender(TimeStep deltaTime) override final;
+    virtual void OnImGuiUpdate() override final;
+
     void CreateDepthImage();
-    void CreatePipeline();
-    void SetUpRenderPass();
+    void CreateRenderPassInfos();
     void LoadScene();
 
     Ref<graphic::Shader> vert_shader;
     Ref<graphic::Shader> frag_shader;
     Ref<graphic::PipeLine> graphic_pipeline;
 
-    graphic::RenderPassInfo geometry_pass_info; // First pass
-    graphic::RenderPassInfo ui_pass_info;   // Second pass
+    graphic::RenderPassInfo2 geometry_pass_info; // First pass
+    graphic::RenderPassInfo2 ui_pass_info;   // Second pass
 
     Ref<graphic::Image> depth_image;
     graphic::DataFormat depth_format = graphic::DataFormat::D32_SFLOAT;
 
-    Scope<Scene> scene;
-    Scope<render::SceneRenderer> scene_renderer;
+    Ref<Scene> scene;
+    Scope<SceneRenderer> scene_renderer;
 
     // Debug
     float cmdListRecordTime = 0;
 };
+
+}

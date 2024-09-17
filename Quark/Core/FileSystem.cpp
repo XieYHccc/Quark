@@ -47,6 +47,21 @@ bool FileSystem::ReadFileText(const std::string& fileName, std::string& outStrin
     return true;
 }
 
+std::string FileSystem::GetExtension(const std::string& filepath)
+{
+    auto index = filepath.find_last_of('.');
+    if (index == std::string::npos)
+        return "";
+    else
+        return filepath.substr(index + 1, std::string::npos);
+}
+
+std::string FileSystem::GetExtension(const std::filesystem::path& filepath)
+{
+    std::string pathString = filepath.string();
+    return GetExtension(pathString);
+}
+
 std::filesystem::path FileSystem::OpenFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters)
 {
     NFD::UniquePath filePath;

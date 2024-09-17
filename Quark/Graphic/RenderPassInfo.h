@@ -66,7 +66,7 @@ struct FrameBufferInfo
     Image* depthAttachment = nullptr;
     AttachmentLoadOp depthAttachmentLoadOp = AttachmentLoadOp::CLEAR;
     AttachmentStoreOp depthAttachmentStoreOp = AttachmentStoreOp::STORE;
-    ClearValue ClearDepthStencil = { 1.f, 0.f };
+    ClearValue clearDepthStencil = { 1.f, 0.f };
 
     Image* depthResolveAttachment = nullptr;
 };

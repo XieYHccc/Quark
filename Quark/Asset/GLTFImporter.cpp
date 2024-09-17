@@ -12,6 +12,7 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
+#include "Quark/Scene/Components/MeshRendererCmpt.h"
 #include "Quark/Renderer/GpuResourceManager.h"
 #include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/AssetManager.h"
@@ -207,9 +208,6 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
         m_Materials.push_back(newMaterial);
     }
 
-    // Add default material
-    m_Materials.push_back(AssetManager::Get().GetDefaultMaterial());
-
     // data copy
     // std::copy(ubo_data, ubo_data + buffer_size, mapped_data);
     // util::memalign_free(ubo_data);
@@ -226,24 +224,20 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
     m_Scene->SetSceneName(gltf_scene.name);
 
     // Load nodes
-    m_Entities.reserve(m_Model.nodes.size());
+    std::vector<Entity*> entities;
+    entities.reserve(m_Model.nodes.size());
     for (const auto& gltf_node : m_Model.nodes) 
     {
         auto* newNode = ParseNode(gltf_node);
-        m_Entities.push_back(newNode);
+        entities.push_back(newNode);
     }
 
     // Loop node again to establish hierachy
     for (size_t i = 0; i < m_Model.nodes.size(); i++) 
     {
         for (const auto& child : m_Model.nodes[i].children)
-            m_Entities[i]->GetComponent<RelationshipCmpt>()->AddChildEntity(m_Entities[child]);
+            entities[i]->GetComponent<RelationshipCmpt>()->AddChildEntity(entities[child]);
     }
-
-    // Add root nodes manually
-    // for (const auto& node : gltf_scene.nodes) {
-    //     m_Scene->GetRootEntity()->GetComponent<RelationshipCmpt>()->AddChildEntity(m_Entities[node]);
-    // }
 
     return m_Scene;
 }
@@ -283,8 +277,20 @@ Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
     {
         MeshCmpt* mesh_cmpt = newObj->AddComponent<MeshCmpt>();
         mesh_cmpt->sharedMesh = m_Meshes[gltf_node.mesh];
-    }
 
+        // Material
+        MeshRendererCmpt* meshRenderer = newObj->AddComponent<MeshRendererCmpt>();
+        meshRenderer->SetMesh(mesh_cmpt->sharedMesh);
+        for (size_t i = 0; auto& p : m_Model.meshes[gltf_node.mesh].primitives)
+        {
+            if (p.material > -1)
+				meshRenderer->SetMaterial(i, m_Materials[p.material]);
+			else
+				meshRenderer->SetMaterial(i, AssetManager::Get().GetDefaultMaterial());
+
+            i++;
+        }
+    }
     //TODO: Parse camera component
 
     return newObj;
@@ -352,8 +358,11 @@ Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
     auto newMaterial = CreateRef<Material>();
     newMaterial->SetName(mat.name);
     newMaterial->alphaMode = AlphaMode::OPAQUE;
+    newMaterial->shaderProgram = GpuResourceManager::Get().GetShaderLibrary().defaultStaticMeshProgram;
+
     auto find = mat.additionalValues.find("alphaMode");
-    if (find != mat.additionalValues.end()) {
+    if (find != mat.additionalValues.end()) 
+    {
         tinygltf::Parameter param = find->second;
         if (param.string_value == "BLEND")
             newMaterial->alphaMode = AlphaMode::TRANSPARENT;

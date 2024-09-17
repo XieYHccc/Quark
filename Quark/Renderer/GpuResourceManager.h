@@ -4,11 +4,6 @@
 #include "Quark/Renderer/ShaderLibrary.h"
 namespace quark {
 
-enum class RenderingState
-{
-
-};
-
 // This class is responsible for managing some global gpu resources
 class GpuResourceManager : public util::MakeSingleton<GpuResourceManager> {
 public:
@@ -48,7 +43,6 @@ public:
 
     GpuResourceManager() = default;
     ~GpuResourceManager() = default;
-
 
     void Init();
     void Shutdown();

@@ -296,7 +296,7 @@ void EditorApp::OnRender(TimeStep ts)
             fb_info.depthAttachment = m_depth_attachment.get();
             fb_info.depthAttachmentLoadOp = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
             fb_info.depthAttachmentStoreOp = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
-            fb_info.ClearDepthStencil.depth_stencil = { 1.f, 0 };
+            fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
             cmd->BeginRenderPass(m_ForwardPassInfo, fb_info);
             cmd->SetViewPort(viewport);

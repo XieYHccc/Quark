@@ -1,6 +1,7 @@
 #include "Quark/qkpch.h"
 #include "Quark/Renderer/ShaderLibrary.h"
 #include "Quark/Core/Application.h"
+#include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Asset/Mesh.h"
 
@@ -48,8 +49,54 @@ ShaderProgramVariant* ShaderProgram::GetOrCreateVariant(const VariantSignatureKe
 	return nullptr;
 }
 
+ShaderProgramVariant* ShaderProgram::GetPrecompiledVariant()
+{
+	if (!IsStatic())
+	{
+		CORE_LOGW("Only static shader programe has precompiled variant")
+		return nullptr;
+	}
+
+	util::Hasher h;
+	util::Hash hash = h.get();
+
+	auto it = m_Variants.find(hash);
+	if (it != m_Variants.end())
+	{
+		return it->second.get();
+	}
+	else
+	{
+		ShaderTemplateVariant* vert = m_Stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->GetPrecompiledVariant();
+		ShaderTemplateVariant* frag = m_Stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->GetPrecompiledVariant();
+		Scope<ShaderProgramVariant> newProgram = CreateScope<ShaderProgramVariant>(vert, frag);
+		
+		m_Variants[hash] = std::move(newProgram);
+		return m_Variants[hash].get();
+	}
+}
+
+bool ShaderProgram::IsStatic() const
+{
+	if(m_Stages[util::ecast(graphic::ShaderStage::STAGE_COMPUTE)])
+		return m_Stages[util::ecast(graphic::ShaderStage::STAGE_COMPUTE)]->IsStatic();
+	else
+	{
+		return m_Stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->IsStatic() &&
+			m_Stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->IsStatic();
+	}
+
+}
+
+
 ShaderLibrary::ShaderLibrary()
 {
+	defaultStaticMeshProgram = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
+		"BuiltInResources/Shaders/static_mesh.frag");
+
+	staticProgram_skybox = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/Spirv/skybox.vert.spv",
+		"BuiltInResources/Shaders/Spirv/skybox.frag.spv");
+
 	CORE_LOGI("[ShaderLibrary]: Initialized");
 }
 
@@ -183,14 +230,26 @@ Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::
 ShaderTemplate::ShaderTemplate(const std::string& path, graphic::ShaderStage stage)
 	:m_Path(path), m_Stage(stage)
 {
-	m_Compiler.SetSourceFromFile(path, stage);
+	if (FileSystem::GetExtension(path) == "spv")
+	{
+		// Static shader template
+		return;
+	}
 
-	// TODO: Set target based on the renderer
-	m_Compiler.SetTarget(GLSLCompiler::Target::VULKAN_VERSION_1_1);
+	m_Compiler = CreateScope<GLSLCompiler>();
+	m_Compiler->SetSourceFromFile(path, stage);
+	m_Compiler->SetTarget(GLSLCompiler::Target::VULKAN_VERSION_1_1);
+
 }
 
 ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const VariantSignatureKey &key)
 {
+	if (IsStatic())
+	{
+		CORE_LOGW("You can't create a variant from a static shader template")
+		return nullptr;
+	}
+
 	uint64_t hash = key.GetHash();
 
 	auto it = m_Variants.find(hash);
@@ -213,7 +272,7 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const VariantSignature
 
 		std::string messages;
 		std::vector<uint32_t> spirv;
-		if (!m_Compiler.Compile(messages, spirv, ops))
+		if (!m_Compiler->Compile(messages, spirv, ops))
 		{
 			CORE_LOGE("[ShaderTemplate]: Failed to compile shader: {}: {}", m_Path, messages);
 			return nullptr;
@@ -223,12 +282,41 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const VariantSignature
 
 		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
 		newVariant->gpuShaderHandle = newShader;
+		newVariant->signatureKey = key;
+		newVariant->spirv = spirv;
 
 		m_Variants[hash] = std::move(newVariant);
 		return m_Variants[hash].get();
 	}
 }
 
+ShaderTemplateVariant* ShaderTemplate::GetPrecompiledVariant()
+{
+	util::Hasher h;
+	util::Hash hash = h.get();
+
+	auto it = m_Variants.find(hash);
+	if (it != m_Variants.end())
+	{
+		return it->second.get();
+	}
+	else
+	{
+		std::string messages;
+		std::vector<uint8_t> spirv;
+		if (!FileSystem::ReadFileBinary(m_Path, spirv))
+			return nullptr;
+
+		Ref<graphic::Shader> newShader = Application::Get().GetGraphicDevice()->CreateShaderFromBytes(m_Stage, spirv.data(), spirv.size());
+		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
+		newVariant->gpuShaderHandle = newShader;
+		newVariant->signatureKey = VariantSignatureKey();
+		newVariant->spirv = std::vector<uint32_t>(spirv.begin(), spirv.end());
+		m_Variants[hash] = std::move(newVariant);
+
+		return m_Variants[hash].get();
+	}
+}
 ShaderProgramVariant::ShaderProgramVariant(ShaderTemplateVariant* vert, ShaderTemplateVariant* frag)
 {
 	m_Stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)] = vert;
