@@ -55,7 +55,8 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
         alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
 		alloc_create_info.requiredFlags = (VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     }
-    else if (desc.domain == BufferMemoryDomain::GPU) {
+    else if (desc.domain == BufferMemoryDomain::GPU) 
+    {
         alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
         // TODO: Optimize small allocation with dedicated pool
     } 
@@ -73,14 +74,17 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     }
 
     // Data Copy
-    if (init_data != nullptr) {
-        if (desc.domain == BufferMemoryDomain::CPU) {
+    if (init_data != nullptr) 
+    {
+        if (desc.domain == BufferMemoryDomain::CPU) 
+        {
             memcpy(m_pMappedData, init_data, desc.size);
         }
-        else {  // static data uplodaing
+        else 
+        {  // static data uplodaing
 
             Device_Vulkan::CopyCmdAllocator::CopyCmd copyCmd = m_Device->copyAllocator.allocate(desc.size);
-            memcpy(copyCmd.stageBuffer->GetMappedDataPtr(), init_data, m_Desc.size);
+            memcpy(copyCmd.stageBuffer->GetMappedDataPtr(), init_data, m_desc.size);
 
             // copy buffer
             VkBufferCopy copyRegion = {};

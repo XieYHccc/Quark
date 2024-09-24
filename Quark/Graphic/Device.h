@@ -12,19 +12,24 @@
 
 namespace quark::graphic {
 
-struct DeviceProperties {
-    struct DeviceLimits {
+struct DeviceProperties 
+{
+    struct DeviceLimits 
+    {
         u64 minUniformBufferOffsetAlignment = 0;
     } limits;
 
 };
-struct DeviceFeatures {
+
+struct DeviceFeatures 
+{
     bool textureCompressionBC = false;
     bool textureCompressionASTC_LDR = false;
     bool textureCompressionETC2 = false;
 };
 
-class Device {
+class Device 
+{
 public:
     Device() = default;
     virtual ~Device() = default;

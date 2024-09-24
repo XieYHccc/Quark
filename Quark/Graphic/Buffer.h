@@ -34,23 +34,26 @@ struct BufferDesc {
 
 class Buffer : public GpuResource{
 public:
+    ~Buffer() = default;
+
+    const BufferDesc& GetDesc() const { return m_desc;}
+
+    void* GetMappedDataPtr() { return m_pMappedData; }
+
+    uint64_t GetGpuAddress() { return m_GpuAddress;}
+
+    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::BUFFER; }
+
+protected:
     Buffer(const BufferDesc& desc)
-        : m_Desc(desc), m_pMappedData(nullptr), m_GpuAddress(UINT64_MAX) 
+        : m_desc(desc), m_pMappedData(nullptr), m_GpuAddress(UINT64_MAX)
     {
 
     }
 
-    ~Buffer() = default;
-
-    const BufferDesc& GetDesc() const { return m_Desc;}
-    void* GetMappedDataPtr() { return m_pMappedData; }
-    u64 GetGpuAddress() { return m_GpuAddress;}
-    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::BUFFER; }
-
-protected:
-    BufferDesc m_Desc;
+    BufferDesc m_desc;
     void* m_pMappedData;
-    u64 m_GpuAddress;
+    uint64_t m_GpuAddress;
 };
 
 }

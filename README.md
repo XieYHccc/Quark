@@ -43,6 +43,7 @@ Quark is my personal learning project.
 - Entity Component System
 - Asset System
 - Event System
+- Job System
 - UI with ImGui
 - Scene Editor Tool
 - KTX2 Transcoding

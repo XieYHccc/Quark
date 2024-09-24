@@ -194,7 +194,6 @@ enum class PipeLineBindingPoint
 
 class PipeLine : public GpuResource {
 public:
-    PipeLine(PipeLineBindingPoint bindingPoint) : m_BindingPoint(bindingPoint) {};
     virtual ~PipeLine() = default;
 
     PipeLineBindingPoint GetBindingPoint() const { return m_BindingPoint; }
@@ -202,6 +201,8 @@ public:
     GpuResourceType GetGpuResourceType() const override { return GpuResourceType::PIPELINE; }
 
 protected:
+    PipeLine(PipeLineBindingPoint bindingPoint) : m_BindingPoint(bindingPoint) {};
+
     PipeLineBindingPoint m_BindingPoint;
 };
 

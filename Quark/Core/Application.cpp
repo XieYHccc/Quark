@@ -26,10 +26,13 @@ Application* Application::s_Instance = nullptr;
 Application::Application(const ApplicationSpecification& specs) 
 {
     s_Instance = this;
-    
-    // Init moudules, the order is important
+
     Logger::Init();
 
+    // Init Job System
+    m_JobSystem = CreateScope<JobSystem>();
+
+    // Init Event Manager
     EventManager::CreateSingleton();
 
     // Create Window
@@ -47,27 +50,42 @@ Application::Application(const ApplicationSpecification& specs)
         NFD::Init();
     }
 
+    // Init Input System
     Input::CreateSingleton();
     Input::Get()->Init();
 
-#ifdef  USE_VULKAN_DRIVER
-    m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
-    m_GraphicDevice->Init();
+    // Init Graphic Device and Renderer
+    JobSystem::Counter counter;
+    m_JobSystem->Execute([this]()
+    {
+#ifdef USE_VULKAN_DRIVER
+        m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
+        m_GraphicDevice->Init();
 #endif
+        GpuResourceManager::CreateSingleton();
+        GpuResourceManager::Get().Init();
+    }, &counter);
 
-    GpuResourceManager::CreateSingleton();
-    GpuResourceManager::Get().Init();
-
-    AssetManager::CreateSingleton();
+    // Init Asset system
+    m_JobSystem->Execute([this, &counter]() 
+    {
+        m_JobSystem->Wait(&counter, 1);
+        AssetManager::CreateSingleton(); 
+    });
 
     // Init UI system
-    UI::CreateSingleton();
-    UI::Get()->Init(m_GraphicDevice.get(), specs.uiSpecs);
+    m_JobSystem->Execute([this, &specs, &counter]() 
+    {
+        m_JobSystem->Wait(&counter, 1);
+        UI::CreateSingleton();
+        UI::Get()->Init(m_GraphicDevice.get(), specs.uiSpecs);
+    });
+
+    m_JobSystem->Wait(&counter, 1);
 
     // Register application callback functions
     EventManager::Get().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
     EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event); });
-
 }
 
 Application::~Application() {
@@ -91,11 +109,9 @@ Application::~Application() {
     m_Window->ShutDown();
     m_Window.reset();
 
-    //Application::Get().GetWindow()->Finalize();
-    //Window::Destroy();
-
     EventManager::FreeSingleton();
 
+    m_JobSystem.reset();
 }
 
 void Application::Run()

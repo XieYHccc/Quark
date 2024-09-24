@@ -32,10 +32,10 @@ namespace quark {
  * since android is based on the linux kernel
  * it has __linux__ defined */
 #elif defined(__ANDROID__)
-	#define HZ_PLATFORM_ANDROID
+	#define QK_PLATFORM_ANDROID
 	#error "Android is not supported!"
 #elif defined(__linux__)
-	#define HZ_PLATFORM_LINUX
+	#define QK_PLATFORM_LINUX
 	#error "Linux is not supported!"
 #else
 	/* Unknown compiler/platform */

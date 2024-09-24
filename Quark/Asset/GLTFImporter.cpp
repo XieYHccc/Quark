@@ -86,6 +86,12 @@ GLTFImporter::GLTFImporter()
 
 }
 
+GLTFImporter::GLTFImporter(graphic::Device* device)
+	:m_GraphicDevice(device)
+{
+
+}
+
 Ref<Scene> GLTFImporter::Import(const std::string &filename)
 {
     CORE_LOGI("Loading GLTF file: {}", filename)

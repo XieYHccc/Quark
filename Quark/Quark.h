@@ -15,6 +15,9 @@
 #include <Quark/Core/Math/Aabb.h>
 #include <Quark/Core/Math/Frustum.h>
 
+// Quark Job system
+#include <Quark/Core/JobSystem.h>
+
 // Quark Event system
 #include <Quark/Events/EventManager.h>
 #include <Quark/Events/ApplicationEvent.h>

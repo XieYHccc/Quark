@@ -18,6 +18,8 @@ class Entity;
 class GLTFImporter {
 public:
     GLTFImporter();
+    GLTFImporter(graphic::Device* device);
+
     Ref<Scene> Import(const std::string& file_path);
 
 private:

@@ -335,7 +335,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
             barrier.dstAccessMask = ParseImageLayoutToMemoryAccess(desc.initialLayout);
             barrier.subresourceRange.levelCount = create_info.mipLevels;
             barrier.oldLayout = desc.generateMipMaps ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.newLayout = ConvertImageLayout(desc_.initialLayout);
+            barrier.newLayout = ConvertImageLayout(desc.initialLayout);
 
             vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.transitionCmdBuffer, &dependencyInfo);
         }
@@ -397,7 +397,7 @@ Image_Vulkan::~Image_Vulkan()
 }
 
 Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
-    : device_(device)
+    : Sampler(desc), device_(device)
 {
     auto convert_sampler_filter = [](SamplerFilter filter) {
         switch (filter) {

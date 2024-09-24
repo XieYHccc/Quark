@@ -3,6 +3,7 @@
 #include "Quark/Core/Timer.h"
 #include "Quark/Core/TimeStep.h"
 #include "Quark/Core/Window.h"
+#include "Quark/Core/JobSystem.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Graphic/Device.h"
 #include "Quark/UI/UI.h"
@@ -54,6 +55,7 @@ protected:
     Timer m_Timer;
 
     Scope<graphic::Device> m_GraphicDevice;
+    Scope<JobSystem> m_JobSystem;
     Scope<Window> m_Window;
 
 private:

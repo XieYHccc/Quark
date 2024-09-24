@@ -9,8 +9,8 @@
 
 //#define OBJECT_POOL_DEBUG
 
-namespace quark::util
-{
+namespace quark::util {
+
 template<typename T>
 class ObjectPool
 {
