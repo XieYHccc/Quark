@@ -21,7 +21,7 @@ void EntityRegistry::UnRegister(Entity* entity, Component* component)
     }  
 
     auto* allocator = m_ComponentAllocators.find(id);
-    CORE_DEBUG_ASSERT(allocator)
+    QK_CORE_ASSERT(allocator)
 
     allocator->FreeComponent(component);
 }
@@ -49,7 +49,7 @@ void EntityRegistry::DeleteEntity(Entity *entity)
     }
 
 	auto offset = entity->m_OffsetInRegistry;
-	CORE_DEBUG_ASSERT(offset < m_Entities.size());
+	QK_CORE_ASSERT(offset < m_Entities.size());
 
 	m_Entities[offset] = m_Entities.back();
 	m_Entities[offset]->m_OffsetInRegistry = offset;

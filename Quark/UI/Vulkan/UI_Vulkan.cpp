@@ -16,7 +16,7 @@ namespace quark {
 
 void UI_Vulkan::Init(graphic::Device* device, const UiSpecification& specs)
 {
-    CORE_DEBUG_ASSERT(device)
+    QK_CORE_ASSERT(device)
 
     m_device = static_cast<graphic::Device_Vulkan*>(device);
 

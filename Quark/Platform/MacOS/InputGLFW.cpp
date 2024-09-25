@@ -8,7 +8,7 @@ template <>
 template <>
 Input* util::MakeSingletonPtr<Input>::CreateSingleton()
 {
-    CORE_DEBUG_ASSERT(m_global == nullptr);
+    QK_CORE_ASSERT(m_global == nullptr);
 
     m_global = new InputGLFW();
     return m_global;
@@ -17,7 +17,7 @@ Input* util::MakeSingletonPtr<Input>::CreateSingleton()
 void InputGLFW::Init()
 {
     window_ = static_cast<GLFWwindow*>(Application::Get().GetWindow()->GetNativeWindow());
-    CORE_DEBUG_ASSERT(window_ != nullptr);
+    QK_CORE_ASSERT(window_ != nullptr);
 
     double xpos, ypos;
     glfwGetCursorPos(window_, &xpos, &ypos);
@@ -39,7 +39,7 @@ void InputGLFW::Finalize()
 
 void InputGLFW::RecordKey(int key, int action)
 { 
-    CORE_DEBUG_ASSERT(key >= 0)
+    QK_CORE_ASSERT(key >= 0)
     keyMouseStatus_[key] = (KeyAction)action;
 }
 

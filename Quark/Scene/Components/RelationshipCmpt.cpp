@@ -5,8 +5,8 @@ namespace quark {
 
 void RelationshipCmpt::AddChildEntity(Entity* child) 
 {
-    CORE_DEBUG_ASSERT(child != nullptr)
-    CORE_DEBUG_ASSERT(child != GetEntity())
+    QK_CORE_ASSERT(child != nullptr)
+    QK_CORE_ASSERT(child != GetEntity())
 
     auto* childRelationship = child->GetComponent<RelationshipCmpt>();
 
@@ -31,7 +31,7 @@ void RelationshipCmpt::AddChildEntity(Entity* child)
 
 void RelationshipCmpt::RemoveChildEntity(Entity* child)
 {
-    CORE_DEBUG_ASSERT(child != nullptr)
+    QK_CORE_ASSERT(child != nullptr)
 
     auto* childRelationship = child->GetComponent<RelationshipCmpt>();
     if (childRelationship->GetParentEntity() != GetEntity()) 

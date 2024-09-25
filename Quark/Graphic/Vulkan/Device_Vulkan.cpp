@@ -26,14 +26,14 @@ void Device_Vulkan::CommandQueue::init(Device_Vulkan *device, QueueType type)
         queue = device->vkContext->transferQueue;
         break;
     default:
-        CORE_DEBUG_ASSERT(0)
+        QK_CORE_ASSERT(0)
         break;
     }
 }
 
 void Device_Vulkan::CommandQueue::submit(VkFence fence)
 {
-    CORE_DEBUG_ASSERT(!submissions.empty() || fence != VK_NULL_HANDLE)
+    QK_CORE_ASSERT(!submissions.empty() || fence != VK_NULL_HANDLE)
 
     std::vector<VkSubmitInfo2> submit_infos(submissions.size());
     for (size_t i = 0; i < submissions.size(); ++i) {
@@ -62,7 +62,7 @@ void Device_Vulkan::CommandQueue::submit(VkFence fence)
 
 void Device_Vulkan::PerFrameData::init(Device_Vulkan *device)
 {
-    CORE_DEBUG_ASSERT(device->vkDevice != VK_NULL_HANDLE)
+    QK_CORE_ASSERT(device->vkDevice != VK_NULL_HANDLE)
     this->device = device;
     this->vmaAllocator = this->device->vmaAllocator;
 
@@ -338,7 +338,7 @@ void Device_Vulkan::OnWindowResize(const WindowResizeEvent &event)
 
 bool Device_Vulkan::Init()
 {
-    CORE_LOGI("==========Initializing Vulkan Backend...========")
+    QK_CORE_LOGI_TAG("Graphic", "==========Initializing Vulkan Backend...========");
 
     // Default values
     m_RecreateSwapchain = false;
@@ -372,13 +372,13 @@ bool Device_Vulkan::Init()
 
     // Register callback functions
     EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event);});
-    CORE_LOGI("==========Vulkan Backend Initialized========")
+    QK_CORE_LOGI_TAG("Graphic", "==========Vulkan Backend Initialized========");
     return true;
 }
 
 void Device_Vulkan::ShutDown()
 {
-    CORE_LOGI("Shutdown vulkan device...")
+    QK_CORE_LOGI_TAG("Graphic", "Shutdown vulkan device...");
     vkDeviceWaitIdle(vkDevice);
     
     // Destroy cached pipeline layout
@@ -440,7 +440,7 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
         return false;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
     {
-        CORE_ASSERT_MSG(0, "Failed to acquire swapchain image!");
+        QK_CORE_VERIFY(0, "Failed to acquire swapchain image!");
         return false;
     }
 
@@ -474,7 +474,7 @@ bool Device_Vulkan::EndFrame(TimeStep ts)
 	VkResult presentResult = vkQueuePresentKHR(vkContext->graphicQueue, &presentInfo);
 
     if (presentResult != VK_SUCCESS && presentResult != VK_ERROR_OUT_OF_DATE_KHR && presentResult != VK_SUBOPTIMAL_KHR)
-        CORE_DEBUG_ASSERT(0)
+        QK_CORE_ASSERT(0)
 
     return true;
 }
@@ -502,7 +502,7 @@ Ref<Shader> Device_Vulkan::CreateShaderFromBytes(ShaderStage stage, const void* 
 Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path)
 {
     std::vector<uint8_t> buffer;
-    FileSystem::ReadFileBinary(file_path, buffer);
+    FileSystem::ReadFileBytes(file_path, buffer);
 
     auto new_shader = CreateShaderFromBytes(stage, buffer.data(), buffer.size());
     if (new_shader == nullptr) 
@@ -646,8 +646,8 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
 }
 
 void Device_Vulkan::ResizeSwapchain()
-{        
-    CORE_LOGI("Resizing swapchain...")
+{
+    QK_CORE_LOGI_TAG("Graphic", "Resizing swapchain...");
     
     vkContext->DestroySwapChain();
     vkContext->CreateSwapChain();
@@ -685,7 +685,7 @@ DataFormat Device_Vulkan::GetPresentImageFormat()
     case VK_FORMAT_B8G8R8A8_UNORM:
         return DataFormat::B8G8R8A8_UNORM;
     default:
-        CORE_ASSERT_MSG(0, "format not handled yet")
+        QK_CORE_VERIFY(0, "format not handled yet")
     }
 }
 

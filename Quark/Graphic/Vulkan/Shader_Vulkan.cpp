@@ -5,12 +5,12 @@
 
 namespace quark::graphic {
     
-#define SPV_REFLECT_CHECK(x) CORE_ASSERT(x == SPV_REFLECT_RESULT_SUCCESS)
+#define SPV_REFLECT_CHECK(x) QK_CORE_ASSERT(x == SPV_REFLECT_RESULT_SUCCESS)
 
 Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const void* shaderCode, size_t codeSize)
     : Shader(stage), m_Device(device)
 {
-    CORE_DEBUG_ASSERT(m_Device != nullptr)
+    QK_CORE_ASSERT(m_Device != nullptr)
 
     VkDevice vk_device = m_Device->vkDevice;
     auto& vk_context = m_Device->vkContext;
@@ -44,7 +44,7 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
         break;
     default:
     {
-        CORE_DEBUG_ASSERT("ShaderStage not handled!")
+        QK_CORE_ASSERT("ShaderStage not handled!")
         m_StageInfo.stage = VK_SHADER_STAGE_ALL;
         break;
     }
@@ -69,14 +69,14 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     // Push constants
     for (auto& x : push_constants)
     {
-        CORE_ASSERT(x->size < PUSH_CONSTANT_DATA_SIZE)
+        QK_CORE_ASSERT(x->size < PUSH_CONSTANT_DATA_SIZE)
         m_ResourceLayout.pushConstant.stageFlags = m_StageInfo.stage;
         m_ResourceLayout.pushConstant.offset = std::min(m_ResourceLayout.pushConstant.offset, x->offset);
         m_ResourceLayout.pushConstant.size = std::max(m_ResourceLayout.pushConstant.size, x->size);
     }
 
     for (auto& b : bindings) {
-        CORE_DEBUG_ASSERT(b->set < DESCRIPTOR_SET_MAX_NUM) // only support shaders with 4 sets or less
+        QK_CORE_ASSERT(b->set < DESCRIPTOR_SET_MAX_NUM) // only support shaders with 4 sets or less
 
         uint32_t bind_slot = b->binding;
         uint32_t set = b->set; 
@@ -106,7 +106,7 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
         // case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
         //     switch (binding->image.dim) {
         //     default:
-        //         CORE_DEBUG_ASSERT("only support 2D, 3D and cube image!")
+        //         QK_CORE_ASSERT("only support 2D, 3D and cube image!")
         //         break;
         //     case SpvDim2D:
         //         if (binding->image.arrayed == 0)

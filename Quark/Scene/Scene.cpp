@@ -90,7 +90,7 @@ Entity* Scene::CreateEntityWithID(UUID id, const std::string& name, Entity* pare
         parentRelationshipCmpt->AddChildEntity(newEntity);
     }
 
-    CORE_DEBUG_ASSERT(m_EntityIdMap.find(id) == m_EntityIdMap.end())
+    QK_CORE_ASSERT(m_EntityIdMap.find(id) == m_EntityIdMap.end())
     m_EntityIdMap[id] = newEntity;
 
     return newEntity;

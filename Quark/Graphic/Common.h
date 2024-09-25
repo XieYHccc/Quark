@@ -158,7 +158,7 @@ inline u32 GetFormatStride(DataFormat format)
         return 16u;
     default:
     {
-        CORE_ASSERT_MSG(0, "format not handled yet!")
+        QK_CORE_VERIFY(0, "format not handled yet!")
         return 0u;
     }
     }

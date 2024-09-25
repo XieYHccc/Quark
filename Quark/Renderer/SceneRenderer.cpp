@@ -110,7 +110,7 @@ void SceneRenderer::UpdateDrawContext(const CameraUniformBufferBlock& cameraData
 
 void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
 {
-    CORE_DEBUG_ASSERT(m_CubeMap)
+    QK_CORE_ASSERT(m_CubeMap)
 
     Ref<graphic::PipeLine> skyboxPipeLine = GpuResourceManager::Get().pipeline_skybox;
     cmd_list->BindPipeLine(*skyboxPipeLine);

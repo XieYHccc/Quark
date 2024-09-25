@@ -112,6 +112,8 @@ Application::~Application() {
     EventManager::FreeSingleton();
 
     m_JobSystem.reset();
+
+    Logger::ShutDown();
 }
 
 void Application::Run()

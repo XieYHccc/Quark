@@ -187,7 +187,7 @@ void TransformCmpt::UpdateWorldMatrix()
 void TransformCmpt::UpdateWorldMatrix_Parent()
 {
     Entity* parent = GetEntity()->GetComponent<RelationshipCmpt>()->GetParentEntity();
-    CORE_ASSERT(parent);
+    QK_CORE_VERIFY(parent);
 
     auto* parent_transform = parent->GetComponent<TransformCmpt>();
     UpdateWorldMatrix();

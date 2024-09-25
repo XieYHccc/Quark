@@ -95,7 +95,7 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 				break;
 			}
 			default:
-				CORE_ASSERT(0)
+				QK_CORE_VERIFY(0)
 			}
 
 			if (asset)
@@ -176,7 +176,7 @@ std::unordered_set<AssetID> AssetManager::GetAllAssetsWithType(AssetType type)
 
 void AssetManager::SetMetadata(AssetID id, AssetMetadata metaData)
 {
-	CORE_ASSERT(metaData.IsValid())
+	QK_CORE_VERIFY(metaData.IsValid())
 	m_AssetMetadata[metaData.id] = metaData;
 }
 
@@ -231,7 +231,7 @@ void AssetManager::LoadAssetRegistry()
 
 	// Parse registry file into yaml
 	std::ifstream stream(s_AssetRegistryPath);
-	CORE_ASSERT(stream)
+	QK_CORE_VERIFY(stream)
 	std::stringstream strStream;
 	strStream << stream.rdbuf();
 

@@ -24,8 +24,8 @@ void MeshRendererCmpt::SetMaterial(uint32_t index, const Ref<Material>& mat)
 
 Ref<Material> MeshRendererCmpt::GetMaterial(uint32_t index)
 {
-	CORE_DEBUG_ASSERT(index < m_Materials.size())
-	CORE_DEBUG_ASSERT(m_Materials[index] != nullptr)
+	QK_CORE_ASSERT(index < m_Materials.size())
+	QK_CORE_ASSERT(m_Materials[index] != nullptr)
 	
 	return m_Materials[index];
 }

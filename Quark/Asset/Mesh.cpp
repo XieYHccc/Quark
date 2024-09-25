@@ -5,7 +5,7 @@ namespace quark {
 //Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::vector<SubMeshDescriptor>& subMeshes, bool isDynamic)
 //    : vertices(vertices), indices(indices), subMeshes(subMeshes), isDynamic(isDynamic)
 //{   
-//    CORE_DEBUG_ASSERT(!vertices.empty() && ! indices.empty())
+//    QK_CORE_ASSERT(!vertices.empty() && ! indices.empty())
 //    auto* graphic_device = Application::Get().GetGraphicDevice();
 //
 //    // Calculate mesh's aabb from submesh's aabb
@@ -22,7 +22,7 @@ namespace quark {
 //        }
 //        aabb += submesh.aabb;
 //
-//        CORE_DEBUG_ASSERT(submesh.aabb.Min() != submesh.aabb.Max())
+//        QK_CORE_ASSERT(submesh.aabb.Min() != submesh.aabb.Max())
 //    }
 //
 //    UpdateGpuBuffers();
@@ -151,7 +151,7 @@ void Mesh::UpdateGpuBuffers()
     }
     else
     {   // Only dynamic mesh can be updated
-        CORE_DEBUG_ASSERT(IsDynamic() && m_AttributeBuffer->GetDesc().domain == graphic::BufferMemoryDomain::CPU)
+        QK_CORE_ASSERT(IsDynamic() && m_AttributeBuffer->GetDesc().domain == graphic::BufferMemoryDomain::CPU)
 
         void* mappedData = m_AttributeBuffer->GetMappedDataPtr();
         memcpy(mappedData, m_CachedAttributeData.data(), m_CachedAttributeData.size());
@@ -198,7 +198,7 @@ void Mesh::CalculateAabbs()
 
         this->aabb += submesh.aabb;
 
-        CORE_DEBUG_ASSERT(submesh.aabb.Min() != submesh.aabb.Max())
+        QK_CORE_ASSERT(submesh.aabb.Min() != submesh.aabb.Max())
     }
 }
 

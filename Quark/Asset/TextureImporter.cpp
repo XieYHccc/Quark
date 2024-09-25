@@ -22,7 +22,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
 
     // Read in file's binary data
     std::vector<byte> binary_data;
-    if (!FileSystem::ReadFileBinary(file_path, binary_data)) {
+    if (!FileSystem::ReadFileBytes(file_path, binary_data)) {
         CORE_LOGW("TextureImporter::LoadKtx2: Failed to read file {}", file_path);
         return nullptr;
     }
@@ -182,7 +182,7 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
     ktxTexture* ktxTexture;
 
     result = ktxTexture_CreateFromNamedFile(file_path.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
-    CORE_ASSERT(result == KTX_SUCCESS);
+    QK_CORE_VERIFY(result == KTX_SUCCESS);
 
     graphic::ImageDesc desc;
     desc.width = ktxTexture->baseWidth;
@@ -194,8 +194,8 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
     desc.usageBits = graphic::ImageUsageBits::IMAGE_USAGE_SAMPLING_BIT | graphic::ImageUsageBits::IMAGE_USAGE_CAN_COPY_TO_BIT;
     // TODO: Support 3D
     desc.type = graphic::ImageType::TYPE_2D;
-    CORE_ASSERT(desc.depth == 1);
-    CORE_ASSERT(desc.arraySize == 1);
+    QK_CORE_VERIFY(desc.depth == 1);
+    QK_CORE_VERIFY(desc.arraySize == 1);
     //TODO: Support other formats
     desc.format = graphic::DataFormat::R8G8B8A8_UNORM;
 
@@ -211,7 +211,7 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
     }
     
     //TODO: Support compressed format
-    CORE_ASSERT(ktxTexture->isCompressed == KTX_FALSE);
+    QK_CORE_VERIFY(ktxTexture->isCompressed == KTX_FALSE);
 
     // Prepare Image's init data
     std::vector<graphic::ImageInitData> initData;

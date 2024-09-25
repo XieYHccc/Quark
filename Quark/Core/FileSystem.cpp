@@ -4,6 +4,25 @@
 #include "Quark/Core/FileSystem.h"
 
 namespace quark {
+std::filesystem::path FileSystem::GetWorkingDirectory()
+{
+    return std::filesystem::current_path();
+}
+
+void FileSystem::SetWorkingDirectory(std::filesystem::path path)
+{
+    std::filesystem::current_path(path);
+}
+
+bool FileSystem::CreateDirectory(const std::filesystem::path& directory)
+{
+    return std::filesystem::create_directories(directory);
+}
+
+bool FileSystem::CreateDirectory(const std::string& directory)
+{
+    return CreateDirectory(std::filesystem::path(directory));
+}
 
 bool FileSystem::Exists(const std::filesystem::path& filepath)
 {
@@ -15,7 +34,7 @@ bool FileSystem::Exists(const std::string& filepath)
     return std::filesystem::exists(std::filesystem::path(filepath));
 }
 
-bool FileSystem::ReadFileBinary(const std::string& fileName, std::vector<byte>& data, size_t readSize, size_t offset)
+bool FileSystem::ReadFileBytes(const std::string& fileName, std::vector<byte>& data, size_t readSize, size_t offset)
 {
     std::ifstream file(fileName, std::ios::binary | std::ios::ate);
 
@@ -37,7 +56,7 @@ bool FileSystem::ReadFileBinary(const std::string& fileName, std::vector<byte>& 
 bool FileSystem::ReadFileText(const std::string& fileName, std::string& outString)
 {
     std::vector<byte> data;
-    if (!ReadFileBinary(fileName, data))
+    if (!ReadFileBytes(fileName, data))
         return false;
 
     outString = std::string(data.begin(), data.end());

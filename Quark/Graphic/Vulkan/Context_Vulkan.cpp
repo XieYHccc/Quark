@@ -30,32 +30,32 @@ VulkanContext::VulkanContext()
 
 VulkanContext::~VulkanContext()
 {
-    CORE_LOGI("Destroying Vulkan Context...")
-    CORE_LOGD("Destroying swapchain...")
+    QK_CORE_LOGI_TAG("Graphic", "Destroying Vulkan Context...");
+    QK_CORE_LOGT_TAG("Graphic", "Destroying swapchain...");
     DestroySwapChain();
-    CORE_LOGD("Destroying vma allocator...")
+    QK_CORE_LOGT_TAG("Graphic", "Destroying vma allocator...");
     vmaDestroyAllocator(vmaAllocator);
-    CORE_LOGD("Destroying logical device...")
+    QK_CORE_LOGT_TAG("Graphic", "Destroying logical device...");
     vkDestroyDevice(logicalDevice, nullptr);
-    CORE_LOGD("Destroying vulkan surface...")
+    QK_CORE_LOGT_TAG("Graphic", "Destroying vulkan surface...");
     vkDestroySurfaceKHR(instance, surface, nullptr);
 
     if (enableDebugUtils)
     {
-        CORE_LOGD("Destroying debug messenger...")
+        QK_CORE_LOGT_TAG("Graphic", "Destroying debug messenger...");
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
         func(instance, debugMessenger, nullptr);
     }
 
-    CORE_LOGD("Destroying vulkan instance...")
+    QK_CORE_LOGT_TAG("Graphic", "Destroying vulkan instance...");
     vkDestroyInstance(instance, nullptr);
 
-    CORE_LOGD("Vulkan Context destroyed")
+    QK_CORE_LOGT_TAG("Graphic", "Vulkan Context destroyed");
 }
 
 void VulkanContext::CreateInstance()
 {
-    CORE_LOGI("Creating vulkan instance...")
+    QK_CORE_LOGI_TAG("Graphic", "Creating vulkan instance...");
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "Quark Engine Application";
@@ -80,13 +80,13 @@ void VulkanContext::CreateInstance()
 
     if (enableDebugUtils)
     {
-        CORE_LOGD("Required vulkan instance extensions:")
+        QK_CORE_LOGT_TAG("Graphic", "Required vulkan instance extensions:");
         for (const auto& s : required_extensions)
-            CORE_LOGD("  {}", s);
+            QK_CORE_LOGT_TAG("Graphic","  {}", s);
     }
 
     // Check extensions and layers support infomation
-    CORE_LOGD("Checking vulkan instance extensions support...")
+    QK_CORE_LOGT_TAG("Graphic", "Checking vulkan instance extensions support...");
     for (u32 i = 0; i < required_extensions.size(); ++i) {
         bool found = false;
         for (u32 j = 0; j < availableExtensions.size(); ++j) {
@@ -100,17 +100,18 @@ void VulkanContext::CreateInstance()
             CORE_LOGC("  Required extension not found: {}", required_extensions[i]);
         }
     }
-    CORE_LOGD("All required vulkan instance extensions are supported.")
+
+    QK_CORE_LOGT_TAG("Graphic", "All required vulkan instance extensions are supported.");
 
     // Enable validation layers?
 #ifdef QK_DEBUG_BUILD
-    CORE_LOGD("Validation layers enabled. Checking...")
+    QK_CORE_LOGT_TAG("Graphic", "Validation layers enabled. Checking...");
     
     // TODO: if this is not supported, try other layers
     required_layers.push_back("VK_LAYER_KHRONOS_validation");
-    CORE_LOGD("Required vulkan instance layers:")
+    QK_CORE_LOGT_TAG("Graphic", "Required vulkan instance layers:");
     for(const auto& s : required_layers)
-        CORE_LOGD("  {}", s);
+        QK_CORE_LOGT_TAG("Graphic","  {}", s);
 
     // checking
     for (auto layerName : required_layers) {
@@ -127,7 +128,7 @@ void VulkanContext::CreateInstance()
             
     }
 
-    CORE_LOGD("All required vulkan validation layers are supported.")
+    QK_CORE_LOGT_TAG("Graphic", "All required vulkan validation layers are supported.");
 #endif
 
     // Finally, create instance
@@ -145,7 +146,7 @@ void VulkanContext::CreateInstance()
 
     VK_CHECK(vkCreateInstance(&createInfo, nullptr, &instance))
 
-    CORE_LOGI("Vulkan instance created") 
+    QK_CORE_LOGI_TAG("Graphic", "Vulkan instance created");
 }
 
 void VulkanContext::CreateDebugMessenger()
@@ -162,14 +163,14 @@ void VulkanContext::CreateDebugMessenger()
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     VK_CHECK(func(instance, &createInfo, nullptr, &debugMessenger))
 
-    CORE_LOGD("Vulkan debug messenger created")
+    QK_CORE_LOGT_TAG("Graphic", "Vulkan debug messenger created");
 }
 
 void VulkanContext::CreateSurface()
 {
     // surface的具体创建过程是要区分平台的，这里直接用GLFW封装好的接口来创建
     VK_CHECK(glfwCreateWindowSurface(instance, (GLFWwindow*)Application::Get().GetWindow()->GetNativeWindow(), nullptr, &surface))
-    CORE_LOGI("Vulkan surface created") 
+    QK_CORE_LOGI_TAG("Graphic", "Vulkan surface created");
 }
 
 void VulkanContext::CreateLogicalDevice()
@@ -207,7 +208,7 @@ void VulkanContext::CreateLogicalDevice()
 
     VK_CHECK(vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice));
 
-    CORE_LOGI("Logical device created")
+    QK_CORE_LOGI_TAG("Graphic", "Logical device created");
 
     // store the queue handle
     vkGetDeviceQueue(logicalDevice, graphicQueueIndex, 0, &graphicQueue);
@@ -218,14 +219,14 @@ void VulkanContext::CreateLogicalDevice()
 
 void VulkanContext::SelectPhysicalDevice()
 {
-    CORE_LOGI("Selecting vulkan physical device...")
+    QK_CORE_LOGI_TAG("Graphic", "Selecting vulkan physical device...");
 
     // Get all GPUs that support vulkan
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-    CORE_ASSERT_MSG(deviceCount !=0, "failed to find GPUs with Vulkan support!")
+    QK_CORE_VERIFY(deviceCount !=0, "failed to find GPUs with Vulkan support!")
 
     // TODO: Make this configurable. For now, just hard code requirements
     std::vector<const char*> required_extensions = {
@@ -259,8 +260,8 @@ void VulkanContext::SelectPhysicalDevice()
             }
         }
     }
-    CORE_ASSERT_MSG(physicalDevice != VK_NULL_HANDLE, "Failed to find a suitable GPU")
-    CORE_LOGI("GPU \"{}\" is selected.", properties2.properties.deviceName)
+    QK_CORE_VERIFY(physicalDevice != VK_NULL_HANDLE, "Failed to find a suitable GPU")
+    QK_CORE_LOGI_TAG("Graphic", "GPU \"{}\" is selected.", properties2.properties.deviceName);
 
     // Find queue families
     uint32_t queueFamilyCount = 0;
@@ -314,39 +315,39 @@ void VulkanContext::SelectPhysicalDevice()
         }
     }
 
-    CORE_LOGI("------------GPU Information------------")
-    CORE_LOGI("GPU name: {}", properties2.properties.deviceName)
+    QK_CORE_LOGI_TAG("Graphic", "------------GPU Information------------");
+    QK_CORE_LOGI_TAG("Graphic", "GPU name: {}", properties2.properties.deviceName);
     switch (properties2.properties.deviceType) {
         default:
         case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-            CORE_LOGI("GPU type is Unknown.");
+            QK_CORE_LOGI_TAG("Graphic","GPU type is Unknown.");
             break;
         case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-            CORE_LOGI("GPU type is Integrated.");
+            QK_CORE_LOGI_TAG("Graphic","GPU type is Integrated.");
             break;
         case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-            CORE_LOGI("GPU type is Descrete.");
+            QK_CORE_LOGI_TAG("Graphic","GPU type is Descrete.");
             break;
         case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-            CORE_LOGI("GPU type is Virtual.");
+            QK_CORE_LOGI_TAG("Graphic","GPU type is Virtual.");
             break;
         case VK_PHYSICAL_DEVICE_TYPE_CPU:
-            CORE_LOGI("GPU type is CPU.");
+            QK_CORE_LOGI_TAG("Graphic","GPU type is CPU.");
             break;
     }
 
-    CORE_LOGI("Graphic queue family index: {}", graphicQueueIndex)
-    CORE_LOGI("Transfer queue family index: {}", transferQueueIndex)
-    CORE_LOGI("Compute queue family index: {}", computeQueueIndex)
+    QK_CORE_LOGI_TAG("Graphic", "Graphic queue family index: {}", graphicQueueIndex);
+    QK_CORE_LOGI_TAG("Graphic", "Transfer queue family index: {}", transferQueueIndex);
+    QK_CORE_LOGI_TAG("Graphic", "Compute queue family index: {}", computeQueueIndex);
 
-    CORE_LOGI(
+    QK_CORE_LOGI_TAG("Graphic",
         "GPU Driver version: {}.{}.{}",
         VK_VERSION_MAJOR(properties2.properties.driverVersion),
         VK_VERSION_MINOR(properties2.properties.driverVersion),
         VK_VERSION_PATCH(properties2.properties.driverVersion));
 
     // Vulkan API version.
-    CORE_LOGI(
+    QK_CORE_LOGI_TAG("Graphic",
         "Vulkan API version: {}.{}.{}",
         VK_VERSION_MAJOR(properties2.properties.apiVersion),
         VK_VERSION_MINOR(properties2.properties.apiVersion),
@@ -357,12 +358,12 @@ void VulkanContext::SelectPhysicalDevice()
     for (u32 j = 0; j < memoryPorps.memoryHeapCount; ++j) {
         f32 memory_size_gib = (((f32)memoryPorps.memoryHeaps[j].size) / 1024.0f / 1024.0f / 1024.0f);
         if (memoryPorps.memoryHeaps[j].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-            CORE_LOGI("Local GPU memory: {} GiB", memory_size_gib);
+            QK_CORE_LOGI_TAG("Graphic","Local GPU memory: {} GiB", memory_size_gib);
         } else {
-            CORE_LOGI("Shared System memory: {} GiB", memory_size_gib);
+            QK_CORE_LOGI_TAG("Graphic","Shared System memory: {} GiB", memory_size_gib);
         }
     }
-    CORE_LOGI("---------------------------------------")
+    QK_CORE_LOGI_TAG("Graphic", "---------------------------------------");
 }
 
 void VulkanContext::CreateSwapChain()
@@ -459,7 +460,7 @@ void VulkanContext::CreateSwapChain()
         VK_CHECK(vkCreateImageView(logicalDevice, &view_info, nullptr, &swapChainImageViews[i]));
     }
 
-    CORE_LOGI("Swapchain created. Width: {}, Height: {}, image count: {}.", swapChainExtent.width, swapChainExtent.height, swapChianImages.size())
+    QK_CORE_LOGI_TAG("Graphic", "Swapchain created. Width: {}, Height: {}, image count: {}.", swapChainExtent.width, swapChainExtent.height, swapChianImages.size());
 
 }
 
@@ -482,7 +483,7 @@ void VulkanContext::CreateVmaAllocator()
     vmaInfo.instance = instance;
     vmaInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     VK_CHECK(vmaCreateAllocator(&vmaInfo, &vmaAllocator));
-    CORE_LOGD("VmaAllocator Created")
+    QK_CORE_LOGT_TAG("Graphic", "VmaAllocator Created");
 }
 
 SwapChainSupportDetail VulkanContext::GetSwapchainSupportDetails() const 
@@ -535,7 +536,7 @@ bool VulkanContext::IsPhysicalDeviceSuitable(VkPhysicalDevice device, physicalDe
     vkGetPhysicalDeviceProperties2(device, &properties2);
     vkGetPhysicalDeviceFeatures2(device, &features2);
 
-    CORE_LOGD("Checking GPU \"{}\"...", properties2.properties.deviceName)
+    QK_CORE_LOGT_TAG("Graphic", "Checking GPU \"{}\"...", properties2.properties.deviceName);
 
     // Query supported device extensions
     uint32_t extensionCount = 0;
@@ -551,7 +552,7 @@ bool VulkanContext::IsPhysicalDeviceSuitable(VkPhysicalDevice device, physicalDe
             }
         }
         if (!found) {
-            CORE_LOGD("  Required extension not found: {}. Skipping", requirements.deviceExtensions[i]);
+            QK_CORE_LOGT_TAG("Graphic","  Required extension not found: {}. Skipping", requirements.deviceExtensions[i]);
             return false;
         }
     }
@@ -562,14 +563,14 @@ bool VulkanContext::IsPhysicalDeviceSuitable(VkPhysicalDevice device, physicalDe
     // Descrete GPU？
     if (requirements.ForceDescreteGpu) {
         if (properties2.properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            CORE_LOGD("  Device is not a discrete GPU, and one is required. Skipping.")
+            QK_CORE_LOGT_TAG("Graphic", "  Device is not a discrete GPU, and one is required. Skipping.");
             return false;
         }
     }
     // Anisotropy sampler？
     if (requirements.samplerAnisotropy) {
         if (!features2.features.samplerAnisotropy) {
-            CORE_LOGD("  Device do not support anisotropy sampler. Skipping.")
+            QK_CORE_LOGT_TAG("Graphic", "  Device do not support anisotropy sampler. Skipping.");
             return false;
         }
     }
@@ -577,24 +578,24 @@ bool VulkanContext::IsPhysicalDeviceSuitable(VkPhysicalDevice device, physicalDe
 #ifndef QK_PLATFORM_MACOS
     // Require dynamic rendering except on Moltenvk
     if (!features13.dynamicRendering) {
-        CORE_LOGD("  Device do not support dynamic rendering. Skipping.")
+        QK_CORE_LOGT_TAG("Graphic", "  Device do not support dynamic rendering. Skipping.");
         return false;
     }
     // Require synchonazition2 except on Moltenvk
     if (!features13.dynamicRendering) {
-        CORE_LOGD("  Device do not support synchronization2. Skipping.")
+        QK_CORE_LOGT_TAG("Graphic", "  Device do not support synchronization2. Skipping.");
         return false;
     }
 #endif
 
     // Require device buffer address
     if (!features12.bufferDeviceAddress) {
-        CORE_LOGD("  Device do not support buffer device address. Skipping.")
+        QK_CORE_LOGT_TAG("Graphic", "  Device do not support buffer device address. Skipping.");
         return false;
     }
     // Require descriptor indexing
     if (!features12.descriptorIndexing) {
-        CORE_LOGD("  Device do not support descriptor indexing. Skipping.")
+        QK_CORE_LOGT_TAG("Graphic", "  Device do not support descriptor indexing. Skipping.");
         return false;
     }
     // This GPU is suitable
@@ -616,7 +617,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::VkDebugCallback(
             CORE_LOGW(pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            CORE_LOGI(pCallbackData->pMessage);
+            QK_CORE_LOGI_TAG("Graphic",pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
             CORE_LOGT(pCallbackData->pMessage);
@@ -661,6 +662,6 @@ void VulkanContext::InitExtendFunctions()
     extendFunction.pVkCmdEndRenderingKHR = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(
         logicalDevice, "vkCmdEndRenderingKHR");
 
-    CORE_LOGD("Vulkan Extend functions Found")
+    QK_CORE_LOGT_TAG("Graphic", "Vulkan Extend functions Found");
 }
 }

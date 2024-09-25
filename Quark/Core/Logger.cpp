@@ -5,25 +5,61 @@
 
 namespace quark {
 
-std::shared_ptr<spdlog::logger> Logger::m_CoreLogger;
-std::shared_ptr<spdlog::logger> Logger::m_ClientLogger;
+std::shared_ptr<spdlog::logger> Logger::s_CoreLogger;
+std::shared_ptr<spdlog::logger> Logger::s_ClientLogger;
+
+std::map<std::string, Logger::TagDetails> Logger::s_DefaultTagDetails = {
+	{ "AssetManager",      TagDetails{  true, Level::WARN  } },
+	{ "Core",              TagDetails{  true, Level::TRACE } },
+	{ "GLFW",              TagDetails{  true, Level::ERROR } },
+    { "Graphic",           TagDetails{  true, Level::TRACE  } },
+	{ "Mesh",              TagDetails{  true, Level::WARN  } },
+	{ "Physics",           TagDetails{  true, Level::WARN  } },
+	{ "Project",           TagDetails{  true, Level::WARN  } },
+	{ "Renderer",          TagDetails{  true, Level::INFO  } },
+	{ "Scene",             TagDetails{  true, Level::INFO  } },
+};
 
 void Logger::Init()
 {
-    std::vector<spdlog::sink_ptr> logSinks;
-    logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-    logSinks[0]->set_level(spdlog::level::trace);
-    logSinks[0]->set_pattern("%^[%n] [%l] %v%$");
+    // Create "logs" directory if doesn't exist
+    std::string logsDirectory = "logs";
+    if (!std::filesystem::exists(logsDirectory))
+        std::filesystem::create_directories(logsDirectory);
+    
+    std::vector<spdlog::sink_ptr> quarkSinks =
+    {
+        std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/QUARK.log", true),
+        std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
+    };
 
-    logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("Quark.log", true));
-    logSinks[1]->set_level(spdlog::level::trace);
-    logSinks[1]->set_pattern("[%T] [%l] %n: %v");
+    std::vector<spdlog::sink_ptr> appSinks =
+    {
+        std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/APP.log", true),
+		std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
+    };
 
-    m_CoreLogger = std::make_shared<spdlog::logger>("QUARK", logSinks.begin(), logSinks.end());
-    m_CoreLogger->set_level(spdlog::level::trace);
+    quarkSinks[0]->set_pattern("[%T] [%l] %n: %v");
+    appSinks[0]->set_pattern("[%T] [%l] %n: %v");
 
-    m_ClientLogger = std::make_shared<spdlog::logger>("APP", logSinks.begin(), logSinks.end());
-    m_ClientLogger->set_level(spdlog::level::trace);
+    quarkSinks[1]->set_pattern("%^[%T] %n: %v%$");
+    appSinks[1]->set_pattern("%^[%T] %n: %v%$");
+
+    s_CoreLogger = std::make_shared<spdlog::logger>("QUARK", quarkSinks.begin(), quarkSinks.end());
+    s_CoreLogger->set_level(spdlog::level::trace);
+
+    s_ClientLogger = std::make_shared<spdlog::logger>("APP", appSinks.begin(), appSinks.end());
+    s_ClientLogger->set_level(spdlog::level::trace);
+
+    s_EnabledTags = s_DefaultTagDetails;
+
+}
+
+void Logger::ShutDown()
+{
+    s_CoreLogger.reset();
+    s_ClientLogger.reset();
+    spdlog::drop_all();
 }
 
 }

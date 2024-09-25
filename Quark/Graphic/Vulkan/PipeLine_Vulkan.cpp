@@ -28,7 +28,7 @@ constexpr VkPolygonMode _ConvertPolygonMode(PolygonMode mode)
     case PolygonMode::Fill:
         return VK_POLYGON_MODE_FILL;
     default:
-        CORE_ASSERT("Polygon mode not handeled yet!")
+        QK_CORE_VERIFY("Polygon mode not handeled yet!")
         break;
     }
 }
@@ -110,7 +110,7 @@ constexpr VkBlendOp _ConvertBlendOp(BlendOperation value)
 PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayout _combinedLayout)
     : device(_device), combinedLayout(_combinedLayout)
 {
-    CORE_DEBUG_ASSERT(this->device != nullptr)
+    QK_CORE_VERIFY(this->device != nullptr)
 
     // Descriptor set layouts
     std::vector<VkDescriptorSetLayout> vk_descriptorset_layouts;
@@ -152,7 +152,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
 
         auto& set_layout = combinedLayout.descriptorSetLayouts[set];
         for (auto& binding : set_layout.bindings) {
-            CORE_DEBUG_ASSERT(binding.binding < SET_BINDINGS_MAX_NUM)
+            QK_CORE_ASSERT(binding.binding < SET_BINDINGS_MAX_NUM)
 
             auto& entry = update_entries[update_count++];
             entry.dstBinding = binding.binding;
@@ -173,7 +173,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
                 entry.offset = offsetof(DescriptorBinding, image) + sizeof(DescriptorBinding) * binding.binding;
                 break;
             default:
-                CORE_ASSERT_MSG(0, "Descriptor type not handled yet.")
+                QK_CORE_VERIFY(0, "Descriptor type not handled yet.")
             }
         }
 
@@ -208,8 +208,8 @@ PipeLineLayout::~PipeLineLayout()
 PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
     :PipeLine(PipeLineBindingPoint::GRAPHIC), m_Device(device), m_CompatableRenderPassInfo(desc.renderPassInfo2)
 {
-    CORE_DEBUG_ASSERT(m_Device)
-    CORE_DEBUG_ASSERT(desc.vertShader != nullptr && desc.fragShader != nullptr)
+    QK_CORE_ASSERT(m_Device)
+    QK_CORE_ASSERT(desc.vertShader != nullptr && desc.fragShader != nullptr)
 
     // Combine shader's resource bindings and create pipeline layout
     {
@@ -260,7 +260,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
                         dstSetLayout.sampler_mask |= 1u << x.binding;
                         break;
                     default:
-                        CORE_DEBUG_ASSERT("Descriptor type not handled!")
+                        QK_CORE_VERIFY("Descriptor type not handled!")
                         break;
                     }
                     
@@ -272,8 +272,8 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
 							// If the asserts fire, it means there are overlapping bindings between shader stages
 							// This is not supported now for performance reasons (less binding management)!
 							// (Overlaps between s/b/t bind points are not a problem because those are shifted by the compiler)
-                            CORE_ASSERT(x.descriptorCount == z.descriptorCount)
-                            CORE_ASSERT(x.descriptorType == z.descriptorType)
+                            QK_CORE_VERIFY(x.descriptorCount == z.descriptorCount)
+                            QK_CORE_VERIFY(x.descriptorType == z.descriptorType)
                             found = true;
                             z.stageFlags |= x.stageFlags;
                             break;
@@ -350,7 +350,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
                 attributes[i].format = VK_FORMAT_R32G32B32A32_SFLOAT;
                 break;
             default:
-                CORE_ASSERT(0)
+                QK_CORE_VERIFY(0)
                 break;
             }
         }
@@ -414,7 +414,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     depth_stencil_state_create_info.depthBoundsTestEnable = VK_FALSE;
 
     // Blend state
-    CORE_ASSERT(desc.blendState.attachments.size() == desc.renderPassInfo2.numColorAttachments)
+    QK_CORE_VERIFY(desc.blendState.attachments.size() == desc.renderPassInfo2.numColorAttachments)
     std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachment_states(desc.blendState.attachments.size());
     for (size_t i = 0; i < color_blend_attachment_states.size(); ++i) 
     {

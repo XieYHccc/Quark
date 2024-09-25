@@ -135,7 +135,7 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
         {
 			// If extension is required then we shouldn't allow the scene to be loaded
 			if (std::find(m_Model.extensionsRequired.begin(), m_Model.extensionsRequired.end(), used_extension) != m_Model.extensionsRequired.end())
-				CORE_ASSERT_MSG(0, "Cannot load glTF file. Contains a required unsupported extension: " + used_extension)
+				QK_CORE_VERIFY(0, "Cannot load glTF file. Contains a required unsupported extension: {}", used_extension)
 			else
 				CORE_LOGW("glTF file contains an unsupported extension, unexpected results may occur: {}", used_extension)
 		}
@@ -190,7 +190,7 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
 
 	//size_t buffer_size = (m_Model.materials.size() + 1) * dynamic_alignment; // additional 1 is for default material
  //   auto* ubo_data = (Material::UniformBufferBlock*)util::memalign_alloc(dynamic_alignment, buffer_size);
- //   CORE_DEBUG_ASSERT(ubo_data)
+ //   QK_CORE_ASSERT(ubo_data)
 
  //   // Create uniform buffer for material's uniform data
  //   BufferDesc uniform_buffer_desc = {
@@ -453,13 +453,13 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
             u32 numColorComponents;
 
             // Position attribute is required
-            CORE_ASSERT_MSG(p.attributes.find("POSITION") != p.attributes.end(), "Position attribute is required")
+            QK_CORE_ASSERT(p.attributes.find("POSITION") != p.attributes.end(), "Position attribute is required")
             const tinygltf::Accessor &posAccessor = m_Model.accessors[p.attributes.find("POSITION")->second];
             const tinygltf::BufferView &posView = m_Model.bufferViews[posAccessor.bufferView];
             buffer_pos = reinterpret_cast<const float *>(&(m_Model.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
             min_pos = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
             max_pos = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
-            CORE_DEBUG_ASSERT(min_pos != max_pos)
+            QK_CORE_ASSERT(min_pos != max_pos)
             
             if (p.attributes.find("NORMAL") != p.attributes.end()) 
             {
@@ -482,7 +482,7 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
                 buffer_colors = &(m_Model.buffers[colorView.buffer].data[colorAccessor.byteOffset + colorView.byteOffset]);
                 numColorComponents = colorAccessor.type == TINYGLTF_PARAMETER_TYPE_FLOAT_VEC3 ? 3 : 4;
                 colorComponentType = colorAccessor.componentType;
-                CORE_DEBUG_ASSERT(colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT
+                QK_CORE_ASSERT(colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT
                     || colorComponentType == TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT)
 
             }
@@ -521,7 +521,7 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
                                 buf[i * 4 + 3] / NORMALIZATION_FACTOR);
                             break;
                         default:
-                            CORE_ASSERT_MSG(0, "Invalid number of color components")
+                            QK_CORE_VERIFY(0, "Invalid number of color components")
                         }
                     }
                     else 
@@ -535,7 +535,7 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
                             color = glm::make_vec4(&buf[i * 4]);
                             break;
                         default:
-                            CORE_ASSERT_MSG(0, "Invalid number of color components")
+                            QK_CORE_VERIFY(0, "Invalid number of color components")
                         }
                     }
                     newMesh->vertex_colors.push_back(color);

@@ -55,7 +55,7 @@ std::string MaterialSerializer::SerializeToYaml(const Ref<Material>& materialAss
         QK_SERIALIZE_PROPERTY(MetalicFactor, materialAsset->uniformBufferData.metalicFactor, out);
         QK_SERIALIZE_PROPERTY(RoughNessFactor, materialAsset->uniformBufferData.roughNessFactor, out);
 
-        CORE_DEBUG_ASSERT(materialAsset->baseColorTexture->image && materialAsset->metallicRoughnessTexture->image)
+        QK_CORE_VERIFY(materialAsset->baseColorTexture->image && materialAsset->metallicRoughnessTexture->image);
 
         // Textures
         if (materialAsset->baseColorTexture->image != GpuResourceManager::Get().image_white)
@@ -78,7 +78,7 @@ std::string MaterialSerializer::SerializeToYaml(const Ref<Material>& materialAss
 
 bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<Material>& outMaterial)
 {
-    CORE_DEBUG_ASSERT(outMaterial)
+    QK_CORE_VERIFY(outMaterial)
 
     YAML::Node root = YAML::Load(yamlString);
     YAML::Node materialNode = root["Material"];
@@ -133,7 +133,7 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
     std::string fragmentShaderPath;
     QK_DESERIALIZE_PROPERTY(FragmentShader, fragmentShaderPath, materialNode, std::string(""));
 
-    CORE_ASSERT(!vertexShaderPath.empty() && !fragmentShaderPath.empty())
+    QK_CORE_VERIFY(!vertexShaderPath.empty() && !fragmentShaderPath.empty())
     outMaterial->shaderProgram = GpuResourceManager::Get().GetShaderLibrary().GetOrCreateGraphicsProgram(vertexShaderPath, fragmentShaderPath);
 
     return true;

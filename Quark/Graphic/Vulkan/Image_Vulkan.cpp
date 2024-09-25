@@ -17,7 +17,7 @@ constexpr VkAccessFlags2 ParseImageLayoutToMemoryAccess(ImageLayout layout)
         return (VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT & VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
     default: 
     {
-        CORE_DEBUG_ASSERT("Layout type not handled")
+        QK_CORE_ASSERT("Layout type not handled")
         return 0;
     }
     }
@@ -31,8 +31,8 @@ Image_Vulkan::Image_Vulkan(const ImageDesc& desc)
 
 void Image_Vulkan::PrepareCopy(const ImageDesc& desc, const TextureFormatLayout& layout, const ImageInitData* init_data, Ref<Buffer> stage_buffer, std::vector<VkBufferImageCopy>& copys)
 {
-    CORE_DEBUG_ASSERT(copys.empty())
-    CORE_DEBUG_ASSERT(stage_buffer->GetDesc().size >= layout.GetRequiredSize())
+    QK_CORE_ASSERT(copys.empty())
+    QK_CORE_ASSERT(stage_buffer->GetDesc().size >= layout.GetRequiredSize())
 
     // Get mapped data ptr
     void* mapped = stage_buffer->GetMappedDataPtr();
@@ -172,7 +172,7 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
 Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data)
     : Image(desc), device_(device)
 {
-    CORE_DEBUG_ASSERT(device != nullptr)
+    QK_CORE_ASSERT(device != nullptr)
     auto& vk_context = device_->vkContext;
     auto vk_device = device_->vkDevice;
 
@@ -204,7 +204,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         break;
     case ImageType::TYPE_CUBE:
     {
-        CORE_ASSERT(desc.arraySize == 6) // only support cube texture with 6 images now
+        QK_CORE_VERIFY(desc.arraySize == 6) // only support cube texture with 6 images now
         create_info.imageType = VK_IMAGE_TYPE_2D;
         create_info.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         break;
@@ -281,7 +281,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
 
     // Static data copy & layout transition
     if (init_data != nullptr && (desc.usageBits & IMAGE_USAGE_SAMPLING_BIT)) {
-        CORE_DEBUG_ASSERT(desc.type == ImageType::TYPE_2D || desc.type == ImageType::TYPE_CUBE)
+        QK_CORE_ASSERT(desc.type == ImageType::TYPE_2D || desc.type == ImageType::TYPE_CUBE)
 
         // Prepare the mipmap infomation for copying
         TextureFormatLayout layout;

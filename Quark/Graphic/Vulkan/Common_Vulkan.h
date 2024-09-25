@@ -80,7 +80,7 @@ constexpr VkFormat ConvertDataFormat(DataFormat value)
     case DataFormat::R16G16B16A16_SFLOAT:
         return VK_FORMAT_R16G16B16A16_SFLOAT;
     default:
-        CORE_ASSERT_MSG(0, "Data format not handled yet!")
+        QK_CORE_VERIFY(0, "Data format not handled yet!")
     }
 }
 

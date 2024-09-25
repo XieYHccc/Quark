@@ -10,7 +10,7 @@ namespace quark::graphic {
 CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
     : CommandList(type), m_GraphicDevice(device)
 {
-    CORE_DEBUG_ASSERT(m_GraphicDevice != nullptr)
+    QK_CORE_ASSERT(m_GraphicDevice != nullptr)
     auto& vulkan_context = m_GraphicDevice->vkContext;
     VkDevice vk_device = m_GraphicDevice->vkDevice;
 
@@ -29,7 +29,7 @@ CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
         poolInfo.queueFamilyIndex = vulkan_context->transferQueueIndex;
         break;
     default:
-        CORE_ASSERT_MSG(0, "Queue Type not handled."); // queue type not handled
+        QK_CORE_VERIFY(0, "Queue Type not handled."); // queue type not handled
         break;
     }
     poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
@@ -77,9 +77,9 @@ CommandList_Vulkan::~CommandList_Vulkan()
 
 void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier *imageBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier *bufferBarriers, u32 bufferBarriersCount)
 {
-    CORE_DEBUG_ASSERT(bufferBarriers == nullptr);   // do not support buffer barrier for now
+    QK_CORE_ASSERT(bufferBarriers == nullptr);   // do not support buffer barrier for now
 
-    CORE_DEBUG_ASSERT(m_MemoryBarriers.empty() && m_ImageBarriers.empty() && m_BufferBarriers.empty())
+    QK_CORE_ASSERT(m_MemoryBarriers.empty() && m_ImageBarriers.empty() && m_BufferBarriers.empty())
 
     // Memory Barriers
     for (size_t i = 0; i < memoryBarriersCount; ++i) {
@@ -180,8 +180,8 @@ void CommandList_Vulkan::ResetBindingState()
 
 void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo)
 {
-    CORE_DEBUG_ASSERT(renderPassInfo.numColorAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
-    CORE_DEBUG_ASSERT(frameBufferInfo.numResolveAttachments < renderPassInfo.numColorAttachments)
+    QK_CORE_ASSERT(renderPassInfo.numColorAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
+    QK_CORE_ASSERT(frameBufferInfo.numResolveAttachments < renderPassInfo.numColorAttachments)
 
 #if QK_DEBUG_BUILD
         if (state != CommandListState::IN_RECORDING)
@@ -283,8 +283,8 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, 
 
 //void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
 //{
-//    CORE_DEBUG_ASSERT(info.numColorAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
-//    CORE_DEBUG_ASSERT(info.numResolveAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
+//    QK_CORE_ASSERT(info.numColorAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
+//    QK_CORE_ASSERT(info.numResolveAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
 //
 //#if QK_DEBUG_BUILD
 //    if (state != CommandListState::IN_RECORDING) {
@@ -399,7 +399,7 @@ void CommandList_Vulkan::EndRenderPass()
 
 void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_t size)
 {
-    CORE_DEBUG_ASSERT(offset + size < PUSH_CONSTANT_DATA_SIZE)
+    QK_CORE_ASSERT(offset + size < PUSH_CONSTANT_DATA_SIZE)
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) 
@@ -426,8 +426,8 @@ void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_
 
 void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &buffer, u64 offset, u64 size)
 {
-    CORE_DEBUG_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
-    CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
+    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
+    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) {
@@ -461,8 +461,8 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
 
 void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &buffer, u64 offset, u64 size)
 {
-    CORE_DEBUG_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
-    CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
+    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
+    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) {
@@ -492,8 +492,8 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
 
 void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, ImageLayout layout)
 {
-    CORE_DEBUG_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
-    CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
+    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
+    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) {
@@ -523,7 +523,7 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
 void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
 {
     auto& internal_pipeline = ToInternal(&pipeline);
-    CORE_DEBUG_ASSERT(internal_pipeline.GetHandle() != VK_NULL_HANDLE)
+    QK_CORE_ASSERT(internal_pipeline.GetHandle() != VK_NULL_HANDLE)
 
 #ifdef QK_DEBUG_BUILD
     if (!m_CurrentRenderPassInfo2.IsValid()) 
@@ -568,8 +568,8 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
 
 void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sampler)
 {
-    CORE_DEBUG_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
-    CORE_DEBUG_ASSERT(binding < SET_BINDINGS_MAX_NUM)
+    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
+    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) {
@@ -590,8 +590,8 @@ void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sample
 void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const IndexBufferFormat format)
 {
     auto& internal_buffer = ToInternal(&buffer);
-    CORE_DEBUG_ASSERT(internal_buffer.GetHandle() != VK_NULL_HANDLE)
-    CORE_DEBUG_ASSERT((buffer.GetDesc().usageBits & BUFFER_USAGE_INDEX_BUFFER_BIT) != 0)
+    QK_CORE_ASSERT(internal_buffer.GetHandle() != VK_NULL_HANDLE)
+    QK_CORE_ASSERT((buffer.GetDesc().usageBits & BUFFER_USAGE_INDEX_BUFFER_BIT) != 0)
     
     auto& index_buffer_binding_state = m_BindingState.indexBufferBindingState;
     if (internal_buffer.GetHandle() == index_buffer_binding_state.buffer &&
@@ -611,8 +611,8 @@ void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64
 {
     auto& internal_buffer = ToInternal(&buffer);
     // TODO: add some state track for debuging here
-    CORE_DEBUG_ASSERT(binding < VERTEX_BUFFER_MAX_NUM)
-    CORE_DEBUG_ASSERT(buffer.GetDesc().usageBits & BUFFER_USAGE_VERTEX_BUFFER_BIT)
+    QK_CORE_ASSERT(binding < VERTEX_BUFFER_MAX_NUM)
+    QK_CORE_ASSERT(buffer.GetDesc().usageBits & BUFFER_USAGE_VERTEX_BUFFER_BIT)
 
     auto& vertex_buffer_binding_state = m_BindingState.vertexBufferBindingState;
     if (vertex_buffer_binding_state.buffers[binding] == internal_buffer.GetHandle() &&
@@ -648,7 +648,7 @@ void CommandList_Vulkan::SetViewPort(const Viewport &viewport)
 
 void CommandList_Vulkan::FlushDescriptorSet(u32 set)
 {
-    CORE_DEBUG_ASSERT((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
+    QK_CORE_ASSERT((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
 
     auto& set_layout = m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set];
     auto& bindings = m_BindingState.descriptorBindings[set];
@@ -668,7 +668,7 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
             if (bindings[b.binding + i].buffer.buffer == VK_NULL_HANDLE)
                 CORE_LOGW("Buffer at Set: {}, Binding {} is not bounded. Performance waring!", set, b.binding)
 #endif
-                CORE_DEBUG_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
+                QK_CORE_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
                 dynamic_offsets[num_dynamic_offsets++] = bindings[b.binding + i].dynamicOffset;
             }
             break;
@@ -678,7 +678,7 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
             for (size_t i = 0; i < b.descriptorCount; ++i) {
                 h.pointer(bindings[b.binding + i].buffer.buffer);
                 h.u64(bindings[b.binding + i].buffer.range);
-                CORE_DEBUG_ASSERT(bindings[b.binding + i].buffer.buffer != VK_NULL_HANDLE)
+                QK_CORE_ASSERT(bindings[b.binding + i].buffer.buffer != VK_NULL_HANDLE)
             }
             break;
         }
@@ -692,12 +692,12 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
 #ifdef QK_DEBUG_BUILD
                 if (bindings[b.binding + i].image.imageView == VK_NULL_HANDLE) {
                     CORE_LOGC("Texture at Set: {}, Binding: {} is not bound.", set, b.binding)
-                    CORE_DEBUG_ASSERT(0)
+                    QK_CORE_ASSERT(0)
                 }
                 if (bindings[b.binding + i].image.sampler == VK_NULL_HANDLE)
                 {
                     CORE_LOGC("Sampler at Set: {}, Binding: {} is not bound.", set, b.binding)
-                    CORE_DEBUG_ASSERT(0)
+                    QK_CORE_ASSERT(0)
                 }
 #endif
             }
@@ -708,7 +708,7 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
             for (size_t i = 0; i < b.descriptorCount; ++i) {
                 h.pointer(bindings[b.binding + i].image.imageView);
                 h.u32(bindings[b.binding + i].image.imageLayout);
-                CORE_DEBUG_ASSERT(bindings[b.binding + i].image.imageView != VK_NULL_HANDLE)
+                QK_CORE_ASSERT(bindings[b.binding + i].image.imageView != VK_NULL_HANDLE)
             }
             break;
         }
@@ -716,12 +716,12 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
         {
             for (size_t i = 0; i < b.descriptorCount; ++i) {
                 h.pointer(bindings[b.binding + i].image.sampler);
-                CORE_DEBUG_ASSERT(bindings[b.binding + i].image.sampler != VK_NULL_HANDLE)
+                QK_CORE_ASSERT(bindings[b.binding + i].image.sampler != VK_NULL_HANDLE)
             }
             break;
         }
         default:
-            CORE_ASSERT_MSG(0, "Descriptor type not handled!")
+            QK_CORE_VERIFY(0, "Descriptor type not handled!")
             break;
         }
     }
@@ -731,7 +731,7 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
     // The descriptor set was not successfully cached, rebuild
     if (!allocated.second) {
         auto updata_template = m_CurrentPipeline->GetLayout()->updateTemplate[set];
-        CORE_DEBUG_ASSERT(updata_template)
+        QK_CORE_ASSERT(updata_template)
         vkUpdateDescriptorSetWithTemplate(m_GraphicDevice->vkDevice, allocated.first, updata_template, bindings);
     }
 
@@ -743,8 +743,8 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
 
 void CommandList_Vulkan::RebindDescriptorSet(u32 set)
 {
-    CORE_DEBUG_ASSERT((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
-    CORE_DEBUG_ASSERT(m_CurrentSets[set] != nullptr)
+    QK_CORE_ASSERT((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
+    QK_CORE_ASSERT(m_CurrentSets[set] != nullptr)
 
     auto& set_layout = m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set];
     auto& bindings = m_BindingState.descriptorBindings[set];
@@ -756,7 +756,7 @@ void CommandList_Vulkan::RebindDescriptorSet(u32 set)
     {
         for (size_t i = 0; i < set_layout.vk_bindings[binding].descriptorCount; ++i) 
         {
-            CORE_DEBUG_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
+            QK_CORE_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
             dynamic_offsets[num_dynamic_offsets++] = bindings[binding + i].dynamicOffset;
         }
     });
@@ -767,7 +767,7 @@ void CommandList_Vulkan::RebindDescriptorSet(u32 set)
 
 void CommandList_Vulkan::DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance)
 {
-    CORE_DEBUG_ASSERT(m_BindingState.indexBufferBindingState.buffer != VK_NULL_HANDLE)
+    QK_CORE_ASSERT(m_BindingState.indexBufferBindingState.buffer != VK_NULL_HANDLE)
 
     // Flush render state : update descriptor sets and bind vertex buffers 
     FlushRenderState();
@@ -806,7 +806,7 @@ void CommandList_Vulkan::FlushRenderState()
     util::for_each_bit_range(m_DirtyVertexBufferMask, [&](u32 first_binding, u32 count) {
 #ifdef QK_DEBUG_BUILD
         for (size_t binding = first_binding; binding < count; ++binding)
-            CORE_DEBUG_ASSERT(vertex_buffer_bindings.buffers[binding] != VK_NULL_HANDLE)
+            QK_CORE_ASSERT(vertex_buffer_bindings.buffers[binding] != VK_NULL_HANDLE)
 #endif
         vkCmdBindVertexBuffers(m_CmdBuffer, first_binding, count, vertex_buffer_bindings.buffers + first_binding, vertex_buffer_bindings.offsets + first_binding);
     });

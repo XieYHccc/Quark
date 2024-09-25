@@ -10,14 +10,14 @@ class MakeSingleton
 public:
 	QK_FORCE_INLINE static T& Get()
 	{
-		CORE_DEBUG_ASSERT(m_initialized);
+		QK_CORE_ASSERT(m_initialized);
 		return *reinterpret_cast<T*>(m_global);
 	}
 
 	template<typename... TArgs>
 	static T& CreateSingleton(TArgs... args)
 	{
-		CORE_DEBUG_ASSERT(!m_initialized);
+		QK_CORE_ASSERT(!m_initialized);
 		::new(m_global) T(args...);
 		m_initialized = true;
 

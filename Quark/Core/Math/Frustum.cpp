@@ -7,7 +7,7 @@ bool Frustum::CheckSphere(const Aabb &aabb)
 {
 	glm::vec4 center(aabb.GetCenter(), 1.0f);
 	float radius = aabb.GetRadius();
-	CORE_DEBUG_ASSERT(radius > 0)
+	QK_CORE_ASSERT(radius > 0)
 
 	for (const auto& plane : planes)
 		if (dot(plane, center) < -radius)

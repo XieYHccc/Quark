@@ -156,7 +156,7 @@ void JobSystem::Wait(const Counter* counters, uint32_t numCounters)
 
 void JobSystem::RunThread(uint32_t threadId)
 {
-	CORE_LOGD("Thread {} Start Working", threadId)
+	QK_CORE_LOGT_TAG("Core", "Thread{} Start Working", threadId);
 
 	while (true)
 	{
@@ -187,7 +187,7 @@ void JobSystem::RunThread(uint32_t threadId)
 		}
 	}
 
-	CORE_LOGD("Thread {} Finished Execution!",threadId);
+	QK_CORE_LOGT_TAG("Core", "Thread {} Finished Execution!", threadId);
 }
 
 }

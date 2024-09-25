@@ -304,7 +304,7 @@ ShaderTemplateVariant* ShaderTemplate::GetPrecompiledVariant()
 	{
 		std::string messages;
 		std::vector<uint8_t> spirv;
-		if (!FileSystem::ReadFileBinary(m_Path, spirv))
+		if (!FileSystem::ReadFileBytes(m_Path, spirv))
 			return nullptr;
 
 		Ref<graphic::Shader> newShader = Application::Get().GetGraphicDevice()->CreateShaderFromBytes(m_Stage, spirv.data(), spirv.size());

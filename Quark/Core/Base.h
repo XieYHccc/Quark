@@ -2,18 +2,18 @@
 #include <memory>
 #include "Quark/Platform/Detection.h"
 
-// Causes a debug breakpoint to be hit.
-#if defined(QK_PLATFORM_WINDOWS)
-    #include <intrin.h>
-    #define QK_DEBUGBREAK() __debugbreak()
-#elif defined(QK_PLATFORM_MACOS)
-    #define QK_DEBUGBREAK() __builtin_trap()
-#else
-    #error "Platform doesn't support debugbreak yet!"
-#endif
-
 // Properly define static assertions.
 #define QK_STATIC_ASSERT static_assert
+
+#if defined(__GNUC__)
+    #if defined(__clang__)
+        #define QK_COMPILER_CLANG
+    #else
+        #define QK_COMPILER_GCC
+    #endif
+#elif defined(_MSC_VER)
+    #define QK_COMPILER_MSVC
+#endif
 
 // Import/export qualifier
 #ifdef QK_EXPORT

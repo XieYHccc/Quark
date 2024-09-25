@@ -6,7 +6,8 @@ namespace quark::graphic {
 
 Buffer_Vulkan::~Buffer_Vulkan()
 {
-    if (m_Handle != VK_NULL_HANDLE) {
+    if (m_Handle != VK_NULL_HANDLE) 
+    {
         auto& frame = m_Device->GetCurrentFrame();
         frame.garbageBuffers.push_back(std::make_pair(m_Handle, m_Allocation)); 
     }
@@ -15,8 +16,8 @@ Buffer_Vulkan::~Buffer_Vulkan()
 Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, const void* init_data)
     : Buffer(desc), m_Device(device)
 {
-    CORE_DEBUG_ASSERT(m_Device != nullptr)
-    CORE_DEBUG_ASSERT(desc.size != 0)
+    QK_CORE_ASSERT(m_Device != nullptr)
+    QK_CORE_ASSERT(desc.size != 0)
 
     const auto& vulkan_context = m_Device->vkContext;
 

@@ -6,7 +6,7 @@ namespace quark::graphic
 {
 DescriptorSetAllocator::DescriptorSetAllocator(Device_Vulkan* device, const DescriptorSetLayout& layout)
 {
-	CORE_DEBUG_ASSERT(device != nullptr && !layout.bindings.empty())
+	QK_CORE_ASSERT(device != nullptr && !layout.bindings.empty())
 
 		this->m_Device = device;
 

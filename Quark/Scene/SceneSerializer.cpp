@@ -135,7 +135,7 @@ void SceneSerializer::Serialize(const std::filesystem::path& filepath)
 void SceneSerializer::SerializeBinary(AssetID scene)
 {
 	// Not implemented
-	CORE_ASSERT(false);
+	QK_CORE_VERIFY(false);
 }
 
 bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
@@ -213,7 +213,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 			{
 				auto* mrc = deserializedEntity->AddComponent<MeshRendererCmpt>();
 				auto* mc = deserializedEntity->GetComponent<MeshCmpt>();
-				CORE_ASSERT(mc)
+				QK_CORE_ASSERT(mc)
 
 				Ref<Mesh> mesh = mc->uniqueMesh ? mc->uniqueMesh : mc->sharedMesh;
 				mrc->SetMesh(mesh);
@@ -231,13 +231,13 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 					else
 					{
 						auto material = AssetManager::Get().GetAsset<Material>(assetId);
-						CORE_ASSERT(material)
+						QK_CORE_ASSERT(material)
 						mrc->SetMaterial(i, material);
 					}
 
 					i++;
 				}
-				CORE_ASSERT(i == mesh->subMeshes.size())
+				QK_CORE_ASSERT(i == mesh->subMeshes.size())
 			}
 		}
 
@@ -267,7 +267,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 bool SceneSerializer::DeserializeBinary(AssetID scene)
 {
 	// Not implemented
-	CORE_ASSERT(false);
+	QK_CORE_ASSERT(false);
 	return false;
 }
 
