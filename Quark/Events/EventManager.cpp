@@ -5,7 +5,7 @@ namespace quark {
 
 void EventManager::TriggerEvent(const Event &event) 
 {
-    CORE_LOGT("{}", event.ToString());
+    event.Log();
 
     for (auto& subscriber : subscribers_[event.GetEventType()])
     {

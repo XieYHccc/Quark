@@ -52,7 +52,7 @@ AssetManager::AssetManager()
 	CreateDefaultAssets();
 	LoadAssetRegistry();
 
-	CORE_LOGI("[AssetManager] Initialized");
+	QK_CORE_LOGI_TAG("AssetManager", "AssetManager Initialized");
 }
 
 Ref<Asset> AssetManager::GetAsset(AssetID id)
@@ -141,7 +141,7 @@ AssetType AssetManager::GetAssetTypeFromExtension(const std::string& extension)
 	std::string ext = util::string::ToLowerCopy(extension);
 	if (s_AssetExtensionMap.find(ext) == s_AssetExtensionMap.end())
 	{
-		CORE_LOGW("[AssetManager] No asset type found for extension {0}", ext);
+		QK_CORE_LOGW_TAG("AssetManger", "No asset type found for extension{0}", ext);
 		return AssetType::None;
 	}
 
@@ -185,14 +185,14 @@ AssetID AssetManager::ImportAsset(const std::filesystem::path &filepath)
 
 	if (auto metadata = GetAssetMetadata(filepath); metadata.IsValid())
 	{
-		CORE_LOGW("[AssetManager] Asset already Imported with id {0}", metadata.id);
+		QK_CORE_LOGW_TAG("AssetManager" ,"Asset already Imported with id{0}", uint64_t(metadata.id));
 		return metadata.id;
 	}
 
 	AssetType type = GetAssetTypeFromPath(filepath);
 	if (type == AssetType::None)
 	{
-		CORE_LOGW("[AssetManager] Asset file {0} is not supported.", filepath.string());
+		QK_CORE_LOGW_TAG("AssetManager", "Asset file{0} is not supported.", filepath.string());
 		return 0;
 	}
 
@@ -240,7 +240,7 @@ void AssetManager::LoadAssetRegistry()
 	auto assetMetadata = data["Assets"];
 	if (!assetMetadata)
 	{
-		CORE_LOGE("No asset meta data in registry file")
+		QK_CORE_LOGW_TAG("AssetManager", "No asset meta data in registry file");
 		return;
 	}
 
@@ -256,24 +256,25 @@ void AssetManager::LoadAssetRegistry()
 
 		if (metadata.type == AssetType::None)
 		{
-			CORE_LOGW("[AssetManager] Asset type is None for asset {0}, this should't happen", filepath);
+			QK_CORE_LOGW_TAG("AssetManager", "Asset type is None for asset{0}, this should't happen", filepath);
 			continue;
 		}
 
 		if (metadata.id == 0) 
 		{
-			CORE_LOGW("[AssetManager] Asset ID is 0 for asset {0}, this should't happen", filepath);
+			QK_CORE_LOGW_TAG("AssetManager", "Asset ID is 0 for asset{0}, this should't happen", filepath);
 			continue;
 		}
 
 		SetMetadata(metadata.id, metadata);
 
 	}
-		CORE_LOGI("[AssetManager] Loaded {0} asset entries", m_AssetMetadata.size());
+
+	QK_CORE_LOGI_TAG("AssetManager", "Loaded {0} asset entries", m_AssetMetadata.size());
 }
 void AssetManager::SaveAssetRegistry()
 {
-	CORE_LOGI("[AssetManager] Saving asset registry with {0} assets", m_AssetMetadata.size());
+	QK_CORE_LOGI_TAG("AssetManager", "Saving asset registry with{0} assets", m_AssetMetadata.size());
 
 	YAML::Emitter out;
 	out << YAML::BeginMap;

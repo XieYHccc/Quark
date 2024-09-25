@@ -53,7 +53,7 @@ ShaderProgramVariant* ShaderProgram::GetPrecompiledVariant()
 {
 	if (!IsStatic())
 	{
-		CORE_LOGW("Only static shader programe has precompiled variant")
+		QK_CORE_LOGW_TAG("Renderer", "Only static shader programe has precompiled variant");
 		return nullptr;
 	}
 
@@ -97,7 +97,7 @@ ShaderLibrary::ShaderLibrary()
 	staticProgram_skybox = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/Spirv/skybox.vert.spv",
 		"BuiltInResources/Shaders/Spirv/skybox.frag.spv");
 
-	CORE_LOGI("[ShaderLibrary]: Initialized");
+	QK_CORE_LOGI_TAG("Renderer", "ShaderLibrary Initialized");
 }
 
 ShaderProgram* ShaderLibrary::GetOrCreateGraphicsProgram(const std::string& vert_path, const std::string& frag_path)
@@ -246,7 +246,7 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const VariantSignature
 {
 	if (IsStatic())
 	{
-		CORE_LOGW("You can't create a variant from a static shader template")
+		QK_CORE_LOGW_TAG("Renderer", "You can't create a variant from a static shader template");
 		return nullptr;
 	}
 
@@ -274,7 +274,7 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const VariantSignature
 		std::vector<uint32_t> spirv;
 		if (!m_Compiler->Compile(messages, spirv, ops))
 		{
-			CORE_LOGE("[ShaderTemplate]: Failed to compile shader: {}: {}", m_Path, messages);
+			QK_CORE_LOGW_TAG("Renderer", "ShaderTemplate: Failed to compile shader : {} : {}", m_Path, messages);
 			return nullptr;
 		}
 

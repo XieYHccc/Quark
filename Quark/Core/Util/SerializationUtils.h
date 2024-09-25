@@ -10,30 +10,30 @@
 #define QK_SERIALIZE_PROPERTY_ASSET(propName, propVal, outputData) outputData << YAML::Key << #propName << YAML::Value << (propVal? (uint64_t)propVal->GetAssetID() : 0);
 
 
-#define QK_DESERIALIZE_PROPERTY(propertyName, destination, node, defaultValue)	\
-if (node.IsMap())																\
-{																				\
-	if (auto foundNode = node[#propertyName])									\
-	{																			\
-		try																		\
-		{																		\
-			destination = foundNode.as<decltype(defaultValue)>();				\
-		}																		\
-		catch (const std::exception& e)											\
-		{																		\
-			CORE_LOGE(e.what());										\
-																				\
-			destination = defaultValue;											\
-		}																		\
-	}																			\
-	else																		\
-	{																			\
-		destination = defaultValue;												\
-	}																			\
-}																				\
-else																			\
-{																				\
-	destination = defaultValue;													\
+#define QK_DESERIALIZE_PROPERTY(propertyName, destination, node, defaultValue)	    \
+if (node.IsMap())																    \
+{																				    \
+	if (auto foundNode = node[#propertyName])									    \
+	{																			    \
+		try																		    \
+		{																		    \
+			destination = foundNode.as<decltype(defaultValue)>();				    \
+		}																		    \
+		catch (const std::exception& e)											    \
+		{																		    \
+			QK_CORE_LOGE_TAG("Core", e.what());										\
+																				    \
+			destination = defaultValue;											    \
+		}																		    \
+	}																			    \
+	else																		    \
+	{																			    \
+		destination = defaultValue;												    \
+	}																			    \
+}																				    \
+else																			    \
+{																				    \
+	destination = defaultValue;													    \
 }
 
 namespace YAML {

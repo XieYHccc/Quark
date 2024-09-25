@@ -11,6 +11,7 @@ std::shared_ptr<spdlog::logger> Logger::s_ClientLogger;
 std::map<std::string, Logger::TagDetails> Logger::s_DefaultTagDetails = {
 	{ "AssetManager",      TagDetails{  true, Level::WARN  } },
 	{ "Core",              TagDetails{  true, Level::TRACE } },
+    { "EventManager",      TagDetails{  true, Level::INFO } },
 	{ "GLFW",              TagDetails{  true, Level::ERROR } },
     { "Graphic",           TagDetails{  true, Level::TRACE  } },
 	{ "Mesh",              TagDetails{  true, Level::WARN  } },
@@ -18,6 +19,7 @@ std::map<std::string, Logger::TagDetails> Logger::s_DefaultTagDetails = {
 	{ "Project",           TagDetails{  true, Level::WARN  } },
 	{ "Renderer",          TagDetails{  true, Level::INFO  } },
 	{ "Scene",             TagDetails{  true, Level::INFO  } },
+    { "UI",                TagDetails{  true, Level::INFO  } },
 };
 
 void Logger::Init()

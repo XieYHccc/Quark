@@ -46,7 +46,7 @@ void WindowGLFW::Init()
     m_glfwWindow = glfwCreateWindow(m_width, m_height, m_title.c_str(), m_fullscreen? m_glfwMonitor : nullptr, nullptr);
     if (!m_glfwWindow) 
     {
-        CORE_LOGC("Cannot create GLFW window.")
+        QK_CORE_LOGF_TAG("Core", "Cannot create GLFW window.");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }

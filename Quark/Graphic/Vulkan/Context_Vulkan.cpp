@@ -96,9 +96,8 @@ void VulkanContext::CreateInstance()
             }
         }
 
-        if (!found) {
-            CORE_LOGC("  Required extension not found: {}", required_extensions[i]);
-        }
+        if (!found)
+            QK_CORE_VERIFY(0, "Required extension not found: {}", required_extensions[i]);
     }
 
     QK_CORE_LOGT_TAG("Graphic", "All required vulkan instance extensions are supported.");
@@ -122,9 +121,8 @@ void VulkanContext::CreateInstance()
                 break;
             }
         }
-        if (!layerFound) {
-            CORE_LOGC("  Required extension not found: {}", layerName);
-        }
+        if (!layerFound)
+            QK_CORE_VERIFY(0, "Required extension not found: {}", layerName);
             
     }
 
@@ -404,7 +402,7 @@ void VulkanContext::CreateSwapChain()
         swapChainExtent = swapchain_support.capabilities.currentExtent;
     }
     else {
-        CORE_LOGW("Customized width and height are used to create swapchain")
+        QK_CORE_LOGW_TAG("Graphic", "Customized width and height are used to create swapchain");
         // Clamp to the value allowed by the GPU.
         VkExtent2D min = swapchain_support.capabilities.minImageExtent;
         VkExtent2D max = swapchain_support.capabilities.maxImageExtent;
@@ -611,16 +609,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL VulkanContext::VkDebugCallback(
     switch (messageSeverity) {
         default:
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            CORE_LOGE(pCallbackData->pMessage);
+            QK_CORE_LOGE_TAG("Graphic", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            CORE_LOGW(pCallbackData->pMessage);
+            QK_CORE_LOGW_TAG("Graphic", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
             QK_CORE_LOGI_TAG("Graphic",pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            CORE_LOGT(pCallbackData->pMessage);
+            QK_CORE_LOGT_TAG("Graphic", pCallbackData->pMessage);
             break;
     }
     return VK_FALSE;

@@ -25,7 +25,7 @@ static EShLanguage FindShaderLanguage(graphic::ShaderStage stage)
 	case graphic::ShaderStage::STAGE_COMPUTE:
 		return EShLangCompute;
 	default:
-		CORE_LOGE("FindShaderLanguage: Unsupported shader stage");
+		QK_CORE_LOGE_TAG("Rernderer", "FindShaderLanguage: Unsupported shader stage");
 		return EShLangCount;
 	}
 }
@@ -99,7 +99,7 @@ void GLSLCompiler::SetSourceFromFile(const std::string& filePath, graphic::Shade
 	std::string source;
 	if (!FileSystem::ReadFileText(filePath, source))
 	{
-		CORE_LOGE("GLSLCompiler::SetSourceFromFile: Failed to read file {}", filePath);
+		QK_CORE_LOGE_TAG("Rernderer", "GLSLCompiler::SetSourceFromFile: Failed to read file {}", filePath);
 		return;
 	}
 
@@ -116,7 +116,7 @@ bool GLSLCompiler::Compile(std::string& outMessages, std::vector<uint32_t>& outS
 
 	if (m_Source.empty())
 	{
-		CORE_LOGE("GLSLCompiler::Compile: Source is empty. Please set source first");
+		QK_CORE_LOGE_TAG("Rernderer", "GLSLCompiler::Compile: Source is empty. Please set source first");
 		return false;
 	}
 
@@ -244,7 +244,7 @@ bool GLSLCompiler::ParseSource(const std::string& source, const std::string sour
 			std::string includedSource;
 			if (!FileSystem::ReadFileText(includePath, includedSource))
 			{
-				CORE_LOGE("Failed to include GLSL file: {}", includePath);
+				QK_CORE_LOGE_TAG("Renderer", "GLSLCompiler: Failed to include GLSL file: {}", includePath);
 				return false;
 			}
 

@@ -19,7 +19,7 @@ void MeshRendererCmpt::SetMaterial(uint32_t index, const Ref<Material>& mat)
 		m_DirtyMaterialMask |= 1 << index;
 	}
 	else
-		CORE_LOGW("MeshRendererCmpt::SetMaterial: Index out of range");
+		QK_CORE_LOGW_TAG("Scene", "MeshRendererCmpt::SetMaterial: Index out of range");
 }
 
 Ref<Material> MeshRendererCmpt::GetMaterial(uint32_t index)
@@ -34,7 +34,7 @@ Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 {
 	if (index >= m_GraphicsPipeLines.size())
 	{
-		CORE_LOGW("MeshRendererCmpt::GetPipeLine: Index out of range");
+		QK_CORE_LOGW_TAG("Scene", "MeshRendererCmpt::GetPipeLine: Index out of range");
 		return nullptr;
 	}
 

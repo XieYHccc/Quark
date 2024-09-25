@@ -2,7 +2,8 @@
 #include "Quark/Core/Base.h"
 
 #include <map>
-#include <spdlog/fmt/fmt.h>
+#include <format>
+
 #include <spdlog/spdlog.h>
 
 // Disable debug and trace logging for release builds.
@@ -41,19 +42,17 @@ public:
 
     template<typename... Args>
     static void PrintMessageTag(Logger::Type type, Logger::Level level, std::string_view tag, std::format_string<Args...> format, Args&&... args);
-
     static void PrintMessageTag(Logger::Type type, Logger::Level level, std::string_view tag, std::string_view message);
 
     template<typename... Args>
     static void PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition, std::string_view inFile, uint32_t inLine, std::format_string<Args...> message, Args&&... args);
-
     static void PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition, std::string_view inFile, uint32_t inLine);
 
     const static std::shared_ptr<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
     const static std::shared_ptr<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
 
     static bool HasTag(const std::string& tag) { return s_EnabledTags.find(tag) != s_EnabledTags.end(); }
-    static std::map<std::string, TagDetails>& EnabledTags() { return s_EnabledTags; }
+    static std::map<std::string, TagDetails>& GetEnabledTags() { return s_EnabledTags; }
 
 private:
     static std::shared_ptr<spdlog::logger> s_CoreLogger;
@@ -66,32 +65,34 @@ private:
 }
 ////////////////////////////////////// OLD API /////////////////////////////////////
 // Engine logging
-#if LOG_DEBUG_ENABLED == 1
-#define CORE_LOGD(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
-#define LOGD(...) Logger::GetClientLogger()->debug(__VA_ARGS__);
-#else
-#define CORE_LOGD(...)
-#define LOGD(...)
-#endif
+//#if LOG_DEBUG_ENABLED == 1
+//#define CORE_LOGD(...) Logger::GetCoreLogger()->debug(__VA_ARGS__);
+//#define LOGD(...) Logger::GetClientLogger()->debug(__VA_ARGS__);
+//#else
+//#define CORE_LOGD(...)
+//#define LOGD(...)
+//#endif
 
-#if LOG_TRACE_ENABLED == 1
-#define CORE_LOGT(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
-#define LOGT(...) Logger::GetClientLogger()->trace(__VA_ARGS__);
-#else
-#define CORE_LOGT(...)
-#define LOGT(...)
-#endif
+//#if LOG_TRACE_ENABLED == 1
+//#define CORE_LOGT(...) Logger::GetCoreLogger()->trace(__VA_ARGS__);
+//#define LOGT(...) Logger::GetClientLogger()->trace(__VA_ARGS__);
+//#else
+//#define CORE_LOGT(...)
+//#define LOGT(...)
+//#endif
+//
+//#define CORE_LOGI(...) ::quark::Logger::GetCoreLogger()->info(__VA_ARGS__);
+//#define CORE_LOGW(...) ::quark::Logger::GetCoreLogger()->warn(__VA_ARGS__);
+//#define CORE_LOGE(...) ::quark::Logger::GetCoreLogger()->error(__VA_ARGS__);
+//#define CORE_LOGC(...) ::quark::Logger::GetCoreLogger()->critical(__VA_ARGS__);
+//
+//#define LOGI(...) ::quark::Logger::GetClientLogger()->info(__VA_ARGS__);
+//#define LOGW(...) ::quark::Logger::GetClientLogger()->warn(__VA_ARGS__);
+//#define LOGE(...) ::quark::Logger::GetClientLogger()->error(__VA_ARGS__);
+//#define LOGC(...) ::quark::Logger::GetClientLogger()->critical(__VA_ARGS__);
 
-#define CORE_LOGI(...) ::quark::Logger::GetCoreLogger()->info(__VA_ARGS__);
-#define CORE_LOGW(...) ::quark::Logger::GetCoreLogger()->warn(__VA_ARGS__);
-#define CORE_LOGE(...) ::quark::Logger::GetCoreLogger()->error(__VA_ARGS__);
-#define CORE_LOGC(...) ::quark::Logger::GetCoreLogger()->critical(__VA_ARGS__);
-
-#define LOGI(...) ::quark::Logger::GetClientLogger()->info(__VA_ARGS__);
-#define LOGW(...) ::quark::Logger::GetClientLogger()->warn(__VA_ARGS__);
-#define LOGE(...) ::quark::Logger::GetClientLogger()->error(__VA_ARGS__);
-#define LOGC(...) ::quark::Logger::GetClientLogger()->critical(__VA_ARGS__);
-
+//////////////////////////////////////////////////////////////////////////////////////
+// 
 // Core logging
 #define QK_CORE_LOGT_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::TRACE, tag, __VA_ARGS__)
 #define QK_CORE_LOGI_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::INFO, tag, __VA_ARGS__)

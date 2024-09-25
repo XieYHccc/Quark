@@ -12,7 +12,7 @@ void RelationshipCmpt::AddChildEntity(Entity* child)
 
     if (childRelationship->GetParentEntity() != nullptr) 
     {
-        CORE_LOGW("GameObject::AddChild()::You can't add a child which has a parent.")
+        QK_CORE_LOGW_TAG("Scene", "RelationshipCmpt: You can't add a child which has a parent.");
         return;
     }
 
@@ -20,7 +20,7 @@ void RelationshipCmpt::AddChildEntity(Entity* child)
     {
         if (c == child) 
         {
-            CORE_LOGW("GameObject::AddChild()::You can't add a child which has existed.")
+            QK_CORE_LOGW_TAG("Scene", "RelationshipCmpt: You can't add a child which has existed.");
             return;       
         }
     }
@@ -36,7 +36,7 @@ void RelationshipCmpt::RemoveChildEntity(Entity* child)
     auto* childRelationship = child->GetComponent<RelationshipCmpt>();
     if (childRelationship->GetParentEntity() != GetEntity()) 
     {
-        CORE_LOGW("GameObject::RemoveChild()::You can't remove a child which is not your child.")
+        QK_CORE_LOGW_TAG("Scene", "RelationshipCmpt: You can't remove a child which is not your child.");
         return;     
     }
 
@@ -49,6 +49,6 @@ void RelationshipCmpt::RemoveChildEntity(Entity* child)
         return;
     }
 
-    CORE_LOGW("GameObject::RemoveChild()::You can't remove a child which is not your child.")
+    QK_CORE_LOGW_TAG("Scene", "RelationshipCmpt: You can't remove a child which is not your child.");
 }
 }

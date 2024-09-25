@@ -23,6 +23,11 @@ public:
         return ss.str();
     }
 
+    void Log() const override
+	{
+		QK_CORE_LOGI_TAG("EventManager", "WindowResizeEvent: {0}, {1}", width, height);
+	}
+
 public:
     unsigned int width;
     unsigned int height;
@@ -37,6 +42,11 @@ public:
         std::stringstream ss;
         ss << "WindowCloseEvent";
         return ss.str();
+    }
+
+    void Log() const override
+    {
+        QK_CORE_LOGI_TAG("EventManager", "WindowCloseEvent");
     }
 };
 

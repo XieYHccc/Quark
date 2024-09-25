@@ -13,17 +13,20 @@
 namespace quark {
 Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCubemap)
 {
-    if (file_path.find_last_of(".") != std::string::npos) {
-        if (file_path.substr(file_path.find_last_of(".") + 1) != "ktx2") {
-            CORE_LOGW("TextureImporter::LoadKtx: The file {} is not a ktx2 file", file_path);
+    if (file_path.find_last_of(".") != std::string::npos) 
+    {
+        if (file_path.substr(file_path.find_last_of(".") + 1) != "ktx2") 
+        {
+            QK_CORE_LOGW_TAG("AssetManager", "TextureImporter::LoadKtx: The file{} is not a ktx2 file", file_path);
             return nullptr;
         }
     }
 
     // Read in file's binary data
     std::vector<byte> binary_data;
-    if (!FileSystem::ReadFileBytes(file_path, binary_data)) {
-        CORE_LOGW("TextureImporter::LoadKtx2: Failed to read file {}", file_path);
+    if (!FileSystem::ReadFileBytes(file_path, binary_data)) 
+    {
+        QK_CORE_LOGW_TAG("AssetManager", "TextureImporter::LoadKtx2: Failed to read file {}", file_path);
         return nullptr;
     }
 
@@ -36,8 +39,9 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
     // Init ktx2 transcoder
     basist::ktx2_transcoder ktxTranscoder;
     bool success = ktxTranscoder.init(binary_data.data(), binary_data.size());
-    if (!success) {
-        CORE_LOGW("TextureImporter::LoadKtx2: Failed to initialize ktx2 transcoder for file {}", file_path);
+    if (!success) 
+    {
+        QK_CORE_LOGW_TAG("AssetManager", "TextureImporter::LoadKtx2: Failed to initialize ktx2 transcoder for file {}", file_path);
         return nullptr;
     }
 
@@ -107,7 +111,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
                         initData.push_back(newSubresource);
                     } 
                     else {
-                        CORE_LOGW("TextureImporter::LoadKtx2: Failed to transcode image level {} layer {} face {}", level, layer, face);
+                        QK_CORE_LOGW_TAG("AssetManager", "TextureImporter::LoadKtx2: Failed to transcode image level {} layer {} face {}", level, layer, face);
                         return nullptr;
                     }
 
@@ -138,7 +142,7 @@ Ref<Texture> TextureImporter::ImportStb(const std::string& file_path)
     void* data = stbi_load(file_path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     if (!data) 
     {
-		CORE_LOGW("TextureImporter::LoadStb: Failed to load image {}", file_path);
+        QK_CORE_LOGW_TAG("AssetManager", "TextureImporter::LoadStb: Failed to load image {}", file_path);
 		return nullptr;
 	}
 
@@ -163,7 +167,7 @@ Ref<Texture> TextureImporter::ImportStb(const std::string& file_path)
     newTexture->image = Application::Get().GetGraphicDevice()->CreateImage(desc, &init_data);
     newTexture->sampler = GpuResourceManager::Get().sampler_linear;
 
-    CORE_LOGI("[TextureImporter] Import texture asset: {0}", file_path)
+    QK_CORE_LOGI_TAG("AssetManager", "TextureImporter: Import texture asset: {0}", file_path);
 
     return newTexture;
 }
@@ -172,8 +176,9 @@ Ref<Texture> TextureImporter::ImportStb(const std::string& file_path)
 Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCubemap) {
     if (file_path.find_last_of(".") != std::string::npos) {
         std::string file_extension = file_path.substr(file_path.find_last_of(".") + 1);
-        if (file_extension != "ktx" && file_extension != "ktx2") {
-            CORE_LOGW("TextureImporter::LoadKtx: The file {} is not a ktx file", file_path);
+        if (file_extension != "ktx" && file_extension != "ktx2") 
+        {
+            QK_CORE_LOGW_TAG("AssetManager", "TextureImporter::LoadKtx: The file {} is not a ktx file", file_path);
             return nullptr;
         }
     }

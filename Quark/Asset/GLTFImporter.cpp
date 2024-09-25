@@ -94,7 +94,7 @@ GLTFImporter::GLTFImporter(graphic::Device* device)
 
 Ref<Scene> GLTFImporter::Import(const std::string &filename)
 {
-    CORE_LOGI("Loading GLTF file: {}", filename)
+    QK_CORE_LOGI_TAG("AssetManger", "Loading GLTF file: {}", filename);
     
 	std::string err;
 	std::string warn;
@@ -117,10 +117,10 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
     bool importResult = binary? gltf_loader.LoadBinaryFromFile(&m_Model, &err, &warn, filename.c_str()) : gltf_loader.LoadASCIIFromFile(&m_Model, &err, &warn, filename.c_str());
 
 	if (!err.empty()){
-		CORE_LOGE("Error loading gltf model: {}.", err);
+        QK_CORE_LOGE_TAG("AssetManger", "Error loading gltf model: {}.", err);
 	}
 	if (!warn.empty()){
-		CORE_LOGI("{}", warn);
+        QK_CORE_LOGI_TAG("AssetManger", "{}", warn);
 	}
     if (!importResult) 
         return nullptr;
@@ -134,15 +134,15 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
 		if (it == s_SupportedExtensions.end()) 
         {
 			// If extension is required then we shouldn't allow the scene to be loaded
-			if (std::find(m_Model.extensionsRequired.begin(), m_Model.extensionsRequired.end(), used_extension) != m_Model.extensionsRequired.end())
-				QK_CORE_VERIFY(0, "Cannot load glTF file. Contains a required unsupported extension: {}", used_extension)
-			else
-				CORE_LOGW("glTF file contains an unsupported extension, unexpected results may occur: {}", used_extension)
+            if (std::find(m_Model.extensionsRequired.begin(), m_Model.extensionsRequired.end(), used_extension) != m_Model.extensionsRequired.end())
+                QK_CORE_VERIFY(0, "Cannot load glTF file. Contains a required unsupported extension: {}", used_extension)
+            else
+                QK_CORE_LOGW_TAG("AssetManger", "glTF file contains an unsupported extension, unexpected results may occur: {}", used_extension);
 		}
 		else 
         {
 			// Extension is supported, so enable it
-			LOGI("glTF file contains extension: {}", used_extension);
+            QK_CORE_LOGI_TAG("AssetManger", "glTF file contains extension: {}", used_extension);
 			it->second = true;
 		}
 	}
@@ -354,7 +354,7 @@ Ref<graphic::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
         }
     }
     
-    CORE_LOGE("GLTFImporter::ParseImage::Failed to load image: {}", gltf_image.uri)
+    QK_CORE_LOGW_TAG("AssetManger", "GLTFImporter::ParseImage::Failed to load image: {}", gltf_image.uri);
 
     return GpuResourceManager::Get().image_checkboard;
 }
@@ -573,7 +573,7 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
                 break;
             }
             default:
-                CORE_LOGE("Index component type: {} not supported!", accessor.componentType)
+                QK_CORE_LOGW_TAG("AssetManger", "Index component type: {} not supported!", accessor.componentType);
                 return nullptr;
 			}
         }

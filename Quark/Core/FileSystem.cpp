@@ -49,7 +49,7 @@ bool FileSystem::ReadFileBytes(const std::string& fileName, std::vector<byte>& d
         return true;
     }
 
-    CORE_LOGW("FileSystem::ReadFile: Failed to open file {}", fileName);
+    QK_CORE_LOGW_TAG("Core", "FileSystem::ReadFile: Failed to open file{}", fileName);
     return false;
 }
 
@@ -92,7 +92,7 @@ std::filesystem::path FileSystem::OpenFileDialog(const std::initializer_list<Fil
     case NFD_CANCEL: return "";
     case NFD_ERROR:
     {
-        CORE_LOGE("NFD-Extended threw an error: {}", NFD::GetError());
+        QK_CORE_LOGE_TAG("Core", "NFD-Extended threw an error: {}", NFD::GetError());
         return "";
     }
     }
@@ -109,7 +109,7 @@ std::filesystem::path FileSystem::SaveFileDialog(const std::initializer_list<Fil
     case NFD_CANCEL: return "";
     case NFD_ERROR:
     {
-        CORE_LOGE("NFD-Extended threw an error: {}", NFD::GetError());
+        QK_CORE_LOGE_TAG("Core", "NFD-Extended threw an error: {}", NFD::GetError());
         return "";
     }
     }

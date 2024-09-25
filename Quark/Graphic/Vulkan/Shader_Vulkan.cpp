@@ -21,7 +21,7 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     moduleInfo.codeSize = codeSize;
     moduleInfo.pCode = (const uint32_t*)shaderCode;
     if (vkCreateShaderModule(vk_device, &moduleInfo, nullptr, &m_ShaderModule) != VK_SUCCESS)
-        CORE_LOGE("Failed to create vulkan shader module.")
+        QK_CORE_LOGE_TAG("Graphic", "Failed to create vulkan shader module.");
 
 
     // Fill shader stage info
@@ -53,9 +53,9 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     // Create descriptor set layout from reflection
     SpvReflectShaderModule spv_reflcet_module;
     auto result = spvReflectCreateShaderModule(moduleInfo.codeSize, moduleInfo.pCode, &spv_reflcet_module);
-    if (result != SPV_REFLECT_RESULT_SUCCESS) {
-        CORE_LOGE("Failed to reflect spv shader moudule")
-    }
+    if (result != SPV_REFLECT_RESULT_SUCCESS)
+        QK_CORE_LOGE_TAG("Graphic", "Failed to reflect spv shader moudule");
+
     uint32_t binding_count = 0;
     SPV_REFLECT_CHECK(spvReflectEnumerateDescriptorBindings(&spv_reflcet_module, &binding_count, nullptr))
     std::vector<SpvReflectDescriptorBinding*> bindings(binding_count);

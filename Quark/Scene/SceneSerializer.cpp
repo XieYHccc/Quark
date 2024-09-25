@@ -148,19 +148,19 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 	} 
 	catch (YAML::ParserException e) 
 	{
-		CORE_LOGE("Failed to load .qkscene file: {}", filepath.string())
+		QK_CORE_LOGE_TAG("Scene", "Failed to load.qkscene file : {}", filepath.string());
 		return false;
 	}
 
 	if (! data["Scene"]) 
 	{
-		CORE_LOGE("Scene file: {} does not contain Scene key", filepath.string())
+		QK_CORE_LOGE_TAG("Scene", "Scene file: {} does not contain Scene key", filepath.string());
 		return false;
 	}
 
 	std::string sceneName = data["Scene"].as<std::string>();
 	m_Scene->SetSceneName(sceneName);
-	CORE_LOGI("Deserializing scene: {}", sceneName);
+	QK_CORE_LOGI_TAG("Scene", "Deserializing scene: {}", sceneName);
 
 	auto entities = data["Entities"];
 	if (entities)
@@ -173,7 +173,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 			auto nameComponent = entity["NameComponent"];
 			if (nameComponent)
 				name = nameComponent.as<std::string>();
-			CORE_LOGT("Deserializing entity with ID: {0} and name: {1}", uuid, name);
+			QK_CORE_LOGT_TAG("Scene", "Deserializing entity with ID: {0} and name: {1}", uuid, name);
 
 			Entity* deserializedEntity = m_Scene->CreateEntityWithID(uuid, name);
 

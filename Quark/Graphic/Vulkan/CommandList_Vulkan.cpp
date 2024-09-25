@@ -181,11 +181,11 @@ void CommandList_Vulkan::ResetBindingState()
 void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo)
 {
     QK_CORE_ASSERT(renderPassInfo.numColorAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
-    QK_CORE_ASSERT(frameBufferInfo.numResolveAttachments < renderPassInfo.numColorAttachments)
+        QK_CORE_ASSERT(frameBufferInfo.numResolveAttachments < renderPassInfo.numColorAttachments)
 
 #if QK_DEBUG_BUILD
         if (state != CommandListState::IN_RECORDING)
-            CORE_LOGE("You must call BeginRenderPass() in recording state.")
+            QK_CORE_LOGE_TAG("Graphic", "You must call BeginRenderPass() in recording state.");
 #endif
 
     // Change state
@@ -389,7 +389,7 @@ void CommandList_Vulkan::EndRenderPass()
 {   
 #if QK_DEBUG_BUILD
     if (state != CommandListState::IN_RENDERPASS) {
-        CORE_LOGE("You must call BeginRenderPass() before calling EndRenderPass()")
+        QK_CORE_LOGE_TAG("Graphic", "You must call BeginRenderPass() before calling EndRenderPass()");
     }
 #endif
     // Set state back to in recording
@@ -404,12 +404,12 @@ void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) 
     {
-        CORE_LOGE("You can not bind a push constant before binding a pipeline.")
+        QK_CORE_LOGE_TAG("Graphic", "You can not bind a push constant before binding a pipeline.");
         return;
     }
     if (m_CurrentPipeline->GetLayout()->combinedLayout.pushConstant.size == 0) 
     {
-        CORE_LOGE("Current pipeline's layout do not have a push constant")
+        QK_CORE_LOGE_TAG("Graphic", "Current pipeline's layout do not have a push constant");
         return;
     }
 #endif
@@ -431,14 +431,14 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) {
-        CORE_LOGE("You must bind a pipeline before binding a uniform buffer.")
+        QK_CORE_LOGE_TAG("Graphic", "You must bind a pipeline before binding a uniform buffer.");
     }
     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0) {
-        CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : The bounded buffer doesn't has BUFFER_USAGE_UNIFORM_BUFFER_BIT")
+        QK_CORE_LOGE_TAG("Graphic", "CommandList_Vulkan::BindUniformBuffer : The bounded buffer doesn't has BUFFER_USAGE_UNIFORM_BUFFER_BIT");
     }
     if ((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0 ||
         (m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
-        CORE_LOGE("CommandList_Vulkan::BindUniformBuffer : Set: {}, binding: {} is not a uniforom buffer.", set, binding)
+        QK_CORE_LOGE_TAG("Graphic", "CommandList_Vulkan::BindUniformBuffer : Set: {}, binding: {} is not a uniforom buffer.", set, binding);
     }
 #endif
 
@@ -465,15 +465,13 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
-    if (m_CurrentPipeline == nullptr) {
-        CORE_LOGE("You must bind a pipeline before binding a storage buffer.")
-    }
-    if ((buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT) == 0) {
-        CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : The bounded buffer doesn't has BUFFER_USAGE_STORAGE_BUFFER_BIT")
-    }
+    if (m_CurrentPipeline == nullptr)
+        QK_CORE_LOGE_TAG("Graphic", "You must bind a pipeline before binding a storage buffer.");
+    if ((buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT) == 0)
+        QK_CORE_LOGE_TAG("Graphic", "CommandList_Vulkan::BindStorageBuffer : The bounded buffer doesn't has BUFFER_USAGE_STORAGE_BUFFER_BIT");
     if ((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0 ||
         (m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].storage_buffer_mask & (1u << binding)) == 0) {
-        CORE_LOGE("CommandList_Vulkan::BindStorageBuffer : Set: {}, binding: {} is not a storage buffer.", set, binding)
+        QK_CORE_LOGE_TAG("Graphic", "CommandList_Vulkan::BindStorageBuffer : Set: {}, binding: {} is not a storage buffer.", set, binding);
     }
 #endif
 
@@ -497,14 +495,14 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) {
-        CORE_LOGE("You must bind a pipeline before binding a image.")
+        QK_CORE_LOGE_TAG("Graphic", "You must bind a pipeline before binding a image.");
     }
     if (!(image.GetDesc().usageBits & IMAGE_USAGE_SAMPLING_BIT) &&
         !(image.GetDesc().usageBits & IMAGE_USAGE_STORAGE_BIT)) {
-        CORE_LOGE("Binded Image must with usage bits: IMAGE_USAGE_SAMPLING_BIT and IMAGE_USAGE_STORAGE_BIT")
+        QK_CORE_LOGE_TAG("Graphic", "Binded Image must with usage bits: IMAGE_USAGE_SAMPLING_BIT and IMAGE_USAGE_STORAGE_BIT");
     }
     if (layout != ImageLayout::SHADER_READ_ONLY_OPTIMAL && layout != ImageLayout::GENERAL) {
-        CORE_LOGE("Bind image's layout can only be SHADER_READ_ONLY_OPTIMAL and GENERAL")
+        QK_CORE_LOGE_TAG("Graphic", "Bind image's layout can only be SHADER_READ_ONLY_OPTIMAL and GENERAL");
     }
 #endif
 
@@ -528,20 +526,20 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
 #ifdef QK_DEBUG_BUILD
     if (!m_CurrentRenderPassInfo2.IsValid()) 
     {
-        CORE_LOGE("BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.")
+        QK_CORE_LOGE_TAG("Graphic", "BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.");
         return;
     }
 
     const auto& render_pass_info = internal_pipeline.GetCompatableRenderPassInfo();
     if (render_pass_info.numColorAttachments != m_CurrentRenderPassInfo2.numColorAttachments) 
     {
-        CORE_LOGE("BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.")
+        QK_CORE_LOGE_TAG("Graphic", "BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.");
         return;
     }
 
     if (render_pass_info.depthAttachmentFormat != m_CurrentRenderPassInfo2.depthAttachmentFormat)
     {
-        CORE_LOGE("BindPipeLine()::The pipeline's depth attachment is not equal to the current render pass.")
+        QK_CORE_LOGE_TAG("Graphic", "BindPipeLine()::The pipeline's depth attachment is not equal to the current render pass.");
         return;
     }
 #endif
@@ -573,7 +571,7 @@ void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sample
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr) {
-        CORE_LOGE("You must bind a pipeline before binding a sampler.")
+        QK_CORE_LOGE_TAG("Graphic", "You must bind a pipeline before binding a sampler.");
     }
 #endif
 
@@ -665,8 +663,8 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
                 h.pointer(bindings[b.binding + i].buffer.buffer);
                 h.u64(bindings[b.binding + i].buffer.range);
 #ifdef QK_DEBUG_BUILD
-            if (bindings[b.binding + i].buffer.buffer == VK_NULL_HANDLE)
-                CORE_LOGW("Buffer at Set: {}, Binding {} is not bounded. Performance waring!", set, b.binding)
+                if (bindings[b.binding + i].buffer.buffer == VK_NULL_HANDLE)
+                    QK_CORE_LOGW_TAG("Graphic", "Buffer at Set: {}, Binding {} is not bounded. Performance waring!", set, b.binding);
 #endif
                 QK_CORE_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
                 dynamic_offsets[num_dynamic_offsets++] = bindings[b.binding + i].dynamicOffset;
@@ -691,12 +689,12 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
 
 #ifdef QK_DEBUG_BUILD
                 if (bindings[b.binding + i].image.imageView == VK_NULL_HANDLE) {
-                    CORE_LOGC("Texture at Set: {}, Binding: {} is not bound.", set, b.binding)
+                    QK_CORE_LOGE_TAG("Graphic", "Texture at Set: {}, Binding: {} is not bound.", set, b.binding);
                     QK_CORE_ASSERT(0)
                 }
                 if (bindings[b.binding + i].image.sampler == VK_NULL_HANDLE)
                 {
-                    CORE_LOGC("Sampler at Set: {}, Binding: {} is not bound.", set, b.binding)
+                    QK_CORE_LOGE_TAG("Graphic", "Sampler at Set: {}, Binding: {} is not bound.", set, b.binding);
                     QK_CORE_ASSERT(0)
                 }
 #endif

@@ -243,7 +243,7 @@ void InspectorPanel::OnImGuiUpdate()
                             transformCmpt->SetLocalRotate(glm::radians(eulerAngles));
                         }
                         else
-                            CORE_LOGW("Rotation values must be less than 90 degrees");
+                            QK_CORE_LOGW_TAG("AssetManger", "Rotation values must be less than 90 degrees");
                     }
 
                     if (DrawVec3Control("Scale", scale))

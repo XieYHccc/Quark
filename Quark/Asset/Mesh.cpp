@@ -88,7 +88,7 @@ void Mesh::UpdateGpuBuffers()
 {
     if (!IsVertexDataArraysValid())
     {
-        CORE_LOGE("Mesh vertex data is invalid, can't update gpu buffers")
+        QK_CORE_LOGE_TAG("Mesh", "Mesh vertex data is invalid, can't update gpu buffers");
 		return;
     }
 

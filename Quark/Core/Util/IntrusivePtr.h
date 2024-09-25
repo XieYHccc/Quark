@@ -52,7 +52,7 @@ template <typename T>
 class IntrusivePtr;
 
 template <typename T, typename Deleter = std::default_delete<T>, typename ReferenceOps = SingleThreadCounter>
-class IntrusivePtrEnabled{
+class IntrusivePtrEnabled {
 	template<typename >
 	friend class IntrusivePtr;
 public:

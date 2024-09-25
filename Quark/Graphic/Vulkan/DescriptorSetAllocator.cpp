@@ -33,9 +33,9 @@ DescriptorSetAllocator::~DescriptorSetAllocator()
 {
 
 	// destroy descriptor pools
-	for (auto p : m_Pools) {
+	for (auto p : m_Pools)
 		vkDestroyDescriptorPool(m_Device->vkDevice, p, nullptr);
-	}
+
 	m_Pools.clear();
 
 	// clear allocated nodes
@@ -43,7 +43,7 @@ DescriptorSetAllocator::~DescriptorSetAllocator()
 
 	vkDestroyDescriptorSetLayout(m_Device->vkDevice, m_Layout, nullptr);
 
-	CORE_LOGD("Desctipor set allocator destroyed")
+	QK_CORE_LOGT_TAG("Graphic", "Desctipor set allocator destroyed");
 }
 
 std::pair<VkDescriptorSet, bool> DescriptorSetAllocator::Find(size_t hash)
@@ -79,7 +79,7 @@ std::pair<VkDescriptorSet, bool> DescriptorSetAllocator::Find(size_t hash)
 
 	if (vkCreateDescriptorPool(m_Device->vkDevice, &info, nullptr, &pool) != VK_SUCCESS)
 	{
-		CORE_LOGE("Failed to create descriptor pool.");
+		QK_CORE_VERIFY(0, "Failed to create descriptor pool.");
 		return { VK_NULL_HANDLE, false };
 	}
 
@@ -93,7 +93,7 @@ std::pair<VkDescriptorSet, bool> DescriptorSetAllocator::Find(size_t hash)
 	alloc.pSetLayouts = layouts;
 
 	if (vkAllocateDescriptorSets(m_Device->vkDevice, &alloc, sets) != VK_SUCCESS)
-		CORE_LOGE("Failed to allocate descriptor sets.");
+		QK_CORE_VERIFY(0, "Failed to allocate descriptor sets.");
 	m_Pools.push_back(pool);
 
 	for (auto set : sets)

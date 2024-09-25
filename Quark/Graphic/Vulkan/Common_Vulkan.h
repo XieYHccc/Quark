@@ -8,13 +8,13 @@
 
 namespace quark::graphic {
 
-#define VK_CHECK(x)                                                             \
-    do {                                                                         \
-        VkResult err = x;                                                        \
-        if (err) {                                                               \
-            CORE_LOGC("Detected Vulkan error: {}", string_VkResult(err)) \
-            abort();                                                             \
-        }                                                                        \
+#define VK_CHECK(x)                                                                        \
+    do {                                                                                   \
+        VkResult err = x;                                                                  \
+        if (err) {                                                                         \
+            QK_CORE_LOGF_TAG("Graphic","Detected Vulkan error: {}", string_VkResult(err)); \
+            abort();                                                                       \
+        }                                                                                  \
     } while (0);
 
 // Forward declaration

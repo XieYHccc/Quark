@@ -26,7 +26,7 @@ bool MaterialSerializer::TryLoadData(const std::string& filepath, Ref<Material>&
     std::ifstream stream(filepath);
     if (!stream.is_open())
     {
-        CORE_LOGE("MaterialSerializer::TryLoadData: Failed to open file {0}", filepath);
+        QK_CORE_LOGE_TAG("AssetManger", "MaterialSerializer::TryLoadData: Failed to open file {0}", filepath);
         return false;
     }
 
@@ -85,7 +85,7 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
 
     if (!materialNode)
     {
-        CORE_LOGE("MaterialSerializer::DeserializeFromYaml: Material node not found");
+        QK_CORE_LOGE_TAG("AssetManager", "MaterialSerializer::DeserializeFromYaml: Material node not found");
         return false;
     }
 
@@ -111,7 +111,7 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
                 return textureAsset;
             else
             {
-                CORE_LOGE("MaterialSerializer::DeserializeFromYaml: Texture asset not found");
+                QK_CORE_LOGE_TAG("AssetManager", "MaterialSerializer::DeserializeFromYaml: Texture asset not found");
                 return defaultTexture;
             }
         }

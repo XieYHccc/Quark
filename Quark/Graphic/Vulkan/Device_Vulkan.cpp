@@ -333,7 +333,7 @@ void Device_Vulkan::OnWindowResize(const WindowResizeEvent &event)
     m_frameBufferWidth = event.width;
     m_frameBufferHeight = event.height;
     m_RecreateSwapchain = true;
-    CORE_LOGD("Device_Vulkan hook window resize event. Width: {} Height: {}", m_frameBufferWidth, m_frameBufferHeight)
+    QK_CORE_LOGT_TAG("Graphic", "Device_Vulkan hook window resize event. Width: {} Height: {}", m_frameBufferWidth, m_frameBufferHeight);
 }
 
 bool Device_Vulkan::Init()
@@ -486,7 +486,7 @@ Ref<Buffer> Device_Vulkan::CreateBuffer(const BufferDesc &desc, const void* init
 
 Ref<Image> Device_Vulkan::CreateImage(const ImageDesc &desc, const ImageInitData* init_data)
 {
-    CORE_LOGD("[Device Vulkan]: Vulkan image created")
+    QK_CORE_LOGT_TAG("Graphic", "Vulkan image created");
     return CreateRef<Image_Vulkan>(this, desc, init_data);
 }
 
@@ -507,7 +507,7 @@ Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std:
     auto new_shader = CreateShaderFromBytes(stage, buffer.data(), buffer.size());
     if (new_shader == nullptr) 
     {
-        CORE_LOGE("Faile to create shader from file: {}", file_path)
+        QK_CORE_LOGE_TAG("Graphic", "Faile to create shader from file: {}", file_path);
         return nullptr;
     }
 
@@ -516,14 +516,18 @@ Ref<Shader> Device_Vulkan::CreateShaderFromSpvFile(ShaderStage stage, const std:
 
 Ref<PipeLine> Device_Vulkan::CreateGraphicPipeLine(const GraphicPipeLineDesc &desc)
 {
-    CORE_LOGD("[Device_Vulkan]: Graphic Pipeline created")
-    return CreateRef<PipeLine_Vulkan>(this, desc);
+    Ref<PipeLine> newPso = CreateRef<PipeLine_Vulkan>(this, desc);
+    QK_CORE_LOGT_TAG("Graphic", "Graphic Pipeline created");
+
+    return newPso;
 }
 
 Ref<Sampler> Device_Vulkan::CreateSampler(const SamplerDesc &desc)
 {
-    CORE_LOGD("[Device_Vulkan]: Vulkan sampler Created")
-    return CreateRef<Sampler_Vulkan>(this, desc);
+    Ref<Sampler> newSamper = CreateRef<Sampler_Vulkan>(this, desc);
+    QK_CORE_LOGT_TAG("Graphic", "Vulkan sampler Created");
+
+    return newSamper;
 }
 
 void Device_Vulkan::SetDebugName(const Ref<GpuResource>& resouce, const char* name)

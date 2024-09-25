@@ -174,7 +174,7 @@ void GpuResourceManager::Init()
             renderPassInfo2_simpleColorDepthPass, vertexInputLayout_skybox);
     }
 
-    CORE_LOGI("[GpuResourceManager]: Initialized");
+    QK_CORE_LOGI_TAG("Rernderer", "Renderer Initialized");
 }
 
 void GpuResourceManager::Shutdown()

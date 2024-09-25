@@ -122,7 +122,7 @@ void UI_Vulkan::Init(graphic::Device* device, const UiSpecification& specs)
         ImGui_ImplVulkan_Init(&init_info);
     }
 
-    CORE_LOGI("[UI]: Initialized in vulkan backend")
+    QK_CORE_LOGI_TAG("UI", "UI System initialized in vulkan backend");
 }
 
 void UI_Vulkan::Finalize()

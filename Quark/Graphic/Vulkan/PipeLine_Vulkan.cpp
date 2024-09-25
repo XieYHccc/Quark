@@ -187,7 +187,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
         info.pipelineBindPoint = (set_layout.set_stage_mask & VK_SHADER_STAGE_COMPUTE_BIT)? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
 
         if (vkCreateDescriptorUpdateTemplate(device->vkDevice, &info, nullptr, &updateTemplate[set]) != VK_SUCCESS)
-            CORE_LOGE("Failed to create descriptor update template")
+            QK_CORE_VERIFY(0, "Failed to create descriptor update template")
     }
 
 }
@@ -202,7 +202,7 @@ PipeLineLayout::~PipeLineLayout()
 
     vkDestroyPipelineLayout(device->vkDevice, handle, nullptr);
 
-    CORE_LOGD("Pipeline layout destroyed")
+    QK_CORE_LOGT_TAG("Graphic", "Pipeline layout destroyed");
 }
 
 PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
@@ -491,7 +491,7 @@ PipeLine_Vulkan::~PipeLine_Vulkan()
         frame.garbagePipelines.push_back(m_Handle);
     }
 
-    CORE_LOGD("Vulkan pipeline destroyed")
+    QK_CORE_LOGT_TAG("Graphic", "Vulkan pipeline destroyed");
 }
 
 }

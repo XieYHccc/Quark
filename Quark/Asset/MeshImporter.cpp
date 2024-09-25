@@ -25,20 +25,18 @@
 
 namespace quark {
 
-
 Ref<Mesh> MeshImporter::ImportGLTF(const std::string& filepath) {
 	GLTFImporter gltf_importer;
-
     Ref<Scene> gltf_scene = gltf_importer.Import(filepath);
-    if (!gltf_scene) {
-        CORE_LOGE("Failed to load gltf scene from file: {}", filepath);
+
+    if (!gltf_scene) 
         return nullptr;
-    }
 
     // Assume there is only one mesh in the scene
 	auto& meshCmpts = gltf_scene->GetComponents<MeshCmpt>();
-	if (meshCmpts.empty()) {
-		CORE_LOGE("No mesh component found in gltf scene: {}", filepath);
+	if (meshCmpts.empty()) 
+	{
+		QK_CORE_LOGW_TAG("No mesh component found in gltf scene: {}", filepath);
 		return nullptr;
 	}
 
@@ -55,10 +53,10 @@ Ref<Mesh> MeshImporter::ImportOBJ(const std::string &filepath)
 	bool success = reader.ParseFromFile(filepath, config);
 
 	if (!reader.Warning().empty())
-		CORE_LOGW(reader.Warning())
+		QK_CORE_LOGW_TAG("AssetManager", reader.Warning());
 
-	if (!reader.Error().empty())
-		CORE_LOGE(reader.Error());
+	//if (!reader.Error().empty())
+	//	QK_CORE_LOGE_TAG("AssetManager", reader.Error());
 
 	if (!success)
 		return nullptr;

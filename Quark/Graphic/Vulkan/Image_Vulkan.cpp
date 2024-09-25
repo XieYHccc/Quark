@@ -392,7 +392,7 @@ Image_Vulkan::~Image_Vulkan()
         frame.grabageViews.push_back(view_);
     }
 
-    CORE_LOGD("Vulkan image destroyed")
+    QK_CORE_LOGT_TAG("Graphic", "Vulkan image destroyed");
 
 }
 
@@ -457,7 +457,7 @@ Sampler_Vulkan::~Sampler_Vulkan()
     if (handle_) {
         device_->GetCurrentFrame().garbageSamplers.push_back(handle_);
     }
-    CORE_LOGD("Vulkan sampler destroyed")
+    QK_CORE_LOGT_TAG("Graphic", "Vulkan sampler destroyed");
 }
 
 }
