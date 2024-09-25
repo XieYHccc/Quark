@@ -45,9 +45,9 @@ public:
     static void PrintMessageTag(Logger::Type type, Logger::Level level, std::string_view tag, std::string_view message);
 
     template<typename... Args>
-    static void PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition, std::format_string<Args...> message, Args&&... args);
+    static void PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition, std::string_view inFile, uint32_t inLine, std::format_string<Args...> message, Args&&... args);
 
-    static void PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition);
+    static void PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition, std::string_view inFile, uint32_t inLine);
 
     const static std::shared_ptr<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
     const static std::shared_ptr<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
@@ -165,18 +165,18 @@ inline void Logger::PrintMessageTag(Logger::Type type, Logger::Level level, std:
 }
 
 template<typename... Args>
-void Logger::PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition, std::format_string<Args...> message, Args&&... args)
+void Logger::PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition, std::string_view inFile, uint32_t inLine, std::format_string<Args...> message, Args&&... args)
 {
     auto logger = (type == Type::CORE) ? GetCoreLogger() : GetClientLogger();
     auto formatted = std::format(message, std::forward<Args>(args)...);
-    logger->error("{0}: {1}, message: {2}, in file {3}, in line {4}", prefix, condition, formatted, __FILE__, __LINE__);
+    logger->error("{0}: {1}, message: {2}, in file {3}, in line {4}", prefix, condition, formatted, inFile, inLine);
 }
 
 
-inline void Logger::PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition)
+inline void Logger::PrintAssertMessage(Logger::Type type, std::string_view prefix, std::string_view condition, std::string_view inFile, uint32_t inLine)
 {
     auto logger = (type == Type::CORE) ? GetCoreLogger() : GetClientLogger();
-    logger->error("{0}: {1}, in file {2}, in line {3}", prefix, condition, __FILE__, __LINE__);
+    logger->error("{0}: {1}, in file {2}, in line {3}", prefix, condition, inFile, inLine);
 }
 
 }
