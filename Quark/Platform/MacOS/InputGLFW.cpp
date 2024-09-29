@@ -1,6 +1,5 @@
-#include "Quark/qkpch.h"
+#include "Quark/qkpch.h" // IWYU pragma: keep
 #include "Quark/Platform/MacOS/InputGLFW.h"
-#include "Quark/Core/Application.h"
 
 namespace quark {
 
@@ -16,13 +15,6 @@ Input* util::MakeSingletonPtr<Input>::CreateSingleton()
 
 void InputGLFW::Init()
 {
-    window_ = static_cast<GLFWwindow*>(Application::Get().GetWindow()->GetNativeWindow());
-    QK_CORE_ASSERT(window_ != nullptr);
-
-    double xpos, ypos;
-    glfwGetCursorPos(window_, &xpos, &ypos);
-
-    mousePosition_ = {(float)xpos, (float)ypos};
 }
 
 void InputGLFW::OnUpdate()

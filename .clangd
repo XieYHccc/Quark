@@ -1,0 +1,5 @@
+If:
+  PathMatch: Quark/qkpch.h
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: Strict

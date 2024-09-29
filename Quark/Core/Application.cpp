@@ -3,13 +3,11 @@
 #include <nfd.hpp>
 
 #include "Quark/Core/Application.h"
-#include "Quark/Core/KeyMouseCodes.h"
 #include "Quark/Core/Input.h"
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Renderer/GpuResourceManager.h"
-#include "Quark/Renderer/ShaderLibrary.h"
 
 #ifdef USE_VULKAN_DRIVER
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
@@ -35,6 +33,10 @@ Application::Application(const ApplicationSpecification& specs)
     // Init Event Manager
     EventManager::CreateSingleton();
 
+    // Init Input System
+    Input::CreateSingleton();
+    Input::Get()->Init();
+
     // Create Window
     {
         WindowSpecification windowSpec;
@@ -48,20 +50,23 @@ Application::Application(const ApplicationSpecification& specs)
         m_Window->Init();
 #endif
         NFD::Init();
+
+        QK_CORE_LOGI_TAG("Core", "Window created");
     }
 
-    // Init Input System
-    Input::CreateSingleton();
-    Input::Get()->Init();
+#ifdef USE_VULKAN_DRIVER
+    m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
+    m_GraphicDevice->Init();
+#endif
 
     // Init Graphic Device and Renderer
     JobSystem::Counter counter;
     m_JobSystem->Execute([this]()
     {
-#ifdef USE_VULKAN_DRIVER
-        m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
-        m_GraphicDevice->Init();
-#endif
+// #ifdef USE_VULKAN_DRIVER
+//         m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
+//         m_GraphicDevice->Init();
+// #endif
         GpuResourceManager::CreateSingleton();
         GpuResourceManager::Get().Init();
     }, &counter);

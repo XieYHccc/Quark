@@ -96,6 +96,7 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 			}
 			default:
 				QK_CORE_VERIFY(0)
+				break;
 			}
 
 			if (asset)
@@ -175,9 +176,10 @@ std::unordered_set<AssetID> AssetManager::GetAllAssetsWithType(AssetType type)
 }
 
 void AssetManager::SetMetadata(AssetID id, AssetMetadata metaData)
-{
-	QK_CORE_VERIFY(metaData.IsValid())
+{    
+	
 	m_AssetMetadata[metaData.id] = metaData;
+	QK_CORE_VERIFY(metaData.IsValid())
 }
 
 AssetID AssetManager::ImportAsset(const std::filesystem::path &filepath)

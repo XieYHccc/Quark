@@ -1,6 +1,5 @@
 #pragma once
 
-#include <format>
 #include <iostream>
 #include "Quark/Events/Event.h"
 
