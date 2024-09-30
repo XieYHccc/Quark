@@ -536,6 +536,7 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
                             break;
                         default:
                             QK_CORE_VERIFY(0, "Invalid number of color components")
+                            break;
                         }
                     }
                     newMesh->vertex_colors.push_back(color);

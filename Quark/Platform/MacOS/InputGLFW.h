@@ -18,8 +18,6 @@ private:
 
     void RecordKey(int key, int action);
     void RecordMousePosition(float xpos, float ypos);
-
-    GLFWwindow* window_ = nullptr;
 };
 
 }

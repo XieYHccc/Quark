@@ -35,7 +35,7 @@ struct timer
 	}
 };
 
-void main()
+int main()
 {
 	Logger::Init();
 	JobSystem jobSystem;

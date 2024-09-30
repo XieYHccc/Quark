@@ -19,8 +19,8 @@
 
 #ifdef QK_ENABLE_ASSERTS
     #ifdef QK_COMPILER_CLANG
-        #define QK_CORE_ASSERT_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CORE, "Assertion Failed", #condition, __FILE__, __LINE__, ##__VA_ARGS__)
-        #define QK_ASSERT_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CLIENT, "Assertion Failed", #condition, __FILE__, __LINE__, __VA_ARGS__)
+        #define QK_CORE_ASSERT_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CORE, "Assertion Failed", #condition, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+        #define QK_ASSERT_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CLIENT, "Assertion Failed", #condition, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
     #else
         #define QK_CORE_ASSERT_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CORE, "Assertion Failed", #condition, __FILE__, __LINE__, ##__VA_ARGS__)
         #define QK_ASSERT_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CLIENT, "Assertion Failed", #condition, __FILE__, __LINE__, ##__VA_ARGS__)
@@ -35,8 +35,8 @@
 
 #ifdef QK_ENABLE_VERIFY
     #ifdef QK_COMPILER_CLANG
-        #define QK_CORE_VERIFY_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CORE, "Verify Failed", #condition, __FILE__, __LINE__, ##__VA_ARGS__)
-        #define QK_VERIFY_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CLIENT, "Verify Failed", #condition, __FILE__, __LINE__, ##__VA_ARGS__)
+        #define QK_CORE_VERIFY_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CORE, "Verify Failed", #condition, __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__)
+        #define QK_VERIFY_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CLIENT, "Verify Failed", #condition, __FILE__, __LINE__, __VA_OPT__(,) __VA_ARGS__)
     #else
         #define QK_CORE_VERIFY_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CORE, "Verify Failed", #condition, __FILE__, __LINE__, ##__VA_ARGS__)
         #define QK_VERIFY_MESSAGE_INTERNAL(condition, ...)  ::quark::Logger::PrintAssertMessage(::quark::Logger::Type::CLIENT, "Verify Failed",  #condition, __FILE__, __LINE__, ##__VA_ARGS__)
