@@ -1,6 +1,6 @@
 #include "Quark/qkpch.h"
 #include "Quark/Core/Util/SerializationUtils.h"
-#include "Quark/Renderer/GpuResourceManager.h"
+#include "Quark/Renderer/Renderer.h"
 #include "Quark/Asset/MaterialSerializer.h"
 #include "Quark/Asset/AssetManager.h"
 
@@ -58,12 +58,12 @@ std::string MaterialSerializer::SerializeToYaml(const Ref<Material>& materialAss
         QK_CORE_VERIFY(materialAsset->baseColorTexture->image && materialAsset->metallicRoughnessTexture->image);
 
         // Textures
-        if (materialAsset->baseColorTexture->image != GpuResourceManager::Get().image_white)
+        if (materialAsset->baseColorTexture->image != Renderer::Get().image_white)
             QK_SERIALIZE_PROPERTY(BaseColorTexture, materialAsset->baseColorTexture->GetAssetID(), out);
         else 
             QK_SERIALIZE_PROPERTY(BaseColorTexture, 0, out);
 
-        if ( materialAsset->metallicRoughnessTexture && materialAsset->metallicRoughnessTexture->image != GpuResourceManager::Get().image_white)
+        if ( materialAsset->metallicRoughnessTexture && materialAsset->metallicRoughnessTexture->image != Renderer::Get().image_white)
             QK_SERIALIZE_PROPERTY(MetallicRoughnessTexture, materialAsset->baseColorTexture->GetAssetID(), out);
         else 
             QK_SERIALIZE_PROPERTY(MetallicRoughnessTexture, 0, out);
@@ -99,8 +99,8 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
     QK_DESERIALIZE_PROPERTY(MetallicRoughnessTexture, metallicRoughnessTextureId, materialNode, AssetID(0))
 
     Ref<Texture> defaultTexture = CreateRef<Texture>();
-    defaultTexture->image = GpuResourceManager::Get().image_white;
-    defaultTexture->sampler = GpuResourceManager::Get().sampler_linear;
+    defaultTexture->image = Renderer::Get().image_white;
+    defaultTexture->sampler = Renderer::Get().sampler_linear;
 
     auto getTextureAsset = [&](AssetID id) -> Ref<Texture>
     {
@@ -134,7 +134,7 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
     QK_DESERIALIZE_PROPERTY(FragmentShader, fragmentShaderPath, materialNode, std::string(""));
 
     QK_CORE_VERIFY(!vertexShaderPath.empty() && !fragmentShaderPath.empty())
-    outMaterial->shaderProgram = GpuResourceManager::Get().GetShaderLibrary().GetOrCreateGraphicsProgram(vertexShaderPath, fragmentShaderPath);
+    outMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().GetOrCreateGraphicsProgram(vertexShaderPath, fragmentShaderPath);
 
     return true;
 }

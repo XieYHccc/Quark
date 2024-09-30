@@ -8,7 +8,7 @@
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Asset/AssetManager.h"
-#include "Quark/Renderer/GpuResourceManager.h"
+#include "Quark/Renderer/Renderer.h"
 #include "Quark/Renderer/ShaderLibrary.h"
 
 #ifdef USE_VULKAN_DRIVER
@@ -62,8 +62,8 @@ Application::Application(const ApplicationSpecification& specs)
         m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
         m_GraphicDevice->Init();
 #endif
-        GpuResourceManager::CreateSingleton();
-        GpuResourceManager::Get().Init();
+        Renderer::CreateSingleton();
+        Renderer::Get().Init();
     }, &counter);
 
     // Init Asset system
@@ -95,8 +95,8 @@ Application::~Application() {
 
     AssetManager::FreeSingleton();
 
-    GpuResourceManager::Get().Shutdown();
-    GpuResourceManager::FreeSingleton();
+    Renderer::Get().Shutdown();
+    Renderer::FreeSingleton();
 
     m_GraphicDevice->ShutDown();
     m_GraphicDevice.reset();

@@ -7,7 +7,7 @@
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/StringUtils.h"
-#include "Quark/Renderer/GpuResourceManager.h"
+#include "Quark/Renderer/Renderer.h"
 #include "Quark/Asset/AssetExtensions.h"
 #include "Quark/Asset/MeshImporter.h"
 #include "Quark/Asset/TextureImporter.h"
@@ -304,13 +304,13 @@ void AssetManager::CreateDefaultAssets()
 {
 	// Create defalult texture
 	m_DefaultColorTexture = CreateRef<Texture>();
-	m_DefaultColorTexture->image = GpuResourceManager::Get().image_white;
-	m_DefaultColorTexture->sampler = GpuResourceManager::Get().sampler_linear;
+	m_DefaultColorTexture->image = Renderer::Get().image_white;
+	m_DefaultColorTexture->sampler = Renderer::Get().sampler_linear;
 	m_DefaultColorTexture->SetName("Default color texture");
 	
 	m_DefaultMetalTexture = CreateRef<Texture>();
-	m_DefaultMetalTexture->image = GpuResourceManager::Get().image_white;
-	m_DefaultMetalTexture->sampler = GpuResourceManager::Get().sampler_linear;
+	m_DefaultMetalTexture->image = Renderer::Get().image_white;
+	m_DefaultMetalTexture->sampler = Renderer::Get().sampler_linear;
 	m_DefaultMetalTexture->SetName("Default metalic roughness texture");
 
 	m_DefaultMaterial = CreateRef<Material>();
@@ -321,7 +321,7 @@ void AssetManager::CreateDefaultAssets()
 	m_DefaultMaterial->uniformBufferData.metalicFactor = 1.0f;
 	m_DefaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
 	// TODO: Remove hardcoded shader
-	m_DefaultMaterial->shaderProgram = GpuResourceManager::Get().GetShaderLibrary().defaultStaticMeshProgram;
+	m_DefaultMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().defaultStaticMeshProgram;
 	m_DefaultMaterial->SetName("Default material");
 	
 	// All default assets' id is 1

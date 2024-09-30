@@ -41,6 +41,8 @@ public:
     void OnWindowResize(const WindowResizeEvent& event);
 
     graphic::Device* GetGraphicDevice() { return m_GraphicDevice.get(); }
+    JobSystem* GetJobSystem() { return m_JobSystem.get(); }
+
     Window* GetWindow() { return m_Window.get(); }
 
 protected:

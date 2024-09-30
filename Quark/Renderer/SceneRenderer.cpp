@@ -1,6 +1,6 @@
 #include "Quark/qkpch.h"
 #include "Quark/Renderer/SceneRenderer.h"
-#include "Quark/Renderer/GpuResourceManager.h"
+#include "Quark/Renderer/Renderer.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
@@ -112,7 +112,7 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
 {
     QK_CORE_ASSERT(m_CubeMap)
 
-    Ref<graphic::PipeLine> skyboxPipeLine = GpuResourceManager::Get().pipeline_skybox;
+    Ref<graphic::PipeLine> skyboxPipeLine = Renderer::Get().pipeline_skybox;
     cmd_list->BindPipeLine(*skyboxPipeLine);
     cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
     cmd_list->BindImage(0, 1, *m_CubeMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);

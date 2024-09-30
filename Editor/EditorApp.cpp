@@ -17,11 +17,11 @@
 #include <Quark/Asset/TextureImporter.h>
 #include <Quark/Asset/AssetManager.h>
 #include <Quark/Asset/MaterialSerializer.h>
-#include <Quark/Renderer/GpuResourceManager.h>
-#include <Quark/Renderer/GLSLCompiler.h>
+#include <Quark/Renderer/Renderer.h>
 #include <Quark/UI/UI.h>
 
 namespace quark {
+
 Application* CreateApplication()
 {    
     ApplicationSpecification specs;
@@ -38,8 +38,8 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1280, 720, 0.1, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
 {
     // Create Render structures
-    m_ForwardPassInfo = GpuResourceManager::Get().renderPassInfo2_simpleColorDepthPass;   // use defalut render pass
-    m_UiPassInfo = GpuResourceManager::Get().renderPassInfo2_uiPass;
+    m_ForwardPassInfo = Renderer::Get().renderPassInfo2_simpleColorDepthPass;   // use defalut render pass
+    m_UiPassInfo = Renderer::Get().renderPassInfo2_uiPass;
     CreateColorDepthAttachments();
 
     // Load cube map
@@ -63,10 +63,7 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     m_EditorCamera.viewportHeight = Application::Get().GetWindow()->GetHeight();
     m_EditorCamera.SetPosition(glm::vec3(0, 10, 10));
 
-
-    EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) {
-        OnKeyPressed(e);
-    });
+    EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
 }
 
 EditorApp::~EditorApp()
@@ -148,7 +145,7 @@ void EditorApp::OnImGuiUpdate()
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
-    ImTextureID colorAttachmentId = UI::Get()->GetOrCreateTextureId(m_color_attachment, GpuResourceManager::Get().sampler_linear);
+    ImTextureID colorAttachmentId = UI::Get()->GetOrCreateTextureId(m_color_attachment, Renderer::Get().sampler_linear);
     ImGui::Image(colorAttachmentId, ImVec2{ m_ViewportSize.x, m_ViewportSize.y });
 
     if (ImGui::BeginDragDropTarget())
@@ -420,7 +417,7 @@ void EditorApp::CreateColorDepthAttachments()
         image_desc.width = uint32_t(Application::Get().GetWindow()->GetMonitorWidth() * Application::Get().GetWindow()->GetRatio());
         image_desc.height = uint32_t(Application::Get().GetWindow()->GetMonitorHeight() * Application::Get().GetWindow()->GetRatio());
         image_desc.depth = 1;
-        image_desc.format = GpuResourceManager::Get().format_depthAttachment_main;
+        image_desc.format = Renderer::Get().format_depthAttachment_main;
         image_desc.arraySize = 1;
         image_desc.mipLevels = 1;
         image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -428,7 +425,7 @@ void EditorApp::CreateColorDepthAttachments()
         m_depth_attachment = m_GraphicDevice->CreateImage(image_desc);
 
         // Create color image
-        image_desc.format = GpuResourceManager::Get().format_colorAttachment_main;
+        image_desc.format = Renderer::Get().format_colorAttachment_main;
         image_desc.initialLayout = ImageLayout::UNDEFINED;
         image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
         m_color_attachment = m_GraphicDevice->CreateImage(image_desc);

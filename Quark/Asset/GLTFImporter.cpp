@@ -13,7 +13,7 @@
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
-#include "Quark/Renderer/GpuResourceManager.h"
+#include "Quark/Renderer/Renderer.h"
 #include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/AssetManager.h"
 
@@ -94,7 +94,7 @@ GLTFImporter::GLTFImporter(graphic::Device* device)
 
 Ref<Scene> GLTFImporter::Import(const std::string &filename)
 {
-    QK_CORE_LOGI_TAG("AssetManger", "Loading GLTF file: {}", filename);
+    QK_CORE_LOGI_TAG("AssetManager", "Loading GLTF file: {}", filename);
     
 	std::string err;
 	std::string warn;
@@ -117,10 +117,10 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
     bool importResult = binary? gltf_loader.LoadBinaryFromFile(&m_Model, &err, &warn, filename.c_str()) : gltf_loader.LoadASCIIFromFile(&m_Model, &err, &warn, filename.c_str());
 
 	if (!err.empty()){
-        QK_CORE_LOGE_TAG("AssetManger", "Error loading gltf model: {}.", err);
+        QK_CORE_LOGE_TAG("AssetManager", "Error loading gltf model: {}.", err);
 	}
 	if (!warn.empty()){
-        QK_CORE_LOGI_TAG("AssetManger", "{}", warn);
+        QK_CORE_LOGI_TAG("AssetManager", "{}", warn);
 	}
     if (!importResult) 
         return nullptr;
@@ -169,8 +169,8 @@ Ref<Scene> GLTFImporter::Import(const std::string &filename)
         auto newTexture = CreateRef<Texture>();
 
         // Default values
-        newTexture->image = GpuResourceManager::Get().image_white;
-        newTexture->sampler = GpuResourceManager::Get().sampler_linear;
+        newTexture->image = Renderer::Get().image_white;
+        newTexture->sampler = Renderer::Get().sampler_linear;
 
         if (m_Model.textures[texture_index].source > -1) {
             newTexture->image = m_Images[m_Model.textures[texture_index].source];
@@ -356,7 +356,7 @@ Ref<graphic::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
     
     QK_CORE_LOGW_TAG("AssetManger", "GLTFImporter::ParseImage::Failed to load image: {}", gltf_image.uri);
 
-    return GpuResourceManager::Get().image_checkboard;
+    return Renderer::Get().image_checkboard;
 }
 
 Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
@@ -364,7 +364,7 @@ Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
     auto newMaterial = CreateRef<Material>();
     newMaterial->SetName(mat.name);
     newMaterial->alphaMode = AlphaMode::OPAQUE;
-    newMaterial->shaderProgram = GpuResourceManager::Get().GetShaderLibrary().defaultStaticMeshProgram;
+    newMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().defaultStaticMeshProgram;
 
     auto find = mat.additionalValues.find("alphaMode");
     if (find != mat.additionalValues.end()) 

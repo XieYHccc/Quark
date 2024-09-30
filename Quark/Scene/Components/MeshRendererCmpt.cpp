@@ -1,5 +1,5 @@
 #include "Quark/qkpch.h"
-#include "Quark/Renderer/GpuResourceManager.h"
+#include "Quark/Renderer/Renderer.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
 
 namespace quark {
@@ -145,14 +145,14 @@ void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 
 	// TODO: Remove hardcoded states after restruct Material class
 	graphic::PipelineDepthStencilState dss = mat->alphaMode == AlphaMode::OPAQUE ?
-		GpuResourceManager::Get().depthStencilState_depthWrite: GpuResourceManager::Get().depthStencilState_depthTestOnly;
+		Renderer::Get().depthStencilState_depthWrite: Renderer::Get().depthStencilState_depthTestOnly;
 
 	graphic::PipelineColorBlendState cbs = mat->alphaMode == AlphaMode::OPAQUE ?
 		graphic::PipelineColorBlendState::create_disabled(1) : graphic::PipelineColorBlendState::create_blend(1);
 
 	m_GraphicsPipeLines[index] = programVariant->GetOrCreatePipeLine(dss, cbs,
-		GpuResourceManager::Get().rasterizationState_fill,
-		GpuResourceManager::Get().renderPassInfo2_simpleColorDepthPass, //TODO: Remove hardcoded render pass when we have render graph system
+		Renderer::Get().rasterizationState_fill,
+		Renderer::Get().renderPassInfo2_simpleColorDepthPass, //TODO: Remove hardcoded render pass when we have render graph system
 		m_CachedVertexInputLayout);
 }
 

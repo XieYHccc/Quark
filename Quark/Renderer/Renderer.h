@@ -5,7 +5,7 @@
 namespace quark {
 
 // This class is responsible for managing some global gpu resources
-class GpuResourceManager : public util::MakeSingleton<GpuResourceManager> {
+class Renderer : public util::MakeSingleton<Renderer> {
 public:
     // defalut resources and settings
     graphic::DataFormat format_depthAttachment_main = graphic::DataFormat::D32_SFLOAT;
@@ -41,8 +41,8 @@ public:
     graphic::RenderPassInfo2 renderPassInfo2_simpleColorDepthPass;
     graphic::RenderPassInfo2 renderPassInfo2_uiPass;
 
-    GpuResourceManager() = default;
-    ~GpuResourceManager() = default;
+    Renderer() = default;
+    ~Renderer() = default;
 
     void Init();
     void Shutdown();

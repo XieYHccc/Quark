@@ -1,5 +1,5 @@
 #include "Quark/qkpch.h"
-#include "Quark/Renderer/GpuResourceManager.h"
+#include "Quark/Renderer/Renderer.h"
 #include "Quark/Core/Application.h"
 
 namespace quark {
@@ -7,7 +7,7 @@ namespace quark {
 using namespace graphic;
 
 
-void GpuResourceManager::Init()
+void Renderer::Init()
 {
     graphic::Device* device = Application::Get().GetGraphicDevice();
 
@@ -177,7 +177,7 @@ void GpuResourceManager::Init()
     QK_CORE_LOGI_TAG("Rernderer", "Renderer Initialized");
 }
 
-void GpuResourceManager::Shutdown()
+void Renderer::Shutdown()
 {
     m_ShaderLibrary.reset();
 

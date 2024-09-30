@@ -10,10 +10,12 @@ namespace quark {
 class Event {
 public:
     using EventType = std::uint32_t;
+
     Event() {}
     virtual ~Event() = default;
+
     virtual std::uint32_t GetEventType() const = 0;
-    virtual std::string ToString() const {return std::to_string(GetEventType());};
+    virtual std::string ToString() const { return std::to_string(GetEventType()); }
     virtual void Log() const { QK_CORE_LOGT_TAG("EventManager", ToString()); }
 
     bool isHandled { false };
