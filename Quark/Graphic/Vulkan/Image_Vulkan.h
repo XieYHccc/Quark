@@ -42,26 +42,27 @@ constexpr VkImageType ConvertImageType(ImageType type)
 }
 
 class Image_Vulkan : public Image {
-    friend class Device_Vulkan;
 public:
     Image_Vulkan(const ImageDesc& desc); // only used for fill swapchain image infomation
     Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data);
     virtual ~Image_Vulkan();
     
-    const VkImage GetHandle() const { return handle_; }
-    const VkImageView GetView() const { return view_; }
+    const VkImage GetHandle() const { return m_Handle; }
+    const VkImageView GetView() const { return m_View; }
     
-    bool IsSwapChainImage() const { return isSwapChainImage_; }
+    bool IsSwapChainImage() const { return m_IsSwapChainImage; }
     
 private:
     void PrepareCopy(const ImageDesc& desc, const TextureFormatLayout& layout, const ImageInitData* init_data, Ref<Buffer> stage_buffer, std::vector<VkBufferImageCopy>& copys);
     void GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd);
 
-    Device_Vulkan* device_;
-    VkImage handle_;
-    VmaAllocation allocation_;
-    VkImageView view_;
-    bool isSwapChainImage_;
+    Device_Vulkan* m_Device;
+    VkImage m_Handle;
+    VmaAllocation m_Allocation;
+    VkImageView m_View;
+    bool m_IsSwapChainImage;
+
+    friend class Device_Vulkan;
 };
 
 CONVERT_TO_VULKAN_INTERNAL_FUNC(Image)
@@ -70,10 +71,10 @@ class Sampler_Vulkan : public Sampler {
 public:
     Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc);
     ~Sampler_Vulkan();
-    VkSampler GetHandle() const { return handle_; }
+    VkSampler GetHandle() const { return m_Handle; }
 private:
-    Device_Vulkan* device_;
-    VkSampler handle_;
+    Device_Vulkan* m_Device;
+    VkSampler m_Handle;
 };
 
 CONVERT_TO_VULKAN_INTERNAL_FUNC(Sampler)

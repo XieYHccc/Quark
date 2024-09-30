@@ -37,8 +37,8 @@ public:
     static uint32_t GeneratedMipCount(uint32_t width, uint32_t height, uint32_t depth);
 private:
     void FillMipInfos(uint32_t width, uint32_t height, uint32_t depth);
-    DataFormat format_;
-    ImageType image_type_;
+    DataFormat format_ = DataFormat::UNDEFINED;
+    ImageType image_type_ = ImageType::TYPE_2D;
     size_t required_size_ = 0; // required data source size
     uint32_t block_stride_ = 1;
 	uint32_t mip_levels_ = 1;

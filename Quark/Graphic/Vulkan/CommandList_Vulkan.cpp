@@ -448,15 +448,21 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
-    if (m_CurrentPipeline == nullptr) {
+    if (m_CurrentPipeline == nullptr) 
+    {
         QK_CORE_LOGE_TAG("Graphic", "You must bind a pipeline before binding a uniform buffer.");
+        return;
     }
-    if ((buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0) {
+    if ((buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0) 
+    {
         QK_CORE_LOGE_TAG("Graphic", "CommandList_Vulkan::BindUniformBuffer : The bounded buffer doesn't has BUFFER_USAGE_UNIFORM_BUFFER_BIT");
+        return;
     }
     if ((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0 ||
-        (m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].uniform_buffer_mask & (1u << binding))== 0) {
+        (m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].uniform_buffer_mask & (1u << binding))== 0) 
+    {
         QK_CORE_LOGE_TAG("Graphic", "CommandList_Vulkan::BindUniformBuffer : Set: {}, binding: {} is not a uniforom buffer.", set, binding);
+        return;
     }
 #endif
 
@@ -484,12 +490,21 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
 
 #ifdef QK_DEBUG_BUILD
     if (m_CurrentPipeline == nullptr)
+    {
         QK_CORE_LOGE_TAG("Graphic", "You must bind a pipeline before binding a storage buffer.");
+        return;
+    }
     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT) == 0)
+    {
         QK_CORE_LOGE_TAG("Graphic", "CommandList_Vulkan::BindStorageBuffer : The bounded buffer doesn't has BUFFER_USAGE_STORAGE_BUFFER_BIT");
+        return;
+    }
+
     if ((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0 ||
-        (m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].storage_buffer_mask & (1u << binding)) == 0) {
+        (m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].storage_buffer_mask & (1u << binding)) == 0) 
+    {
         QK_CORE_LOGE_TAG("Graphic", "CommandList_Vulkan::BindStorageBuffer : Set: {}, binding: {} is not a storage buffer.", set, binding);
+        return;
     }
 #endif
 
@@ -510,15 +525,21 @@ void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, Ima
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
 #ifdef QK_DEBUG_BUILD
-    if (m_CurrentPipeline == nullptr) {
+    if (m_CurrentPipeline == nullptr) 
+    {
         QK_CORE_LOGE_TAG("Graphic", "You must bind a pipeline before binding a image.");
+        return;
     }
     if (!(image.GetDesc().usageBits & IMAGE_USAGE_SAMPLING_BIT) &&
-        !(image.GetDesc().usageBits & IMAGE_USAGE_STORAGE_BIT)) {
+        !(image.GetDesc().usageBits & IMAGE_USAGE_STORAGE_BIT)) 
+    {
         QK_CORE_LOGE_TAG("Graphic", "Binded Image must with usage bits: IMAGE_USAGE_SAMPLING_BIT and IMAGE_USAGE_STORAGE_BIT");
+        return;
     }
-    if (layout != ImageLayout::SHADER_READ_ONLY_OPTIMAL && layout != ImageLayout::GENERAL) {
+    if (layout != ImageLayout::SHADER_READ_ONLY_OPTIMAL && layout != ImageLayout::GENERAL) 
+    {
         QK_CORE_LOGE_TAG("Graphic", "Bind image's layout can only be SHADER_READ_ONLY_OPTIMAL and GENERAL");
+        return;
     }
 #endif
 

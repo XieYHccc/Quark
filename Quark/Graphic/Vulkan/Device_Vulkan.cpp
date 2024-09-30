@@ -667,10 +667,10 @@ void Device_Vulkan::ResizeSwapchain()
 
         Ref<Image> newImage = CreateRef<Image_Vulkan>(desc);
         auto& internal_image = ToInternal(newImage.get());
-        internal_image.device_ = this;
-        internal_image.handle_ = vkContext->swapChianImages[i];
-        internal_image.view_ = vkContext->swapChainImageViews[i];
-        internal_image.isSwapChainImage_ = true;
+        internal_image.m_Device = this;
+        internal_image.m_Handle = vkContext->swapChianImages[i];
+        internal_image.m_View = vkContext->swapChainImageViews[i];
+        internal_image.m_IsSwapChainImage = true;
         m_SwapChainImages.push_back(newImage);
         
     }
