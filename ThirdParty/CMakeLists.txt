@@ -28,6 +28,7 @@ target_include_directories(vma SYSTEM INTERFACE ${VMA_DIR})
 target_link_libraries(vma INTERFACE Vulkan::Vulkan)
 
 # spdlog
+set(SPDLOG_USE_STD_FORMAT ON)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
 set_property(TARGET spdlog PROPERTY FOLDER "ThirdParty")
 

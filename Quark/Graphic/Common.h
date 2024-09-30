@@ -28,7 +28,8 @@ struct ComputePipeLineDesc;
 struct GraphicPipeLineDesc;
 struct SamplerDesc;
 
-enum class GpuResourceType {
+enum class GpuResourceType : uint8_t
+{
     BUFFER,
 	IMAGE,
 	SHADER,
@@ -48,7 +49,7 @@ public:
     virtual GpuResourceType GetGpuResourceType() const = 0;
 };
 
-enum QueueType
+enum QueueType : uint8_t
 {
     QUEUE_TYPE_GRAPHICS,
     QUEUE_TYPE_ASYNC_COMPUTE,
@@ -57,7 +58,8 @@ enum QueueType
 };
 
 // TODO: Support various image format
-enum class DataFormat {
+enum class DataFormat 
+{
     UNDEFINED,
     R8G8B8A8_UNORM,
     B8G8R8A8_UNORM,
@@ -73,7 +75,8 @@ enum class DataFormat {
     BC3_UNORM_BLOCK,
 };
 
-enum class LogicOperation {
+enum class LogicOperation : uint8_t
+{
     CLEAR,
     AND,
     AND_REVERSE,
@@ -93,7 +96,8 @@ enum class LogicOperation {
     MAX_ENUM
 };
 
-enum class CompareOperation {
+enum class CompareOperation : uint8_t
+{
     NEVER,
     LESS,
     EQUAL,
@@ -105,14 +109,16 @@ enum class CompareOperation {
     MAX_ENUM
 };
 
-enum class ShaderStage{
+enum class ShaderStage : uint8_t
+{
     STAGE_COMPUTE,
     STAGE_VERTEX,
     STAGE_FRAGEMNT,
     MAX_ENUM
 };
 
-enum class SampleCount {
+enum class SampleCount : uint8_t
+{
     SAMPLES_1 = 1,
     SAMPLES_2 = 2,
     SAMPLES_4 = 4,
@@ -135,6 +141,16 @@ struct Offset
 struct Extent
 {
     unsigned int width, height;
+};
+
+struct Offset3D
+{
+    int x, y, z;
+};
+
+struct Extent3D
+{
+	unsigned int width, height, depth;
 };
 
 struct Scissor

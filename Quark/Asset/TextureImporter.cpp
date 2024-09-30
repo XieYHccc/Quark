@@ -38,7 +38,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
 
     // Init ktx2 transcoder
     basist::ktx2_transcoder ktxTranscoder;
-    bool success = ktxTranscoder.init(binary_data.data(), binary_data.size());
+    bool success = ktxTranscoder.init(binary_data.data(), (uint32_t)binary_data.size());
     if (!success) 
     {
         QK_CORE_LOGW_TAG("AssetManager", "TextureImporter::LoadKtx2: Failed to initialize ktx2 transcoder for file {}", file_path);
@@ -220,8 +220,8 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
 
     // Prepare Image's init data
     std::vector<graphic::ImageInitData> initData;
-    for (size_t level = 0; level < desc.mipLevels; level++) {
-        for (size_t layer = 0; layer < desc.arraySize; layer++) {
+    for (uint32_t level = 0; level < desc.mipLevels; level++) {
+        for (uint32_t layer = 0; layer < desc.arraySize; layer++) {
             auto& newSubresource = initData.emplace_back();
             ktx_size_t offset;
             KTX_error_code result;
@@ -233,7 +233,7 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
 
             newSubresource.data = ktxTextureData + offset;
             newSubresource.rowPitch = ktxTexture_GetRowPitch(ktxTexture, level);
-            newSubresource.slicePitch = ktxTexture_GetImageSize(ktxTexture, level);
+            newSubresource.slicePitch = (uint32_t)ktxTexture_GetImageSize(ktxTexture, level);
         }
     }
 

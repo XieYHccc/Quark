@@ -13,14 +13,23 @@ enum ImageUsageBits
     IMAGE_USAGE_INPUT_ATTACHMENT_BIT = (1 << 6),
 };
 
-enum class ImageType 
+enum class ImageType : uint8_t
 {
     TYPE_2D,
     TYPE_3D,
     TYPE_CUBE,
 };
 
-enum class ImageLayout 
+enum class ImageAspect : uint8_t
+{
+    COLOR,
+    DEPTH,
+    STENCIL,
+    LUMINANCE,
+    CHROMINANCE,
+};
+
+enum class ImageLayout : uint8_t
 {
     UNDEFINED,
     GENERAL,    // usuallly used for shader read and write
@@ -33,31 +42,39 @@ enum class ImageLayout
     PRESENT
 };
 
-enum class SamplerFilter
+enum class SamplerFilter : uint8_t
 {
     NEAREST = 1,
     LINEAR = 2
 };
 
-enum class SamplerAddressMode
+enum class SamplerAddressMode : uint8_t
 {
     REPEAT = 1,
     MIRRORED_REPEAT = 2,
     CLAMPED_TO_EDGE = 3
 };
 
+struct ImageSubresourceRange
+{
+	ImageAspect aspect = ImageAspect::COLOR;
+	uint32_t mipLevel = 0;
+	uint32_t baseArrayLayer = 0;
+	uint32_t layerCount = 1;
+};
+
 struct ImageDesc 
 {
-    u32 width = 0;
-    u32 height = 0;
-    u32 depth = 1;  // for 3d image
-    u32 mipLevels = 1;
-    u32 arraySize = 1;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t depth = 1;  // for 3d image
+    uint32_t mipLevels = 1;
+    uint32_t arraySize = 1;
     ImageType type = ImageType::TYPE_2D;
     DataFormat format =  DataFormat::R8G8B8A8_UNORM;
     SampleCount samples = SampleCount::SAMPLES_1;
     ImageLayout initialLayout = ImageLayout::UNDEFINED;
-    u32 usageBits  = 0;
+    uint32_t usageBits  = 0;
     bool generateMipMaps = false;
 };
 

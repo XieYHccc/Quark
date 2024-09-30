@@ -220,7 +220,8 @@ public:
             cmd->BindIndexBuffer(*index_buffer, 0, IndexBufferFormat::UINT32);
 
             // 7. Draw call
-            cmd->DrawIndexed(index_buffer->GetDesc().size / sizeof(uint32_t), 1, 0, 0, 0);
+            uint32_t index_count = (uint32_t)(index_buffer->GetDesc().size / sizeof(uint32_t));
+            cmd->DrawIndexed(index_count, 1, 0, 0, 0);
             cmd->EndRenderPass();
 
             // 8. Transit swapchain image to present layout for presenting

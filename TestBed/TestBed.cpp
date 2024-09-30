@@ -6,7 +6,7 @@
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/Components/MoveControlCmpt.h>
-#include <Quark/Renderer/GpuResourceManager.h>
+#include <Quark/Renderer/Renderer.h>
 #include <Quark/UI/UI.h>
 
 namespace quark {
@@ -125,8 +125,8 @@ void TestBed::OnRender(TimeStep deltaTime)
         viewport.maxDepth = 1;
 
         graphic::Scissor scissor;
-        scissor.extent.width = viewport.width;
-        scissor.extent.height = viewport.height;
+        scissor.extent.width = swap_chain_image->GetDesc().width;
+        scissor.extent.height = swap_chain_image->GetDesc().height;
         scissor.offset.x = 0;
         scissor.offset.y = 0;
         cmd->SetViewPort(viewport);

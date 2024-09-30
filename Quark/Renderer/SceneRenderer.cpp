@@ -45,7 +45,7 @@ void SceneRenderer::UpdateRenderObjects()
 
         if (!mesh) continue;
 
-        for (size_t i = 0; const auto & submesh : mesh->subMeshes) {
+        for (uint32_t i = 0; const auto & submesh : mesh->subMeshes) {
             RenderObject new_renderObject;
             new_renderObject.aabb = submesh.aabb;
             new_renderObject.firstIndex = submesh.startIndex;
@@ -119,7 +119,7 @@ void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
     cmd_list->BindSampler(0, 1, *m_CubeMap->sampler);
     cmd_list->BindVertexBuffer(0, *m_CubeMesh->GetPositionBuffer(), 0);
     cmd_list->BindIndexBuffer(*m_CubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
-    cmd_list->DrawIndexed(m_CubeMesh->indices.size(), 1, 0, 0, 0);
+    cmd_list->DrawIndexed((uint32_t)m_CubeMesh->indices.size(), 1, 0, 0, 0);
 }
 
 void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)

@@ -51,7 +51,7 @@ protected:
         float fps = 0;
         bool isRunning = true;
         bool isMinimized = false;
-        double lastFrameDuration = 0; // in seconds
+        float lastFrameDuration = 0; // in seconds
     } m_Status;
 
     Timer m_Timer;

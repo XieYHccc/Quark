@@ -2,7 +2,7 @@
 #include <array>
 
 #include <Quark/Core/Application.h>
-#include <Quark/Renderer/GpuResourceManager.h>
+#include <Quark/Renderer/Renderer.h>
 #include <glm/gtx/transform.hpp>
 #include <glm/glm.hpp>
 
@@ -277,7 +277,7 @@ public:
 
             // 6. Bind uniform buffer, texture, and sampler
             cmd->BindUniformBuffer(0, 0, *uniform_buffer, 0, uniform_buffer->GetDesc().size);
-            cmd->BindImage(0, 1, *GpuResourceManager::Get().image_checkboard, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+            cmd->BindImage(0, 1, *Renderer::Get().image_checkboard, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
             cmd->BindSampler(0, 1, *linear_sampler);
 
             // 7.Bind vertex buffer and index buffer
@@ -285,7 +285,8 @@ public:
             cmd->BindIndexBuffer(*index_buffer, 0, IndexBufferFormat::UINT32);
 
             // 8. Draw call
-            cmd->DrawIndexed(index_buffer->GetDesc().size / sizeof(uint32_t), 1, 0, 0, 0);
+            uint32_t index_count = (uint32_t)(index_buffer->GetDesc().size / sizeof(uint32_t));
+            cmd->DrawIndexed(index_count, 1, 0, 0, 0);
             cmd->EndRenderPass();
 
             // 9. Transit swapchain image to present layout for presenting

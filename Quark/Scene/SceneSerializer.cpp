@@ -219,7 +219,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 				mrc->SetMesh(mesh);
 
 				auto materials = meshRendererCmpt["Materials"];
-				size_t i = 0;
+				uint32_t i = 0;
 				for (auto mat : materials)
 				{
 					AssetID assetId = mat["AssetID"].as<AssetID>();

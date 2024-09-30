@@ -8,7 +8,7 @@
 #include "Quark/Ecs/EntityRegistry.h"
 
 namespace quark {
-class CameraCmpt;
+struct CameraCmpt;
 class Scene {
 public:
     Scene(const std::string& name);

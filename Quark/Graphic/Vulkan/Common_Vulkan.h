@@ -81,6 +81,7 @@ constexpr VkFormat ConvertDataFormat(DataFormat value)
         return VK_FORMAT_R16G16B16A16_SFLOAT;
     default:
         QK_CORE_VERIFY(0, "Data format not handled yet!")
+        return VK_FORMAT_UNDEFINED;
     }
 }
 

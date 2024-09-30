@@ -40,12 +40,12 @@ void Image_Vulkan::PrepareCopy(const ImageDesc& desc, const TextureFormatLayout&
     size_t index = 0;
     // Loop per mipmap level to copy data into staging buffer
     // and remove padding if necessary
-    for (size_t level = 0; level < layout.GetMipLevels(); level++) {
+    for (uint32_t level = 0; level < layout.GetMipLevels(); level++) {
         const auto& mip_info = layout.GetMipInfo(level);
         size_t dst_row_pitch = mip_info.num_block_x * layout.GetBlockStride();
         size_t dst_slice_pitch = dst_row_pitch * mip_info.num_block_y;
 
-        for (size_t layer = 0; layer < desc.arraySize; layer++, index++) {
+        for (uint32_t layer = 0; layer < desc.arraySize; layer++, index++) {
             const ImageInitData& sub_resouce = init_data[index];
             size_t src_row_size = sub_resouce.rowPitch;
             size_t src_slice_size = sub_resouce.slicePitch;
@@ -54,8 +54,8 @@ void Image_Vulkan::PrepareCopy(const ImageDesc& desc, const TextureFormatLayout&
             const uint8_t* src = static_cast<const uint8_t*>(sub_resouce.data);
 
             // Remove padding
-            for (size_t z = 0; z < desc.depth; ++z) {
-                for (size_t y = 0; y < mip_info.num_block_y; ++y)
+            for (uint32_t z = 0; z < desc.depth; ++z) {
+                for (uint32_t y = 0; y < mip_info.num_block_y; ++y)
                     std::memcpy(dst + dst_slice_pitch * z + dst_row_pitch * y,
                         src + src_slice_size * z + src_row_size * y, dst_row_pitch );
             }
@@ -113,7 +113,7 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
     }
 
     // Generate mipmaps
-    for (size_t level = 1; level < layout.GetMipLevels(); ++level) {
+    for (uint32_t level = 1; level < layout.GetMipLevels(); ++level) {
         VkImageBlit blit = {};
         blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         blit.srcSubresource.layerCount = desc.arraySize;
@@ -213,7 +213,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
 
     if (vk_context->uniqueQueueFamilies.size() > 1) {
         create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        create_info.queueFamilyIndexCount = vk_context->uniqueQueueFamilies.size();
+        create_info.queueFamilyIndexCount = (uint32_t)vk_context->uniqueQueueFamilies.size();
         create_info.pQueueFamilyIndices = vk_context->uniqueQueueFamilies.data();
     }
     if (desc.usageBits & IMAGE_USAGE_SAMPLING_BIT) {
@@ -320,7 +320,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.transferCmdBuffer, &dependencyInfo);
 
         // Copy to image
-        vkCmdCopyBufferToImage(copyCmd.transferCmdBuffer, ToInternal(copyCmd.stageBuffer.get()).GetHandle(), handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copys.size(), copys.data());
+        vkCmdCopyBufferToImage(copyCmd.transferCmdBuffer, ToInternal(copyCmd.stageBuffer.get()).GetHandle(), handle_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, (uint32_t)copys.size(), copys.data());
         
         // Generate mipmaps? //TODO: change to use graphic queue to generate mipmaps
         if (desc.generateMipMaps) 

@@ -40,15 +40,15 @@ void Device_Vulkan::CommandQueue::submit(VkFence fence)
         auto& info = submit_infos[i];
         auto& submission = submissions[i];
         info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-        info.commandBufferInfoCount = submission.cmdInfos.size();
+        info.commandBufferInfoCount = (uint32_t)submission.cmdInfos.size();
         info.pCommandBufferInfos = submission.cmdInfos.data();
-        info.signalSemaphoreInfoCount = submission.signalSemaphoreInfos.size();
+        info.signalSemaphoreInfoCount = (uint32_t)submission.signalSemaphoreInfos.size();
         info.pSignalSemaphoreInfos = submission.signalSemaphoreInfos.data();
-        info.waitSemaphoreInfoCount = submission.waitSemaphoreInfos.size();
+        info.waitSemaphoreInfoCount = (uint32_t)submission.waitSemaphoreInfos.size();
         info.pWaitSemaphoreInfos = submission.waitSemaphoreInfos.data();
     }
 
-    device->vkContext->extendFunction.pVkQueueSubmit2KHR(queue, submit_infos.size(), submit_infos.data(), fence);
+    device->vkContext->extendFunction.pVkQueueSubmit2KHR(queue, (uint32_t)submit_infos.size(), submit_infos.data(), fence);
     
     // Clear submissions
     for(auto& submission : submissions){
@@ -115,7 +115,7 @@ void Device_Vulkan::PerFrameData::clear()
 void Device_Vulkan::PerFrameData::reset()
 {
     if (!waitedFences.empty()) {
-        vkResetFences(device->vkDevice, waitedFences.size(), waitedFences.data());
+        vkResetFences(device->vkDevice, (uint32_t)waitedFences.size(), waitedFences.data());
         waitedFences.clear();
     }
 
@@ -415,7 +415,7 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
     
     // Wait for in-flight fences
     if (!frame.waitedFences.empty())
-        vkWaitForFences(vkDevice, frame.waitedFences.size(), frame.waitedFences.data(), true, 1000000000);
+        vkWaitForFences(vkDevice, (uint32_t)frame.waitedFences.size(), frame.waitedFences.data(), true, 1000000000);
     
     // Reset per frame data
     frame.reset();
@@ -690,6 +690,7 @@ DataFormat Device_Vulkan::GetPresentImageFormat()
         return DataFormat::B8G8R8A8_UNORM;
     default:
         QK_CORE_VERIFY(0, "format not handled yet")
+        return DataFormat::UNDEFINED;
     }
 }
 

@@ -108,7 +108,7 @@ void WindowGLFW::Init()
     glfwSetCursorPosCallback(m_glfwWindow, [](GLFWwindow* window, double xpos, double ypos)
     {   
         // Record Mouse position
-        ((InputGLFW*)Input::Get())->RecordMousePosition(xpos, ypos);
+        ((InputGLFW*)Input::Get())->RecordMousePosition((float)xpos, (float)ypos);
 
         EventManager::Get().TriggerEvent(MouseMovedEvent((float)xpos, (float)ypos));
     });

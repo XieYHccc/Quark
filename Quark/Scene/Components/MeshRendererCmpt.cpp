@@ -90,7 +90,7 @@ void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
 		attrib.offset = 0;
 	}
 
-	size_t offset = 0;
+	uint32_t offset = 0;
 
 	// UV
 	if (meshAttribsMask & MESH_ATTRIBUTE_UV_BIT)

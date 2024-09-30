@@ -15,33 +15,35 @@ enum class CommandListState {
     READY_FOR_SUBMIT,
 };
 
-class CommandList_Vulkan : public CommandList {
+class CommandList_Vulkan final : public CommandList {
 public:
     CommandListState state = CommandListState::READY_FOR_RECORDING;
 
     CommandList_Vulkan(Device_Vulkan* device, QueueType type_);
     ~CommandList_Vulkan();
 
-    void PushConstant(const void* data, uint32_t offset, uint32_t size) override;
-    void BindPipeLine(const PipeLine& pipeline) override;
-    void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override;
-    void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override;
-    void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) override;
-    void BindVertexBuffer(u32 binding, const Buffer& buffer, u64 offset) override;
-    void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) override;
-    void BindSampler(u32 set, u32 binding, const Sampler& sampler) override;
+    void PushConstant(const void* data, uint32_t offset, uint32_t size) override final;
+    void BindPipeLine(const PipeLine& pipeline) override final;
+    void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override final;
+    void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override final;
+    void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) override final;
+    void BindVertexBuffer(u32 binding, const Buffer& buffer, u64 offset) override final;
+    void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) override final;
+    void BindSampler(u32 set, u32 binding, const Sampler& sampler) override final;
     
-    void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) override;
-    void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) override;
-
-    void SetViewPort(const Viewport& viewport) override;
-    void SetScissor(const Scissor& scissor) override;
-
-    void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* imageBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) override;
+    void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, Offset3D& offset, Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, ImageSubresourceRange& subresouce) override final;
     
-    void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) override;
+    void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) override final;
+    void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) override final;
+
+    void SetViewPort(const Viewport& viewport) override final;
+    void SetScissor(const Scissor& scissor) override final;
+
+    void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* imageBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) override final;
+    
+    void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) override final;
     // void BeginRenderPass(const RenderPassInfo& info) override;
-    void EndRenderPass() override;
+    void EndRenderPass() override final;
 
     ///////////////////////// Vulkan specific /////////////////////////
 

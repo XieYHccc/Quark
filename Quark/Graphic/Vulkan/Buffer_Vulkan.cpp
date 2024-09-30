@@ -34,7 +34,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
 
     if (m_Device->vkContext->uniqueQueueFamilies.size() > 1) {
         buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        buffer_create_info.queueFamilyIndexCount = vulkan_context->uniqueQueueFamilies.size();
+        buffer_create_info.queueFamilyIndexCount = (uint32_t)vulkan_context->uniqueQueueFamilies.size();
         buffer_create_info.pQueueFamilyIndices = vulkan_context->uniqueQueueFamilies.data();
     }
 

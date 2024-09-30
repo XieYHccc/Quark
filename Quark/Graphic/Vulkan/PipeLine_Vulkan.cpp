@@ -29,7 +29,7 @@ constexpr VkPolygonMode _ConvertPolygonMode(PolygonMode mode)
         return VK_POLYGON_MODE_FILL;
     default:
         QK_CORE_VERIFY("Polygon mode not handeled yet!")
-        break;
+        return VK_POLYGON_MODE_MAX_ENUM;
     }
 }
 
@@ -38,9 +38,15 @@ constexpr VkCullModeFlagBits _ConverCullMode(CullMode mode)
     switch (mode) {
     case CullMode::BACK:
         return VK_CULL_MODE_BACK_BIT;
+        break;
     case CullMode::FRONT:
         return VK_CULL_MODE_FRONT_BIT;
+        break;
     case CullMode::NONE:
+        return VK_CULL_MODE_NONE;
+        break;
+    default:
+        QK_CORE_VERIFY(false)
         return VK_CULL_MODE_NONE;
     }
 }
@@ -114,7 +120,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
 
     // Descriptor set layouts
     std::vector<VkDescriptorSetLayout> vk_descriptorset_layouts;
-    for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; set++) 
+    for (uint32_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; set++) 
     {
         if ((combinedLayout.descriptorSetLayoutMask & 1u << set) == 0)
             continue;
@@ -127,7 +133,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_create_info.pSetLayouts = vk_descriptorset_layouts.data();
-    pipeline_layout_create_info.setLayoutCount = vk_descriptorset_layouts.size();
+    pipeline_layout_create_info.setLayoutCount = (uint32_t)vk_descriptorset_layouts.size();
     if (combinedLayout.pushConstant.size > 0) 
     {
         pipeline_layout_create_info.pushConstantRangeCount = 1;
@@ -181,7 +187,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
         info.pipelineLayout = handle;
         info.descriptorSetLayout = setAllocators[set]->GetLayout();
         info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
-        info.set = set;
+        info.set = (uint32_t)set;
         info.descriptorUpdateEntryCount = update_count;
         info.pDescriptorUpdateEntries = update_entries;
         info.pipelineBindPoint = (set_layout.set_stage_mask & VK_SHADER_STAGE_COMPUTE_BIT)? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -434,7 +440,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     color_blend_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     color_blend_state_create_info.logicOpEnable = VK_FALSE; // TODO: Support logic operation
     color_blend_state_create_info.logicOp = VK_LOGIC_OP_MAX_ENUM;
-    color_blend_state_create_info.attachmentCount = color_blend_attachment_states.size();
+    color_blend_state_create_info.attachmentCount = (uint32_t)color_blend_attachment_states.size();
     color_blend_state_create_info.pAttachments = color_blend_attachment_states.data();
     color_blend_state_create_info.blendConstants[0] = 1.0f; //TODO: Make this configurable
     color_blend_state_create_info.blendConstants[1] = 1.0f;
@@ -459,7 +465,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     
     VkPipelineRenderingCreateInfo renderingInfo = {};
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-    renderingInfo.colorAttachmentCount = vk_color_attachment_format.size();
+    renderingInfo.colorAttachmentCount = (uint32_t)vk_color_attachment_format.size();
     renderingInfo.pColorAttachmentFormats = vk_color_attachment_format.data();
     if (IsFormatSupportDepth(renderPassInfo2.depthAttachmentFormat))
         renderingInfo.depthAttachmentFormat = ConvertDataFormat(renderPassInfo2.depthAttachmentFormat);

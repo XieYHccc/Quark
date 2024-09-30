@@ -46,34 +46,34 @@ enum PipelineMemoryAccessBits {
 
 struct PipelineMemoryBarrier
 {
-    u32 srcStageBits = 0;
-    u32 dstStageBits = 0;
-    u32 srcMemoryAccessBits = 0;
-    u32 dstMemoryAccessBits = 0;
+    uint32_t srcStageBits = 0;
+    uint32_t dstStageBits = 0;
+    uint32_t srcMemoryAccessBits = 0;
+    uint32_t dstMemoryAccessBits = 0;
 };
 
 // we don't actually use this...
 struct PipelineBufferBarrier
 {
     Buffer* buffer;
-    u32 srcStageBits = 0;
-    u32 dstStageBits = 0;
-    u32 srcMemoryAccessBits = 0;
-    u32 dstMemoryAccessBits = 0;
+    uint32_t srcStageBits = 0;
+    uint32_t dstStageBits = 0;
+    uint32_t srcMemoryAccessBits = 0;
+    uint32_t dstMemoryAccessBits = 0;
 };
 
 // In addition to memory barrier, we need to convert the layout(a state) of a image
 struct PipelineImageBarrier
 {
     Image* image;
-    u32 srcStageBits = 0;
-    u32 dstStageBits = 0;
-    u32 srcMemoryAccessBits = 0;
-    u32 dstMemoryAccessBits = 0;
+    uint32_t srcStageBits = 0;
+    uint32_t dstStageBits = 0;
+    uint32_t srcMemoryAccessBits = 0;
+    uint32_t dstMemoryAccessBits = 0;
     ImageLayout layoutBefore;
     ImageLayout layoutAfter;
-    u32 baseMipLevel = UINT32_MAX;
-    u32 baseArrayLayer = UINT32_MAX;
+    uint32_t baseMipLevel = UINT32_MAX;
+    uint32_t baseArrayLayer = UINT32_MAX;
 };
 
 class CommandList : public GpuResource {
@@ -82,21 +82,23 @@ public:
     virtual ~CommandList() = default;
 
     virtual void PushConstant(const void* data, uint32_t offset, uint32_t size) = 0;
-    virtual void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) = 0;   
-    virtual void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) = 0;
-    virtual void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) = 0;
+    virtual void BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) = 0;   
+    virtual void BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) = 0;
+    virtual void BindImage(uint32_t set, uint32_t binding, const Image& image, ImageLayout layout) = 0;
     virtual void BindPipeLine(const PipeLine& pipeline) = 0;
-    virtual void BindVertexBuffer(u32 binding, const Buffer& buffer, u64 offset) = 0;
-    virtual void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) = 0;
-    virtual void BindSampler(u32 set, u32 binding, const Sampler& sampler) = 0;
+    virtual void BindVertexBuffer(uint32_t binding, const Buffer& buffer, uint64_t offset) = 0;
+    virtual void BindIndexBuffer(const Buffer& buffer, uint64_t offset, const IndexBufferFormat format) = 0;
+    virtual void BindSampler(uint32_t set, uint32_t binding, const Sampler& sampler) = 0;
     
-    virtual void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) = 0;
-    virtual void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) = 0;
+    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, Offset3D& offset, Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, ImageSubresourceRange& subresouce) = 0;
+
+    virtual void DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance) = 0;
+    virtual void Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;
     
     virtual void SetViewPort(const Viewport& viewport) = 0;
     virtual void SetScissor(const Scissor& scissor) = 0;
 
-    virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) = 0;
+    virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, uint32_t bufferBarriersCount) = 0;
     
     // RenderPassInfo2 here is used to check the formats compatibilies between renderpass and framebuffer
     virtual void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) = 0;

@@ -287,7 +287,7 @@ Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
         // Material
         MeshRendererCmpt* meshRenderer = newObj->AddComponent<MeshRendererCmpt>();
         meshRenderer->SetMesh(mesh_cmpt->sharedMesh);
-        for (size_t i = 0; auto& p : m_Model.meshes[gltf_node.mesh].primitives)
+        for (uint32_t i = 0; auto& p : m_Model.meshes[gltf_node.mesh].primitives)
         {
             if (p.material > -1)
 				meshRenderer->SetMaterial(i, m_Materials[p.material]);
@@ -436,9 +436,9 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
     // loop primitives
     for (auto& p : gltf_mesh.primitives) 
     {
-        u32 start_index = newMesh->indices.size();
-        u32 start_vertex = newMesh->vertex_positions.size();
-        u32 index_num = 0;
+        size_t start_index = newMesh->indices.size();
+        size_t start_vertex = newMesh->vertex_positions.size();
+        size_t index_num = 0;
         glm::vec3 min_pos = {};
         glm::vec3 max_pos = {};
 
@@ -581,9 +581,9 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 
         auto& newSubmesh = submeshes.emplace_back();
         newSubmesh.aabb = { min_pos, max_pos };
-        newSubmesh.count = index_num;
-        newSubmesh.startIndex = start_index;
-        newSubmesh.startVertex = start_vertex;
+        newSubmesh.count = (uint32_t)index_num;
+        newSubmesh.startIndex = (uint32_t)start_index;
+        newSubmesh.startVertex = (uint32_t)start_vertex;
         // new_submesh.material = p.material > -1? m_Materials[p.material] : m_Materials.back();
 
     }

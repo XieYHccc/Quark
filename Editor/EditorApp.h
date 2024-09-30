@@ -53,9 +53,9 @@ private:
     SceneHeirarchyPanel m_HeirarchyPanel;
     InspectorPanel m_InspectorPanel;
     ContentBrowserPanel m_ContentBrowserPanel;
-
+    
     // Debug
-    float m_CmdListRecordTime = 0;
+    double m_CmdListRecordTime = 0;
 };
 
 }

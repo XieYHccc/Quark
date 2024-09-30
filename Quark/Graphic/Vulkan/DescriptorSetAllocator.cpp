@@ -13,7 +13,7 @@ DescriptorSetAllocator::DescriptorSetAllocator(Device_Vulkan* device, const Desc
 	// get pool size ratios
 	for (auto& binding : layout.bindings) {
 		auto& size_ratio = m_PoolSizeRatios.emplace_back();
-		size_ratio.ratio = binding.descriptorCount;
+		size_ratio.ratio = (float)binding.descriptorCount;
 		size_ratio.type = binding.descriptorType;
 	}
 
@@ -21,7 +21,7 @@ DescriptorSetAllocator::DescriptorSetAllocator(Device_Vulkan* device, const Desc
 	VkDescriptorSetLayoutCreateInfo set_m_Layoutcreate_info = {};
 	set_m_Layoutcreate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	set_m_Layoutcreate_info.pBindings = layout.bindings.data();
-	set_m_Layoutcreate_info.bindingCount = layout.bindings.size();
+	set_m_Layoutcreate_info.bindingCount = (uint32_t)layout.bindings.size();
 	VK_CHECK(vkCreateDescriptorSetLayout(device->vkDevice, &set_m_Layoutcreate_info, nullptr, &m_Layout))
 }
 
@@ -64,13 +64,14 @@ std::pair<VkDescriptorSet, bool> DescriptorSetAllocator::Find(size_t hash)
 	std::vector<VkDescriptorPoolSize> poolSizes;
 	if (!m_PoolSizeRatios.empty())
 	{
-		for (PoolSizeRatio ratio : m_PoolSizeRatios) {
+		for (PoolSizeRatio ratio : m_PoolSizeRatios) 
+		{
 			poolSizes.push_back(VkDescriptorPoolSize{
 			.type = ratio.type,
 			.descriptorCount = uint32_t(ratio.ratio * setsPerPool)
 				});
 		}
-		info.poolSizeCount = poolSizes.size();
+		info.poolSizeCount = (uint32_t)poolSizes.size();
 		info.pPoolSizes = poolSizes.data();
 	}
 

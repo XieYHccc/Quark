@@ -84,17 +84,22 @@ std::string FileSystem::GetExtension(const std::filesystem::path& filepath)
 std::filesystem::path FileSystem::OpenFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters)
 {
     NFD::UniquePath filePath;
-    nfdresult_t result = NFD::OpenDialog(filePath, (const nfdfilteritem_t*)inFilters.begin(), inFilters.size());
+    nfdresult_t result = NFD::OpenDialog(filePath, (const nfdfilteritem_t*)inFilters.begin(), (nfdresult_t)inFilters.size());
 
     switch (result)
     {
-    case NFD_OKAY: return filePath.get();
-    case NFD_CANCEL: return "";
+    case NFD_OKAY: 
+        return filePath.get();
+        break;
+    case NFD_CANCEL: 
+        return "";
+        break;
     case NFD_ERROR:
-    {
         QK_CORE_LOGE_TAG("Core", "NFD-Extended threw an error: {}", NFD::GetError());
         return "";
-    }
+    default:
+        QK_CORE_VERIFY(false);
+        return "";
     }
 }
 
@@ -105,13 +110,18 @@ std::filesystem::path FileSystem::SaveFileDialog(const std::initializer_list<Fil
 
     switch (result)
     {
-    case NFD_OKAY: return filePath.get();
-    case NFD_CANCEL: return "";
+    case NFD_OKAY:
+        return filePath.get();
+        break;
+    case NFD_CANCEL:
+        return "";
+        break;
     case NFD_ERROR:
-    {
         QK_CORE_LOGE_TAG("Core", "NFD-Extended threw an error: {}", NFD::GetError());
         return "";
-    }
+    default:
+        QK_CORE_VERIFY(false);
+        return "";
     }
 }
 

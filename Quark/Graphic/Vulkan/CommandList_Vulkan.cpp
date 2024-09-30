@@ -7,6 +7,25 @@
 #include "Quark/Graphic/Vulkan/DescriptorSetAllocator.h"
 
 namespace quark::graphic {
+
+constexpr VkImageAspectFlags _ConvertImageAspect(ImageAspect value)
+{
+    switch (value)
+    {
+    default:
+    case graphic::ImageAspect::COLOR:
+        return VK_IMAGE_ASPECT_COLOR_BIT;
+    case graphic::ImageAspect::DEPTH:
+        return VK_IMAGE_ASPECT_DEPTH_BIT;
+    case graphic::ImageAspect::STENCIL:
+        return VK_IMAGE_ASPECT_STENCIL_BIT;
+    case graphic::ImageAspect::LUMINANCE:
+        return VK_IMAGE_ASPECT_PLANE_0_BIT;
+    case graphic::ImageAspect::CHROMINANCE:
+        return VK_IMAGE_ASPECT_PLANE_1_BIT;
+    }
+}
+
 CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
     : CommandList(type), m_GraphicDevice(device)
 {
@@ -421,7 +440,6 @@ void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_
         offset,
         size,
         data);
-    
 }
 
 void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &buffer, u64 offset, u64 size)
@@ -448,12 +466,12 @@ void CommandList_Vulkan::BindUniformBuffer(u32 set, u32 binding, const Buffer &b
     if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size) {
         if (b.dynamicOffset != offset) {
             m_DirtySetDynamicMask|= 1u << set;
-            b.dynamicOffset = offset;
+            b.dynamicOffset = (uint32_t)offset;
         }
     }
     else {
         b.buffer = {internal_buffer.GetHandle(), 0, size};
-        b.dynamicOffset = offset;
+        b.dynamicOffset = (uint32_t)offset;
         m_DirtySetMask |= 1u << set;
     }
 
@@ -481,11 +499,9 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
     if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size) 
         return;
 
-    b.buffer = {internal_buffer.GetHandle(), offset, size};
+    b.buffer = { internal_buffer.GetHandle(), offset, size };
     b.dynamicOffset = 0;
     m_DirtySetMask |= 1u << set;
-
-
 }
 
 void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, ImageLayout layout)
@@ -585,6 +601,25 @@ void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sample
     m_DirtySetMask |= 1u << set;
 }
 
+void CommandList_Vulkan::CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, Offset3D& offset, Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, ImageSubresourceRange& subresouce)
+{
+    auto& internal_buffer = ToInternal(&buffer);
+	auto& internal_image = ToInternal(&image);
+
+	VkBufferImageCopy copy_region = {};
+	copy_region.bufferOffset = buffer_offset;
+	copy_region.bufferRowLength = row_pitch;
+	copy_region.bufferImageHeight = slice_pitch;
+	copy_region.imageSubresource.aspectMask = _ConvertImageAspect(subresouce.aspect);
+	copy_region.imageSubresource.baseArrayLayer = subresouce.baseArrayLayer;
+	copy_region.imageSubresource.layerCount = subresouce.layerCount;
+    copy_region.imageSubresource.mipLevel = subresouce.mipLevel;
+	copy_region.imageOffset = { offset.x, offset.y, offset.z };
+	copy_region.imageExtent = { extent.width, extent.height, extent.depth };
+
+	vkCmdCopyImageToBuffer(m_CmdBuffer, internal_image.GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, internal_buffer.GetHandle(), 1, &copy_region);
+}
+
 void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const IndexBufferFormat format)
 {
     auto& internal_buffer = ToInternal(&buffer);
@@ -651,8 +686,8 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
     auto& set_layout = m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set];
     auto& bindings = m_BindingState.descriptorBindings[set];
 
-	u32 num_dynamic_offsets = 0;
-	u32 dynamic_offsets[SET_BINDINGS_MAX_NUM];
+	uint32_t num_dynamic_offsets = 0;
+	uint32_t dynamic_offsets[SET_BINDINGS_MAX_NUM];
 	util::Hasher h;
 
     for (auto& b : set_layout.bindings) {
@@ -667,6 +702,7 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
                     QK_CORE_LOGW_TAG("Graphic", "Buffer at Set: {}, Binding {} is not bounded. Performance waring!", set, b.binding);
 #endif
                 QK_CORE_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
+                h.u32(bindings[b.binding + i].dynamicOffset);
                 dynamic_offsets[num_dynamic_offsets++] = bindings[b.binding + i].dynamicOffset;
             }
             break;

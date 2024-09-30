@@ -9,9 +9,10 @@ FILE(GLOB_RECURSE QUARK_SOURCE_FILES ${QUARK_SOURCE_ROOT_DIR} "*.cpp" "*.c" "*.h
 source_group(TREE ${QUARK_SOURCE_ROOT_DIR} FILES ${QUARK_SOURCE_FILES})
 
 add_library(quark ${QUARK_SOURCE_FILES})
+#target_compile_definitions(quark PUBLIC SPDLOG_USE_STD_FORMAT)
 
 if(MSVC)
-
+    target_compile_definitions(quark PUBLIC _CRT_SECURE_NO_WARNINGS)
 else()
     #for clang and gcc
     target_compile_options(quark PRIVATE -Wno-nullability-completeness)

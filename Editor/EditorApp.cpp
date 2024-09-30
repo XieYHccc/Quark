@@ -35,7 +35,7 @@ Application* CreateApplication()
 }
 
 EditorApp::EditorApp(const ApplicationSpecification& specs)
-    : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1280, 720, 0.1, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
+    : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1280, 720, 0.1f, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
 {
     // Create Render structures
     m_ForwardPassInfo = Renderer::Get().renderPassInfo2_simpleColorDepthPass;   // use defalut render pass
@@ -59,8 +59,8 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     m_SceneRenderer->SetCubeMap(m_CubeMapTexture);
 
     // Adjust editor camera's aspect ratio
-    m_EditorCamera.viewportWidth = Application::Get().GetWindow()->GetWidth();
-    m_EditorCamera.viewportHeight = Application::Get().GetWindow()->GetHeight();
+    m_EditorCamera.viewportWidth = (float)Application::Get().GetWindow()->GetWidth();
+    m_EditorCamera.viewportHeight = (float)Application::Get().GetWindow()->GetHeight();
     m_EditorCamera.SetPosition(glm::vec3(0, 10, 10));
 
     EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
@@ -279,8 +279,8 @@ void EditorApp::OnRender(TimeStep ts)
             viewport.maxDepth = 1;
 
             graphic::Scissor scissor;
-            scissor.extent.width = viewport.width;
-            scissor.extent.height = viewport.height;
+            scissor.extent.width = (float)viewport.width;
+            scissor.extent.height = (float)viewport.height;
             scissor.offset.x = 0;
             scissor.offset.y = 0;
 

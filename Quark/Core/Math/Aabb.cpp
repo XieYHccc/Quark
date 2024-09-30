@@ -26,7 +26,7 @@ Aabb Aabb::Transform(const glm::mat4 &mat) const
 	glm::vec3 min = glm::vec3(FLT_MAX);
 	glm::vec3 max = glm::vec3(-FLT_MAX);
 
-	for (size_t i = 0; i < 8; i++)
+	for (uint32_t i = 0; i < 8; i++)
 	{
 		glm::vec3 corner = GetCorner(i);
 		glm::vec4 trans = mat * glm::vec4(corner, 1.0f);

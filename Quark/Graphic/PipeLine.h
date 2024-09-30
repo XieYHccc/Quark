@@ -5,19 +5,20 @@
 
 namespace quark::graphic {
 
-enum class PolygonMode
+enum class PolygonMode : uint8_t
 {
     Fill, 
     Line
 };
 
-enum class FrontFaceType
+enum class FrontFaceType : uint8_t
+
 {
     CLOCKWISE ,
     COUNTER_CLOCKWISE
 };
 
-enum class TopologyType 
+enum class TopologyType : uint8_t
 {
     TRANGLE_LIST,
     LINE_LIST,
@@ -25,14 +26,14 @@ enum class TopologyType
     MAX_ENUM
 };
 
-enum class CullMode 
+enum class CullMode : uint8_t
 {
     NONE,
     FRONT,
     BACK,
 };
 
-enum class BlendOperation 
+enum class BlendOperation : uint8_t
 {
     ADD,
     SUBTRACT,
@@ -42,7 +43,7 @@ enum class BlendOperation
     MAX_ENUM
 };
 
-enum class BlendFactor 
+enum class BlendFactor : uint8_t
 {
     ZERO,
     ONE,

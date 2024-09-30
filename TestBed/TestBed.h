@@ -31,7 +31,7 @@ public:
     Scope<SceneRenderer> scene_renderer;
 
     // Debug
-    float cmdListRecordTime = 0;
+    double cmdListRecordTime = 0;
 };
 
 }

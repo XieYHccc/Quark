@@ -68,8 +68,8 @@ Application::Application(const ApplicationSpecification& specs)
 //         m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
 //         m_GraphicDevice->Init();
 // #endif
-        GpuResourceManager::CreateSingleton();
-        GpuResourceManager::Get().Init();
+        Renderer::CreateSingleton();
+        Renderer::Get().Init();
     }, &counter);
 
     // Init Asset system
@@ -126,7 +126,7 @@ void Application::Run()
 {
     while (m_Status.isRunning) 
     {
-        f64 start_frame = m_Timer.ElapsedSeconds();
+        float start_frame = m_Timer.ElapsedSeconds();
 
         // Poll events
         Input::Get()->OnUpdate();
