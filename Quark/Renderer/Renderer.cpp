@@ -1,17 +1,20 @@
 #include "Quark/qkpch.h"
 #include "Quark/Renderer/Renderer.h"
 #include "Quark/Core/Application.h"
+#include "Quark/Asset/MeshImporter.h"
 
 namespace quark {
 
 using namespace graphic;
 
 
-void Renderer::Init()
+Renderer::Renderer()
 {
     graphic::Device* device = Application::Get().GetGraphicDevice();
 
-    m_ShaderLibrary = CreateScope<ShaderLibrary>();
+    m_shaderLibrary = CreateScope<ShaderLibrary>();
+
+    m_sceneRenderer = CreateScope<SceneRenderer>(device);
 
     // format_colorAttachment_main = Application::Get().GetGraphicDevice()->GetPresentImageFormat();
 
@@ -20,7 +23,7 @@ void Renderer::Init()
     desc.format = DataFormat::R8G8B8A8_UNORM;
     desc.initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
     desc.type = ImageType::TYPE_2D;
-    desc.usageBits = IMAGE_USAGE_CAN_COPY_TO_BIT |IMAGE_USAGE_SAMPLING_BIT;
+    desc.usageBits = IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_SAMPLING_BIT;
     desc.arraySize = 1;
     desc.mipLevels = 1;
     desc.generateMipMaps = false;
@@ -93,9 +96,9 @@ void Renderer::Init()
         sampler_cube = device->CreateSampler(desc);
 
     }
-    
+
     // Depth stencil states
-	{
+    {
         depthStencilState_disabled.enableDepthTest = false;
         depthStencilState_disabled.enableDepthWrite = false;
 
@@ -108,11 +111,11 @@ void Renderer::Init()
         depthStencilState_depthWrite.enableDepthWrite = true;
         depthStencilState_depthWrite.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
         depthStencilState_depthWrite.enableStencil = false;
-	}
+    }
 
     // Rasterization state
-	{
-		rasterizationState_fill.cullMode = CullMode::NONE;
+    {
+        rasterizationState_fill.cullMode = CullMode::NONE;
         rasterizationState_fill.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
         rasterizationState_fill.polygonMode = PolygonMode::Fill;
         rasterizationState_fill.enableDepthClamp = false;
@@ -127,7 +130,7 @@ void Renderer::Init()
         rasterizationState_wireframe.enableAntialiasedLine = false;
         rasterizationState_wireframe.SampleCount = SampleCount::SAMPLES_1;
         rasterizationState_wireframe.lineWidth = 1.5f;
-	}
+    }
 
     // Render Pass
     {
@@ -177,17 +180,49 @@ void Renderer::Init()
     QK_CORE_LOGI_TAG("Rernderer", "Renderer Initialized");
 }
 
-void Renderer::Shutdown()
+Renderer::~Renderer()
 {
-    m_ShaderLibrary.reset();
+    m_sceneRenderer.reset();
+    m_shaderLibrary.reset();
 
+    // Free default resources
     image_white.reset();
     image_black.reset();
     image_checkboard.reset();
-
+    
     sampler_linear.reset();
     sampler_nearst.reset();
     sampler_cube.reset();
+}
+
+void Renderer::SetScene(Ref<Scene> scene)
+{
+    m_sceneRenderer->SetScene(scene);
+}
+
+void Renderer::SetSceneEnvironmentMap(Ref<Texture> cubeMap)
+{
+    m_sceneRenderer->SetCubeMap(cubeMap);
+}
+
+void Renderer::UpdateSceneDrawContextEditor(const CameraUniformBufferBlock& cameraData)
+{
+    m_sceneRenderer->UpdateDrawContext(cameraData);
+}
+
+void Renderer::UpdateSceneDrawContext()
+{
+    m_sceneRenderer->UpdateDrawContext();
+}
+
+void Renderer::DrawSkybox(graphic::CommandList* cmd)
+{
+    m_sceneRenderer->DrawSkybox(cmd);
+}
+
+void Renderer::DrawScene(graphic::CommandList* cmd)
+{
+    m_sceneRenderer->DrawScene(cmd);
 }
 
 }

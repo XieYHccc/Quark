@@ -88,7 +88,8 @@ private:
 class ShaderLibrary
 {
 public:
-	ShaderProgram* defaultStaticMeshProgram = nullptr;
+	ShaderProgram* program_staticMesh = nullptr;
+	ShaderProgram* program_editor = nullptr;
 	ShaderProgram* staticProgram_skybox = nullptr;
 
 	ShaderLibrary();

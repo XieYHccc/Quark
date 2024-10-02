@@ -2,9 +2,10 @@
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Graphic/Device.h"
 #include "Quark/Renderer/ShaderLibrary.h"
+#include "Quark/Renderer/SceneRenderer.h"
+
 namespace quark {
 
-// This class is responsible for managing some global gpu resources
 class Renderer : public util::MakeSingleton<Renderer> {
 public:
     // defalut resources and settings
@@ -41,15 +42,23 @@ public:
     graphic::RenderPassInfo2 renderPassInfo2_simpleColorDepthPass;
     graphic::RenderPassInfo2 renderPassInfo2_uiPass;
 
-    Renderer() = default;
-    ~Renderer() = default;
 
-    void Init();
-    void Shutdown();
+    Renderer();
+    ~Renderer();
 
-    ShaderLibrary& GetShaderLibrary() { return *m_ShaderLibrary; }
+    ShaderLibrary& GetShaderLibrary() { return *m_shaderLibrary; }
+
+    // Scene Rendering
+    void SetScene(Ref<Scene> scene);
+    void SetSceneEnvironmentMap(Ref<Texture> cubeMap);
+    void UpdateSceneDrawContextEditor(const CameraUniformBufferBlock& cameraData);
+    void UpdateSceneDrawContext();
+    void DrawSkybox(graphic::CommandList* cmd);
+    void DrawScene(graphic::CommandList* cmd);
 
 private:
-    Scope<ShaderLibrary> m_ShaderLibrary;
+    Scope<ShaderLibrary> m_shaderLibrary;
+    Scope<SceneRenderer> m_sceneRenderer;
+
 };
 }

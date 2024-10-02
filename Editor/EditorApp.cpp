@@ -54,9 +54,8 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     m_InspectorPanel.SetScene(m_Scene);
 
     // SetUp Renderer
-    m_SceneRenderer = CreateScope<SceneRenderer>(m_GraphicDevice.get());
-    m_SceneRenderer->SetScene(m_Scene);
-    m_SceneRenderer->SetCubeMap(m_CubeMapTexture);
+    Renderer::Get().SetScene(m_Scene);
+    Renderer::Get().SetSceneEnvironmentMap(m_CubeMapTexture);
 
     // Adjust editor camera's aspect ratio
     m_EditorCamera.viewportWidth = (float)Application::Get().GetWindow()->GetWidth();
@@ -87,6 +86,14 @@ void EditorApp::OnUpdate(TimeStep ts)
 
     // Update scene
     m_Scene->OnUpdate();
+
+    // Sync the rendering data with game scene
+    CameraUniformBufferBlock cameraData;
+    cameraData.proj = m_EditorCamera.GetProjectionMatrix();
+    cameraData.proj[1][1] *= -1;
+    cameraData.view = m_EditorCamera.GetViewMatrix();
+    cameraData.viewproj = cameraData.proj * cameraData.view;
+    Renderer::Get().UpdateSceneDrawContextEditor(cameraData);
 
 }   
 
@@ -206,7 +213,7 @@ void EditorApp::NewScene()
 {
     m_Scene = CreateRef<Scene>("New Scene");
 
-    m_SceneRenderer->SetScene(m_Scene);
+    Renderer::Get().SetScene(m_Scene);
     m_HeirarchyPanel.SetScene(m_Scene);
     m_InspectorPanel.SetScene(m_Scene);
 }
@@ -224,7 +231,7 @@ void EditorApp::OpenScene(const std::filesystem::path& path)
     SceneSerializer serializer(m_Scene);
     serializer.Deserialize(path.string());
 
-    m_SceneRenderer->SetScene(m_Scene);
+    Renderer::Get().SetScene(m_Scene);
     m_HeirarchyPanel.SetScene(m_Scene);
     m_InspectorPanel.SetScene(m_Scene);
 }
@@ -241,33 +248,36 @@ void EditorApp::SaveSceneAs()
 
 void EditorApp::OnRender(TimeStep ts)
 {
-    // Sync the rendering data with game scene
-    CameraUniformBufferBlock cameraData;
-    cameraData.proj = m_EditorCamera.GetProjectionMatrix();
-    cameraData.proj[1][1] *= -1;
-    cameraData.view = m_EditorCamera.GetViewMatrix();
-    cameraData.viewproj = cameraData.proj * cameraData.view;
-
-    m_SceneRenderer->UpdateDrawContext(cameraData);
+    Renderer& renderer = Renderer::Get();
 
     // Rendering commands
     auto graphic_device = Application::Get().GetGraphicDevice();
 
-    if (graphic_device->BeiginFrame(ts)) {
+    if (graphic_device->BeiginFrame(ts)) 
+    {
         auto* cmd = graphic_device->BeginCommandList();
         auto* swap_chain_image = graphic_device->GetPresentImage();
 
         // Geometry pass
         {
-            graphic::PipelineImageBarrier image_barrier;
-            image_barrier.image = m_color_attachment.get();
-            image_barrier.srcStageBits = graphic::PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-            image_barrier.srcMemoryAccessBits = 0;
-            image_barrier.dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            image_barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            image_barrier.layoutBefore = graphic::ImageLayout::UNDEFINED;
-            image_barrier.layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            cmd->PipeLineBarriers(nullptr, 0, &image_barrier, 1, nullptr, 0);
+            graphic::PipelineImageBarrier image_barriers[3];
+            image_barriers[0].image = m_color_attachment.get();
+            image_barriers[0].srcStageBits = graphic::PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+            image_barriers[0].srcMemoryAccessBits = 0;
+            image_barriers[0].dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barriers[0].dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barriers[0].layoutBefore = graphic::ImageLayout::UNDEFINED;
+            image_barriers[0].layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+
+            //image_barrier[1].image = m_low_entityID_attachment.get();
+            //image_barrier[1].srcStageBits = graphic::PIPELINE_STAGE_TRANSFER_BIT;
+            //image_barrier[1].srcMemoryAccessBits = graphic::BARRIER_ACCESS_TRANSFER_READ_BIT;
+            //image_barrier[1].dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            //image_barrier[1].dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            //image_barrier[1].layoutBefore = graphic::ImageLayout::UNDEFINED;
+            //image_barrier[1].layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+
+            cmd->PipeLineBarriers(nullptr, 0, image_barriers, 1, nullptr, 0);
 
             // Viewport and scissor
             graphic::Viewport viewport;
@@ -279,8 +289,8 @@ void EditorApp::OnRender(TimeStep ts)
             viewport.maxDepth = 1;
 
             graphic::Scissor scissor;
-            scissor.extent.width = (float)viewport.width;
-            scissor.extent.height = (float)viewport.height;
+            scissor.extent.width = (int)viewport.width;
+            scissor.extent.height = (int)viewport.height;
             scissor.offset.x = 0;
             scissor.offset.y = 0;
 
@@ -295,16 +305,27 @@ void EditorApp::OnRender(TimeStep ts)
             fb_info.depthAttachmentStoreOp = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
+            //fb_info.colorAttatchemtsLoadOp[1] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            //fb_info.colorAttatchemtsStoreOp[1] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            //fb_info.colorAttatchemtsLoadOp[1] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            //fb_info.colorAttatchemtsStoreOp[1] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            //fb_info.colorAttachments[1] = m_low_entityID_attachment.get();
+            //fb_info.colorAttatchemtsLoadOp[2] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            //fb_info.colorAttatchemtsStoreOp[2] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            //fb_info.colorAttatchemtsLoadOp[2] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            //fb_info.colorAttatchemtsStoreOp[2] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            //fb_info.colorAttachments[2] = m_high_entityID_attachment.get();
+
             cmd->BeginRenderPass(m_ForwardPassInfo, fb_info);
             cmd->SetViewPort(viewport);
             cmd->SetScissor(scissor);
 
             // Draw skybox
-            m_SceneRenderer->RenderSkybox(cmd);
+            renderer.DrawSkybox(cmd);
 
             // Draw scene
             auto geometry_start = m_Timer.ElapsedMillis();
-            m_SceneRenderer->RenderScene(cmd);
+            renderer.DrawScene(cmd);
             m_CmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
             cmd->EndRenderPass();
@@ -354,10 +375,32 @@ void EditorApp::OnRender(TimeStep ts)
             present_barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
             present_barrier.layoutAfter = graphic::ImageLayout::PRESENT;
             cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
+
+            // Submit graphic command list
+            graphic_device->SubmitCommandList(cmd, nullptr, 0, false);
         }
 
-        // Submit command list
-        graphic_device->SubmitCommandList(cmd);
+        // Transfer entity color attachment back to cpu
+        {
+            //auto* transfer_cmd = graphic_device->BeginCommandList(graphic::QUEUE_TYPE_ASYNC_TRANSFER);
+
+            //graphic::PipelineImageBarrier barrier;
+            //barrier.image = m_low_entityID_attachment.get();
+            //barrier.srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            //barrier.srcMemoryAccessBits = 0;
+            //barrier.dstStageBits = graphic::PIPELINE_STAGE_TRANSFER_BIT;
+            //barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_TRANSFER_READ_BIT;
+            //barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            //barrier.layoutAfter = graphic::ImageLayout::TRANSFER_SRC_OPTIMAL;
+            //transfer_cmd->PipeLineBarriers(nullptr, 0, &barrier, 1, nullptr, 0);
+
+            //transfer_cmd->CopyImageToBuffer(*m_stage_buffer, *m_low_entityID_attachment, 0, { 0, 0, 0 },
+            //    { m_low_entityID_attachment->GetDesc().width, m_low_entityID_attachment->GetDesc().height, 1 },
+            //    0, 0, { graphic::ImageAspect::COLOR, 0, 0, 1 });
+
+            //graphic_device->SubmitCommandList(transfer_cmd, cmd, 1, false);
+        }
+
         graphic_device->EndFrame(ts);
     }
 }
@@ -409,26 +452,39 @@ void EditorApp::OnKeyPressed(const KeyPressedEvent& e)
 
 void EditorApp::CreateColorDepthAttachments()
 {
-        using namespace quark::graphic;
+    using namespace quark::graphic;
 
-        // Create depth image
-        ImageDesc image_desc;
-        image_desc.type = ImageType::TYPE_2D;
-        image_desc.width = uint32_t(Application::Get().GetWindow()->GetMonitorWidth() * Application::Get().GetWindow()->GetRatio());
-        image_desc.height = uint32_t(Application::Get().GetWindow()->GetMonitorHeight() * Application::Get().GetWindow()->GetRatio());
-        image_desc.depth = 1;
-        image_desc.format = Renderer::Get().format_depthAttachment_main;
-        image_desc.arraySize = 1;
-        image_desc.mipLevels = 1;
-        image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        image_desc.usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        m_depth_attachment = m_GraphicDevice->CreateImage(image_desc);
+    // Create depth image
+    ImageDesc image_desc;
+    image_desc.type = ImageType::TYPE_2D;
+    image_desc.width = uint32_t(Application::Get().GetWindow()->GetMonitorWidth() * Application::Get().GetWindow()->GetRatio());
+    image_desc.height = uint32_t(Application::Get().GetWindow()->GetMonitorHeight() * Application::Get().GetWindow()->GetRatio());
+    image_desc.depth = 1;
+    image_desc.format = Renderer::Get().format_depthAttachment_main;
+    image_desc.arraySize = 1;
+    image_desc.mipLevels = 1;
+    image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    image_desc.usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    m_depth_attachment = m_GraphicDevice->CreateImage(image_desc);
 
-        // Create color image
-        image_desc.format = Renderer::Get().format_colorAttachment_main;
-        image_desc.initialLayout = ImageLayout::UNDEFINED;
-        image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
-        m_color_attachment = m_GraphicDevice->CreateImage(image_desc);
+    // Create color image
+    image_desc.format = Renderer::Get().format_colorAttachment_main;
+    image_desc.initialLayout = ImageLayout::UNDEFINED;
+    image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
+    m_color_attachment = m_GraphicDevice->CreateImage(image_desc);
+
+    //// Create entityID image
+    //image_desc.format = DataFormat::R32_UINT;
+    //image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
+    //m_low_entityID_attachment = m_GraphicDevice->CreateImage(image_desc);
+    //m_high_entityID_attachment = m_GraphicDevice->CreateImage(image_desc);
+
+    //// Create stage buffer
+    //BufferDesc buffer_desc;
+    //buffer_desc.domain = BufferMemoryDomain::CPU;
+    //buffer_desc.usageBits = BUFFER_USAGE_TRANSFER_TO_BIT;
+    //buffer_desc.size = image_desc.width * image_desc.height * sizeof(uint32_t);
+    //m_stage_buffer = m_GraphicDevice->CreateBuffer(buffer_desc);
 }
 
 }

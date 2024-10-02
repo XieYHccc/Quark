@@ -622,7 +622,7 @@ void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sample
     m_DirtySetMask |= 1u << set;
 }
 
-void CommandList_Vulkan::CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, Offset3D& offset, Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, ImageSubresourceRange& subresouce)
+void CommandList_Vulkan::CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce)
 {
     auto& internal_buffer = ToInternal(&buffer);
 	auto& internal_image = ToInternal(&image);

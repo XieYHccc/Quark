@@ -7,7 +7,7 @@
 namespace quark {
 static std::string AlphaModetoString(AlphaMode mode)
 {
-    if (mode == AlphaMode::OPAQUE)
+    if (mode == AlphaMode::MODE_OPAQUE)
         return "Opaque";
     else
         return "Transparent";
@@ -125,7 +125,7 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
     std::string AlphaMode;
     QK_DESERIALIZE_PROPERTY(AlphaMode, AlphaMode, materialNode, std::string("Opaque"));
 
-    outMaterial->alphaMode = AlphaMode == "Opaque" ? AlphaMode::OPAQUE : AlphaMode::TRANSPARENT;
+    outMaterial->alphaMode = AlphaMode == "Opaque" ? AlphaMode::MODE_OPAQUE : AlphaMode::MODE_TRANSPARENT;
 
     std::string vertexShaderPath;
     QK_DESERIALIZE_PROPERTY(VertexShader, vertexShaderPath, materialNode, std::string(""));

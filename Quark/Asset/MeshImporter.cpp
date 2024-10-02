@@ -27,21 +27,26 @@ namespace quark {
 
 Ref<Mesh> MeshImporter::ImportGLTF(const std::string& filepath) {
 	GLTFImporter gltf_importer;
-    Ref<Scene> gltf_scene = gltf_importer.Import(filepath);
+	GLTFImporter::ImportingFlags flags = GLTFImporter::ImportingFlags::ImportMeshes;
+    gltf_importer.Import(filepath, flags);
 
-    if (!gltf_scene) 
-        return nullptr;
-
-    // Assume there is only one mesh in the scene
-	auto& meshCmpts = gltf_scene->GetComponents<MeshCmpt>();
-	if (meshCmpts.empty()) 
+	std::vector<Ref<Mesh>>& meshes = gltf_importer.GetMeshes();
+	if (meshes.empty())
 	{
-		QK_CORE_LOGW_TAG("No mesh component found in gltf scene: {}", filepath);
+		QK_CORE_LOGW_TAG("No mesh found in gltf file: {}", filepath);
 		return nullptr;
 	}
 
-	auto [meshCmpt] = meshCmpts[0];
-	return meshCmpt->sharedMesh;
+    // Assume there is only one mesh in the scene
+	//auto& meshCmpts = gltf_scene->GetComponents<MeshCmpt>();
+	//if (meshCmpts.empty()) 
+	//{
+	//	QK_CORE_LOGW_TAG("No mesh component found in gltf scene: {}", filepath);
+	//	return nullptr;
+	//}
+
+	//auto [meshCmpt] = meshCmpts[0];
+	return meshes[0];
 
 }
 

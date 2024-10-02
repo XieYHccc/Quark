@@ -15,12 +15,28 @@ class Device;
 
 class Scene;
 class Entity;
+
 class GLTFImporter {
 public:
+    enum ImportingFlags 
+    {
+		None = 0,
+		ImportMaterials = 1 << 0,
+		ImportTextures = 1 << 1,
+		ImportMeshes = 1 << 2,
+		ImportNodes = 1 << 3,
+		ImportAnimations = 1 << 4,
+		ImportAll = ImportMaterials | ImportTextures | ImportMeshes | ImportNodes | ImportAnimations
+	};
+
     GLTFImporter();
     GLTFImporter(graphic::Device* device);
 
-    Ref<Scene> Import(const std::string& file_path);
+    void Import(const std::string& file_path, uint32_t flags = 0);
+
+    Ref<Scene> GetScene() { return m_Scene; }
+
+    std::vector<Ref<Mesh>>& GetMeshes() { return m_Meshes; }
 
 private:
     Ref<graphic::Sampler> ParseSampler(const tinygltf::Sampler& gltf_sampler);

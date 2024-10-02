@@ -18,7 +18,7 @@ public:
     Entity* GetEntity() { return m_Entity; }
 
 private:
-    Entity* m_Entity;
+    Entity* m_Entity = nullptr;
     friend class EntityRegistry;
 };
 

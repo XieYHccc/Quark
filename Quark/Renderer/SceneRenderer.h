@@ -33,7 +33,7 @@ struct ModelPushConstants
 {
     // Per geometry
     glm::mat4 worldMatrix = glm::mat4(1.f);
-    u64 vertexBufferGpuAddress; // deprecated currently
+    // u64 vertexBufferGpuAddress; // deprecated currently
 };
 
 struct MaterialPushConstants
@@ -56,6 +56,9 @@ struct RenderObject
     Ref<Material> material;
     math::Aabb aabb = {};
     glm::mat4 transform;
+
+    //Editor
+    uint64_t entityID = 0;
 };
 
 class SceneRenderer {
@@ -65,8 +68,8 @@ public:
     void SetScene(const Ref<Scene>& scene) { m_Scene = scene; }
     void SetCubeMap(const Ref<Texture>& cubeMap) { m_CubeMap = cubeMap; }
 
-    void RenderScene(graphic::CommandList* cmd_list);
-    void RenderSkybox(graphic::CommandList* cmd_list);
+    void DrawScene(graphic::CommandList* cmd_list);
+    void DrawSkybox(graphic::CommandList* cmd_list);
 
     void UpdateDrawContext();
     void UpdateDrawContext(const CameraUniformBufferBlock& cameraData); // Update scene uniform buffer with custom camera data(Used in Editor now)
@@ -78,7 +81,6 @@ private:
 
     Ref<Scene> m_Scene;
     Ref<Texture> m_CubeMap;
-    Ref<Mesh> m_CubeMesh;
 
     // Data need to be updated every frame
     struct DrawContext 

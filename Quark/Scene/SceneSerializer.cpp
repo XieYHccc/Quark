@@ -226,7 +226,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 
 					if (assetId == 1)	// Default material
 					{
-						mrc->SetMaterial(i, AssetManager::Get().GetDefaultMaterial());
+						mrc->SetMaterial(i, AssetManager::Get().defaultMaterial);
 					}
 					else
 					{

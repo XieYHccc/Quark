@@ -1,6 +1,7 @@
 #version 450
 
 #extension GL_GOOGLE_include_directive : require
+#extension GL_ARB_gpu_shader_int64 : require
 #include "include/input_structures.glsl"
 
 #ifdef HAVE_UV
@@ -16,12 +17,15 @@ layout(location = 3) in vec4 vColor;
 #endif
 
 layout (location = 0) out vec4 outFragColor;
+layout (location = 1) out uint outID1;
+layout (location = 2) out uint outID2;
 
 layout(push_constant, std430) uniform PushConstants
 {
 	layout(offset = 64) vec4 baseColor;
 	layout(offset = 80) float roughness;
 	layout(offset = 84) float metallic;
+    layout(offset = 88) uint64_t entityID;
 } materialData;
 
 void main() 
@@ -47,4 +51,11 @@ void main()
 	vec3 ambient = baseColor * sceneData.ambientColor.xyz;
 
 	outFragColor = vec4(baseColor * lightValue * sceneData.sunlightColor.w + ambient ,1.0f);
+
+    // outID1 = uint32_t(entityData.entityID >> 32);
+    // outID2 = uint32_t(entityData.entityID & 0xFFFFFFFFu);
+
+    outID1 = -1;
+    outID2 = -2;
+
 }

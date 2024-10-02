@@ -31,7 +31,7 @@ public:
     void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) override final;
     void BindSampler(u32 set, u32 binding, const Sampler& sampler) override final;
     
-    void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, Offset3D& offset, Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, ImageSubresourceRange& subresouce) override final;
+    void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) override final;
     
     void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) override final;
     void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) override final;

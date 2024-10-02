@@ -90,7 +90,7 @@ public:
     virtual void BindIndexBuffer(const Buffer& buffer, uint64_t offset, const IndexBufferFormat format) = 0;
     virtual void BindSampler(uint32_t set, uint32_t binding, const Sampler& sampler) = 0;
     
-    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, Offset3D& offset, Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, ImageSubresourceRange& subresouce) = 0;
+    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) = 0;
 
     virtual void DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance) = 0;
     virtual void Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;

@@ -210,7 +210,7 @@ void InspectorPanel::OnImGuiUpdate()
                         Ref<Mesh> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
                         cmpt->SetMesh(mesh);
                         for (size_t i = 0; i < mesh->subMeshes.size(); i++)
-                            cmpt->SetMaterial(i, AssetManager::Get().GetDefaultMaterial());
+                            cmpt->SetMaterial(i, AssetManager::Get().defaultMaterial);
                     }
                 }
 				ImGui::CloseCurrentPopup();

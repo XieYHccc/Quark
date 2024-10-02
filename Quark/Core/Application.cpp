@@ -69,7 +69,6 @@ Application::Application(const ApplicationSpecification& specs)
 //         m_GraphicDevice->Init();
 // #endif
         Renderer::CreateSingleton();
-        Renderer::Get().Init();
     }, &counter);
 
     // Init Asset system
@@ -101,7 +100,6 @@ Application::~Application() {
 
     AssetManager::FreeSingleton();
 
-    Renderer::Get().Shutdown();
     Renderer::FreeSingleton();
 
     m_GraphicDevice->ShutDown();

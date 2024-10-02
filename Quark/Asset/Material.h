@@ -5,8 +5,8 @@
 
 namespace quark {
 enum class AlphaMode {
-    OPAQUE,
-    TRANSPARENT
+    MODE_OPAQUE,
+    MODE_TRANSPARENT
 };
 
 class ShaderProgram;
@@ -18,7 +18,7 @@ struct Material : public Asset {
         float roughNessFactor = 1.f;
     } uniformBufferData;
 
-    AlphaMode alphaMode = AlphaMode::OPAQUE;
+    AlphaMode alphaMode = AlphaMode::MODE_OPAQUE;
 
     Ref<Texture> baseColorTexture;
     Ref<Texture> metallicRoughnessTexture;

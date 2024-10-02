@@ -35,11 +35,13 @@ private:
 
     Ref<graphic::Image> m_depth_attachment;
     Ref<graphic::Image> m_color_attachment;
+    //Ref<graphic::Image> m_low_entityID_attachment;
+    //Ref<graphic::Image> m_high_entityID_attachment;
+    //Ref<graphic::Buffer> m_stage_buffer;
 
     Ref<Texture> m_CubeMapTexture;
-
     Ref<Scene> m_Scene;
-    Scope<SceneRenderer> m_SceneRenderer;
+
     EditorCamera m_EditorCamera;
 
     glm::vec2 m_ViewportSize;

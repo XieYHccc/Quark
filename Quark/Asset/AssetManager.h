@@ -7,10 +7,19 @@
 #include "Quark/Asset/AssetMetadata.h"
 #include "Quark/Asset/Texture.h"
 #include "Quark/Asset/Material.h"
+#include "Quark/Asset/Mesh.h"
 
 namespace quark {
 
 class AssetManager : public util::MakeSingleton<AssetManager> {
+
+public:
+	// All default assets' id is 1
+	Ref<Texture> defaultColorTexture;
+	Ref<Texture> defaultMetalTexture;
+	Ref<Material> defaultMaterial;
+	Ref<Mesh> mesh_cube;
+
 public:
 	AssetManager();
 
@@ -38,10 +47,6 @@ public:
 	void LoadAssetRegistry();
 	void SaveAssetRegistry();
 
-	const Ref<Material> GetDefaultMaterial() const { return m_DefaultMaterial; }
-	const Ref<Texture> GetDefaultColorTexture() const { return m_DefaultColorTexture; }
-	const Ref<Texture> GetDefaultMetalTexture() const { return m_DefaultMetalTexture; }
-
 private:
 	void SetMetadata(AssetID id, AssetMetadata metaData);
 	void ReloadAssets();
@@ -49,11 +54,6 @@ private:
 
 	std::unordered_map<AssetID, Ref<Asset>> m_LoadedAssets;
 	std::unordered_map<AssetID, AssetMetadata> m_AssetMetadata;
-
-	// All default assets' id is 1
-	Ref<Texture> m_DefaultColorTexture;
-	Ref<Texture> m_DefaultMetalTexture;
-	Ref<Material> m_DefaultMaterial;
 };
 
 template<typename T>

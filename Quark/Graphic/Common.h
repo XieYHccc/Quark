@@ -69,6 +69,9 @@ enum class DataFormat
     D32_SFLOAT_S8_UINT,
     D24_UNORM_S8_UINT,
 
+    R64_UINT,
+    R32_UINT,
+
     // Compressed image format
     ETC2_R8G8B8A8_UNORM_BLOCK,
     BC7_UNORM_BLOCK,

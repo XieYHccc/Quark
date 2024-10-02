@@ -305,32 +305,35 @@ void AssetManager::ReloadAssets()
 void AssetManager::CreateDefaultAssets()
 {
 	// Create defalult texture
-	m_DefaultColorTexture = CreateRef<Texture>();
-	m_DefaultColorTexture->image = Renderer::Get().image_white;
-	m_DefaultColorTexture->sampler = Renderer::Get().sampler_linear;
-	m_DefaultColorTexture->SetName("Default color texture");
+	defaultColorTexture = CreateRef<Texture>();
+	defaultColorTexture->image = Renderer::Get().image_white;
+	defaultColorTexture->sampler = Renderer::Get().sampler_linear;
+	defaultColorTexture->SetName("Default color texture");
 	
-	m_DefaultMetalTexture = CreateRef<Texture>();
-	m_DefaultMetalTexture->image = Renderer::Get().image_white;
-	m_DefaultMetalTexture->sampler = Renderer::Get().sampler_linear;
-	m_DefaultMetalTexture->SetName("Default metalic roughness texture");
+	defaultMetalTexture = CreateRef<Texture>();
+	defaultMetalTexture->image = Renderer::Get().image_white;
+	defaultMetalTexture->sampler = Renderer::Get().sampler_linear;
+	defaultMetalTexture->SetName("Default metalic roughness texture");
 
-	m_DefaultMaterial = CreateRef<Material>();
-	m_DefaultMaterial->alphaMode = AlphaMode::OPAQUE;
-	m_DefaultMaterial->baseColorTexture = m_DefaultColorTexture;
-	m_DefaultMaterial->metallicRoughnessTexture = m_DefaultMetalTexture;
-	m_DefaultMaterial->uniformBufferData.baseColorFactor = glm::vec4(1.0f);
-	m_DefaultMaterial->uniformBufferData.metalicFactor = 1.0f;
-	m_DefaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
+	defaultMaterial = CreateRef<Material>();
+	defaultMaterial->alphaMode = AlphaMode::MODE_OPAQUE;
+	defaultMaterial->baseColorTexture = defaultColorTexture;
+	defaultMaterial->metallicRoughnessTexture = defaultMetalTexture;
+	defaultMaterial->uniformBufferData.baseColorFactor = glm::vec4(1.0f);
+	defaultMaterial->uniformBufferData.metalicFactor = 1.0f;
+	defaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
 	// TODO: Remove hardcoded shader
-	m_DefaultMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().defaultStaticMeshProgram;
-	m_DefaultMaterial->SetName("Default material");
+	defaultMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().program_staticMesh;
+	defaultMaterial->SetName("Default material");
 	
-	// All default assets' id is 1
-	m_DefaultColorTexture->SetAssetID(1);
-	m_DefaultMetalTexture->SetAssetID(1);
-	m_DefaultMaterial->SetAssetID(1);
+	MeshImporter mesh_loader;
+	mesh_cube = mesh_loader.ImportGLTF("BuiltInResources/Gltf/cube.gltf");
 
+	// All default assets' id is 1
+	defaultColorTexture->SetAssetID(1);
+	defaultMetalTexture->SetAssetID(1);
+	defaultMaterial->SetAssetID(1);
+	mesh_cube->SetAssetID(1);
 }
 
 }

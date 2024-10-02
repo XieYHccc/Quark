@@ -6,8 +6,7 @@
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
-#include "Quark/Graphic/Device.h"
-#include "Quark/Asset/MeshImporter.h"
+#include "Quark/Asset/AssetManager.h"
 
 namespace quark {
 
@@ -15,9 +14,6 @@ using namespace graphic;
 SceneRenderer::SceneRenderer(graphic::Device* device)
     : m_GraphicDevice(device)
 {
-    // Load Cube mesh
-    MeshImporter mesh_loader;
-    m_CubeMesh = mesh_loader.ImportGLTF("BuiltInResources/Gltf/cube.gltf");
 
     // Create scene uniform buffer
     BufferDesc desc;
@@ -39,7 +35,7 @@ void SceneRenderer::UpdateRenderObjects()
     m_DrawContext.transparentObjects.clear();
 
     // Fill render objects
-    const auto& cmpts = m_Scene->GetComponents<MeshCmpt, MeshRendererCmpt,TransformCmpt>();
+    const auto& cmpts = m_Scene->GetComponents<MeshCmpt, MeshRendererCmpt, TransformCmpt>();
     for (const auto [mesh_cmpt, mesh_renderer_cmpt, transform_cmpt] : cmpts) {
         auto* mesh = mesh_cmpt->uniqueMesh ? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
 
@@ -56,7 +52,7 @@ void SceneRenderer::UpdateRenderObjects()
             new_renderObject.material = mesh_renderer_cmpt->GetMaterial(i);
             new_renderObject.transform = transform_cmpt->GetWorldMatrix();
             new_renderObject.pipeLine = mesh_renderer_cmpt->GetGraphicsPipeLine(i);
-            if (new_renderObject.material->alphaMode == AlphaMode::OPAQUE)
+            if (new_renderObject.material->alphaMode == AlphaMode::MODE_OPAQUE)
                 m_DrawContext.opaqueObjects.push_back(new_renderObject);
             else
                 m_DrawContext.transparentObjects.push_back(new_renderObject);
@@ -108,21 +104,23 @@ void SceneRenderer::UpdateDrawContext(const CameraUniformBufferBlock& cameraData
 
 }
 
-void SceneRenderer::RenderSkybox(graphic::CommandList *cmd_list)
+void SceneRenderer::DrawSkybox(graphic::CommandList *cmd_list)
 {
     QK_CORE_ASSERT(m_CubeMap)
 
+    Ref<Mesh> cubeMesh = AssetManager::Get().mesh_cube;
     Ref<graphic::PipeLine> skyboxPipeLine = Renderer::Get().pipeline_skybox;
+
     cmd_list->BindPipeLine(*skyboxPipeLine);
     cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
     cmd_list->BindImage(0, 1, *m_CubeMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd_list->BindSampler(0, 1, *m_CubeMap->sampler);
-    cmd_list->BindVertexBuffer(0, *m_CubeMesh->GetPositionBuffer(), 0);
-    cmd_list->BindIndexBuffer(*m_CubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
-    cmd_list->DrawIndexed((uint32_t)m_CubeMesh->indices.size(), 1, 0, 0, 0);
+    cmd_list->BindVertexBuffer(0, *cubeMesh->GetPositionBuffer(), 0);
+    cmd_list->BindIndexBuffer(*cubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
+    cmd_list->DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);
 }
 
-void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
+void SceneRenderer::DrawScene(graphic::CommandList* cmd_list)
 {
     std::vector<u32>& opaque_draws = m_DrawContext.opaqueDraws;
     std::vector<u32>& transparent_draws = m_DrawContext.transparentDraws;
@@ -209,7 +207,8 @@ void SceneRenderer::RenderScene(graphic::CommandList* cmd_list)
         // Push model constant
         ModelPushConstants push_constant;
         push_constant.worldMatrix = obj.transform;
-        push_constant.vertexBufferGpuAddress = obj.attributeBuffer->GetGpuAddress();
+        //push_constant.vertexBufferGpuAddress = obj.attributeBuffer->GetGpuAddress();
+
         cmd_list->PushConstant(&push_constant, 0, 64);  // only push model matrix
 
         cmd_list->DrawIndexed(obj.indexCount, 1, obj.firstIndex, 0, 0);

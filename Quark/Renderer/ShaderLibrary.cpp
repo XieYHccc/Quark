@@ -91,8 +91,11 @@ bool ShaderProgram::IsStatic() const
 
 ShaderLibrary::ShaderLibrary()
 {
-	defaultStaticMeshProgram = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
+	program_staticMesh = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
 		"BuiltInResources/Shaders/static_mesh.frag");
+
+	program_editor = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/editor_scene.vert",
+		"BuiltInResources/Shaders/editor_scene.frag");
 
 	staticProgram_skybox = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/Spirv/skybox.vert.spv",
 		"BuiltInResources/Shaders/Spirv/skybox.frag.spv");
@@ -274,7 +277,7 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const VariantSignature
 		std::vector<uint32_t> spirv;
 		if (!m_Compiler->Compile(messages, spirv, ops))
 		{
-			QK_CORE_LOGW_TAG("Renderer", "ShaderTemplate: Failed to compile shader : {} : {}", m_Path, messages);
+			QK_CORE_LOGE_TAG("Renderer", "ShaderTemplate: Failed to compile shader : {} : {}", m_Path, messages);
 			return nullptr;
 		}
 

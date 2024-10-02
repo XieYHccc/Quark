@@ -144,10 +144,10 @@ void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 	ShaderProgramVariant* programVariant = mat->shaderProgram->GetOrCreateVariant(m_CachedProgramVatriantKey);
 
 	// TODO: Remove hardcoded states after restruct Material class
-	graphic::PipelineDepthStencilState dss = mat->alphaMode == AlphaMode::OPAQUE ?
+	graphic::PipelineDepthStencilState dss = mat->alphaMode == AlphaMode::MODE_OPAQUE ?
 		Renderer::Get().depthStencilState_depthWrite: Renderer::Get().depthStencilState_depthTestOnly;
 
-	graphic::PipelineColorBlendState cbs = mat->alphaMode == AlphaMode::OPAQUE ?
+	graphic::PipelineColorBlendState cbs = mat->alphaMode == AlphaMode::MODE_OPAQUE ?
 		graphic::PipelineColorBlendState::create_disabled(1) : graphic::PipelineColorBlendState::create_blend(1);
 
 	m_GraphicsPipeLines[index] = programVariant->GetOrCreatePipeLine(dss, cbs,
