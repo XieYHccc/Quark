@@ -8,14 +8,17 @@
 #include "Quark/Ecs/EntityRegistry.h"
 
 namespace quark {
+
 struct CameraCmpt;
+struct Texture;
+
 class Scene {
+public:
+    std::string sceneName = "Unnamed";
+
 public:
     Scene(const std::string& name);
     ~Scene();
-
-    void SetSceneName(const std::string& name);
-    std::string GetSceneName() const;
 
     void OnUpdate();
 
@@ -58,9 +61,10 @@ public:
 
 private:
     std::string m_SceneName;
+
     EntityRegistry m_Registry;
     Entity* m_MainCameraEntity;
-    std::unordered_map<UUID, Entity*> m_EntityIdMap;
+    std::unordered_map<uint64_t, Entity*> m_EntityIdMap;
 
     friend class GLTFLoader;
     friend class MeshLoader;

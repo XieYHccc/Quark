@@ -134,7 +134,7 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
     QK_DESERIALIZE_PROPERTY(FragmentShader, fragmentShaderPath, materialNode, std::string(""));
 
     QK_CORE_VERIFY(!vertexShaderPath.empty() && !fragmentShaderPath.empty())
-    outMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().GetOrCreateGraphicsProgram(vertexShaderPath, fragmentShaderPath);
+    outMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().program_editor;
 
     return true;
 }

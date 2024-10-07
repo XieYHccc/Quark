@@ -68,7 +68,7 @@ Application::Application(const ApplicationSpecification& specs)
 //         m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
 //         m_GraphicDevice->Init();
 // #endif
-        Renderer::CreateSingleton();
+        Renderer::CreateSingleton(m_GraphicDevice.get());
     }, &counter);
 
     // Init Asset system

@@ -183,7 +183,7 @@ struct GraphicPipeLineDesc {
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
     VertexInputLayout vertexInputLayout;
     // RenderPassInfo renderPassInfo;  // Compatable Renderpass info. Only the Format informations are actually needed when createing pipeline.
-    RenderPassInfo2 renderPassInfo2;
+    RenderPassInfo2 renderPassInfo2 = {};
 };
 
 

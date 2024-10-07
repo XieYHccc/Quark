@@ -6,8 +6,15 @@
 namespace quark::graphic {
 union ClearValue
 {
-    float color[4];
-    struct ClearDepthStencil
+    // float color[4];
+    union clearColorValue
+	{
+		float float32[4];
+        uint32_t uint32[4];
+        int32_t int32[4];
+	} color;
+
+    struct ClearDepthStencilValue
     {
         float depth;
         uint32_t stencil;
@@ -17,7 +24,7 @@ union ClearValue
 // This is all information about renderpass that need to be known when creating a pipeline
 struct RenderPassInfo2
 {
-    DataFormat colorAttachmentFormats[MAX_COLOR_ATTHACHEMNT_NUM];
+    DataFormat colorAttachmentFormats[MAX_COLOR_ATTHACHEMNT_NUM] = {};
     uint32_t numColorAttachments = 0;
 
     DataFormat depthAttachmentFormat = DataFormat::UNDEFINED;

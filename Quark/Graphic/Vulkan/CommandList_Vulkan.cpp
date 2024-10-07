@@ -260,10 +260,10 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, 
         color_attachments[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_attachments[i].loadOp = convertLoadOp(frameBufferInfo.colorAttatchemtsLoadOp[i]);
         color_attachments[i].storeOp = convertStoreOp(frameBufferInfo.colorAttatchemtsStoreOp[i]);
-        color_attachments[i].clearValue.color.float32[0] = frameBufferInfo.clearColors[i].color[0];
-        color_attachments[i].clearValue.color.float32[1] = frameBufferInfo.clearColors[i].color[1];
-        color_attachments[i].clearValue.color.float32[2] = frameBufferInfo.clearColors[i].color[2];
-        color_attachments[i].clearValue.color.float32[3] = frameBufferInfo.clearColors[i].color[3];
+        color_attachments[i].clearValue.color.float32[0] = frameBufferInfo.clearColors[i].color.float32[0];
+        color_attachments[i].clearValue.color.float32[1] = frameBufferInfo.clearColors[i].color.float32[1];
+        color_attachments[i].clearValue.color.float32[2] = frameBufferInfo.clearColors[i].color.float32[2];
+        color_attachments[i].clearValue.color.float32[3] = frameBufferInfo.clearColors[i].color.float32[3];
 
         // internal swapchain image state tracking
         if (internal_image.IsSwapChainImage())

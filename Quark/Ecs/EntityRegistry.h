@@ -18,7 +18,7 @@ public:
 
 	template <typename... Ts>
 	EntityGroup<Ts...>* GetEntityGroup() {
-		ComponentType group_id = GetComponentGroupId<Ts...>();
+		constexpr ComponentType group_id = GetComponentGroupId<Ts...>();
 		auto* t = m_EntityGroups.find(group_id);
 		if (!t) {
 			register_group<Ts...>(group_id);

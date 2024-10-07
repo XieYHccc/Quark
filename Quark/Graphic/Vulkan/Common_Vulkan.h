@@ -37,24 +37,6 @@ VULKAN_INTERNAL_CLASS(Sampler)
     inline x_##_Vulkan& ToInternal(x_* ptr) { return *static_cast<x_##_Vulkan*>(ptr);} \
     inline const x_##_Vulkan& ToInternal(const x_* ptr) {return *static_cast<const x_##_Vulkan*>(ptr);}\
 
-// class Cookie {  // track the resource information when bind resouces to shader
-// public:
-//     Cookie(uint64_t cookie) : cookie_(cookie) {};
-//     uint64_t get_cookie() const { return cookie_;}
-// protected:
-//     static uint64_t allocate_cookie() 
-//     {
-//         // Reserve lower bits for "special purposes".
-//         uint64_t new_cookie = cookie_allocator + 16;
-//         cookie_allocator += 16;
-
-//         return new_cookie;
-//     }
-// private:
-//     uint64_t cookie_;
-//     inline static uint64_t cookie_allocator = 0;
-// };
-
 constexpr VkFormat ConvertDataFormat(DataFormat value)
 {
     switch(value)
@@ -82,7 +64,11 @@ constexpr VkFormat ConvertDataFormat(DataFormat value)
     case DataFormat::R64_UINT:
         return VK_FORMAT_R64_UINT;
     case DataFormat::R32_UINT:
-        return VK_FORMAT_R32_UINT;       
+        return VK_FORMAT_R32_UINT;    
+    case DataFormat::R32_SINT:
+        return VK_FORMAT_R32_SINT;
+    case DataFormat::R32G32_UINT:
+        return VK_FORMAT_R32G32_UINT;
     default:
         QK_CORE_VERIFY(0, "Data format not handled yet!")
         return VK_FORMAT_UNDEFINED;

@@ -39,11 +39,11 @@ public:
 
     // graphic::RenderPassInfo
     graphic::RenderPassInfo2 renderPassInfo2_simpleColorPass;
-    graphic::RenderPassInfo2 renderPassInfo2_simpleColorDepthPass;
+    graphic::RenderPassInfo2 renderPassInfo2_simpleMainPass;
+    graphic::RenderPassInfo2 renderPassInfo2_editorMainPass;
     graphic::RenderPassInfo2 renderPassInfo2_uiPass;
 
-
-    Renderer();
+    Renderer(graphic::Device* device);
     ~Renderer();
 
     ShaderLibrary& GetShaderLibrary() { return *m_shaderLibrary; }
@@ -51,14 +51,27 @@ public:
     // Scene Rendering
     void SetScene(Ref<Scene> scene);
     void SetSceneEnvironmentMap(Ref<Texture> cubeMap);
-    void UpdateSceneDrawContextEditor(const CameraUniformBufferBlock& cameraData);
-    void UpdateSceneDrawContext();
+    void UpdateDrawContextEditor(const CameraUniformBufferBlock& cameraData);
+    void UpdateDrawContext();
+
     void DrawSkybox(graphic::CommandList* cmd);
     void DrawScene(graphic::CommandList* cmd);
 
+    Ref<graphic::PipeLine> GetOrCreatePipeLine(
+        const ShaderProgramVariant& programVariant,
+        const graphic::PipelineDepthStencilState& ds,
+        const graphic::PipelineColorBlendState& cb,
+        const graphic::RasterizationState& rs,
+        const graphic::RenderPassInfo2& compatablerp,
+        const graphic::VertexInputLayout& input);
+
 private:
+    graphic::Device* m_device;
+
     Scope<ShaderLibrary> m_shaderLibrary;
     Scope<SceneRenderer> m_sceneRenderer;
+
+    std::unordered_map<uint64_t, Ref<graphic::PipeLine>> m_pipelines;
 
 };
 }

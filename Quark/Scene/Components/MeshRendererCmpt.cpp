@@ -32,11 +32,7 @@ Ref<Material> MeshRendererCmpt::GetMaterial(uint32_t index)
 
 Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 {
-	if (index >= m_GraphicsPipeLines.size())
-	{
-		QK_CORE_LOGW_TAG("Scene", "MeshRendererCmpt::GetPipeLine: Index out of range");
-		return nullptr;
-	}
+	QK_CORE_ASSERT(index < m_GraphicsPipeLines.size())
 
 	if (m_GraphicsPipeLines[index] == nullptr)
 	{
@@ -148,11 +144,11 @@ void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 		Renderer::Get().depthStencilState_depthWrite: Renderer::Get().depthStencilState_depthTestOnly;
 
 	graphic::PipelineColorBlendState cbs = mat->alphaMode == AlphaMode::MODE_OPAQUE ?
-		graphic::PipelineColorBlendState::create_disabled(1) : graphic::PipelineColorBlendState::create_blend(1);
+		graphic::PipelineColorBlendState::create_disabled(2) : graphic::PipelineColorBlendState::create_blend(2);
 
-	m_GraphicsPipeLines[index] = programVariant->GetOrCreatePipeLine(dss, cbs,
+	m_GraphicsPipeLines[index] = Renderer::Get().GetOrCreatePipeLine(*programVariant, dss, cbs,
 		Renderer::Get().rasterizationState_fill,
-		Renderer::Get().renderPassInfo2_simpleColorDepthPass, //TODO: Remove hardcoded render pass when we have render graph system
+		Renderer::Get().renderPassInfo2_editorMainPass, //TODO: Remove hardcoded render pass when we have render graph system
 		m_CachedVertexInputLayout);
 }
 

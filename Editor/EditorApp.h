@@ -4,6 +4,7 @@
 #include <Quark/Scene/Scene.h>
 #include <Quark/Renderer/SceneRenderer.h>
 #include <Quark/Events/KeyEvent.h>
+#include <Quark/Events/MouseEvent.h>
 
 #include "Editor/EditorCamera.h"
 #include "Editor/Panel/SceneHeirarchyPanel.h"
@@ -21,6 +22,7 @@ public:
     void OnImGuiUpdate() override final;
 
     void OnKeyPressed(const KeyPressedEvent& e);
+    void OnMouseButtonPressed(const MouseButtonPressedEvent& e);
 
     void NewScene();
     void OpenScene();
@@ -28,20 +30,19 @@ public:
     void SaveSceneAs();
 
 private:
-    void CreateColorDepthAttachments();
+    void CreateGraphicResources();
 
-    graphic::RenderPassInfo2 m_ForwardPassInfo; // First pass
+    graphic::RenderPassInfo2 m_MainPassInfo; // First pass
     graphic::RenderPassInfo2 m_UiPassInfo;   // Second pass
 
     Ref<graphic::Image> m_depth_attachment;
     Ref<graphic::Image> m_color_attachment;
-    //Ref<graphic::Image> m_low_entityID_attachment;
-    //Ref<graphic::Image> m_high_entityID_attachment;
-    //Ref<graphic::Buffer> m_stage_buffer;
+    Ref<graphic::Image> m_entityID_attachment;
+    Ref<graphic::Buffer> m_stage_buffer;
 
     Ref<Texture> m_CubeMapTexture;
     Ref<Scene> m_Scene;
-
+    Entity* m_HoverdEntity;
     EditorCamera m_EditorCamera;
 
     glm::vec2 m_ViewportSize;

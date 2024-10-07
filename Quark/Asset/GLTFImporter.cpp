@@ -238,7 +238,7 @@ void GLTFImporter::Import(const std::string &filename, uint32_t flags)
         // TODO: Support gltf file with multiple scenes
         // CORE_ASSERT(m_Model.scenes.size() == 1)
         const tinygltf::Scene& gltf_scene = m_Model.scenes[m_Model.defaultScene > -1 ? m_Model.defaultScene : 0];
-        m_Scene->SetSceneName(gltf_scene.name);
+        m_Scene->sceneName = gltf_scene.name;
 
         // Load nodes
         std::vector<Entity*> entities;

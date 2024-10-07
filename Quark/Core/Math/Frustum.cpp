@@ -16,6 +16,11 @@ bool Frustum::CheckSphere(const Aabb &aabb)
 	return true;
 }
 
+Frustum::Frustum(const glm::mat4& inv_view_proj_mat)
+{
+	Build(inv_view_proj_mat);
+}
+
 void Frustum::Build(const glm::mat4 &inv_view_proj_mat)
 {
 	inv_view_proj_matrix_ = inv_view_proj_mat;

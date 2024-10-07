@@ -3,10 +3,11 @@
 #include "Quark/Core/Math/Frustum.h"
 #include "Quark/Asset/Material.h"
 #include "Quark/Asset/Mesh.h"
-
+#include "Quark/Renderer/RenderObject.h"
 namespace quark {
 
-namespace graphic {
+namespace graphic 
+{
 class CommandList;
 class Device;
 }
@@ -44,21 +45,14 @@ struct MaterialPushConstants
     float roughnessFactor = 1.f;
 };
 
-// The minimum unit for a single draw call
-struct RenderObject 
+struct DrawContext
 {
-    uint32_t indexCount = 0;
-    uint32_t firstIndex = 0;
-    Ref<graphic::Buffer> indexBuffer;
-    Ref<graphic::Buffer> attributeBuffer;
-    Ref<graphic::Buffer> positionBuffer;
-    Ref<graphic::PipeLine> pipeLine;
-    Ref<Material> material;
-    math::Aabb aabb = {};
-    glm::mat4 transform;
-
-    //Editor
-    uint64_t entityID = 0;
+    std::vector<RenderObject> opaqueObjects;
+    std::vector<RenderObject> transparentObjects;
+    std::vector<uint32_t> opaqueDraws;   // indices point to  opaque render objects vector
+    std::vector<uint32_t> transparentDraws; // indices point to transparent render objects vector
+    Ref<graphic::Buffer> sceneUniformBuffer;
+    math::Frustum frustum;
 };
 
 class SceneRenderer {
@@ -66,33 +60,24 @@ public:
     SceneRenderer(graphic::Device* device);
 
     void SetScene(const Ref<Scene>& scene) { m_Scene = scene; }
-    void SetCubeMap(const Ref<Texture>& cubeMap) { m_CubeMap = cubeMap; }
+    void SetEnvironmentMap(const Ref<Texture>& cubeMap) { m_EnvironmentMap = cubeMap; }
 
     void DrawScene(graphic::CommandList* cmd_list);
     void DrawSkybox(graphic::CommandList* cmd_list);
 
     void UpdateDrawContext();
-    void UpdateDrawContext(const CameraUniformBufferBlock& cameraData); // Update scene uniform buffer with custom camera data(Used in Editor now)
+    void UpdateDrawContextEditor(const CameraUniformBufferBlock& cameraData); // Update scene uniform buffer with custom camera data(Used in Editor now)
 
 private:
     void UpdateRenderObjects();
 
+    // encapsule all needed data for rendering a single frame
+    DrawContext m_DrawContext;
+
     graphic::Device* m_GraphicDevice;
 
     Ref<Scene> m_Scene;
-    Ref<Texture> m_CubeMap;
-
-    // Data need to be updated every frame
-    struct DrawContext 
-    {
-        std::vector<RenderObject> opaqueObjects;
-        std::vector<RenderObject> transparentObjects;
-        std::vector<uint32_t> opaqueDraws;   // indices point to  opaque render objects vector
-        std::vector<uint32_t> transparentDraws; // indices point to transparent render objects vector
-        SceneUniformBufferBlock sceneUboData;
-        Ref<graphic::Buffer> sceneUniformBuffer;
-        math::Frustum frustum;
-    } m_DrawContext;
+    Ref<Texture> m_EnvironmentMap;
 };
 
 }

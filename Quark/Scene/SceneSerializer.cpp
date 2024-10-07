@@ -117,7 +117,7 @@ void SceneSerializer::Serialize(const std::filesystem::path& filepath)
 
 	YAML::Emitter out;
 	out << YAML::BeginMap;
-	out << YAML::Key << "Scene" << YAML::Value << m_Scene->GetSceneName();
+	out << YAML::Key << "Scene" << YAML::Value << m_Scene->sceneName;
 	out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
 	for (auto* e : m_Scene->GetAllEntitiesWith<IdCmpt, RelationshipCmpt>()) 
@@ -159,7 +159,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 	}
 
 	std::string sceneName = data["Scene"].as<std::string>();
-	m_Scene->SetSceneName(sceneName);
+	m_Scene->sceneName = sceneName;
 	QK_CORE_LOGI_TAG("Scene", "Deserializing scene: {}", sceneName);
 
 	auto entities = data["Entities"];

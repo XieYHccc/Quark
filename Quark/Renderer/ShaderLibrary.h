@@ -20,7 +20,7 @@ struct ShaderTemplateVariant
 	Ref<graphic::Shader> gpuShaderHandle;
 	
 	std::vector<uint32_t> spirv;	// maybe used for serialization
-	util::Hash spirvHash;
+	util::Hash spirvHash; // <=> Ref<graphic::Shader>
 };
 
 class ShaderTemplate 
@@ -46,24 +46,20 @@ private:
 	std::unordered_map<uint64_t, Scope<ShaderTemplateVariant>> m_Variants;
 };
 
-// This class can be represented as a combination of Ref<graphic::Shader> and 
-// manages(caches) the Ref<PipeLine>s build from these shaders
+// This class can be represented as a combination of Ref<graphic::Shader>
 class ShaderProgramVariant 
 {
 public:
 	ShaderProgramVariant(ShaderTemplateVariant* vert, ShaderTemplateVariant* frag);
 	ShaderProgramVariant(ShaderTemplateVariant* compute);
 
-	Ref<graphic::PipeLine> GetOrCreatePipeLine(const graphic::PipelineDepthStencilState& ds, 
-		const graphic::PipelineColorBlendState& cb,
-		const graphic::RasterizationState& rs,
-		const graphic::RenderPassInfo2& compatablerp,
-		const graphic::VertexInputLayout& input);
+	const Ref<graphic::Shader> GetShader(graphic::ShaderStage stage) const { return m_Stages[util::ecast(stage)]->gpuShaderHandle; }
+
+	uint64_t GetHash() const;
 
 private:
 	ShaderTemplateVariant* m_Stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
 
-	std::unordered_map<uint64_t, Ref<graphic::PipeLine>> m_PipeLines;
 };
 
 // You should create a ShaderProgram instance through ShaderManager's API

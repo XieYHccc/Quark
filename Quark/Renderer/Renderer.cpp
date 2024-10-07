@@ -8,13 +8,12 @@ namespace quark {
 using namespace graphic;
 
 
-Renderer::Renderer()
+Renderer::Renderer(graphic::Device* device)
+    : m_device(device)
 {
-    graphic::Device* device = Application::Get().GetGraphicDevice();
-
     m_shaderLibrary = CreateScope<ShaderLibrary>();
 
-    m_sceneRenderer = CreateScope<SceneRenderer>(device);
+    m_sceneRenderer = CreateScope<SceneRenderer>(m_device);
 
     // format_colorAttachment_main = Application::Get().GetGraphicDevice()->GetPresentImageFormat();
 
@@ -142,10 +141,14 @@ Renderer::Renderer()
         renderPassInfo2_simpleColorPass.colorAttachmentFormats[0] = format_colorAttachment_main;
         renderPassInfo2_simpleColorPass.sampleCount = SampleCount::SAMPLES_1;
 
-        renderPassInfo2_simpleColorDepthPass.numColorAttachments = 1;
-        renderPassInfo2_simpleColorDepthPass.colorAttachmentFormats[0] = format_colorAttachment_main;
-        renderPassInfo2_simpleColorDepthPass.depthAttachmentFormat = format_depthAttachment_main;
-        renderPassInfo2_simpleColorDepthPass.sampleCount = SampleCount::SAMPLES_1;
+        renderPassInfo2_simpleMainPass.numColorAttachments = 1;
+        renderPassInfo2_simpleMainPass.colorAttachmentFormats[0] = format_colorAttachment_main;
+        renderPassInfo2_simpleMainPass.depthAttachmentFormat = format_depthAttachment_main;
+        renderPassInfo2_simpleMainPass.sampleCount = SampleCount::SAMPLES_1;
+
+        renderPassInfo2_editorMainPass = renderPassInfo2_simpleMainPass;
+        renderPassInfo2_editorMainPass.numColorAttachments = 2;
+        renderPassInfo2_editorMainPass.colorAttachmentFormats[1] = DataFormat::R32G32_UINT;
 
         renderPassInfo2_uiPass.numColorAttachments = 1;
         renderPassInfo2_uiPass.colorAttachmentFormats[0] = Application::Get().GetGraphicDevice()->GetPresentImageFormat();
@@ -172,9 +175,9 @@ Renderer::Renderer()
     {
         ShaderProgramVariant* precompiledSkyboxVariant = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant();
 
-        pipeline_skybox = precompiledSkyboxVariant->GetOrCreatePipeLine(depthStencilState_disabled,
-            PipelineColorBlendState::create_disabled(1), rasterizationState_fill,
-            renderPassInfo2_simpleColorDepthPass, vertexInputLayout_skybox);
+        pipeline_skybox = GetOrCreatePipeLine(*precompiledSkyboxVariant, depthStencilState_disabled,
+            PipelineColorBlendState::create_disabled(2), rasterizationState_fill,
+            renderPassInfo2_editorMainPass, vertexInputLayout_skybox);
     }
 
     QK_CORE_LOGI_TAG("Rernderer", "Renderer Initialized");
@@ -202,15 +205,15 @@ void Renderer::SetScene(Ref<Scene> scene)
 
 void Renderer::SetSceneEnvironmentMap(Ref<Texture> cubeMap)
 {
-    m_sceneRenderer->SetCubeMap(cubeMap);
+    m_sceneRenderer->SetEnvironmentMap(cubeMap);
 }
 
-void Renderer::UpdateSceneDrawContextEditor(const CameraUniformBufferBlock& cameraData)
+void Renderer::UpdateDrawContextEditor(const CameraUniformBufferBlock& cameraData)
 {
-    m_sceneRenderer->UpdateDrawContext(cameraData);
+    m_sceneRenderer->UpdateDrawContextEditor(cameraData);
 }
 
-void Renderer::UpdateSceneDrawContext()
+void Renderer::UpdateDrawContext()
 {
     m_sceneRenderer->UpdateDrawContext();
 }
@@ -223,6 +226,86 @@ void Renderer::DrawSkybox(graphic::CommandList* cmd)
 void Renderer::DrawScene(graphic::CommandList* cmd)
 {
     m_sceneRenderer->DrawScene(cmd);
+}
+
+Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(
+    const ShaderProgramVariant& programVariant,
+    const graphic::PipelineDepthStencilState& ds,
+    const graphic::PipelineColorBlendState& cb,
+    const graphic::RasterizationState& rs,
+    const graphic::RenderPassInfo2& compatablerp,
+    const graphic::VertexInputLayout& input)
+{
+    util::Hasher h;
+
+    // hash depth stencil state
+    h.u32(static_cast<uint32_t>(ds.enableDepthTest));
+    h.u32(static_cast<uint32_t>(ds.enableDepthWrite));
+    h.u32(util::ecast(ds.depthCompareOp));
+    h.u32(util::ecast(rs.polygonMode));
+    h.u32(util::ecast(rs.cullMode));
+    h.u32(util::ecast(rs.frontFaceType));
+    h.u64(programVariant.GetHash());
+
+    // hash blend state
+    for (size_t i = 0; i < compatablerp.numColorAttachments; i++)
+    {
+        const auto& att = cb.attachments[i];
+
+        h.u32(static_cast<uint32_t>(att.enable_blend));
+        if (att.enable_blend)
+        {
+            h.u32(util::ecast(att.colorBlendOp));
+            h.u32(util::ecast(att.srcColorBlendFactor));
+            h.u32(util::ecast(att.dstColorBlendFactor));
+            h.u32(util::ecast(att.alphaBlendOp));
+            h.u32(util::ecast(att.srcAlphaBlendFactor));
+            h.u32(util::ecast(att.dstAlphaBlendFactor));
+        }
+    }
+
+    // hash render pass info
+    h.u64(compatablerp.GetHash());
+
+    // hash vertex input layout
+    for (const auto& attrib : input.vertexAttribInfos)
+    {
+        h.u32(util::ecast(attrib.format));
+        h.u32(attrib.offset);
+        h.u32(attrib.binding);
+    }
+
+    for (const auto& b : input.vertexBindInfos)
+    {
+        h.u32(b.binding);
+        h.u32(b.stride);
+        h.u32(util::ecast(b.inputRate));
+    }
+
+    uint64_t hash = h.get();
+
+    auto it = m_pipelines.find(hash);
+    if (it != m_pipelines.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        graphic::GraphicPipeLineDesc desc = {};
+        desc.vertShader = programVariant.GetShader(graphic::ShaderStage::STAGE_VERTEX);
+        desc.fragShader = programVariant.GetShader(graphic::ShaderStage::STAGE_FRAGEMNT);
+        desc.depthStencilState = ds;
+        desc.blendState = cb;
+        desc.rasterState = rs;
+        desc.topologyType = graphic::TopologyType::TRANGLE_LIST;
+        desc.renderPassInfo2 = compatablerp;
+        desc.vertexInputLayout = input;
+
+        Ref<graphic::PipeLine> newPipeline = Application::Get().GetGraphicDevice()->CreateGraphicPipeLine(desc);
+        m_pipelines[hash] = newPipeline;
+
+        return newPipeline;
+    }
 }
 
 }

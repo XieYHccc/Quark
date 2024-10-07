@@ -94,7 +94,6 @@ private:
     uint32_t m_SwapChainWaitStages = 0;
 
     // Rendering state 
-    //const RenderPassInfo* m_CurrentRenderPassInfo = nullptr;
     const PipeLine_Vulkan* m_CurrentPipeline = nullptr;
     RenderPassInfo2 m_CurrentRenderPassInfo2 = {};
     VkDescriptorSet m_CurrentSets[DESCRIPTOR_SET_MAX_NUM] = {};

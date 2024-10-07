@@ -88,11 +88,11 @@ bool ShaderProgram::IsStatic() const
 
 }
 
-
 ShaderLibrary::ShaderLibrary()
 {
-	program_staticMesh = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
-		"BuiltInResources/Shaders/static_mesh.frag");
+
+	program_staticMesh = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/editor_scene.vert",
+		"BuiltInResources/Shaders/editor_scene.frag");
 
 	program_editor = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/editor_scene.vert",
 		"BuiltInResources/Shaders/editor_scene.frag");
@@ -153,82 +153,6 @@ ShaderTemplate* ShaderLibrary::GetOrCreateShaderTemplate(const std::string& path
 	}
 }
 
-Ref<graphic::PipeLine> ShaderProgramVariant::GetOrCreatePipeLine(const graphic::PipelineDepthStencilState& ds,
-																 const graphic::PipelineColorBlendState& cb, 
-																 const graphic::RasterizationState& rs, 
-																 const graphic::RenderPassInfo2& compatablerp,
-																 const graphic::VertexInputLayout& input)
-{
-	util::Hasher h;
-
-	// hash depth stencil state
-	h.u32(static_cast<uint32_t>(ds.enableDepthTest));
-	h.u32(static_cast<uint32_t>(ds.enableDepthWrite));
-	h.u32(util::ecast(ds.depthCompareOp));
-	h.u32(util::ecast(rs.polygonMode));
-	h.u32(util::ecast(rs.cullMode));
-	h.u32(util::ecast(rs.frontFaceType));
-
-	// hash blend state
-	for (size_t i = 0; i < compatablerp.numColorAttachments; i++) 
-	{
-		const auto& att = cb.attachments[i];
-
-		h.u32(static_cast<uint32_t>(att.enable_blend));
-		if (att.enable_blend) 
-		{
-			h.u32(util::ecast(att.colorBlendOp));
-			h.u32(util::ecast(att.srcColorBlendFactor));
-			h.u32(util::ecast(att.dstColorBlendFactor));
-			h.u32(util::ecast(att.alphaBlendOp));
-			h.u32(util::ecast(att.srcAlphaBlendFactor));
-			h.u32(util::ecast(att.dstAlphaBlendFactor));
-		}
-	}
-
-	// hash render pass info
-	h.u64(compatablerp.GetHash());
-
-	// hash vertex input layout
-	for (const auto& attrib : input.vertexAttribInfos) 
-	{
-		h.u32(util::ecast(attrib.format));
-		h.u32(attrib.offset);
-		h.u32(attrib.binding);
-	}
-
-	for (const auto& b : input.vertexBindInfos)
-	{
-		h.u32(b.binding);
-		h.u32(b.stride);
-		h.u32(util::ecast(b.inputRate));
-	}
-
-	uint64_t hash = h.get();
-
-	auto it = m_PipeLines.find(hash);
-	if (it != m_PipeLines.end())
-	{
-		return it->second;
-	}
-	else 
-	{
-		graphic::GraphicPipeLineDesc desc = {};
-		desc.vertShader = m_Stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->gpuShaderHandle;
-		desc.fragShader = m_Stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->gpuShaderHandle;
-		desc.depthStencilState = ds;
-		desc.blendState = cb;
-		desc.rasterState = rs;
-		desc.topologyType = graphic::TopologyType::TRANGLE_LIST;
-		desc.renderPassInfo2 = compatablerp;
-		desc.vertexInputLayout = input;
-
-		Ref<graphic::PipeLine> newPipeline = Application::Get().GetGraphicDevice()->CreateGraphicPipeLine(desc);
-		m_PipeLines[hash] = newPipeline;
-
-		return newPipeline;
-	}
-}
 
 ShaderTemplate::ShaderTemplate(const std::string& path, graphic::ShaderStage stage)
 	:m_Path(path), m_Stage(stage)
@@ -324,6 +248,15 @@ ShaderProgramVariant::ShaderProgramVariant(ShaderTemplateVariant* vert, ShaderTe
 {
 	m_Stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)] = vert;
 	m_Stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)] = frag;
+}
+
+uint64_t ShaderProgramVariant::GetHash() const
+{
+	util::Hasher h;
+	h.u64(m_Stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->spirvHash);
+	h.u64(m_Stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->spirvHash);
+
+	return h.get();
 }
 
 }

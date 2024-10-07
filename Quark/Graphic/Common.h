@@ -71,6 +71,8 @@ enum class DataFormat
 
     R64_UINT,
     R32_UINT,
+    R32_SINT,
+    R32G32_UINT,
 
     // Compressed image format
     ETC2_R8G8B8A8_UNORM_BLOCK,

@@ -10,6 +10,7 @@ public:
 	enum side { LEFT = 0, RIGHT = 1, NEAR = 2, FAR = 3, TOP = 4, BOTTOM = 5 };
 	
     Frustum() = default;
+    Frustum(const glm::mat4& inv_view_proj_mat);
 
     void Build(const glm::mat4& inv_view_proj_mat);
     bool CheckSphere(const Aabb& aabb);

@@ -1,10 +1,11 @@
 #include "Quark/qkpch.h"
-#include "Quark/Core/Util/Hash.h"
 #include "Quark/Scene/Scene.h"
+#include "Quark/Core/Util/Hash.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
+#include "Quark/Asset/Texture.h"
 
 namespace quark {
 
@@ -15,12 +16,9 @@ Scene::Scene(const std::string& name)
 
 Scene::~Scene()
 {   
+
 }
 
-std::string Scene::GetSceneName() const
-{
-    return m_SceneName;
-}
 
 void Scene::DeleteEntity(Entity* entity)
 {
@@ -103,11 +101,6 @@ Entity* Scene::GetEntityWithID(UUID id)
         return find->second;
     else
         return nullptr;
-}
-
-void Scene::SetSceneName(const std::string &name)
-{
-    m_SceneName = name;
 }
 
 Entity* Scene::GetMainCameraEntity()

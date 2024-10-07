@@ -11,6 +11,7 @@
 #include <Quark/Core/Logger.h>
 #include <Quark/Events/KeyEvent.h>
 #include <Quark/Events/EventManager.h>
+#include <Quark/Scene/Components/CommonCmpts.h>
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/SceneSerializer.h>
@@ -35,12 +36,15 @@ Application* CreateApplication()
 }
 
 EditorApp::EditorApp(const ApplicationSpecification& specs)
-    : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), m_EditorCamera(60, 1280, 720, 0.1f, 256), m_ViewportSize(1000, 800) // dont'care here, will be overwrited
+    : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), 
+    m_EditorCamera(60, 1280, 720, 0.1f, 256), m_ViewportSize(1000, 800), // dont'care here, will be overwrited
+    m_HoverdEntity(nullptr)
 {
     // Create Render structures
-    m_ForwardPassInfo = Renderer::Get().renderPassInfo2_simpleColorDepthPass;   // use defalut render pass
+    m_MainPassInfo = Renderer::Get().renderPassInfo2_editorMainPass;
+
     m_UiPassInfo = Renderer::Get().renderPassInfo2_uiPass;
-    CreateColorDepthAttachments();
+    CreateGraphicResources();
 
     // Load cube map
     TextureImporter textureLoader;
@@ -63,29 +67,54 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     m_EditorCamera.SetPosition(glm::vec3(0, 10, 10));
 
     EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
+    EventManager::Get().Subscribe<MouseButtonPressedEvent>([&](const MouseButtonPressedEvent& e) { OnMouseButtonPressed(e); });
 }
 
 EditorApp::~EditorApp()
 {   
     // Save asset registry
     AssetManager::Get().SaveAssetRegistry();
-
 }
 
 void EditorApp::OnUpdate(TimeStep ts)
 {   
-    // Update Editor camera's aspect ratio
+    // Update Editor camera's aspect ratio and movement
     m_EditorCamera.viewportWidth = m_ViewportSize.x;
     m_EditorCamera.viewportHeight = m_ViewportSize.y;
-
-    // Update Editor camera's movement
     if (m_ViewportHovered && Input::Get()->IsKeyPressed(Key::LeftAlt, true))
         m_EditorCamera.OnUpdate(ts);
 
-    // TODO: Update physics
-
     // Update scene
     m_Scene->OnUpdate();
+
+    // TODO: Update physics
+
+    auto [mx, my] = ImGui::GetMousePos();
+    mx -= m_ViewportBounds[0].x;
+    my -= m_ViewportBounds[0].y;
+    glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+
+    int mouseX = (int)mx;
+    int mouseY = (int)my;
+    
+
+    if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
+    {
+        uint32_t* pixel = (uint32_t*)m_stage_buffer->GetMappedDataPtr();
+        uint32_t image_width = m_color_attachment->GetDesc().width;
+        uint32_t image_height = m_color_attachment->GetDesc().height;
+        uint32_t x = (uint32_t)((mouseX / viewportSize.x) * image_width);
+        uint32_t y = (uint32_t)((mouseY / viewportSize.y) * image_height);
+        uint32_t low = pixel[2 * (image_width * y + x)];
+        uint32_t high = pixel[2 * (image_width * y + x) + 1];
+        if (low != 0 && high != 0)
+        {
+            uint64_t entityID = ((uint64_t)high << 32) | (uint64_t)low;
+            m_HoverdEntity = m_Scene->GetEntityWithID(entityID);
+        }
+        else
+            m_HoverdEntity = nullptr;
+    }
 
     // Sync the rendering data with game scene
     CameraUniformBufferBlock cameraData;
@@ -94,7 +123,6 @@ void EditorApp::OnUpdate(TimeStep ts)
     cameraData.view = m_EditorCamera.GetViewMatrix();
     cameraData.viewproj = cameraData.proj * cameraData.view;
     Renderer::Get().UpdateSceneDrawContextEditor(cameraData);
-
 }   
 
 void EditorApp::OnImGuiUpdate()
@@ -129,6 +157,12 @@ void EditorApp::OnImGuiUpdate()
         ImGui::Text("FPS: %f", m_Status.fps);
         ImGui::Text("Frame Time: %f ms", m_Status.lastFrameDuration);
         ImGui::Text("CmdList Record Time: %f ms", m_CmdListRecordTime);
+
+        std::string entityName = "None";
+        if (m_HoverdEntity)
+            entityName = m_HoverdEntity->GetComponent<NameCmpt>()->name;
+
+		ImGui::Text("Hovered Entity: %s", entityName.c_str());
     }
     ImGui::End();
 
@@ -146,6 +180,12 @@ void EditorApp::OnImGuiUpdate()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
     ImGui::Begin("Viewport");
 
+    auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+    auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+    auto viewportOffset = ImGui::GetWindowPos();
+    m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+    m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+
     m_ViewportFocused = ImGui::IsWindowFocused();
     m_ViewportHovered = ImGui::IsWindowHovered();
 
@@ -154,6 +194,7 @@ void EditorApp::OnImGuiUpdate()
 
     ImTextureID colorAttachmentId = UI::Get()->GetOrCreateTextureId(m_color_attachment, Renderer::Get().sampler_linear);
     ImGui::Image(colorAttachmentId, ImVec2{ m_ViewportSize.x, m_ViewportSize.y });
+
 
     if (ImGui::BeginDragDropTarget())
     {
@@ -251,14 +292,12 @@ void EditorApp::OnRender(TimeStep ts)
     Renderer& renderer = Renderer::Get();
 
     // Rendering commands
-    auto graphic_device = Application::Get().GetGraphicDevice();
-
-    if (graphic_device->BeiginFrame(ts)) 
+    if (m_GraphicDevice->BeiginFrame(ts)) 
     {
-        auto* cmd = graphic_device->BeginCommandList();
-        auto* swap_chain_image = graphic_device->GetPresentImage();
+        auto* graphic_cmd = m_GraphicDevice->BeginCommandList();
+        auto* swap_chain_image = m_GraphicDevice->GetPresentImage();
 
-        // Geometry pass
+        // Main pass
         {
             graphic::PipelineImageBarrier image_barriers[3];
             image_barriers[0].image = m_color_attachment.get();
@@ -268,16 +307,15 @@ void EditorApp::OnRender(TimeStep ts)
             image_barriers[0].dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             image_barriers[0].layoutBefore = graphic::ImageLayout::UNDEFINED;
             image_barriers[0].layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            image_barriers[1].image = m_entityID_attachment.get();
+            image_barriers[1].srcStageBits = graphic::PIPELINE_STAGE_TRANSFER_BIT;
+            image_barriers[1].srcMemoryAccessBits = graphic::BARRIER_ACCESS_TRANSFER_READ_BIT;
+            image_barriers[1].dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barriers[1].dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barriers[1].layoutBefore = graphic::ImageLayout::UNDEFINED;
+            image_barriers[1].layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
 
-            //image_barrier[1].image = m_low_entityID_attachment.get();
-            //image_barrier[1].srcStageBits = graphic::PIPELINE_STAGE_TRANSFER_BIT;
-            //image_barrier[1].srcMemoryAccessBits = graphic::BARRIER_ACCESS_TRANSFER_READ_BIT;
-            //image_barrier[1].dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            //image_barrier[1].dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            //image_barrier[1].layoutBefore = graphic::ImageLayout::UNDEFINED;
-            //image_barrier[1].layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-
-            cmd->PipeLineBarriers(nullptr, 0, image_barriers, 1, nullptr, 0);
+            graphic_cmd->PipeLineBarriers(nullptr, 0, image_barriers, 2, nullptr, 0);
 
             // Viewport and scissor
             graphic::Viewport viewport;
@@ -298,71 +336,63 @@ void EditorApp::OnRender(TimeStep ts)
             graphic::FrameBufferInfo fb_info;
             fb_info.colorAttatchemtsLoadOp[0] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
             fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
-            fb_info.colorAttachments[0] = { m_color_attachment.get() };
+            fb_info.colorAttachments[0] = m_color_attachment.get();
             fb_info.clearColors[0] = { 0.22f, 0.22f, 0.22f, 1.f };
+
+            fb_info.colorAttatchemtsLoadOp[1] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.colorAttatchemtsStoreOp[1] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            fb_info.colorAttachments[1] = m_entityID_attachment.get();
+            fb_info.clearColors[1].color.uint32[0] = 0;
+            fb_info.clearColors[1].color.uint32[1] = 0;
+
             fb_info.depthAttachment = m_depth_attachment.get();
             fb_info.depthAttachmentLoadOp = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
             fb_info.depthAttachmentStoreOp = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
-            //fb_info.colorAttatchemtsLoadOp[1] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            //fb_info.colorAttatchemtsStoreOp[1] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
-            //fb_info.colorAttatchemtsLoadOp[1] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            //fb_info.colorAttatchemtsStoreOp[1] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
-            //fb_info.colorAttachments[1] = m_low_entityID_attachment.get();
-            //fb_info.colorAttatchemtsLoadOp[2] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            //fb_info.colorAttatchemtsStoreOp[2] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
-            //fb_info.colorAttatchemtsLoadOp[2] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            //fb_info.colorAttatchemtsStoreOp[2] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
-            //fb_info.colorAttachments[2] = m_high_entityID_attachment.get();
-
-            cmd->BeginRenderPass(m_ForwardPassInfo, fb_info);
-            cmd->SetViewPort(viewport);
-            cmd->SetScissor(scissor);
+            graphic_cmd->BeginRenderPass(m_MainPassInfo, fb_info);
+            graphic_cmd->SetViewPort(viewport);
+            graphic_cmd->SetScissor(scissor);
 
             // Draw skybox
-            renderer.DrawSkybox(cmd);
+            renderer.DrawSkybox(graphic_cmd);
 
             // Draw scene
             auto geometry_start = m_Timer.ElapsedMillis();
-            renderer.DrawScene(cmd);
+            renderer.DrawScene(graphic_cmd);
             m_CmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
-            cmd->EndRenderPass();
+            graphic_cmd->EndRenderPass();
         }
 
         // UI pass
         {
-            graphic::PipelineImageBarrier swapchain_image_barrier;
-            swapchain_image_barrier.image = swap_chain_image;
-            swapchain_image_barrier.srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            swapchain_image_barrier.srcMemoryAccessBits = 0;
-            swapchain_image_barrier.dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            swapchain_image_barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            swapchain_image_barrier.layoutBefore = graphic::ImageLayout::UNDEFINED;
-            swapchain_image_barrier.layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            cmd->PipeLineBarriers(nullptr, 0, &swapchain_image_barrier, 1, nullptr, 0);
-
-            graphic::PipelineImageBarrier color_attachment_barrier;
-            color_attachment_barrier.image = m_color_attachment.get();
-            color_attachment_barrier.srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            color_attachment_barrier.srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            color_attachment_barrier.dstStageBits = graphic::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            color_attachment_barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_SHADER_READ_BIT;
-            color_attachment_barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            color_attachment_barrier.layoutAfter = graphic::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
-            cmd->PipeLineBarriers(nullptr, 0, &color_attachment_barrier, 1, nullptr, 0);
+            graphic::PipelineImageBarrier image_barriers[2];
+            image_barriers[0].image = swap_chain_image;
+            image_barriers[0].srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            image_barriers[0].srcMemoryAccessBits = 0;
+            image_barriers[0].dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barriers[0].dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barriers[0].layoutBefore = graphic::ImageLayout::UNDEFINED;
+            image_barriers[0].layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            image_barriers[1].image = m_color_attachment.get();
+            image_barriers[1].srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barriers[1].srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barriers[1].dstStageBits = graphic::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            image_barriers[1].dstMemoryAccessBits = graphic::BARRIER_ACCESS_SHADER_READ_BIT;
+            image_barriers[1].layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            image_barriers[1].layoutAfter = graphic::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+            graphic_cmd->PipeLineBarriers(nullptr, 0, image_barriers, 2, nullptr, 0);
 
             graphic::FrameBufferInfo fb_info;
             fb_info.colorAttatchemtsLoadOp[0] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
             fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.colorAttachments[0] = swap_chain_image;
 
-            cmd->BeginRenderPass(m_UiPassInfo, fb_info);
-            UI::Get()->OnRender(cmd);
-            cmd->EndRenderPass();
+            graphic_cmd->BeginRenderPass(m_UiPassInfo, fb_info);
+            UI::Get()->OnRender(graphic_cmd);
+            graphic_cmd->EndRenderPass();
         }
-
 
         // Transit swapchain image to present layout for presenting
         {
@@ -374,34 +404,34 @@ void EditorApp::OnRender(TimeStep ts)
             present_barrier.dstMemoryAccessBits = 0;
             present_barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
             present_barrier.layoutAfter = graphic::ImageLayout::PRESENT;
-            cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
+            graphic_cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
 
             // Submit graphic command list
-            graphic_device->SubmitCommandList(cmd, nullptr, 0, false);
+            m_GraphicDevice->SubmitCommandList(graphic_cmd, nullptr, 0, true);
         }
 
         // Transfer entity color attachment back to cpu
         {
-            //auto* transfer_cmd = graphic_device->BeginCommandList(graphic::QUEUE_TYPE_ASYNC_TRANSFER);
+            auto* transfer_cmd = m_GraphicDevice->BeginCommandList(graphic::QUEUE_TYPE_ASYNC_TRANSFER);
 
-            //graphic::PipelineImageBarrier barrier;
-            //barrier.image = m_low_entityID_attachment.get();
-            //barrier.srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            //barrier.srcMemoryAccessBits = 0;
-            //barrier.dstStageBits = graphic::PIPELINE_STAGE_TRANSFER_BIT;
-            //barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_TRANSFER_READ_BIT;
-            //barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            //barrier.layoutAfter = graphic::ImageLayout::TRANSFER_SRC_OPTIMAL;
-            //transfer_cmd->PipeLineBarriers(nullptr, 0, &barrier, 1, nullptr, 0);
+            graphic::PipelineImageBarrier barrier;
+            barrier.image = m_entityID_attachment.get();
+            barrier.srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            barrier.srcMemoryAccessBits = 0;
+            barrier.dstStageBits = graphic::PIPELINE_STAGE_TRANSFER_BIT;
+            barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_TRANSFER_READ_BIT;
+            barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            barrier.layoutAfter = graphic::ImageLayout::TRANSFER_SRC_OPTIMAL;
+            transfer_cmd->PipeLineBarriers(nullptr, 0, &barrier, 1, nullptr, 0);
 
-            //transfer_cmd->CopyImageToBuffer(*m_stage_buffer, *m_low_entityID_attachment, 0, { 0, 0, 0 },
-            //    { m_low_entityID_attachment->GetDesc().width, m_low_entityID_attachment->GetDesc().height, 1 },
-            //    0, 0, { graphic::ImageAspect::COLOR, 0, 0, 1 });
+            transfer_cmd->CopyImageToBuffer(*m_stage_buffer, *m_entityID_attachment, 0, { 0, 0, 0 },
+                { m_entityID_attachment->GetDesc().width, m_entityID_attachment->GetDesc().height, 1 },
+                0, 0, { graphic::ImageAspect::COLOR, 0, 0, 1 });
 
-            //graphic_device->SubmitCommandList(transfer_cmd, cmd, 1, false);
+            m_GraphicDevice->SubmitCommandList(transfer_cmd, graphic_cmd, 1, false);
         }
 
-        graphic_device->EndFrame(ts);
+        m_GraphicDevice->EndFrame(ts);
     }
 }
 
@@ -430,19 +460,15 @@ void EditorApp::OnKeyPressed(const KeyPressedEvent& e)
 		break;
     // Gizmos
     case Key::Q:
-        if (!ImGuizmo::IsUsing())
-            m_GizmoType = -1;
+        m_GizmoType = -1;
         break;
     case Key::W:
-        if (!ImGuizmo::IsUsing())
-			m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+	    m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
 		break;
     case Key::E:
-		if (!ImGuizmo::IsUsing())
-            m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+        m_GizmoType = ImGuizmo::OPERATION::ROTATE;
         break;
     case Key::R:
-        if (!ImGuizmo::IsUsing())
 		m_GizmoType = ImGuizmo::OPERATION::SCALE;
         break;
     default:
@@ -450,13 +476,23 @@ void EditorApp::OnKeyPressed(const KeyPressedEvent& e)
     }
 }
 
-void EditorApp::CreateColorDepthAttachments()
+void EditorApp::OnMouseButtonPressed(const MouseButtonPressedEvent& e)
+{
+    if (e.button == Mouse::ButtonLeft)
+	{
+		if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::Get()->IsKeyPressed(Key::LeftAlt, true))
+			m_HeirarchyPanel.SetSelectedEntity(m_HoverdEntity);
+	}
+}
+
+void EditorApp::CreateGraphicResources()
 {
     using namespace quark::graphic;
 
     // Create depth image
     ImageDesc image_desc;
     image_desc.type = ImageType::TYPE_2D;
+    auto ratio = Application::Get().GetWindow()->GetRatio();
     image_desc.width = uint32_t(Application::Get().GetWindow()->GetMonitorWidth() * Application::Get().GetWindow()->GetRatio());
     image_desc.height = uint32_t(Application::Get().GetWindow()->GetMonitorHeight() * Application::Get().GetWindow()->GetRatio());
     image_desc.depth = 1;
@@ -473,18 +509,17 @@ void EditorApp::CreateColorDepthAttachments()
     image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
     m_color_attachment = m_GraphicDevice->CreateImage(image_desc);
 
-    //// Create entityID image
-    //image_desc.format = DataFormat::R32_UINT;
-    //image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
-    //m_low_entityID_attachment = m_GraphicDevice->CreateImage(image_desc);
-    //m_high_entityID_attachment = m_GraphicDevice->CreateImage(image_desc);
+    // Create entityID image
+    image_desc.format = DataFormat::R32G32_UINT;
+    image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
+    m_entityID_attachment = m_GraphicDevice->CreateImage(image_desc);
 
-    //// Create stage buffer
-    //BufferDesc buffer_desc;
-    //buffer_desc.domain = BufferMemoryDomain::CPU;
-    //buffer_desc.usageBits = BUFFER_USAGE_TRANSFER_TO_BIT;
-    //buffer_desc.size = image_desc.width * image_desc.height * sizeof(uint32_t);
-    //m_stage_buffer = m_GraphicDevice->CreateBuffer(buffer_desc);
+    // Create stage buffer
+    BufferDesc buffer_desc;
+    buffer_desc.domain = BufferMemoryDomain::CPU;
+    buffer_desc.usageBits = BUFFER_USAGE_TRANSFER_TO_BIT;
+    buffer_desc.size = image_desc.width * image_desc.height * sizeof(uint64_t);
+    m_stage_buffer = m_GraphicDevice->CreateBuffer(buffer_desc);
 }
 
 }

@@ -12,6 +12,7 @@ public:
     void OnImGuiUpdate() override;
 
     void SetScene(Ref<Scene> scene);
+    void SetSelectedEntity(Entity* entity) { m_SelectedEntity = entity; }
 
     Entity* GetSelectedEntity() { return m_SelectedEntity; }
 

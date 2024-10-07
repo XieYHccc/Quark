@@ -10,7 +10,7 @@ class EntityRegistry;
 class Entity {
 public:
     Entity(EntityRegistry* registry, util::Hash hashId)
-        : m_Registry(registry), m_HashId(hashId) 
+        : m_Registry(registry), m_HashId(hashId), m_OffsetInRegistry(0)
     {
 
     }

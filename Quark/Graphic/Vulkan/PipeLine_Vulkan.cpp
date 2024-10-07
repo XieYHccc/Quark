@@ -17,7 +17,6 @@ constexpr VkPrimitiveTopology _ConvertTopologyType(TopologyType topo)
     default:
         return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     }
-
 }
 
 constexpr VkPolygonMode _ConvertPolygonMode(PolygonMode mode)
@@ -318,6 +317,18 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     auto& frag_shader_internal = ToInternal(desc.fragShader.get());
     VkPipelineShaderStageCreateInfo shader_stage_info[2] = { vert_shader_internal.GetStageInfo(), frag_shader_internal.GetStageInfo()};
 
+    // Dynamic state
+    const uint32_t dynamic_state_count = 2;
+    VkDynamicState dynamic_states[dynamic_state_count] = 
+    {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR 
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamic_state_create_info = { VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+    dynamic_state_create_info.dynamicStateCount = dynamic_state_count;
+    dynamic_state_create_info.pDynamicStates = dynamic_states;
+
     // Vertex Input
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info = {};
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -401,15 +412,6 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
 	rasterization_state_create_info.depthBiasClamp = 0;
 	rasterization_state_create_info.depthBiasSlopeFactor = 0;
 
-    // Multisampling
-    VkPipelineMultisampleStateCreateInfo multisample_state_create_info = {VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
-    multisample_state_create_info.sampleShadingEnable = VK_FALSE;
-    multisample_state_create_info.rasterizationSamples = (VkSampleCountFlagBits)desc.renderPassInfo2.sampleCount;
-    multisample_state_create_info.minSampleShading = 1.0f;
-    multisample_state_create_info.pSampleMask = 0;
-    multisample_state_create_info.alphaToCoverageEnable = VK_FALSE;
-    multisample_state_create_info.alphaToOneEnable = VK_FALSE;
-
     // Depth stencil
     VkPipelineDepthStencilStateCreateInfo depth_stencil_state_create_info = {};
     depth_stencil_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -418,6 +420,15 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     depth_stencil_state_create_info.depthCompareOp = ConvertCompareOp(desc.depthStencilState.depthCompareOp);
     depth_stencil_state_create_info.stencilTestEnable = VK_FALSE; // TODO: Support stencil test and depth bounds test
     depth_stencil_state_create_info.depthBoundsTestEnable = VK_FALSE;
+
+    // Multisampling
+    VkPipelineMultisampleStateCreateInfo multisample_state_create_info = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+    multisample_state_create_info.sampleShadingEnable = VK_FALSE;
+    multisample_state_create_info.rasterizationSamples = (VkSampleCountFlagBits)desc.renderPassInfo2.sampleCount;
+    multisample_state_create_info.minSampleShading = 1.0f;
+    multisample_state_create_info.pSampleMask = 0;
+    multisample_state_create_info.alphaToCoverageEnable = VK_FALSE;
+    multisample_state_create_info.alphaToOneEnable = VK_FALSE;
 
     // Blend state
     QK_CORE_VERIFY(desc.blendState.attachments.size() == desc.renderPassInfo2.numColorAttachments)
@@ -446,15 +457,6 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
     color_blend_state_create_info.blendConstants[1] = 1.0f;
     color_blend_state_create_info.blendConstants[2] = 1.0f;
     color_blend_state_create_info.blendConstants[3] = 1.0f;
-
-    // Dynamic state
-    const u32 dynamic_state_count = 2;
-    VkDynamicState dynamic_states[dynamic_state_count] = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dynamic_state_create_info = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-    dynamic_state_create_info.dynamicStateCount = dynamic_state_count;
-    dynamic_state_create_info.pDynamicStates = dynamic_states;
 
     // Rendering info : we are using dynamic rendering instead of renderpass and framebuffer
     const auto& renderPassInfo2 = desc.renderPassInfo2;
