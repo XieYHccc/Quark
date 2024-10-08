@@ -99,6 +99,7 @@ private:
     bool m_IsDynamic = false;
 
     friend class SceneRenderer;
+    friend class Renderer;
 
 };
 }

@@ -69,9 +69,11 @@ enum class BlendFactor : uint8_t
 
 struct PipelineColorBlendState 
 {
-    // Currently logic op is not in use.
+    // currently logic op is not in use.
     bool enable_logic_op = false;
     LogicOperation logic_op = LogicOperation::CLEAR;
+
+    bool enable_independent_blend = false;
 
     struct Attachment 
     {
@@ -82,18 +84,17 @@ struct PipelineColorBlendState
         BlendFactor srcAlphaBlendFactor = BlendFactor::ZERO;
         BlendFactor dstAlphaBlendFactor = BlendFactor::ZERO;
         BlendOperation alphaBlendOp = BlendOperation::ADD;
-        bool writeR = true;
-        bool writeG = true;
-        bool writeB = true;
-        bool writeA = true;
+        uint32_t colorWriteMask = (uint32_t)ColorWriteFlagBits::ENABLE_ALL;
     };
+
+    Attachment attachments[8]; // one per render target texture.
 
     static PipelineColorBlendState create_disabled(int p_attachments = 1) 
     {
         PipelineColorBlendState bs;
-        for (int i = 0; i < p_attachments; i++) {
-            bs.attachments.push_back(Attachment());
-        }
+        for (int i = 0; i < p_attachments; i++)
+            bs.attachments[i] = Attachment();
+
         return bs;
     }
 
@@ -108,12 +109,10 @@ struct PipelineColorBlendState
             ba.srcAlphaBlendFactor = BlendFactor::SRC_ALPHA;
             ba.dstColorBlendFactor = BlendFactor::ONE_MINUS_SRC_ALPHA;
 
-            bs.attachments.push_back(ba);
+            bs.attachments[i] = ba;
         }
         return bs;
     }
-
-    std::vector<Attachment> attachments; // One per render target texture.
 };
 
 struct RasterizationState 
@@ -123,7 +122,7 @@ struct RasterizationState
     PolygonMode polygonMode = PolygonMode::Fill;
     bool enableDepthClamp = false;
     bool enableAntialiasedLine = false;
-    SampleCount SampleCount = SampleCount::SAMPLES_1;
+    SampleCount forcedSampleCount = SampleCount::SAMPLES_1;
     float lineWidth = 1.f;
 };
 
@@ -174,7 +173,8 @@ struct VertexInputLayout
     bool isValid() const { return !vertexAttribInfos.empty() && !vertexBindInfos.empty(); }
 };
 
-struct GraphicPipeLineDesc {
+struct GraphicPipeLineDesc 
+{
     Ref<Shader> vertShader;
     Ref<Shader> fragShader;
     PipelineColorBlendState blendState = {};
@@ -182,10 +182,8 @@ struct GraphicPipeLineDesc {
     PipelineDepthStencilState depthStencilState = {};
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
     VertexInputLayout vertexInputLayout;
-    // RenderPassInfo renderPassInfo;  // Compatable Renderpass info. Only the Format informations are actually needed when createing pipeline.
-    RenderPassInfo2 renderPassInfo2 = {};
+    RenderPassInfo2 renderPassInfo = {};
 };
-
 
 enum class PipeLineBindingPoint 
 {

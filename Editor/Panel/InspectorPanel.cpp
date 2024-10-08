@@ -209,7 +209,7 @@ void InspectorPanel::OnImGuiUpdate()
                     {
                         Ref<Mesh> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
                         cmpt->SetMesh(mesh);
-                        for (size_t i = 0; i < mesh->subMeshes.size(); i++)
+                        for (uint32_t i = 0; i < mesh->subMeshes.size(); i++)
                             cmpt->SetMaterial(i, AssetManager::Get().defaultMaterial);
                     }
                 }
@@ -320,7 +320,7 @@ void InspectorPanel::OnImGuiUpdate()
         // MeshRenderer component
         DrawComponent<MeshRendererCmpt>("MeshRenderer", m_SelectedEntity, [&](auto& component) 
 		{
-			for (size_t i = 0; auto mat : component.GetMaterials())
+			for (uint32_t i = 0; auto mat : component.GetMaterials())
 			{
                 std::filesystem::path materialAssetPath = mat->GetAssetID() != 1 ?
 					AssetManager::Get().GetAssetMetadata(mat->GetAssetID()).filePath : std::filesystem::path("Default material");

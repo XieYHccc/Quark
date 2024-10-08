@@ -133,6 +133,16 @@ enum class SampleCount : uint8_t
     SAMPLES_64 = 64,
 };
 
+enum class ColorWriteFlagBits
+{
+    DISABLE = 0,
+    ENABLE_RED = 1 << 0,
+    ENABLE_GREEN = 1 << 1,
+    ENABLE_BLUE = 1 << 2,
+    ENABLE_ALPHA = 1 << 3,
+    ENABLE_ALL = ~0,
+};
+
 struct Viewport
 {
     float x, y, width, height, minDepth, maxDepth;

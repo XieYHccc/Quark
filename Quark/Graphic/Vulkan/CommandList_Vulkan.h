@@ -56,9 +56,9 @@ public:
 
     
 private:
-    void FlushDescriptorSet(u32 set);
+    void FlushDescriptorSet(uint32_t set);
     void FlushRenderState();
-    void RebindDescriptorSet(u32 set);  // Rebind if only the buffer offset changed
+    void RebindDescriptorSet(uint32_t set);  // Rebind if only the buffer offset changed
     void ResetBindingState();
 
 private:

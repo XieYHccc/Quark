@@ -29,17 +29,15 @@ public:
     PipeLine_Vulkan(Device_Vulkan* device, Ref<Shader> computeShader);
     ~PipeLine_Vulkan();
 
-    VkPipeline GetHandle() const { return m_Handle; }
-    const PipeLineLayout* GetLayout() const { return m_Layout; }
-    const RenderPassInfo2& GetCompatableRenderPassInfo() const { return m_CompatableRenderPassInfo; }
-    const VkGraphicsPipelineCreateInfo GetGraphicsPipelineCreateInfo() const { return m_CreateInfo; }
+    VkPipeline GetHandle() const { return m_handle; }
+    const PipeLineLayout* GetLayout() const { return m_layout; }
+    const GraphicPipeLineDesc& GetGraphicPipelineDesc() const { return m_graphicDesc; }
 
 private:
-    Device_Vulkan* m_Device;
-    VkPipeline m_Handle = VK_NULL_HANDLE;
-    PipeLineLayout* m_Layout = nullptr; // no lifetime management here
-    RenderPassInfo2 m_CompatableRenderPassInfo = {};
-    VkGraphicsPipelineCreateInfo m_CreateInfo = {};
+    Device_Vulkan* m_device = nullptr;
+    VkPipeline m_handle = VK_NULL_HANDLE;
+    PipeLineLayout* m_layout = nullptr; // no lifetime management here
+    GraphicPipeLineDesc m_graphicDesc = {};
 };
 
 CONVERT_TO_VULKAN_INTERNAL_FUNC(PipeLine)

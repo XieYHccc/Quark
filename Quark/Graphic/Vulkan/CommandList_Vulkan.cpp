@@ -567,7 +567,7 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
         return;
     }
 
-    const auto& render_pass_info = internal_pipeline.GetCompatableRenderPassInfo();
+    const auto& render_pass_info = internal_pipeline.GetGraphicPipelineDesc().renderPassInfo;
     if (render_pass_info.numColorAttachments != m_CurrentRenderPassInfo2.numColorAttachments) 
     {
         QK_CORE_LOGE_TAG("Graphic", "BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.");
@@ -589,16 +589,19 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
     else
         vkCmdBindPipeline(m_CmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.GetHandle());
 
-    // Change tracking state
+    // reset binding state if layout changed
+    if (!m_CurrentPipeline || m_CurrentPipeline->GetLayout() != internal_pipeline.GetLayout())
+    {
+        m_DirtySetMask = 0;
+        m_DirtySetDynamicMask = 0;
+
+        memset(m_BindingState.descriptorBindings, 0, sizeof(m_BindingState.descriptorBindings));
+
+        for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++)
+            m_CurrentSets[i] = VK_NULL_HANDLE;
+    }
+
     m_CurrentPipeline = &internal_pipeline;
-    m_DirtySetMask = 0;
-    m_DirtySetDynamicMask = 0;
-
-    memset(m_BindingState.descriptorBindings, 0, sizeof(m_BindingState.descriptorBindings));
-
-    for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++)
-        m_CurrentSets[i] = VK_NULL_HANDLE;
-
 }
 
 void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sampler)
@@ -700,7 +703,7 @@ void CommandList_Vulkan::SetViewPort(const Viewport &viewport)
 	vkCmdSetViewport(m_CmdBuffer, 0, 1, &m_Viewport);
 }
 
-void CommandList_Vulkan::FlushDescriptorSet(u32 set)
+void CommandList_Vulkan::FlushDescriptorSet(uint32_t set)
 {
     QK_CORE_ASSERT((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
 
@@ -796,7 +799,7 @@ void CommandList_Vulkan::FlushDescriptorSet(u32 set)
     m_CurrentSets[set] = allocated.first;
 }  
 
-void CommandList_Vulkan::RebindDescriptorSet(u32 set)
+void CommandList_Vulkan::RebindDescriptorSet(uint32_t set)
 {
     QK_CORE_ASSERT((m_CurrentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
     QK_CORE_ASSERT(m_CurrentSets[set] != nullptr)

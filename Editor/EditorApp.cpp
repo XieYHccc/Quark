@@ -59,7 +59,6 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
 
     // SetUp Renderer
     Renderer::Get().SetScene(m_Scene);
-    Renderer::Get().SetSceneEnvironmentMap(m_CubeMapTexture);
 
     // Adjust editor camera's aspect ratio
     m_EditorCamera.viewportWidth = (float)Application::Get().GetWindow()->GetWidth();
@@ -122,7 +121,7 @@ void EditorApp::OnUpdate(TimeStep ts)
     cameraData.proj[1][1] *= -1;
     cameraData.view = m_EditorCamera.GetViewMatrix();
     cameraData.viewproj = cameraData.proj * cameraData.view;
-    Renderer::Get().UpdateSceneDrawContextEditor(cameraData);
+    Renderer::Get().UpdateDrawContextEditor(cameraData);
 }   
 
 void EditorApp::OnImGuiUpdate()
@@ -355,7 +354,7 @@ void EditorApp::OnRender(TimeStep ts)
             graphic_cmd->SetScissor(scissor);
 
             // Draw skybox
-            renderer.DrawSkybox(graphic_cmd);
+            renderer.DrawSkybox(m_CubeMapTexture, graphic_cmd);
 
             // Draw scene
             auto geometry_start = m_Timer.ElapsedMillis();

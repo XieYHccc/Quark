@@ -1,102 +1,23 @@
 #include "Quark/qkpch.h"
 #include "Quark/Renderer/Renderer.h"
 #include "Quark/Core/Application.h"
-#include "Quark/Asset/MeshImporter.h"
-
+#include "Quark/Asset/Mesh.h"
+#include "Quark/Scene/Scene.h"
+#include "Quark/Scene/Components/CommonCmpts.h"
+#include "Quark/Scene/Components/MeshCmpt.h"
+#include "Quark/Scene/Components/TransformCmpt.h"
+#include "Quark/Scene/Components/MeshRendererCmpt.h"
 namespace quark {
 
 using namespace graphic;
-
 
 Renderer::Renderer(graphic::Device* device)
     : m_device(device)
 {
     m_shaderLibrary = CreateScope<ShaderLibrary>();
-
     m_sceneRenderer = CreateScope<SceneRenderer>(m_device);
 
-    // format_colorAttachment_main = Application::Get().GetGraphicDevice()->GetPresentImageFormat();
-
-    ImageDesc desc = {};
-    desc.depth = 1;
-    desc.format = DataFormat::R8G8B8A8_UNORM;
-    desc.initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
-    desc.type = ImageType::TYPE_2D;
-    desc.usageBits = IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_SAMPLING_BIT;
-    desc.arraySize = 1;
-    desc.mipLevels = 1;
-    desc.generateMipMaps = false;
-
-    constexpr uint32_t white = 0xFFFFFFFF;
-    constexpr uint32_t black = 0x000000FF;
-    constexpr uint32_t magenta = 0xFF00FFFF;
-
-    // white image and black image
-    {
-        desc.width = 1;
-        desc.height = 1;
-
-        ImageInitData initData;
-        initData.data = &white;
-        initData.rowPitch = 4;
-        initData.slicePitch = 1 * 1 * 4;
-
-        image_white = device->CreateImage(desc, &initData);
-
-        initData.data = &black;
-        image_black = device->CreateImage(desc, &initData);
-
-    }
-
-    // Checkboard image
-    {
-        std::array<uint32_t, 32 * 32 > checkBoradpixelsData;
-        for (int x = 0; x < 32; x++)
-        {
-            for (int y = 0; y < 32; y++)
-                checkBoradpixelsData[y * 32 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
-        }
-
-        desc.width = 32;
-        desc.height = 32;
-
-        ImageInitData initData;
-        initData.data = checkBoradpixelsData.data();
-        initData.rowPitch = 32 * 4;
-        initData.slicePitch = 32 * 32 * 4;
-
-        image_checkboard = device->CreateImage(desc, &initData);
-    }
-
-
-    // Samplers
-    {
-        SamplerDesc desc = {};
-        desc.minFilter = SamplerFilter::LINEAR;
-        desc.magFliter = SamplerFilter::LINEAR;
-        desc.addressModeU = SamplerAddressMode::REPEAT;
-        desc.addressModeV = SamplerAddressMode::REPEAT;
-        desc.addressModeW = SamplerAddressMode::REPEAT;
-
-        sampler_linear = device->CreateSampler(desc);
-
-        desc.minFilter = SamplerFilter::NEAREST;
-        desc.magFliter = SamplerFilter::NEAREST;
-
-        sampler_nearst = device->CreateSampler(desc);
-
-        // Cubemap sampler
-        desc.minFilter = SamplerFilter::LINEAR;
-        desc.magFliter = SamplerFilter::LINEAR;
-        desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
-        desc.addressModeV = SamplerAddressMode::CLAMPED_TO_EDGE;
-        desc.addressModeW = SamplerAddressMode::CLAMPED_TO_EDGE;
-
-        sampler_cube = device->CreateSampler(desc);
-
-    }
-
-    // Depth stencil states
+    // depth stencil states
     {
         depthStencilState_disabled.enableDepthTest = false;
         depthStencilState_disabled.enableDepthWrite = false;
@@ -112,14 +33,14 @@ Renderer::Renderer(graphic::Device* device)
         depthStencilState_depthWrite.enableStencil = false;
     }
 
-    // Rasterization state
+    // rasterization states
     {
         rasterizationState_fill.cullMode = CullMode::NONE;
         rasterizationState_fill.frontFaceType = FrontFaceType::COUNTER_CLOCKWISE;
         rasterizationState_fill.polygonMode = PolygonMode::Fill;
         rasterizationState_fill.enableDepthClamp = false;
         rasterizationState_fill.enableAntialiasedLine = false;
-        rasterizationState_fill.SampleCount = SampleCount::SAMPLES_1;
+        rasterizationState_fill.forcedSampleCount = SampleCount::SAMPLES_1;
         rasterizationState_fill.lineWidth = 1.f;
 
         rasterizationState_wireframe.cullMode = CullMode::NONE;
@@ -127,16 +48,32 @@ Renderer::Renderer(graphic::Device* device)
         rasterizationState_wireframe.polygonMode = PolygonMode::Line;
         rasterizationState_wireframe.enableDepthClamp = false;
         rasterizationState_wireframe.enableAntialiasedLine = false;
-        rasterizationState_wireframe.SampleCount = SampleCount::SAMPLES_1;
+        rasterizationState_wireframe.forcedSampleCount = SampleCount::SAMPLES_1;
         rasterizationState_wireframe.lineWidth = 1.5f;
     }
 
-    // Render Pass
-    {
-        // renderPassInfo_simpleMainPass.numColorAttachments = 1;
-        // renderPassInfo_simpleMainPass.colorAttachmentFormats[0] = format_colorAttachment_main;
-        // renderPassInfo_simpleMainPass.depthAttachmentFormat = format_depthAttachment_main;
+    // blend states
+	{
+        graphic::PipelineColorBlendState bs;
+        bs.enable_independent_blend = false;
+        bs.attachments[0].enable_blend = false;
+        bs.attachments[0].colorWriteMask = util::ecast(ColorWriteFlagBits::ENABLE_ALL);
+        blendState_opaque = bs;
 
+        bs.attachments[0].enable_blend = true;
+        bs.attachments[0].srcColorBlendFactor = BlendFactor::SRC_ALPHA;
+        bs.attachments[0].dstColorBlendFactor = BlendFactor::ONE_MINUS_SRC_ALPHA;
+        bs.attachments[0].colorBlendOp = BlendOperation::ADD;
+        bs.attachments[0].srcAlphaBlendFactor = BlendFactor::ONE;
+        bs.attachments[0].dstAlphaBlendFactor = BlendFactor::ONE_MINUS_SRC_ALPHA;
+        bs.attachments[0].alphaBlendOp = BlendOperation::ADD;
+        bs.attachments[0].colorWriteMask = util::ecast(ColorWriteFlagBits::ENABLE_ALL);
+        bs.enable_independent_blend = false;
+        blendState_transparent = bs;
+	}
+
+    // renderpass infos
+    {
         renderPassInfo2_simpleColorPass.numColorAttachments = 1;
         renderPassInfo2_simpleColorPass.colorAttachmentFormats[0] = format_colorAttachment_main;
         renderPassInfo2_simpleColorPass.sampleCount = SampleCount::SAMPLES_1;
@@ -171,13 +108,97 @@ Renderer::Renderer(graphic::Device* device)
         vertexInputLayout_skybox.vertexAttribInfos.push_back(pos_attrib);
     }
 
+    // pipeline descs
+    {
+        pipelineDesc_skybox.vertShader = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
+        pipelineDesc_skybox.fragShader = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
+        pipelineDesc_skybox.blendState = blendState_opaque;
+        pipelineDesc_skybox.depthStencilState = depthStencilState_disabled;
+        pipelineDesc_skybox.rasterState = rasterizationState_fill;
+        pipelineDesc_skybox.topologyType = TopologyType::TRANGLE_LIST;
+        pipelineDesc_skybox.vertexInputLayout = vertexInputLayout_skybox;
+        
+        //TODO: remove hardcoded renderpass
+        pipelineDesc_skybox.renderPassInfo = renderPassInfo2_editorMainPass;
+    }
+
+    // images
+    {
+        constexpr uint32_t white = 0xFFFFFFFF;
+        constexpr uint32_t black = 0x000000FF;
+        constexpr uint32_t magenta = 0xFF00FFFF;
+
+        ImageDesc desc = {};
+        desc.depth = 1;
+        desc.format = DataFormat::R8G8B8A8_UNORM;
+        desc.initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+        desc.type = ImageType::TYPE_2D;
+        desc.usageBits = IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_SAMPLING_BIT;
+        desc.arraySize = 1;
+        desc.mipLevels = 1;
+        desc.generateMipMaps = false;
+        desc.width = 1;
+        desc.height = 1;
+
+        ImageInitData initData;
+        initData.data = &white;
+        initData.rowPitch = 4;
+        initData.slicePitch = 1 * 1 * 4;
+
+        image_white = device->CreateImage(desc, &initData);
+
+        initData.data = &black;
+        image_black = device->CreateImage(desc, &initData);
+
+        // Checkboard image
+        std::array<uint32_t, 32 * 32 > checkBoradpixelsData;
+        for (int x = 0; x < 32; x++)
+        {
+            for (int y = 0; y < 32; y++)
+                checkBoradpixelsData[y * 32 + x] = ((x % 2) ^ (y % 2)) ? magenta : black;
+        }
+
+        desc.width = 32;
+        desc.height = 32;
+
+        initData.data = checkBoradpixelsData.data();
+        initData.rowPitch = 32 * 4;
+        initData.slicePitch = 32 * 32 * 4;
+
+        image_checkboard = device->CreateImage(desc, &initData);
+    }
+
+    // Samplers
+    {
+        SamplerDesc desc = {};
+        desc.minFilter = SamplerFilter::LINEAR;
+        desc.magFliter = SamplerFilter::LINEAR;
+        desc.addressModeU = SamplerAddressMode::REPEAT;
+        desc.addressModeV = SamplerAddressMode::REPEAT;
+        desc.addressModeW = SamplerAddressMode::REPEAT;
+
+        sampler_linear = device->CreateSampler(desc);
+
+        desc.minFilter = SamplerFilter::NEAREST;
+        desc.magFliter = SamplerFilter::NEAREST;
+
+        sampler_nearst = device->CreateSampler(desc);
+
+        // Cubemap sampler
+        desc.minFilter = SamplerFilter::LINEAR;
+        desc.magFliter = SamplerFilter::LINEAR;
+        desc.addressModeU = SamplerAddressMode::CLAMPED_TO_EDGE;
+        desc.addressModeV = SamplerAddressMode::CLAMPED_TO_EDGE;
+        desc.addressModeW = SamplerAddressMode::CLAMPED_TO_EDGE;
+
+        sampler_cube = device->CreateSampler(desc);
+    }
+
     // Pipelines
     {
         ShaderProgramVariant* precompiledSkyboxVariant = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant();
 
-        pipeline_skybox = GetOrCreatePipeLine(*precompiledSkyboxVariant, depthStencilState_disabled,
-            PipelineColorBlendState::create_disabled(2), rasterizationState_fill,
-            renderPassInfo2_editorMainPass, vertexInputLayout_skybox);
+        pipeline_skybox = m_device->CreateGraphicPipeLine(pipelineDesc_skybox);
     }
 
     QK_CORE_LOGI_TAG("Rernderer", "Renderer Initialized");
@@ -198,14 +219,9 @@ Renderer::~Renderer()
     sampler_cube.reset();
 }
 
-void Renderer::SetScene(Ref<Scene> scene)
+void Renderer::SetScene(const Ref<Scene>& scene)
 {
     m_sceneRenderer->SetScene(scene);
-}
-
-void Renderer::SetSceneEnvironmentMap(Ref<Texture> cubeMap)
-{
-    m_sceneRenderer->SetEnvironmentMap(cubeMap);
 }
 
 void Renderer::UpdateDrawContextEditor(const CameraUniformBufferBlock& cameraData)
@@ -218,9 +234,107 @@ void Renderer::UpdateDrawContext()
     m_sceneRenderer->UpdateDrawContext();
 }
 
-void Renderer::DrawSkybox(graphic::CommandList* cmd)
+void Renderer::UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perframeData)
 {
-    m_sceneRenderer->DrawSkybox(cmd);
+    // Update render objects
+    perframeData.objects_opaque.clear();
+    perframeData.objects_transparent.clear();
+
+    const auto& cmpts = scene->GetComponents<IdCmpt, MeshCmpt, MeshRendererCmpt, TransformCmpt>();
+    for (const auto [id_cmpt, mesh_cmpt, mesh_renderer_cmpt, transform_cmpt] : cmpts)
+    {
+        auto* mesh = mesh_cmpt->uniqueMesh ? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
+        if (!mesh) 
+            continue;
+
+        for (uint32_t i = 0; i > mesh->subMeshes.size(); ++i) {
+            const auto& submesh = mesh->subMeshes[i];
+
+            RenderObject newObj;
+            newObj.aabb = submesh.aabb;
+            newObj.firstIndex = submesh.startIndex;
+            newObj.indexCount = submesh.count;
+            newObj.indexBuffer = mesh->GetIndexBuffer();
+            newObj.attributeBuffer = mesh->GetAttributeBuffer();
+            newObj.positionBuffer = mesh->GetPositionBuffer();
+            newObj.material = mesh_renderer_cmpt->GetMaterial(i);
+            newObj.transform = transform_cmpt->GetWorldMatrix();
+            newObj.pipeLine = mesh_renderer_cmpt->GetGraphicsPipeLine(i);
+            newObj.entityID = id_cmpt->id;
+            if (newObj.material->alphaMode == AlphaMode::MODE_OPAQUE)
+                perframeData.objects_opaque.push_back(newObj);
+            else
+                perframeData.objects_transparent.push_back(newObj);
+
+            i++;
+        }
+    }
+}
+
+void Renderer::UpdateVisibility(const CameraUniformBufferBlock& cameraData, const PerFrameData& perframeData, Visibility& vis)
+{
+    vis.cameraData = cameraData;
+	vis.visible_opaque.clear();
+    vis.visible_transparent.clear();
+    vis.frustum.Build(cameraData.viewproj);
+
+    auto is_visible = [&](const RenderObject& obj)
+    {
+        math::Aabb transformed_aabb = obj.aabb.Transform(obj.transform);
+        if (vis.frustum.CheckSphere(transformed_aabb))
+            return true;
+        else
+            return false;
+    };
+
+    for (size_t i = 0; i < perframeData.objects_opaque.size(); i++)
+    {
+        if (is_visible(perframeData.objects_opaque[i]))
+            vis.visible_opaque.push_back(i);
+    }
+
+    for (size_t i = 0; i < perframeData.objects_transparent.size(); i++)
+    {
+        if (is_visible(perframeData.objects_transparent[i]))
+            vis.visible_transparent.push_back(i);
+    }
+
+    // Sort render objects by material, pipleine and mesh
+    // The number of materials < the number of pipelines < the number of meshes
+    std::sort(vis.visible_opaque.begin(), vis.visible_opaque.end(), [&](const uint32_t& iA, const uint32_t& iB)
+    {
+        const RenderObject& A = perframeData.objects_opaque[iA];
+        const RenderObject& B = perframeData.objects_opaque[iB];
+        if (A.material == B.material)
+        {
+            if (A.pipeLine == B.pipeLine)
+                return A.indexBuffer < B.indexBuffer;
+            else
+                return A.pipeLine < B.pipeLine;
+        }
+        else
+            return A.material < B.material;
+    });
+
+    std::sort(vis.visible_transparent.begin(), vis.visible_transparent.end(), [&](const uint32_t& iA, const uint32_t& iB)
+    {
+        const RenderObject& A = perframeData.objects_transparent[iA];
+        const RenderObject& B = perframeData.objects_transparent[iB];
+        if (A.material == B.material)
+        {
+            if (A.pipeLine == B.pipeLine)
+                return A.indexBuffer < B.indexBuffer;
+            else
+                return A.pipeLine < B.pipeLine;
+        }
+        else
+            return A.material < B.material;
+    });
+}
+
+void Renderer::DrawSkybox(const Ref<Texture>& envMap, graphic::CommandList* cmd)
+{
+    m_sceneRenderer->DrawSkybox(envMap, cmd);
 }
 
 void Renderer::DrawScene(graphic::CommandList* cmd)
@@ -231,9 +345,9 @@ void Renderer::DrawScene(graphic::CommandList* cmd)
 Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(
     const ShaderProgramVariant& programVariant,
     const graphic::PipelineDepthStencilState& ds,
-    const graphic::PipelineColorBlendState& cb,
+    const graphic::PipelineColorBlendState& bs,
     const graphic::RasterizationState& rs,
-    const graphic::RenderPassInfo2& compatablerp,
+    const graphic::RenderPassInfo2& rp,
     const graphic::VertexInputLayout& input)
 {
     util::Hasher h;
@@ -248,9 +362,15 @@ Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(
     h.u64(programVariant.GetHash());
 
     // hash blend state
-    for (size_t i = 0; i < compatablerp.numColorAttachments; i++)
+    h.u32(uint32_t(bs.enable_independent_blend));
+
+    for (uint32_t i = 0; i < rp.numColorAttachments; i++)
     {
-        const auto& att = cb.attachments[i];
+        size_t attachmentIndex = 0;
+        if (bs.enable_independent_blend)
+            attachmentIndex = i;
+
+        const auto& att = bs.attachments[attachmentIndex];
 
         h.u32(static_cast<uint32_t>(att.enable_blend));
         if (att.enable_blend)
@@ -265,7 +385,7 @@ Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(
     }
 
     // hash render pass info
-    h.u64(compatablerp.GetHash());
+    h.u64(rp.GetHash());
 
     // hash vertex input layout
     for (const auto& attrib : input.vertexAttribInfos)
@@ -295,10 +415,10 @@ Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(
         desc.vertShader = programVariant.GetShader(graphic::ShaderStage::STAGE_VERTEX);
         desc.fragShader = programVariant.GetShader(graphic::ShaderStage::STAGE_FRAGEMNT);
         desc.depthStencilState = ds;
-        desc.blendState = cb;
+        desc.blendState = bs;
         desc.rasterState = rs;
         desc.topologyType = graphic::TopologyType::TRANGLE_LIST;
-        desc.renderPassInfo2 = compatablerp;
+        desc.renderPassInfo = rp;
         desc.vertexInputLayout = input;
 
         Ref<graphic::PipeLine> newPipeline = Application::Get().GetGraphicDevice()->CreateGraphicPipeLine(desc);

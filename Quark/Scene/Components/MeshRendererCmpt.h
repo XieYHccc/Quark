@@ -18,9 +18,8 @@ public:
 	Ref<Material> GetMaterial(uint32_t index);
 	const std::vector<Ref<Material>>& GetMaterials() const { return m_Materials; }
 
-private:
-	// Calls from SceneRenderer
 	Ref<graphic::PipeLine> GetGraphicsPipeLine(uint32_t index);
+private:
 
 	void UpdateCachedVertexAttribs(uint32_t meshAttribsMask);
 	void UpdateGraphicsPipeLine(uint32_t index);
@@ -41,6 +40,5 @@ private:
 
 	graphic::VertexInputLayout m_CachedVertexInputLayout;
 
-	friend class SceneRenderer;
 };
 }

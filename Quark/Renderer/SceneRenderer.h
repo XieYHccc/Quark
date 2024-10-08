@@ -60,10 +60,9 @@ public:
     SceneRenderer(graphic::Device* device);
 
     void SetScene(const Ref<Scene>& scene) { m_Scene = scene; }
-    void SetEnvironmentMap(const Ref<Texture>& cubeMap) { m_EnvironmentMap = cubeMap; }
 
     void DrawScene(graphic::CommandList* cmd_list);
-    void DrawSkybox(graphic::CommandList* cmd_list);
+    void DrawSkybox(const Ref<Texture>& envMap, graphic::CommandList* cmd_list);
 
     void UpdateDrawContext();
     void UpdateDrawContextEditor(const CameraUniformBufferBlock& cameraData); // Update scene uniform buffer with custom camera data(Used in Editor now)
@@ -77,7 +76,6 @@ private:
     graphic::Device* m_GraphicDevice;
 
     Ref<Scene> m_Scene;
-    Ref<Texture> m_EnvironmentMap;
 };
 
 }

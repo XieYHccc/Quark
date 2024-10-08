@@ -147,7 +147,7 @@ public:
         pipe_desc.fragShader = frag_shader;
         pipe_desc.blendState = PipelineColorBlendState::create_disabled(1);
         pipe_desc.topologyType = TopologyType::TRANGLE_LIST;
-        pipe_desc.renderPassInfo2 = render_pass_info;
+        pipe_desc.renderPassInfo = render_pass_info;
 
         // Depth-stencil state
         pipe_desc.depthStencilState = {

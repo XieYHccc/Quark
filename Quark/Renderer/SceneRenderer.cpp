@@ -151,17 +151,15 @@ void SceneRenderer::UpdateDrawContextEditor(const CameraUniformBufferBlock& came
     UpdateRenderObjects();
 }
 
-void SceneRenderer::DrawSkybox(graphic::CommandList *cmd_list)
+void SceneRenderer::DrawSkybox(const Ref<Texture>& envMap, graphic::CommandList *cmd_list)
 {
-    QK_CORE_ASSERT(m_EnvironmentMap)
-
     Ref<Mesh> cubeMesh = AssetManager::Get().mesh_cube;
     Ref<graphic::PipeLine> skyboxPipeLine = Renderer::Get().pipeline_skybox;
 
     cmd_list->BindPipeLine(*skyboxPipeLine);
     cmd_list->BindUniformBuffer(0, 0, *m_DrawContext.sceneUniformBuffer, 0, sizeof(SceneUniformBufferBlock));
-    cmd_list->BindImage(0, 1, *m_EnvironmentMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
-    cmd_list->BindSampler(0, 1, *m_EnvironmentMap->sampler);
+    cmd_list->BindImage(0, 1, *envMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+    cmd_list->BindSampler(0, 1, *envMap->sampler);
     cmd_list->BindVertexBuffer(0, *cubeMesh->GetPositionBuffer(), 0);
     cmd_list->BindIndexBuffer(*cubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
     cmd_list->DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);

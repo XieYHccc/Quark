@@ -135,7 +135,7 @@ void TestBed::OnRender(TimeStep deltaTime)
         // Draw scene
         auto geometry_start = m_Timer.ElapsedMillis();
         scene_renderer->UpdateDrawContext();
-        scene_renderer->RenderScene(cmd);
+        scene_renderer->DrawScene(cmd);
         cmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
         cmd->EndRenderPass();
@@ -172,7 +172,9 @@ void TestBed::LoadScene()
 {
     // load scene
     GLTFImporter gltf_loader;
-    scene = gltf_loader.Import("BuiltInResources/Gltf/house2.glb");
+    gltf_loader.Import("BuiltInResources/Gltf/house2.glb");
+
+    scene = gltf_loader.GetScene();
 
     // Create camera node
     float aspect = GetWindow()->GetRatio();

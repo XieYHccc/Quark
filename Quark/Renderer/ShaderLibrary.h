@@ -13,7 +13,7 @@ struct VariantSignatureKey
 	uint64_t GetHash() const;
 };
 
-// A ShaderTemplateVariant instance contains a gpu shader resource
+// a shaderTemplateVariant instance contains a gpu shader resource
 struct ShaderTemplateVariant
 {
 	VariantSignatureKey signatureKey;
@@ -23,6 +23,7 @@ struct ShaderTemplateVariant
 	util::Hash spirvHash; // <=> Ref<graphic::Shader>
 };
 
+// shader source class
 class ShaderTemplate 
 {
 public:
