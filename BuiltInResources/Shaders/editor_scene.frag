@@ -16,15 +16,15 @@ layout(location = 2) in vec3 vNormal;
 layout(location = 3) in vec4 vColor;
 #endif
 
-layout (location = 0) out vec4 outFragColor;
-layout (location = 1) out uint outID1;
-layout (location = 2) out uint outID2;
+layout (location = 0) out vec4 outColor;
+layout (location = 1) out uvec2 outID;
 
 layout(push_constant, std430) uniform PushConstants
 {
 	layout(offset = 64) vec4 baseColor;
 	layout(offset = 80) float roughness;
 	layout(offset = 84) float metallic;
+
     layout(offset = 88) uint64_t entityID;
 } materialData;
 
@@ -50,12 +50,10 @@ void main()
 
 	vec3 ambient = baseColor * sceneData.ambientColor.xyz;
 
-	outFragColor = vec4(baseColor * lightValue * sceneData.sunlightColor.w + ambient ,1.0f);
-
-    // outID1 = uint32_t(entityData.entityID >> 32);
-    // outID2 = uint32_t(entityData.entityID & 0xFFFFFFFFu);
-
-    outID1 = -1;
-    outID2 = -2;
+	outColor = vec4(baseColor * lightValue * sceneData.sunlightColor.w + ambient ,1.0f);
+	
+    uint high = uint(materialData.entityID >> 32);
+    uint low = uint(materialData.entityID & 0xFFFFFFFFu);
+    outID = uvec2(low, high);
 
 }

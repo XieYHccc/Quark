@@ -40,20 +40,20 @@ public:
 
     void* GetMappedDataPtr() { return m_pMappedData; }
 
-    uint64_t GetGpuAddress() { return m_GpuAddress;}
+    uint64_t GetGpuAddress() { return m_gpuAddress;}
 
     GpuResourceType GetGpuResourceType() const override { return GpuResourceType::BUFFER; }
 
 protected:
     Buffer(const BufferDesc& desc)
-        : m_desc(desc), m_pMappedData(nullptr), m_GpuAddress(UINT64_MAX)
+        : m_desc(desc), m_pMappedData(nullptr), m_gpuAddress(UINT64_MAX)
     {
 
     }
 
     BufferDesc m_desc;
     void* m_pMappedData;
-    uint64_t m_GpuAddress;
+    uint64_t m_gpuAddress;
 };
 
 }

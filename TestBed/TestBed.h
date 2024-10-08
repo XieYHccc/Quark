@@ -1,7 +1,6 @@
 #pragma once
 #include <Quark/Core/Application.h>
 #include <Quark/Scene/Scene.h>
-#include <Quark/Renderer/SceneRenderer.h>
 
 namespace quark {
     class TestBed : public Application {

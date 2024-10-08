@@ -1,10 +1,13 @@
 #pragma once
 #include "Quark/Core/Util/Singleton.h"
+#include "Quark/Core/Math/Frustum.h"
 #include "Quark/Graphic/Device.h"
+#include "Quark/Renderer/Types.h"
 #include "Quark/Renderer/ShaderLibrary.h"
-#include "Quark/Renderer/SceneRenderer.h"
 
 namespace quark {
+
+class Scene;
 
 // 1. high level rendering api
 // 2. this class is a collection of graphics technique implentations and functions 
@@ -61,16 +64,18 @@ public:
     {
         std::vector<RenderObject> objects_opaque;
         std::vector<RenderObject> objects_transparent;
+        SceneUniformBufferData sceneData;
+
+        // gpu resources
         Ref<graphic::Buffer> sceneUB;
     };
 
     struct Visibility
     {
-        CameraUniformBufferBlock cameraData;
-
-        std::vector<uint32_t> visible_opaque;
-        std::vector<uint32_t> visible_transparent; 
+        CameraUniformBufferData cameraData;
         math::Frustum frustum;
+        std::vector<uint32_t> visible_opaque;
+        std::vector<uint32_t> visible_transparent;
     };
 
 public:
@@ -79,16 +84,15 @@ public:
 
     ShaderLibrary& GetShaderLibrary() { return *m_shaderLibrary; }
 
-    void SetScene(const Ref<Scene>& scene);
-
-    void UpdateDrawContextEditor(const CameraUniformBufferBlock& cameraData);
-    void UpdateDrawContext();
-
+    // This two function is used to sync rendering data with the scene
     void UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perframeData);
-    void UpdateVisibility(const CameraUniformBufferBlock& cameraData, const PerFrameData& perframeData, Visibility& vis);
+    void UpdateVisibility(const CameraUniformBufferData& cameraData, const PerFrameData& perframeData, Visibility& vis);
 
-    void DrawSkybox(const Ref<Texture>& envMap, graphic::CommandList* cmd);
-    void DrawScene(graphic::CommandList* cmd);
+    void UpdateGpuResources(PerFrameData& perframeData, Visibility& vis);
+
+    // update frame data and visibility before you call these draw functions
+    void DrawSkybox(const PerFrameData& frame, const Ref<Texture>& envMap, graphic::CommandList* cmd);
+    void DrawScene(const PerFrameData& frame, const Visibility& vis, graphic::CommandList* cmd);
 
     Ref<graphic::PipeLine> GetOrCreatePipeLine(
         const ShaderProgramVariant& programVariant,
@@ -102,7 +106,6 @@ private:
     graphic::Device* m_device;
 
     Scope<ShaderLibrary> m_shaderLibrary;
-    Scope<SceneRenderer> m_sceneRenderer;
 
     std::unordered_map<uint64_t, Ref<graphic::PipeLine>> m_pipelines;
 

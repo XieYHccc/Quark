@@ -71,7 +71,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     if (vulkan_context->features12.bufferDeviceAddress) {
         VkBufferDeviceAddressInfo bda_info = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
         bda_info.buffer = m_Handle;
-        m_GpuAddress = vkGetBufferDeviceAddress(m_Device->vkDevice, &bda_info); 
+        m_gpuAddress = vkGetBufferDeviceAddress(m_Device->vkDevice, &bda_info); 
     }
 
     // Data Copy

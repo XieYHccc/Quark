@@ -1,7 +1,9 @@
 #include "Quark/qkpch.h"
 #include "Quark/Renderer/Renderer.h"
 #include "Quark/Core/Application.h"
+#include "Quark/Asset/AssetManager.h"
 #include "Quark/Asset/Mesh.h"
+#include "Quark/Graphic/Device.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
@@ -15,7 +17,7 @@ Renderer::Renderer(graphic::Device* device)
     : m_device(device)
 {
     m_shaderLibrary = CreateScope<ShaderLibrary>();
-    m_sceneRenderer = CreateScope<SceneRenderer>(m_device);
+    // m_sceneRenderer = CreateScope<SceneRenderer>(m_device);
 
     // depth stencil states
     {
@@ -206,10 +208,7 @@ Renderer::Renderer(graphic::Device* device)
 
 Renderer::~Renderer()
 {
-    m_sceneRenderer.reset();
-    m_shaderLibrary.reset();
-
-    // Free default resources
+    // Free gpu resources
     image_white.reset();
     image_black.reset();
     image_checkboard.reset();
@@ -217,25 +216,17 @@ Renderer::~Renderer()
     sampler_linear.reset();
     sampler_nearst.reset();
     sampler_cube.reset();
-}
 
-void Renderer::SetScene(const Ref<Scene>& scene)
-{
-    m_sceneRenderer->SetScene(scene);
-}
-
-void Renderer::UpdateDrawContextEditor(const CameraUniformBufferBlock& cameraData)
-{
-    m_sceneRenderer->UpdateDrawContextEditor(cameraData);
-}
-
-void Renderer::UpdateDrawContext()
-{
-    m_sceneRenderer->UpdateDrawContext();
+    m_shaderLibrary.reset();
 }
 
 void Renderer::UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perframeData)
 {
+    // update light data
+    perframeData.sceneData.ambientColor = glm::vec4(.1f);
+    perframeData.sceneData.sunlightColor = glm::vec4(1.f);
+    perframeData.sceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
+
     // Update render objects
     perframeData.objects_opaque.clear();
     perframeData.objects_transparent.clear();
@@ -247,7 +238,7 @@ void Renderer::UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perfram
         if (!mesh) 
             continue;
 
-        for (uint32_t i = 0; i > mesh->subMeshes.size(); ++i) {
+        for (uint32_t i = 0; i < mesh->subMeshes.size(); ++i) {
             const auto& submesh = mesh->subMeshes[i];
 
             RenderObject newObj;
@@ -271,12 +262,12 @@ void Renderer::UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perfram
     }
 }
 
-void Renderer::UpdateVisibility(const CameraUniformBufferBlock& cameraData, const PerFrameData& perframeData, Visibility& vis)
+void Renderer::UpdateVisibility(const CameraUniformBufferData& cameraData, const PerFrameData& perframeData, Visibility& vis)
 {
-    vis.cameraData = cameraData;
 	vis.visible_opaque.clear();
     vis.visible_transparent.clear();
-    vis.frustum.Build(cameraData.viewproj);
+    vis.cameraData = cameraData;
+    vis.frustum.Build(glm::inverse(cameraData.viewproj));
 
     auto is_visible = [&](const RenderObject& obj)
     {
@@ -332,14 +323,94 @@ void Renderer::UpdateVisibility(const CameraUniformBufferBlock& cameraData, cons
     });
 }
 
-void Renderer::DrawSkybox(const Ref<Texture>& envMap, graphic::CommandList* cmd)
+void Renderer::UpdateGpuResources(PerFrameData& perframeData, Visibility& vis)
 {
-    m_sceneRenderer->DrawSkybox(envMap, cmd);
+    // Create scene uniform buffer
+	BufferDesc desc;
+	desc.domain = BufferMemoryDomain::CPU;
+	desc.size = sizeof(SceneUniformBufferData);
+	desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	perframeData.sceneUB = m_device->CreateBuffer(desc);
+
+	SceneUniformBufferData sceneData = perframeData.sceneData;
+	sceneData.cameraUboData = vis.cameraData;
+	SceneUniformBufferData* mappedData = (SceneUniformBufferData*)perframeData.sceneUB->GetMappedDataPtr();
+	*mappedData = sceneData;
+
 }
 
-void Renderer::DrawScene(graphic::CommandList* cmd)
+void Renderer::DrawSkybox(const PerFrameData& frame, const Ref<Texture>& envMap, graphic::CommandList* cmd)
 {
-    m_sceneRenderer->DrawScene(cmd);
+    Ref<Mesh> cubeMesh = AssetManager::Get().mesh_cube;
+    Ref<graphic::PipeLine> skyboxPipeLine = Renderer::Get().pipeline_skybox;
+
+    cmd->BindPipeLine(*skyboxPipeLine);
+    cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
+    cmd->BindImage(0, 1, *envMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+    cmd->BindSampler(0, 1, *envMap->sampler);
+    cmd->BindVertexBuffer(0, *cubeMesh->GetPositionBuffer(), 0);
+    cmd->BindIndexBuffer(*cubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
+    cmd->DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);
+}
+
+void Renderer::DrawScene(const PerFrameData& frame, const Visibility& vis, graphic::CommandList* cmd)
+{
+
+    Ref<Material> lastMaterial = nullptr;
+    Ref<PipeLine> lastPipeline = nullptr;
+    Ref<graphic::Buffer> lastIndexBuffer = nullptr;
+
+    // Draw
+    auto draw = [&](const RenderObject& obj)
+    {
+        // Bind Pipeline
+        if (obj.pipeLine != lastPipeline)
+        {
+            lastPipeline = obj.pipeLine;
+            cmd->BindPipeLine(*lastPipeline);
+
+            // Bind scene uniform buffer
+            cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
+        }
+
+        // Bind material
+        if (obj.material != lastMaterial)
+        {
+            lastMaterial = obj.material;
+            // (deprecated)cmd_list->BindUniformBuffer(1, 0, *lastMaterial->uniformBuffer, lastMaterial->uniformBufferOffset, sizeof(Material::UniformBufferBlock));
+            cmd->BindImage(1, 1, *lastMaterial->baseColorTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+            cmd->BindSampler(1, 1, *lastMaterial->baseColorTexture->sampler);
+            cmd->BindImage(1, 2, *lastMaterial->metallicRoughnessTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+            cmd->BindSampler(1, 2, *lastMaterial->metallicRoughnessTexture->sampler);
+
+            MaterialPushConstants materialPushConstants;
+            materialPushConstants.colorFactors = obj.material->uniformBufferData.baseColorFactor;
+            materialPushConstants.metallicFactor = obj.material->uniformBufferData.metalicFactor;
+            materialPushConstants.roughnessFactor = obj.material->uniformBufferData.roughNessFactor;
+            cmd->PushConstant(&materialPushConstants, sizeof(glm::mat4), sizeof(MaterialPushConstants));
+        }
+
+        // Bind index buffer
+        if (obj.indexBuffer != lastIndexBuffer)
+        {
+            cmd->BindVertexBuffer(0, *obj.positionBuffer, 0);
+            cmd->BindVertexBuffer(1, *obj.attributeBuffer, 0);
+            cmd->BindIndexBuffer(*obj.indexBuffer, 0, IndexBufferFormat::UINT32);
+            lastIndexBuffer = obj.indexBuffer;
+        }
+
+        // Push model constant
+        ModelPushConstants push_constant;
+        push_constant.worldMatrix = obj.transform;
+        //push_constant.vertexBufferGpuAddress = obj.attributeBuffer->GetGpuAddress();
+        cmd->PushConstant(&push_constant, 0, 64);  // only push model matrix
+        cmd->PushConstant(&obj.entityID, 88, 8);
+
+        cmd->DrawIndexed(obj.indexCount, 1, obj.firstIndex, 0, 0);
+    };
+
+    for (const uint32_t idx : vis.visible_opaque)
+        draw(frame.objects_opaque[idx]);
 }
 
 Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(

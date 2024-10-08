@@ -18,7 +18,6 @@
 #include <Quark/Asset/TextureImporter.h>
 #include <Quark/Asset/AssetManager.h>
 #include <Quark/Asset/MaterialSerializer.h>
-#include <Quark/Renderer/Renderer.h>
 #include <Quark/UI/UI.h>
 
 namespace quark {
@@ -36,34 +35,31 @@ Application* CreateApplication()
 }
 
 EditorApp::EditorApp(const ApplicationSpecification& specs)
-    : Application(specs), m_ViewportFocused(false), m_ViewportHovered(false), 
-    m_EditorCamera(60, 1280, 720, 0.1f, 256), m_ViewportSize(1000, 800), // dont'care here, will be overwrited
-    m_HoverdEntity(nullptr)
+    : Application(specs), m_viewportFocused(false), m_viewportHovered(false), 
+    m_editorCamera(60, 1280, 720, 0.1f, 256), m_viewportSize(1000, 800), // dont'care here, will be overwrited
+    m_hoverdEntity(nullptr)
 {
     // Create Render structures
-    m_MainPassInfo = Renderer::Get().renderPassInfo2_editorMainPass;
+    m_mainPassInfo = Renderer::Get().renderPassInfo2_editorMainPass;
 
-    m_UiPassInfo = Renderer::Get().renderPassInfo2_uiPass;
+    m_uiPassInfo = Renderer::Get().renderPassInfo2_uiPass;
     CreateGraphicResources();
 
     // Load cube map
     TextureImporter textureLoader;
-    m_CubeMapTexture = textureLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
+    m_cubeMapTexture = textureLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
 
     // Load scene
-    m_Scene = CreateScope<Scene>("");
+    m_scene = CreateScope<Scene>("");
 
     // Init UI Panels
-    m_HeirarchyPanel.SetScene(m_Scene);
-    m_InspectorPanel.SetScene(m_Scene);
-
-    // SetUp Renderer
-    Renderer::Get().SetScene(m_Scene);
+    m_HeirarchyPanel.SetScene(m_scene);
+    m_InspectorPanel.SetScene(m_scene);
 
     // Adjust editor camera's aspect ratio
-    m_EditorCamera.viewportWidth = (float)Application::Get().GetWindow()->GetWidth();
-    m_EditorCamera.viewportHeight = (float)Application::Get().GetWindow()->GetHeight();
-    m_EditorCamera.SetPosition(glm::vec3(0, 10, 10));
+    m_editorCamera.viewportWidth = (float)Application::Get().GetWindow()->GetWidth();
+    m_editorCamera.viewportHeight = (float)Application::Get().GetWindow()->GetHeight();
+    m_editorCamera.SetPosition(glm::vec3(0, 10, 10));
 
     EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
     EventManager::Get().Subscribe<MouseButtonPressedEvent>([&](const MouseButtonPressedEvent& e) { OnMouseButtonPressed(e); });
@@ -78,25 +74,24 @@ EditorApp::~EditorApp()
 void EditorApp::OnUpdate(TimeStep ts)
 {   
     // Update Editor camera's aspect ratio and movement
-    m_EditorCamera.viewportWidth = m_ViewportSize.x;
-    m_EditorCamera.viewportHeight = m_ViewportSize.y;
-    if (m_ViewportHovered && Input::Get()->IsKeyPressed(Key::LeftAlt, true))
-        m_EditorCamera.OnUpdate(ts);
+    m_editorCamera.viewportWidth = m_viewportSize.x;
+    m_editorCamera.viewportHeight = m_viewportSize.y;
+    if (m_viewportHovered && Input::Get()->IsKeyPressed(Key::LeftAlt, true))
+        m_editorCamera.OnUpdate(ts);
 
     // Update scene
-    m_Scene->OnUpdate();
+    m_scene->OnUpdate();
 
     // TODO: Update physics
 
     auto [mx, my] = ImGui::GetMousePos();
-    mx -= m_ViewportBounds[0].x;
-    my -= m_ViewportBounds[0].y;
-    glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+    mx -= m_viewportBounds[0].x;
+    my -= m_viewportBounds[0].y;
+    glm::vec2 viewportSize = m_viewportBounds[1] - m_viewportBounds[0];
 
     int mouseX = (int)mx;
     int mouseY = (int)my;
     
-
     if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
     {
         uint32_t* pixel = (uint32_t*)m_stage_buffer->GetMappedDataPtr();
@@ -109,19 +104,22 @@ void EditorApp::OnUpdate(TimeStep ts)
         if (low != 0 && high != 0)
         {
             uint64_t entityID = ((uint64_t)high << 32) | (uint64_t)low;
-            m_HoverdEntity = m_Scene->GetEntityWithID(entityID);
+            m_hoverdEntity = m_scene->GetEntityWithID(entityID);
         }
         else
-            m_HoverdEntity = nullptr;
+            m_hoverdEntity = nullptr;
     }
 
     // Sync the rendering data with game scene
-    CameraUniformBufferBlock cameraData;
-    cameraData.proj = m_EditorCamera.GetProjectionMatrix();
+    CameraUniformBufferData cameraData;
+    cameraData.proj = m_editorCamera.GetProjectionMatrix();
     cameraData.proj[1][1] *= -1;
-    cameraData.view = m_EditorCamera.GetViewMatrix();
+    cameraData.view = m_editorCamera.GetViewMatrix();
     cameraData.viewproj = cameraData.proj * cameraData.view;
-    Renderer::Get().UpdateDrawContextEditor(cameraData);
+
+    //Renderer::Get().UpdateDrawContextEditor(cameraData);
+    Renderer::Get().UpdatePerFrameData(m_scene, m_frameData);
+    Renderer::Get().UpdateVisibility(cameraData, m_frameData, m_visibility);
 }   
 
 void EditorApp::OnImGuiUpdate()
@@ -158,8 +156,8 @@ void EditorApp::OnImGuiUpdate()
         ImGui::Text("CmdList Record Time: %f ms", m_CmdListRecordTime);
 
         std::string entityName = "None";
-        if (m_HoverdEntity)
-            entityName = m_HoverdEntity->GetComponent<NameCmpt>()->name;
+        if (m_hoverdEntity)
+            entityName = m_hoverdEntity->GetComponent<NameCmpt>()->name;
 
 		ImGui::Text("Hovered Entity: %s", entityName.c_str());
     }
@@ -182,17 +180,17 @@ void EditorApp::OnImGuiUpdate()
     auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
     auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
     auto viewportOffset = ImGui::GetWindowPos();
-    m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-    m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+    m_viewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+    m_viewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
-    m_ViewportFocused = ImGui::IsWindowFocused();
-    m_ViewportHovered = ImGui::IsWindowHovered();
+    m_viewportFocused = ImGui::IsWindowFocused();
+    m_viewportHovered = ImGui::IsWindowHovered();
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-    m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+    m_viewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
     ImTextureID colorAttachmentId = UI::Get()->GetOrCreateTextureId(m_color_attachment, Renderer::Get().sampler_linear);
-    ImGui::Image(colorAttachmentId, ImVec2{ m_ViewportSize.x, m_ViewportSize.y });
+    ImGui::Image(colorAttachmentId, ImVec2{ m_viewportSize.x, m_viewportSize.y });
 
 
     if (ImGui::BeginDragDropTarget())
@@ -208,14 +206,14 @@ void EditorApp::OnImGuiUpdate()
 
     // Gizmos
     Entity* selectedEntity = m_HeirarchyPanel.GetSelectedEntity();
-    if (selectedEntity && m_GizmoType != -1)
+    if (selectedEntity && m_gizmoType != -1)
     {
         ImGuizmo::SetOrthographic(false);
         ImGuizmo::SetDrawlist();
         ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 
-        glm::mat4 cameraProjection = m_EditorCamera.GetProjectionMatrix();
-        glm::mat4 cameraView = m_EditorCamera.GetViewMatrix();
+        glm::mat4 cameraProjection = m_editorCamera.GetProjectionMatrix();
+        glm::mat4 cameraView = m_editorCamera.GetViewMatrix();
 
         auto* tc = selectedEntity->GetComponent<TransformCmpt>();
         glm::mat4 transform = tc->GetLocalMatrix();
@@ -223,13 +221,13 @@ void EditorApp::OnImGuiUpdate()
         bool snap = Input::Get()->IsKeyPressed(Key::LeftControl, true);
         float snapValue = 0.5f; // Snap to 0.5m for translation/scale
         // Snap to 45 degrees for rotation
-        if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+        if (m_gizmoType == ImGuizmo::OPERATION::ROTATE)
             snapValue = 45.0f;
 
         float snapValues[3] = { snapValue, snapValue, snapValue };
 
         ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-            (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
+            (ImGuizmo::OPERATION)m_gizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
             nullptr, snap ? snapValues : nullptr);
 
         if (ImGuizmo::IsUsing())
@@ -251,11 +249,10 @@ void EditorApp::OnImGuiUpdate()
 
 void EditorApp::NewScene()
 {
-    m_Scene = CreateRef<Scene>("New Scene");
+    m_scene = CreateRef<Scene>("New Scene");
 
-    Renderer::Get().SetScene(m_Scene);
-    m_HeirarchyPanel.SetScene(m_Scene);
-    m_InspectorPanel.SetScene(m_Scene);
+    m_HeirarchyPanel.SetScene(m_scene);
+    m_InspectorPanel.SetScene(m_scene);
 }
 
 void EditorApp::OpenScene()
@@ -267,13 +264,12 @@ void EditorApp::OpenScene()
 
 void EditorApp::OpenScene(const std::filesystem::path& path)
 {
-    m_Scene = CreateRef<Scene>("");
-    SceneSerializer serializer(m_Scene);
+    m_scene = CreateRef<Scene>("");
+    SceneSerializer serializer(m_scene);
     serializer.Deserialize(path.string());
 
-    Renderer::Get().SetScene(m_Scene);
-    m_HeirarchyPanel.SetScene(m_Scene);
-    m_InspectorPanel.SetScene(m_Scene);
+    m_HeirarchyPanel.SetScene(m_scene);
+    m_InspectorPanel.SetScene(m_scene);
 }
 
 void EditorApp::SaveSceneAs()
@@ -281,14 +277,17 @@ void EditorApp::SaveSceneAs()
     std::filesystem::path filepath = FileSystem::SaveFileDialog({ { "Quark Scene", "qkscene" } });
     if (!filepath.empty())
     {
-        SceneSerializer serializer(m_Scene);
+        SceneSerializer serializer(m_scene);
         serializer.Serialize(filepath.string());
     }
 }
 
 void EditorApp::OnRender(TimeStep ts)
 {
+
     Renderer& renderer = Renderer::Get();
+
+    renderer.UpdateGpuResources(m_frameData, m_visibility);
 
     // Rendering commands
     if (m_GraphicDevice->BeiginFrame(ts)) 
@@ -349,16 +348,16 @@ void EditorApp::OnRender(TimeStep ts)
             fb_info.depthAttachmentStoreOp = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
-            graphic_cmd->BeginRenderPass(m_MainPassInfo, fb_info);
+            graphic_cmd->BeginRenderPass(m_mainPassInfo, fb_info);
             graphic_cmd->SetViewPort(viewport);
             graphic_cmd->SetScissor(scissor);
 
             // Draw skybox
-            renderer.DrawSkybox(m_CubeMapTexture, graphic_cmd);
+            renderer.DrawSkybox(m_frameData, m_cubeMapTexture, graphic_cmd);
 
             // Draw scene
             auto geometry_start = m_Timer.ElapsedMillis();
-            renderer.DrawScene(graphic_cmd);
+            renderer.DrawScene(m_frameData, m_visibility, graphic_cmd);
             m_CmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;
 
             graphic_cmd->EndRenderPass();
@@ -388,7 +387,7 @@ void EditorApp::OnRender(TimeStep ts)
             fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.colorAttachments[0] = swap_chain_image;
 
-            graphic_cmd->BeginRenderPass(m_UiPassInfo, fb_info);
+            graphic_cmd->BeginRenderPass(m_uiPassInfo, fb_info);
             UI::Get()->OnRender(graphic_cmd);
             graphic_cmd->EndRenderPass();
         }
@@ -459,16 +458,16 @@ void EditorApp::OnKeyPressed(const KeyPressedEvent& e)
 		break;
     // Gizmos
     case Key::Q:
-        m_GizmoType = -1;
+        m_gizmoType = -1;
         break;
     case Key::W:
-	    m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+	    m_gizmoType = ImGuizmo::OPERATION::TRANSLATE;
 		break;
     case Key::E:
-        m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+        m_gizmoType = ImGuizmo::OPERATION::ROTATE;
         break;
     case Key::R:
-		m_GizmoType = ImGuizmo::OPERATION::SCALE;
+		m_gizmoType = ImGuizmo::OPERATION::SCALE;
         break;
     default:
         break;
@@ -479,8 +478,8 @@ void EditorApp::OnMouseButtonPressed(const MouseButtonPressedEvent& e)
 {
     if (e.button == Mouse::ButtonLeft)
 	{
-		if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::Get()->IsKeyPressed(Key::LeftAlt, true))
-			m_HeirarchyPanel.SetSelectedEntity(m_HoverdEntity);
+		if (m_viewportHovered && !ImGuizmo::IsOver() && !Input::Get()->IsKeyPressed(Key::LeftAlt, true))
+			m_HeirarchyPanel.SetSelectedEntity(m_hoverdEntity);
 	}
 }
 

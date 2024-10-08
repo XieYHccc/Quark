@@ -2,7 +2,7 @@
 #include <Quark/Core/Application.h>
 #include <Quark/Core/FileSystem.h>
 #include <Quark/Scene/Scene.h>
-#include <Quark/Renderer/SceneRenderer.h>
+#include <Quark/Renderer/Renderer.h>
 #include <Quark/Events/KeyEvent.h>
 #include <Quark/Events/MouseEvent.h>
 
@@ -32,25 +32,28 @@ public:
 private:
     void CreateGraphicResources();
 
-    graphic::RenderPassInfo2 m_MainPassInfo; // First pass
-    graphic::RenderPassInfo2 m_UiPassInfo;   // Second pass
+    graphic::RenderPassInfo2 m_mainPassInfo; // First pass
+    graphic::RenderPassInfo2 m_uiPassInfo;   // Second pass
 
     Ref<graphic::Image> m_depth_attachment;
     Ref<graphic::Image> m_color_attachment;
     Ref<graphic::Image> m_entityID_attachment;
     Ref<graphic::Buffer> m_stage_buffer;
 
-    Ref<Texture> m_CubeMapTexture;
-    Ref<Scene> m_Scene;
-    Entity* m_HoverdEntity;
-    EditorCamera m_EditorCamera;
+    Renderer::PerFrameData m_frameData;
+    Renderer::Visibility m_visibility;
 
-    glm::vec2 m_ViewportSize;
-    glm::vec2 m_ViewportBounds[2];
+    Ref<Texture> m_cubeMapTexture;
+    Ref<Scene> m_scene;
+    Entity* m_hoverdEntity;
+    EditorCamera m_editorCamera;
 
-    bool m_ViewportFocused;
-    bool m_ViewportHovered;
-    int m_GizmoType = -1;
+    glm::vec2 m_viewportSize;
+    glm::vec2 m_viewportBounds[2];
+
+    bool m_viewportFocused;
+    bool m_viewportHovered;
+    int m_gizmoType = -1;
 
     // UI window
     SceneHeirarchyPanel m_HeirarchyPanel;

@@ -4,7 +4,6 @@
 
 namespace quark {
 
-
 /// Helper class to generate SPIRV code from GLSL source
 /// Currently only support compiling for one shader stage and vulkan 1.3
 class GLSLCompiler {
