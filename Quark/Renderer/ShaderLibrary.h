@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "Quark/Core/Util/EnumCast.h"
-#include "Quark/Graphic/Device.h"
+#include "Quark/Core/Util/Hash.h"
 #include "Quark/Renderer/GLSLCompiler.h"
 
 namespace quark {
@@ -85,18 +85,19 @@ private:
 class ShaderLibrary
 {
 public:
-	ShaderProgram* program_staticMesh = nullptr;
-	ShaderProgram* program_editor = nullptr;
-	ShaderProgram* staticProgram_skybox = nullptr;
+	ShaderProgram* program_staticMesh;
+	ShaderProgram* program_editor;
+	ShaderProgram* staticProgram_skybox;
+	ShaderProgram* staticProgram_infiniteGrid;
 
+public:
 	ShaderLibrary();
 
 	ShaderProgram* GetOrCreateGraphicsProgram(const std::string& vert_path, const std::string& frag_path);
 	ShaderProgram* GetOrCreateComputeProgram(const std::string& comp_path);
-
-private:
 	ShaderTemplate* GetOrCreateShaderTemplate(const std::string& path, graphic::ShaderStage stage);
 
+private:
 	std::unordered_map<uint64_t, Scope<ShaderTemplate>> m_ShaderTemplates;
 	std::unordered_map<uint64_t, Scope<ShaderProgram>> m_ShaderPrograms;
 	

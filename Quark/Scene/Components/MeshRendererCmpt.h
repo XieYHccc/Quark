@@ -2,6 +2,7 @@
 #include "Quark/Ecs/Component.h"
 #include "Quark/Asset/Mesh.h"
 #include "Quark/Asset/Material.h"
+#include "Quark/Graphic/PipeLine.h"
 #include "Quark/Renderer/ShaderLibrary.h"
 
 namespace quark {

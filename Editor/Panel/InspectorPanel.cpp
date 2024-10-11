@@ -325,7 +325,7 @@ void InspectorPanel::OnImGuiUpdate()
                 std::filesystem::path materialAssetPath = mat->GetAssetID() != 1 ?
 					AssetManager::Get().GetAssetMetadata(mat->GetAssetID()).filePath : std::filesystem::path("Default material");
 
-				ImGui::Text("Material %zu", i);
+				ImGui::Text("Material %u", i);
                 if (ImGui::Button(materialAssetPath.string().c_str()))
                 {
                     m_SelectedMaterial = mat;

@@ -36,7 +36,7 @@ Application* CreateApplication()
 
 EditorApp::EditorApp(const ApplicationSpecification& specs)
     : Application(specs), m_viewportFocused(false), m_viewportHovered(false), 
-    m_editorCamera(60, 1280, 720, 0.1f, 256), m_viewportSize(1000, 800), // dont'care here, will be overwrited
+    m_editorCamera(60, 1280, 720, 0.1f, 256.f), m_viewportSize(1000, 800), // dont'care here, will be overwrited
     m_hoverdEntity(nullptr)
 {
     // Create Render structures
@@ -59,7 +59,7 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     // Adjust editor camera's aspect ratio
     m_editorCamera.viewportWidth = (float)Application::Get().GetWindow()->GetWidth();
     m_editorCamera.viewportHeight = (float)Application::Get().GetWindow()->GetHeight();
-    m_editorCamera.SetPosition(glm::vec3(0, 10, 10));
+    m_editorCamera.SetPosition(glm::vec3(0, 0, 5));
 
     EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
     EventManager::Get().Subscribe<MouseButtonPressedEvent>([&](const MouseButtonPressedEvent& e) { OnMouseButtonPressed(e); });
@@ -352,10 +352,13 @@ void EditorApp::OnRender(TimeStep ts)
             graphic_cmd->SetViewPort(viewport);
             graphic_cmd->SetScissor(scissor);
 
-            // Draw skybox
+            // draw skybox
             renderer.DrawSkybox(m_frameData, m_cubeMapTexture, graphic_cmd);
 
-            // Draw scene
+            // draw infinite grid
+            renderer.DrawGrid(m_frameData, graphic_cmd);
+
+            // draw scene
             auto geometry_start = m_Timer.ElapsedMillis();
             renderer.DrawScene(m_frameData, m_visibility, graphic_cmd);
             m_CmdListRecordTime = m_Timer.ElapsedMillis() - geometry_start;

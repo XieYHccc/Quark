@@ -8,6 +8,11 @@ class UI_Vulkan;
 
 namespace quark::graphic {
 
+enum CommandListDirtyFlagBits
+{
+    COMMAND_LIST_DIRTY_PUSH_CONSTANTS_BIT = 1 << 0,
+};
+
 enum class CommandListState {
     READY_FOR_RECORDING,
     IN_RECORDING,
@@ -48,12 +53,11 @@ public:
     ///////////////////////// Vulkan specific /////////////////////////
 
     void ResetAndBeginCmdBuffer();
-    bool IsWaitingForSwapChainImage() const { return m_WaitForSwapchainImage; }
+    bool IsWaitingForSwapChainImage() const { return m_waitForSwapchainImage; }
 
-    const VkCommandBuffer GetHandle() const { return m_CmdBuffer; }
-    const VkSemaphore GetCmdCompleteSemaphore() const { return m_CmdCompleteSemaphore; }
-    uint32_t GetSwapChainWaitStages() const { return m_SwapChainWaitStages; }
-
+    const VkCommandBuffer GetHandle() const { return m_cmdBuffer; }
+    const VkSemaphore GetCmdCompleteSemaphore() const { return m_cmdCompleteSemaphore; }
+    uint32_t GetSwapChainWaitStages() const { return m_swapChainWaitStages; }
     
 private:
     void FlushDescriptorSet(uint32_t set);
@@ -61,6 +65,9 @@ private:
     void RebindDescriptorSet(uint32_t set);  // Rebind if only the buffer offset changed
     void ResetBindingState();
 
+    void _SetDirtyFlags(CommandListDirtyFlagBits flags) { m_dirtyMask |= flags; }
+
+    CommandListDirtyFlagBits _GetAndClearDirtyFlags(CommandListDirtyFlagBits flags);
 private:
     struct BindingState
     {
@@ -78,32 +85,36 @@ private:
         } indexBufferBindingState;
 
         DescriptorBinding descriptorBindings[DESCRIPTOR_SET_MAX_NUM][SET_BINDINGS_MAX_NUM] = {};
+
+        uint8_t pushConstantData[PUSH_CONSTANT_DATA_SIZE];
     };
 
 
-    Device_Vulkan* m_GraphicDevice;
+    Device_Vulkan* m_device;
 
-    VkSemaphore m_CmdCompleteSemaphore = VK_NULL_HANDLE;
-    VkCommandBuffer m_CmdBuffer = VK_NULL_HANDLE;
-    VkCommandPool m_CmdPool = VK_NULL_HANDLE;
+    VkSemaphore m_cmdCompleteSemaphore = VK_NULL_HANDLE;
+    VkCommandBuffer m_cmdBuffer = VK_NULL_HANDLE;
+    VkCommandPool m_cmdPool = VK_NULL_HANDLE;
 
-    std::vector<VkMemoryBarrier2> m_MemoryBarriers;
-    std::vector<VkImageMemoryBarrier2> m_ImageBarriers;
-    std::vector<VkBufferMemoryBarrier2> m_BufferBarriers;
-    bool m_WaitForSwapchainImage = false;
-    uint32_t m_SwapChainWaitStages = 0;
+    std::vector<VkMemoryBarrier2> m_memoryBarriers;
+    std::vector<VkImageMemoryBarrier2> m_imageBarriers;
+    std::vector<VkBufferMemoryBarrier2> m_bufferBarriers;
+    bool m_waitForSwapchainImage = false;
+    uint32_t m_swapChainWaitStages = 0;
 
     // Rendering state 
-    const PipeLine_Vulkan* m_CurrentPipeline = nullptr;
-    RenderPassInfo2 m_CurrentRenderPassInfo2 = {};
-    VkDescriptorSet m_CurrentSets[DESCRIPTOR_SET_MAX_NUM] = {};
-    VkViewport m_Viewport = {};
-    VkRect2D m_Scissor = {};
-    BindingState m_BindingState = {};
+    const PipeLine_Vulkan* m_currentPipeline = nullptr;
+    RenderPassInfo2 m_currentRenderPassInfo = {};
+    VkDescriptorSet m_currentSets[DESCRIPTOR_SET_MAX_NUM] = {};
+    VkViewport m_viewport = {};
+    VkRect2D m_scissor = {};
+    BindingState m_bindingState = {};
 
-    uint32_t m_DirtySetMask = 0;
-    uint32_t m_DirtySetDynamicMask = 0;
-    uint32_t m_DirtyVertexBufferMask = 0;
+    uint32_t m_dirtySetMask = 0;
+    uint32_t m_dirtySetRebindMask = 0;
+    uint32_t m_dirtyVertexBufferMask = 0;
+    uint32_t m_dirtyMask = ~0u;
+    
 };
 
 CONVERT_TO_VULKAN_INTERNAL_FUNC(CommandList)

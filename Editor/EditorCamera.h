@@ -9,8 +9,8 @@ public:
 	float viewportWidth = 1280;
 	float viewportHeight = 720;
 	float nearClip = 0.1f;
-	float farClip = 256.0f;
-	float moveSpeed = 25.0f;
+	float farClip = 100.0f;
+	float moveSpeed = 20.0f;
 	float rotationSpeed = 0.3f;
 	
 	EditorCamera(float degreeFov, float viewportWidth, float viewportHeight, float nearClip, float farClip);

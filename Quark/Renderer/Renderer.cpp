@@ -31,7 +31,7 @@ Renderer::Renderer(graphic::Device* device)
         depthStencilState_depthWrite.enableStencil = false;
         depthStencilState_depthWrite.enableDepthTest = true;
         depthStencilState_depthWrite.enableDepthWrite = true;
-        depthStencilState_depthWrite.depthCompareOp = CompareOperation::LESS_OR_EQUAL;
+        depthStencilState_depthWrite.depthCompareOp = CompareOperation::LESS;
         depthStencilState_depthWrite.enableStencil = false;
     }
 
@@ -122,6 +122,15 @@ Renderer::Renderer(graphic::Device* device)
         
         //TODO: remove hardcoded renderpass
         pipelineDesc_skybox.renderPassInfo = renderPassInfo2_editorMainPass;
+
+        pipelineDesc_infiniteGrid.vertShader = GetShaderLibrary().staticProgram_infiniteGrid->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
+        pipelineDesc_infiniteGrid.fragShader = GetShaderLibrary().staticProgram_infiniteGrid->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
+        pipelineDesc_infiniteGrid.blendState = blendState_opaque;
+        pipelineDesc_infiniteGrid.depthStencilState = depthStencilState_depthWrite;
+        pipelineDesc_infiniteGrid.rasterState = rasterizationState_fill;
+        pipelineDesc_infiniteGrid.topologyType = TopologyType::TRANGLE_LIST;
+
+        pipelineDesc_infiniteGrid.renderPassInfo = renderPassInfo2_editorMainPass;
     }
 
     // images
@@ -198,9 +207,8 @@ Renderer::Renderer(graphic::Device* device)
 
     // Pipelines
     {
-        ShaderProgramVariant* precompiledSkyboxVariant = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant();
-
         pipeline_skybox = m_device->CreateGraphicPipeLine(pipelineDesc_skybox);
+        pipeline_infiniteGrid = m_device->CreateGraphicPipeLine(pipelineDesc_infiniteGrid);
     }
 
     QK_CORE_LOGI_TAG("Rernderer", "Renderer Initialized");
@@ -296,15 +304,15 @@ void Renderer::UpdateVisibility(const CameraUniformBufferData& cameraData, const
     {
         const RenderObject& A = perframeData.objects_opaque[iA];
         const RenderObject& B = perframeData.objects_opaque[iB];
-        if (A.material == B.material)
+        if (A.pipeLine == B.pipeLine)
         {
-            if (A.pipeLine == B.pipeLine)
+            if (A.material == B.material)
                 return A.indexBuffer < B.indexBuffer;
             else
-                return A.pipeLine < B.pipeLine;
+                return A.material < B.material;
         }
         else
-            return A.material < B.material;
+            return A.pipeLine < B.pipeLine;
     });
 
     std::sort(vis.visible_transparent.begin(), vis.visible_transparent.end(), [&](const uint32_t& iA, const uint32_t& iB)
@@ -312,12 +320,7 @@ void Renderer::UpdateVisibility(const CameraUniformBufferData& cameraData, const
         const RenderObject& A = perframeData.objects_transparent[iA];
         const RenderObject& B = perframeData.objects_transparent[iB];
         if (A.material == B.material)
-        {
-            if (A.pipeLine == B.pipeLine)
-                return A.indexBuffer < B.indexBuffer;
-            else
-                return A.pipeLine < B.pipeLine;
-        }
+            return A.indexBuffer < B.indexBuffer;
         else
             return A.material < B.material;
     });
@@ -342,17 +345,25 @@ void Renderer::UpdateGpuResources(PerFrameData& perframeData, Visibility& vis)
 void Renderer::DrawSkybox(const PerFrameData& frame, const Ref<Texture>& envMap, graphic::CommandList* cmd)
 {
     Ref<Mesh> cubeMesh = AssetManager::Get().mesh_cube;
-    Ref<graphic::PipeLine> skyboxPipeLine = Renderer::Get().pipeline_skybox;
 
-    cmd->BindPipeLine(*skyboxPipeLine);
     cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
-    cmd->BindImage(0, 1, *envMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
-    cmd->BindSampler(0, 1, *envMap->sampler);
+
+    cmd->BindPipeLine(*pipeline_skybox);
+    cmd->BindImage(1, 0, *envMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+    cmd->BindSampler(1, 0, *envMap->sampler);
     cmd->BindVertexBuffer(0, *cubeMesh->GetPositionBuffer(), 0);
     cmd->BindIndexBuffer(*cubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
     cmd->DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);
 }
 
+void Renderer::DrawGrid(const PerFrameData& frame, graphic::CommandList* cmd)
+{
+    cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
+
+    cmd->BindPipeLine(*pipeline_infiniteGrid);
+    cmd->Draw(6, 1, 0, 0);
+
+}
 void Renderer::DrawScene(const PerFrameData& frame, const Visibility& vis, graphic::CommandList* cmd)
 {
 
@@ -360,20 +371,13 @@ void Renderer::DrawScene(const PerFrameData& frame, const Visibility& vis, graph
     Ref<PipeLine> lastPipeline = nullptr;
     Ref<graphic::Buffer> lastIndexBuffer = nullptr;
 
+    // Bind scene uniform buffer(assume all pipeline are using the same pipeline layout)
+    cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
+
     // Draw
     auto draw = [&](const RenderObject& obj)
     {
-        // Bind Pipeline
-        if (obj.pipeLine != lastPipeline)
-        {
-            lastPipeline = obj.pipeLine;
-            cmd->BindPipeLine(*lastPipeline);
-
-            // Bind scene uniform buffer
-            cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
-        }
-
-        // Bind material
+        // rebind material
         if (obj.material != lastMaterial)
         {
             lastMaterial = obj.material;
@@ -388,6 +392,13 @@ void Renderer::DrawScene(const PerFrameData& frame, const Visibility& vis, graph
             materialPushConstants.metallicFactor = obj.material->uniformBufferData.metalicFactor;
             materialPushConstants.roughnessFactor = obj.material->uniformBufferData.roughNessFactor;
             cmd->PushConstant(&materialPushConstants, sizeof(glm::mat4), sizeof(MaterialPushConstants));
+        }
+
+        // rebind Pipeline
+        if (obj.pipeLine != lastPipeline)
+        {
+            lastPipeline = obj.pipeLine;
+            cmd->BindPipeLine(*lastPipeline);
         }
 
         // Bind index buffer

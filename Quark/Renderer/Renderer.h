@@ -46,6 +46,7 @@ public:
 
     // pipeline descs
     graphic::GraphicPipeLineDesc pipelineDesc_skybox;
+    graphic::GraphicPipeLineDesc pipelineDesc_infiniteGrid;
 
     // default images
     Ref<graphic::Image> image_white;
@@ -59,6 +60,7 @@ public:
 
     // pipelines
     Ref<graphic::PipeLine> pipeline_skybox;
+    Ref<graphic::PipeLine> pipeline_infiniteGrid;
 
     struct PerFrameData 
     {
@@ -84,15 +86,17 @@ public:
 
     ShaderLibrary& GetShaderLibrary() { return *m_shaderLibrary; }
 
-    // This two function is used to sync rendering data with the scene
+    // these two function is used to sync rendering data with the scene
     void UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perframeData);
     void UpdateVisibility(const CameraUniformBufferData& cameraData, const PerFrameData& perframeData, Visibility& vis);
-
     void UpdateGpuResources(PerFrameData& perframeData, Visibility& vis);
 
     // update frame data and visibility before you call these draw functions
     void DrawSkybox(const PerFrameData& frame, const Ref<Texture>& envMap, graphic::CommandList* cmd);
     void DrawScene(const PerFrameData& frame, const Visibility& vis, graphic::CommandList* cmd);
+    
+    // scene helpers
+    void DrawGrid(const PerFrameData& frame, graphic::CommandList* cmd);
 
     Ref<graphic::PipeLine> GetOrCreatePipeLine(
         const ShaderProgramVariant& programVariant,

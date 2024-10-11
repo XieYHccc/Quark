@@ -100,6 +100,9 @@ ShaderLibrary::ShaderLibrary()
 	staticProgram_skybox = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/Spirv/skybox.vert.spv",
 		"BuiltInResources/Shaders/Spirv/skybox.frag.spv");
 
+	staticProgram_infiniteGrid = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/Spirv/infinite_grid.vert.spv",
+		"BuiltInResources/Shaders/Spirv/infinite_grid.frag.spv");
+		
 	QK_CORE_LOGI_TAG("Renderer", "ShaderLibrary Initialized");
 }
 
