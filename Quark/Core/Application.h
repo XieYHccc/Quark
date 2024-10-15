@@ -10,7 +10,8 @@
 
 namespace quark {
 
-struct ApplicationSpecification {
+struct ApplicationSpecification 
+{
     std::string title = "Quark Application";
     std::uint32_t width = 1200;
     std::uint32_t height = 800;

@@ -2,35 +2,35 @@
 #include "Quark/Core/Math/Aabb.h"
 #include "Quark/Graphic/Common.h"
 #include "Quark/Asset/Material.h"
+
 #include <glm/glm.hpp>
 
-namespace quark
-{
+namespace quark {
 
-struct CameraUniformBufferData
+struct UniformBufferData_Camera
 {
     glm::mat4 view;
     glm::mat4 proj;
     glm::mat4 viewproj;
 };
 
-struct SceneUniformBufferData
+struct UniformBufferData_Scene
 {
-    CameraUniformBufferData cameraUboData;
+    UniformBufferData_Camera cameraUboData;
 
     glm::vec4 ambientColor;
     glm::vec4 sunlightDirection; // w for sun power
     glm::vec4 sunlightColor;
 };
 
-struct ModelPushConstants
+struct PushConstants_Model
 {
     // Per geometry
     glm::mat4 worldMatrix = glm::mat4(1.f);
     // u64 vertexBufferGpuAddress; // deprecated currently
 };
 
-struct MaterialPushConstants
+struct PushConstants_Material
 {
     // Per material
     glm::vec4 colorFactors = glm::vec4(1.f);

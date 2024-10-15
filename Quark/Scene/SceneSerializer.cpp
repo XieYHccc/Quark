@@ -87,16 +87,20 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 	if (entity->HasComponent<MeshRendererCmpt>())
 	{
 		auto* meshRendererCmpt = entity->GetComponent<MeshRendererCmpt>();
+		auto* meshCmpt = entity->GetComponent<MeshCmpt>();
+		QK_CORE_ASSERT(meshCmpt)
+		Ref<Mesh> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
+
 		out << YAML::Key << "MeshRendererComponent";
 		out << YAML::BeginMap; // MeshRendererComponent
 
 		out << YAML::Key << "Materials";
 		out << YAML::BeginSeq;
 
-		for (const auto mat : meshRendererCmpt->GetMaterials())
+		for (size_t i = 0; i < mesh->subMeshes.size(); i++)
 		{
 			out << YAML::BeginMap;
-			QK_SERIALIZE_PROPERTY_ASSET(AssetID, mat, out);
+			QK_SERIALIZE_PROPERTY_ASSET(AssetID, meshRendererCmpt->GetMaterial((uint32_t)i), out);
 			out << YAML::EndMap;
 		}
 

@@ -31,16 +31,14 @@ public:
 
 private:
     void CreateGraphicResources();
-
-    graphic::RenderPassInfo2 m_mainPassInfo; // First pass
-    graphic::RenderPassInfo2 m_uiPassInfo;   // Second pass
+    void MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, graphic::CommandList* cmd);
 
     Ref<graphic::Image> m_depth_attachment;
     Ref<graphic::Image> m_color_attachment;
     Ref<graphic::Image> m_entityID_attachment;
     Ref<graphic::Buffer> m_stage_buffer;
 
-    Renderer::PerFrameData m_frameData;
+    Renderer::DrawContext m_frameData;
     Renderer::Visibility m_visibility;
 
     Ref<Texture> m_cubeMapTexture;

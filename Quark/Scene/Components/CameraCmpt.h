@@ -13,8 +13,7 @@ public:
     float zNear;
     float zFar;
 
-    CameraCmpt() = default;
-    CameraCmpt(float aspect, float fov = 60.f, float zNear = 0.1f, float zFar = 100.f);
+    CameraCmpt(float aspect = 1.f, float fov = 60.f, float zNear = 0.1f, float zFar = 100.f);
     QK_COMPONENT_TYPE_DECL(Camera)
     
     glm::mat4 GetViewMatrix();

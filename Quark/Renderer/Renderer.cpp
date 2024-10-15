@@ -1,6 +1,5 @@
 #include "Quark/qkpch.h"
 #include "Quark/Renderer/Renderer.h"
-#include "Quark/Core/Application.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Asset/Mesh.h"
 #include "Quark/Graphic/Device.h"
@@ -9,6 +8,7 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
+
 namespace quark {
 
 using namespace graphic;
@@ -76,21 +76,23 @@ Renderer::Renderer(graphic::Device* device)
 
     // renderpass infos
     {
-        renderPassInfo2_simpleColorPass.numColorAttachments = 1;
-        renderPassInfo2_simpleColorPass.colorAttachmentFormats[0] = format_colorAttachment_main;
-        renderPassInfo2_simpleColorPass.sampleCount = SampleCount::SAMPLES_1;
+        renderPassInfo_swapchainPass.numColorAttachments = 1;
+        renderPassInfo_swapchainPass.colorAttachmentFormats[0] = m_device->GetPresentImageFormat();
+        renderPassInfo_swapchainPass.sampleCount = SampleCount::SAMPLES_1;
 
-        renderPassInfo2_simpleMainPass.numColorAttachments = 1;
-        renderPassInfo2_simpleMainPass.colorAttachmentFormats[0] = format_colorAttachment_main;
-        renderPassInfo2_simpleMainPass.depthAttachmentFormat = format_depthAttachment_main;
-        renderPassInfo2_simpleMainPass.sampleCount = SampleCount::SAMPLES_1;
+        renderPassInfo_simpleMainPass.numColorAttachments = 1;
+        renderPassInfo_simpleMainPass.colorAttachmentFormats[0] = format_colorAttachment_main;
+        renderPassInfo_simpleMainPass.depthAttachmentFormat = format_depthAttachment_main;
+        renderPassInfo_simpleMainPass.sampleCount = SampleCount::SAMPLES_1;
 
-        renderPassInfo2_editorMainPass = renderPassInfo2_simpleMainPass;
-        renderPassInfo2_editorMainPass.numColorAttachments = 2;
-        renderPassInfo2_editorMainPass.colorAttachmentFormats[1] = DataFormat::R32G32_UINT;
+        renderPassInfo_editorMainPass = renderPassInfo_simpleMainPass;
+        renderPassInfo_editorMainPass.numColorAttachments = 2;
+        renderPassInfo_editorMainPass.colorAttachmentFormats[1] = DataFormat::R32G32_UINT;
 
-        renderPassInfo2_uiPass.numColorAttachments = 1;
-        renderPassInfo2_uiPass.colorAttachmentFormats[0] = Application::Get().GetGraphicDevice()->GetPresentImageFormat();
+        renderPassInfo_entityIdPass.numColorAttachments = 1;
+        renderPassInfo_entityIdPass.colorAttachmentFormats[0] = DataFormat::R32G32_UINT;
+        renderPassInfo_entityIdPass.sampleCount = SampleCount::SAMPLES_1;
+        renderPassInfo_entityIdPass.depthAttachmentFormat = format_depthAttachment_main;
     }
 
     // vertex input layout
@@ -121,7 +123,7 @@ Renderer::Renderer(graphic::Device* device)
         pipelineDesc_skybox.vertexInputLayout = vertexInputLayout_skybox;
         
         //TODO: remove hardcoded renderpass
-        pipelineDesc_skybox.renderPassInfo = renderPassInfo2_editorMainPass;
+        pipelineDesc_skybox.renderPassInfo = renderPassInfo_editorMainPass;
 
         pipelineDesc_infiniteGrid.vertShader = GetShaderLibrary().staticProgram_infiniteGrid->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
         pipelineDesc_infiniteGrid.fragShader = GetShaderLibrary().staticProgram_infiniteGrid->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
@@ -130,7 +132,7 @@ Renderer::Renderer(graphic::Device* device)
         pipelineDesc_infiniteGrid.rasterState = rasterizationState_fill;
         pipelineDesc_infiniteGrid.topologyType = TopologyType::TRANGLE_LIST;
 
-        pipelineDesc_infiniteGrid.renderPassInfo = renderPassInfo2_editorMainPass;
+        pipelineDesc_infiniteGrid.renderPassInfo = renderPassInfo_editorMainPass;
     }
 
     // images
@@ -209,6 +211,18 @@ Renderer::Renderer(graphic::Device* device)
     {
         pipeline_skybox = m_device->CreateGraphicPipeLine(pipelineDesc_skybox);
         pipeline_infiniteGrid = m_device->CreateGraphicPipeLine(pipelineDesc_infiniteGrid);
+
+        // entityId pipeline
+        graphic::GraphicPipeLineDesc desc;
+        desc.vertShader = GetShaderLibrary().staticProgram_entityID->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
+        desc.fragShader = GetShaderLibrary().staticProgram_entityID->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
+        desc.depthStencilState = depthStencilState_depthWrite;
+        desc.blendState = blendState_opaque;
+        desc.rasterState = rasterizationState_fill;
+        desc.topologyType = TopologyType::TRANGLE_LIST;
+        desc.renderPassInfo = renderPassInfo_entityIdPass;
+        desc.vertexInputLayout = vertexInputLayout_skybox;
+        pipeline_entityID = m_device->CreateGraphicPipeLine(desc);
     }
 
     QK_CORE_LOGI_TAG("Rernderer", "Renderer Initialized");
@@ -228,16 +242,16 @@ Renderer::~Renderer()
     m_shaderLibrary.reset();
 }
 
-void Renderer::UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perframeData)
+void Renderer::UpdateDrawContext(const Ref<Scene>& scene, DrawContext& context)
 {
     // update light data
-    perframeData.sceneData.ambientColor = glm::vec4(.1f);
-    perframeData.sceneData.sunlightColor = glm::vec4(1.f);
-    perframeData.sceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
+    context.sceneData.ambientColor = glm::vec4(.1f);
+    context.sceneData.sunlightColor = glm::vec4(1.f);
+    context.sceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
 
     // Update render objects
-    perframeData.objects_opaque.clear();
-    perframeData.objects_transparent.clear();
+    context.objects_opaque.clear();
+    context.objects_transparent.clear();
 
     const auto& cmpts = scene->GetComponents<IdCmpt, MeshCmpt, MeshRendererCmpt, TransformCmpt>();
     for (const auto [id_cmpt, mesh_cmpt, mesh_renderer_cmpt, transform_cmpt] : cmpts)
@@ -261,16 +275,16 @@ void Renderer::UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perfram
             newObj.pipeLine = mesh_renderer_cmpt->GetGraphicsPipeLine(i);
             newObj.entityID = id_cmpt->id;
             if (newObj.material->alphaMode == AlphaMode::MODE_OPAQUE)
-                perframeData.objects_opaque.push_back(newObj);
+                context.objects_opaque.push_back(newObj);
             else
-                perframeData.objects_transparent.push_back(newObj);
+                context.objects_transparent.push_back(newObj);
 
             i++;
         }
     }
 }
 
-void Renderer::UpdateVisibility(const CameraUniformBufferData& cameraData, const PerFrameData& perframeData, Visibility& vis)
+void Renderer::UpdateVisibility(const DrawContext& drawContext, Visibility& vis, const UniformBufferData_Camera& cameraData)
 {
 	vis.visible_opaque.clear();
     vis.visible_transparent.clear();
@@ -286,39 +300,34 @@ void Renderer::UpdateVisibility(const CameraUniformBufferData& cameraData, const
             return false;
     };
 
-    for (size_t i = 0; i < perframeData.objects_opaque.size(); i++)
+    for (size_t i = 0; i < drawContext.objects_opaque.size(); i++)
     {
-        if (is_visible(perframeData.objects_opaque[i]))
-            vis.visible_opaque.push_back(i);
+        if (is_visible(drawContext.objects_opaque[i]))
+            vis.visible_opaque.push_back((uint32_t)i);
     }
 
-    for (size_t i = 0; i < perframeData.objects_transparent.size(); i++)
+    for (size_t i = 0; i < drawContext.objects_transparent.size(); i++)
     {
-        if (is_visible(perframeData.objects_transparent[i]))
-            vis.visible_transparent.push_back(i);
+        if (is_visible(drawContext.objects_transparent[i]))
+            vis.visible_transparent.push_back((uint32_t)i);
     }
 
     // Sort render objects by material, pipleine and mesh
     // The number of materials < the number of pipelines < the number of meshes
     std::sort(vis.visible_opaque.begin(), vis.visible_opaque.end(), [&](const uint32_t& iA, const uint32_t& iB)
     {
-        const RenderObject& A = perframeData.objects_opaque[iA];
-        const RenderObject& B = perframeData.objects_opaque[iB];
-        if (A.pipeLine == B.pipeLine)
-        {
-            if (A.material == B.material)
-                return A.indexBuffer < B.indexBuffer;
-            else
-                return A.material < B.material;
-        }
+        const RenderObject& A = drawContext.objects_opaque[iA];
+        const RenderObject& B = drawContext.objects_opaque[iB];
+        if (A.material == B.material)
+            return A.indexBuffer < B.indexBuffer;
         else
-            return A.pipeLine < B.pipeLine;
+            return A.material < B.material;
     });
 
     std::sort(vis.visible_transparent.begin(), vis.visible_transparent.end(), [&](const uint32_t& iA, const uint32_t& iB)
     {
-        const RenderObject& A = perframeData.objects_transparent[iA];
-        const RenderObject& B = perframeData.objects_transparent[iB];
+        const RenderObject& A = drawContext.objects_transparent[iA];
+        const RenderObject& B = drawContext.objects_transparent[iB];
         if (A.material == B.material)
             return A.indexBuffer < B.indexBuffer;
         else
@@ -326,29 +335,29 @@ void Renderer::UpdateVisibility(const CameraUniformBufferData& cameraData, const
     });
 }
 
-void Renderer::UpdateGpuResources(PerFrameData& perframeData, Visibility& vis)
+void Renderer::UpdateGpuResources(DrawContext& DrawContext, Visibility& vis)
 {
     // Create scene uniform buffer
 	BufferDesc desc;
 	desc.domain = BufferMemoryDomain::CPU;
-	desc.size = sizeof(SceneUniformBufferData);
+	desc.size = sizeof(UniformBufferData_Scene);
 	desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	perframeData.sceneUB = m_device->CreateBuffer(desc);
+	DrawContext.sceneUB = m_device->CreateBuffer(desc);
 
-	SceneUniformBufferData sceneData = perframeData.sceneData;
+    UniformBufferData_Scene sceneData = DrawContext.sceneData;
 	sceneData.cameraUboData = vis.cameraData;
-	SceneUniformBufferData* mappedData = (SceneUniformBufferData*)perframeData.sceneUB->GetMappedDataPtr();
+    UniformBufferData_Scene* mappedData = (UniformBufferData_Scene*)DrawContext.sceneUB->GetMappedDataPtr();
 	*mappedData = sceneData;
-
 }
 
-void Renderer::DrawSkybox(const PerFrameData& frame, const Ref<Texture>& envMap, graphic::CommandList* cmd)
+void Renderer::DrawSkybox(const DrawContext& context, const Ref<Texture>& envMap, graphic::CommandList* cmd)
 {
     Ref<Mesh> cubeMesh = AssetManager::Get().mesh_cube;
+    Ref<graphic::PipeLine> skybox_pipeline = GetGraphicsPipeline(*m_shaderLibrary->staticProgram_skybox, {}, cmd->GetCurrentRenderPassInfo(), vertexInputLayout_skybox, false, AlphaMode::MODE_OPAQUE);
+    
+    cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
 
-    cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
-
-    cmd->BindPipeLine(*pipeline_skybox);
+    cmd->BindPipeLine(*skybox_pipeline);
     cmd->BindImage(1, 0, *envMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd->BindSampler(1, 0, *envMap->sampler);
     cmd->BindVertexBuffer(0, *cubeMesh->GetPositionBuffer(), 0);
@@ -356,23 +365,43 @@ void Renderer::DrawSkybox(const PerFrameData& frame, const Ref<Texture>& envMap,
     cmd->DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);
 }
 
-void Renderer::DrawGrid(const PerFrameData& frame, graphic::CommandList* cmd)
+void Renderer::DrawGrid(const DrawContext& context, graphic::CommandList* cmd)
 {
-    cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
+    Ref<graphic::PipeLine> infiniteGrid_pipeline = GetGraphicsPipeline(*m_shaderLibrary->staticProgram_infiniteGrid, {}, cmd->GetCurrentRenderPassInfo(), {}, true, AlphaMode::MODE_OPAQUE);
+    
+    cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
 
-    cmd->BindPipeLine(*pipeline_infiniteGrid);
+    cmd->BindPipeLine(*infiniteGrid_pipeline);
     cmd->Draw(6, 1, 0, 0);
 
 }
-void Renderer::DrawScene(const PerFrameData& frame, const Visibility& vis, graphic::CommandList* cmd)
+void Renderer::DrawEntityID(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd)
 {
+    QK_CORE_ASSERT(cmd->GetCurrentRenderPassInfo().colorAttachmentFormats[0] == graphic::DataFormat::R32G32_UINT)
+    
+    cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
+    cmd->BindPipeLine(*pipeline_entityID);
 
+    for (const uint32_t id : vis.visible_opaque)
+    {
+        const RenderObject& obj = context.objects_opaque[id];
+        cmd->BindVertexBuffer(0, *obj.positionBuffer, 0);
+        cmd->BindVertexBuffer(1, *obj.attributeBuffer, 0);
+        cmd->BindIndexBuffer(*obj.indexBuffer, 0, IndexBufferFormat::UINT32);
+        cmd->PushConstant(&obj.entityID, 64, 8);
+
+        cmd->DrawIndexed(obj.indexCount, 1, obj.firstIndex, 0, 0);
+    }
+}
+
+void Renderer::DrawScene(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd)
+{
     Ref<Material> lastMaterial = nullptr;
     Ref<PipeLine> lastPipeline = nullptr;
     Ref<graphic::Buffer> lastIndexBuffer = nullptr;
 
     // Bind scene uniform buffer(assume all pipeline are using the same pipeline layout)
-    cmd->BindUniformBuffer(0, 0, *frame.sceneUB, 0, sizeof(SceneUniformBufferData));
+    cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
 
     // Draw
     auto draw = [&](const RenderObject& obj)
@@ -387,11 +416,11 @@ void Renderer::DrawScene(const PerFrameData& frame, const Visibility& vis, graph
             cmd->BindImage(1, 2, *lastMaterial->metallicRoughnessTexture->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
             cmd->BindSampler(1, 2, *lastMaterial->metallicRoughnessTexture->sampler);
 
-            MaterialPushConstants materialPushConstants;
+            PushConstants_Material materialPushConstants;
             materialPushConstants.colorFactors = obj.material->uniformBufferData.baseColorFactor;
             materialPushConstants.metallicFactor = obj.material->uniformBufferData.metalicFactor;
             materialPushConstants.roughnessFactor = obj.material->uniformBufferData.roughNessFactor;
-            cmd->PushConstant(&materialPushConstants, sizeof(glm::mat4), sizeof(MaterialPushConstants));
+            cmd->PushConstant(&materialPushConstants, sizeof(glm::mat4), sizeof(PushConstants_Material));
         }
 
         // rebind Pipeline
@@ -411,9 +440,10 @@ void Renderer::DrawScene(const PerFrameData& frame, const Visibility& vis, graph
         }
 
         // Push model constant
-        ModelPushConstants push_constant;
+        PushConstants_Model push_constant;
         push_constant.worldMatrix = obj.transform;
         //push_constant.vertexBufferGpuAddress = obj.attributeBuffer->GetGpuAddress();
+
         cmd->PushConstant(&push_constant, 0, 64);  // only push model matrix
         cmd->PushConstant(&obj.entityID, 88, 8);
 
@@ -421,16 +451,10 @@ void Renderer::DrawScene(const PerFrameData& frame, const Visibility& vis, graph
     };
 
     for (const uint32_t idx : vis.visible_opaque)
-        draw(frame.objects_opaque[idx]);
+        draw(context.objects_opaque[idx]);
 }
 
-Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(
-    const ShaderProgramVariant& programVariant,
-    const graphic::PipelineDepthStencilState& ds,
-    const graphic::PipelineColorBlendState& bs,
-    const graphic::RasterizationState& rs,
-    const graphic::RenderPassInfo2& rp,
-    const graphic::VertexInputLayout& input)
+Ref<graphic::PipeLine> Renderer::GetGraphicsPipeline(const ShaderProgramVariant& programVariant, const graphic::PipelineDepthStencilState& ds, const graphic::PipelineColorBlendState& bs, const graphic::RasterizationState& rs, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& input)
 {
     util::Hasher h;
 
@@ -486,8 +510,8 @@ Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(
 
     uint64_t hash = h.get();
 
-    auto it = m_pipelines.find(hash);
-    if (it != m_pipelines.end())
+    auto it = m_cached_pipelines.find(hash);
+    if (it != m_cached_pipelines.end())
     {
         return it->second;
     }
@@ -503,11 +527,159 @@ Ref<graphic::PipeLine> Renderer::GetOrCreatePipeLine(
         desc.renderPassInfo = rp;
         desc.vertexInputLayout = input;
 
-        Ref<graphic::PipeLine> newPipeline = Application::Get().GetGraphicDevice()->CreateGraphicPipeLine(desc);
-        m_pipelines[hash] = newPipeline;
+        Ref<graphic::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
+        m_cached_pipelines[hash] = newPipeline;
 
         return newPipeline;
     }
+}
+
+Ref<graphic::PipeLine> Renderer::GetGraphicsPipeline(ShaderProgram& program, const ShaderVariantKey& key, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& vertexLayout, bool enableDepth, AlphaMode mode)
+{
+    ShaderProgramVariant* programVariant = program.IsStatic()? program.GetPrecompiledVariant() : program.GetOrCreateVariant(key);
+    graphic::PipelineColorBlendState& bs = mode == AlphaMode::MODE_OPAQUE ? blendState_opaque : blendState_transparent;
+    graphic::PipelineDepthStencilState ds = depthStencilState_disabled;
+    if (enableDepth)
+        ds = mode == AlphaMode::MODE_OPAQUE ? depthStencilState_depthWrite : depthStencilState_depthTestOnly;
+
+    util::Hasher h;
+    h.u64(programVariant->GetHash());
+    h.u64(rp.GetHash());
+
+    // hash depth stencil state
+    h.u32(static_cast<uint32_t>(ds.enableDepthTest));
+    h.u32(static_cast<uint32_t>(ds.enableDepthWrite));
+    h.u32(util::ecast(ds.depthCompareOp));
+
+    // hash blend state
+    h.u32(uint32_t(bs.enable_independent_blend));
+    for (uint32_t i = 0; i < rp.numColorAttachments; i++)
+    {
+        size_t attachmentIndex = 0;
+        if (bs.enable_independent_blend)
+            attachmentIndex = i;
+
+        const auto& att = bs.attachments[attachmentIndex];
+
+        h.u32(static_cast<uint32_t>(att.enable_blend));
+        if (att.enable_blend)
+        {
+            h.u32(util::ecast(att.colorBlendOp));
+            h.u32(util::ecast(att.srcColorBlendFactor));
+            h.u32(util::ecast(att.dstColorBlendFactor));
+            h.u32(util::ecast(att.alphaBlendOp));
+            h.u32(util::ecast(att.srcAlphaBlendFactor));
+            h.u32(util::ecast(att.dstAlphaBlendFactor));
+        }
+    }
+
+    // hash vertex input layout
+    for (const auto& attrib : vertexLayout.vertexAttribInfos)
+    {
+        h.u32(util::ecast(attrib.format));
+        h.u32(attrib.offset);
+        h.u32(attrib.binding);
+    }
+
+    for (const auto& b : vertexLayout.vertexBindInfos)
+    {
+        h.u32(b.binding);
+        h.u32(b.stride);
+        h.u32(util::ecast(b.inputRate));
+    }
+
+    util::Hash hash = h.get();
+    auto it = m_cached_pipelines.find(hash);
+    if (it != m_cached_pipelines.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        graphic::GraphicPipeLineDesc desc = {};
+        desc.vertShader = programVariant->GetShader(graphic::ShaderStage::STAGE_VERTEX);
+        desc.fragShader = programVariant->GetShader(graphic::ShaderStage::STAGE_FRAGEMNT);
+        desc.depthStencilState = ds;
+        desc.blendState = bs;
+        desc.rasterState = rasterizationState_fill;
+        desc.topologyType = graphic::TopologyType::TRANGLE_LIST;
+        desc.renderPassInfo = rp;
+        if (vertexLayout.isValid())
+            desc.vertexInputLayout = vertexLayout;
+
+        Ref<graphic::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
+        m_cached_pipelines[hash] = newPipeline;
+
+        return newPipeline;
+    }
+}
+
+Ref<graphic::VertexInputLayout> Renderer::GetVertexInputLayout(uint32_t meshAttributesMask)
+{
+    auto it = m_cached_vertexInputLayouts.find(meshAttributesMask);
+    if (it != m_cached_vertexInputLayouts.end())
+		return it->second;
+
+    Ref<graphic::VertexInputLayout> newLayout = CreateRef<graphic::VertexInputLayout>();
+
+    // Position
+    if (meshAttributesMask & MESH_ATTRIBUTE_POSITION_BIT)
+    {
+        graphic::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
+        attrib.location = 0;
+        attrib.binding = 0;
+        attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+        attrib.offset = 0;
+    }
+
+    uint32_t offset = 0;
+
+    // UV
+    if (meshAttributesMask & MESH_ATTRIBUTE_UV_BIT)
+    {
+        graphic::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
+        attrib.location = 1;
+        attrib.binding = 1;
+        attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
+        attrib.offset = offset;
+        offset += sizeof(glm::vec2);
+    }
+
+    // Normal
+    if (meshAttributesMask & MESH_ATTRIBUTE_NORMAL_BIT)
+    {
+        graphic::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
+        attrib.location = 2;
+        attrib.binding = 1;
+        attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+        attrib.offset = offset;
+        offset += sizeof(glm::vec3);
+    }
+
+    // Vertex Color
+    if (meshAttributesMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
+    {
+        graphic::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
+        attrib.location = 3;
+        attrib.binding = 1;
+        attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
+        attrib.offset = offset;
+        offset += sizeof(glm::vec4);
+    }
+
+    graphic::VertexInputLayout::VertexBindInfo bindInfo = {};
+    bindInfo.binding = 0;
+    bindInfo.stride = sizeof(glm::vec3);
+    bindInfo.inputRate = graphic::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+    newLayout->vertexBindInfos.push_back(bindInfo);
+
+    bindInfo.binding = 1;
+    bindInfo.stride = offset;
+    bindInfo.inputRate = graphic::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+    newLayout->vertexBindInfos.push_back(bindInfo);
+
+    m_cached_vertexInputLayouts[meshAttributesMask] = newLayout;
+    return newLayout;
 }
 
 }

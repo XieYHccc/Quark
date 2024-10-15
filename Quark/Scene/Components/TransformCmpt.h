@@ -51,6 +51,7 @@ private:
         DIRTY = 1 << 0, // Local transform has changed
         PARENT_DIRTY = 1 << 1 // Need to update parent world matrix
     };
+
     uint32_t m_flags = Flags::DIRTY;
 
     glm::quat m_localQuat;

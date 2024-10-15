@@ -1,10 +1,5 @@
 #include "Editor/EditorApp.h"
 
-#include <glm/gtx/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <imgui.h>
-#include <ImGuizmo.h>
-
 #include <Quark/Core/Application.h>
 #include <Quark/Core/FileSystem.h>
 #include <Quark/Core/Input.h>
@@ -20,6 +15,11 @@
 #include <Quark/Asset/MaterialSerializer.h>
 #include <Quark/UI/UI.h>
 
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
+#include <ImGuizmo.h>
+
 namespace quark {
 
 Application* CreateApplication()
@@ -27,8 +27,8 @@ Application* CreateApplication()
     ApplicationSpecification specs;
     specs.uiSpecs.flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS;
     specs.title = "Quark Editor";
-    specs.width = 1600;
-    specs.height = 1000;
+    specs.width = 2500;
+    specs.height = 1600;
     specs.isFullScreen = false;
 
     return new EditorApp(specs);
@@ -39,10 +39,6 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     m_editorCamera(60, 1280, 720, 0.1f, 256.f), m_viewportSize(1000, 800), // dont'care here, will be overwrited
     m_hoverdEntity(nullptr)
 {
-    // Create Render structures
-    m_mainPassInfo = Renderer::Get().renderPassInfo2_editorMainPass;
-
-    m_uiPassInfo = Renderer::Get().renderPassInfo2_uiPass;
     CreateGraphicResources();
 
     // Load cube map
@@ -59,7 +55,7 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     // Adjust editor camera's aspect ratio
     m_editorCamera.viewportWidth = (float)Application::Get().GetWindow()->GetWidth();
     m_editorCamera.viewportHeight = (float)Application::Get().GetWindow()->GetHeight();
-    m_editorCamera.SetPosition(glm::vec3(0, 0, 5));
+    m_editorCamera.SetPosition(glm::vec3(0, 5, 5));
 
     EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
     EventManager::Get().Subscribe<MouseButtonPressedEvent>([&](const MouseButtonPressedEvent& e) { OnMouseButtonPressed(e); });
@@ -111,15 +107,15 @@ void EditorApp::OnUpdate(TimeStep ts)
     }
 
     // Sync the rendering data with game scene
-    CameraUniformBufferData cameraData;
+    UniformBufferData_Camera cameraData;
     cameraData.proj = m_editorCamera.GetProjectionMatrix();
     cameraData.proj[1][1] *= -1;
     cameraData.view = m_editorCamera.GetViewMatrix();
     cameraData.viewproj = cameraData.proj * cameraData.view;
 
     //Renderer::Get().UpdateDrawContextEditor(cameraData);
-    Renderer::Get().UpdatePerFrameData(m_scene, m_frameData);
-    Renderer::Get().UpdateVisibility(cameraData, m_frameData, m_visibility);
+    Renderer::Get().UpdateDrawContext(m_scene, m_frameData);
+    Renderer::Get().UpdateVisibility(m_frameData, m_visibility, cameraData);
 }   
 
 void EditorApp::OnImGuiUpdate()
@@ -295,9 +291,24 @@ void EditorApp::OnRender(TimeStep ts)
         auto* graphic_cmd = m_GraphicDevice->BeginCommandList();
         auto* swap_chain_image = m_GraphicDevice->GetPresentImage();
 
+        // Viewport and scissor
+        graphic::Viewport viewport;
+        viewport.x = 0;
+        viewport.y = 0;
+        viewport.width = (float)m_color_attachment->GetDesc().width;
+        viewport.height = (float)m_color_attachment->GetDesc().height;
+        viewport.minDepth = 0;
+        viewport.maxDepth = 1;
+
+        graphic::Scissor scissor;
+        scissor.extent.width = (int)viewport.width;
+        scissor.extent.height = (int)viewport.height;
+        scissor.offset.x = 0;
+        scissor.offset.y = 0;
+
         // Main pass
         {
-            graphic::PipelineImageBarrier image_barriers[3];
+            graphic::PipelineImageBarrier image_barriers[2];
             image_barriers[0].image = m_color_attachment.get();
             image_barriers[0].srcStageBits = graphic::PIPELINE_STAGE_ALL_GRAPHICS_BIT;
             image_barriers[0].srcMemoryAccessBits = 0;
@@ -312,30 +323,14 @@ void EditorApp::OnRender(TimeStep ts)
             image_barriers[1].dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             image_barriers[1].layoutBefore = graphic::ImageLayout::UNDEFINED;
             image_barriers[1].layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-
             graphic_cmd->PipeLineBarriers(nullptr, 0, image_barriers, 2, nullptr, 0);
-
-            // Viewport and scissor
-            graphic::Viewport viewport;
-            viewport.x = 0;
-            viewport.y = 0;
-            viewport.width = (float)m_color_attachment->GetDesc().width;
-            viewport.height = (float)m_color_attachment->GetDesc().height;
-            viewport.minDepth = 0;
-            viewport.maxDepth = 1;
-
-            graphic::Scissor scissor;
-            scissor.extent.width = (int)viewport.width;
-            scissor.extent.height = (int)viewport.height;
-            scissor.offset.x = 0;
-            scissor.offset.y = 0;
 
             // Begin pass
             graphic::FrameBufferInfo fb_info;
             fb_info.colorAttatchemtsLoadOp[0] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
             fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.colorAttachments[0] = m_color_attachment.get();
-            fb_info.clearColors[0] = { 0.22f, 0.22f, 0.22f, 1.f };
+            fb_info.clearColors[0] = { 0.2f, 0.2f, 0.2f, 0.f };
 
             fb_info.colorAttatchemtsLoadOp[1] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
             fb_info.colorAttatchemtsStoreOp[1] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
@@ -348,7 +343,7 @@ void EditorApp::OnRender(TimeStep ts)
             fb_info.depthAttachmentStoreOp = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
-            graphic_cmd->BeginRenderPass(m_mainPassInfo, fb_info);
+            graphic_cmd->BeginRenderPass(renderer.renderPassInfo_editorMainPass, fb_info);
             graphic_cmd->SetViewPort(viewport);
             graphic_cmd->SetScissor(scissor);
 
@@ -366,7 +361,7 @@ void EditorApp::OnRender(TimeStep ts)
             graphic_cmd->EndRenderPass();
         }
 
-        // UI pass
+        // ui pass
         {
             graphic::PipelineImageBarrier image_barriers[2];
             image_barriers[0].image = swap_chain_image;
@@ -390,7 +385,7 @@ void EditorApp::OnRender(TimeStep ts)
             fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.colorAttachments[0] = swap_chain_image;
 
-            graphic_cmd->BeginRenderPass(m_uiPassInfo, fb_info);
+            graphic_cmd->BeginRenderPass(renderer.renderPassInfo_swapchainPass, fb_info);
             UI::Get()->OnRender(graphic_cmd);
             graphic_cmd->EndRenderPass();
         }
@@ -521,6 +516,14 @@ void EditorApp::CreateGraphicResources()
     buffer_desc.usageBits = BUFFER_USAGE_TRANSFER_TO_BIT;
     buffer_desc.size = image_desc.width * image_desc.height * sizeof(uint64_t);
     m_stage_buffer = m_GraphicDevice->CreateBuffer(buffer_desc);
+}
+
+void EditorApp::MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, graphic::CommandList* cmd)
+{
+    // Bind scene uniform buffer(assume all pipeline are using the same pipeline layout)
+    cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
+
+
 }
 
 }

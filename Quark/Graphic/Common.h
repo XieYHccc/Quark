@@ -20,7 +20,7 @@ class Shader;
 class PipeLine;
 class Sampler;
 
-struct RenderPassInfo;
+struct RenderPassInfo2;
 struct BufferDesc;
 struct ImageDesc;
 struct ImageInitData;

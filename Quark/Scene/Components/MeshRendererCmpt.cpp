@@ -6,17 +6,17 @@ namespace quark {
 
 void MeshRendererCmpt::SetMesh(const Ref<Mesh>& mesh)
 {
-	m_Mesh = mesh;
-	m_Materials.resize(mesh->subMeshes.size());
-	m_GraphicsPipeLines.resize(mesh->subMeshes.size());
+	m_mesh = mesh;
+	m_materials.resize(mesh->subMeshes.size());
+	m_graphicsPipeLines.resize(mesh->subMeshes.size());
 }
 
 void MeshRendererCmpt::SetMaterial(uint32_t index, const Ref<Material>& mat)
 {
-	if (index < m_Materials.size())
+	if (index < m_materials.size())
 	{
-		m_Materials[index] = mat;
-		m_DirtyMaterialMask |= 1 << index;
+		m_materials[index] = mat;
+		m_dirtyMaterialMask |= 1 << index;
 	}
 	else
 		QK_CORE_LOGW_TAG("Scene", "MeshRendererCmpt::SetMaterial: Index out of range");
@@ -24,40 +24,36 @@ void MeshRendererCmpt::SetMaterial(uint32_t index, const Ref<Material>& mat)
 
 Ref<Material> MeshRendererCmpt::GetMaterial(uint32_t index)
 {
-	QK_CORE_ASSERT(index < m_Materials.size())
-	QK_CORE_ASSERT(m_Materials[index] != nullptr)
+	QK_CORE_ASSERT(index < m_materials.size())
+	QK_CORE_ASSERT(m_materials[index] != nullptr)
 	
-	return m_Materials[index];
+	return m_materials[index];
 }
 
 Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 {
-	QK_CORE_ASSERT(index < m_GraphicsPipeLines.size())
+	QK_CORE_ASSERT(index < m_graphicsPipeLines.size())
 
-	if (m_GraphicsPipeLines[index] == nullptr)
+	if (m_graphicsPipeLines[index] == nullptr)
 	{
-		// Create a new pipeline
-		m_CachedProgramVatriantKey.meshAttributeMask = m_Mesh->GetMeshAttributeMask();
-
-		UpdateCachedVertexAttribs(m_CachedProgramVatriantKey.meshAttributeMask);
-
+		// create a new pipeline
+		m_cachedProgramVatriantKey.meshAttributeMask = m_mesh->GetMeshAttributeMask();
 		UpdateGraphicsPipeLine(index);
 	}
 	else
 	{
 		bool requireNewPipeline = false;
 
-		// Check if mesh's attribute mask has changed
-		if (m_CachedProgramVatriantKey.meshAttributeMask != m_Mesh->GetMeshAttributeMask())
+		// check if mesh's attribute mask has changed
+		if (m_cachedProgramVatriantKey.meshAttributeMask != m_mesh->GetMeshAttributeMask())
 		{
-			m_CachedProgramVatriantKey.meshAttributeMask = m_Mesh->GetMeshAttributeMask();
-			UpdateCachedVertexAttribs(m_CachedProgramVatriantKey.meshAttributeMask);
+			m_cachedProgramVatriantKey.meshAttributeMask = m_mesh->GetMeshAttributeMask();
 			requireNewPipeline = true;
 		}
 
-		if ((m_DirtyMaterialMask & (1u < index)) != 0)
+		if ((m_dirtyMaterialMask & (1u < index)) != 0)
 		{
-			m_DirtyMaterialMask &= ~(1u << index);
+			m_dirtyMaterialMask &= ~(1u << index);
 			requireNewPipeline = true;
 		}
 
@@ -67,89 +63,18 @@ Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 		}
 	}
 
-	return m_GraphicsPipeLines[index];
+	return m_graphicsPipeLines[index];
 
-}
-
-void MeshRendererCmpt::UpdateCachedVertexAttribs(uint32_t meshAttribsMask)
-{
-	m_CachedVertexInputLayout = {};
-
-	// TODO: Add support for dynamic mesh
-	// Position
-	if (meshAttribsMask & MESH_ATTRIBUTE_POSITION_BIT)
-	{
-		graphic::VertexInputLayout::VertexAttribInfo& attrib = m_CachedVertexInputLayout.vertexAttribInfos.emplace_back();
-		attrib.location = 0;
-		attrib.binding = 0;
-		attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
-		attrib.offset = 0;
-	}
-
-	uint32_t offset = 0;
-
-	// UV
-	if (meshAttribsMask & MESH_ATTRIBUTE_UV_BIT)
-	{
-		graphic::VertexInputLayout::VertexAttribInfo& attrib = m_CachedVertexInputLayout.vertexAttribInfos.emplace_back();
-		attrib.location = 1;
-		attrib.binding = 1;
-		attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
-		attrib.offset = offset;
-		offset += sizeof(decltype(m_Mesh->vertex_uvs)::value_type);
-	}
-
-	// Normal
-	if (meshAttribsMask & MESH_ATTRIBUTE_NORMAL_BIT)
-	{
-		graphic::VertexInputLayout::VertexAttribInfo& attrib = m_CachedVertexInputLayout.vertexAttribInfos.emplace_back();
-		attrib.location = 2;
-		attrib.binding = 1;
-		attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
-		attrib.offset = offset;
-		offset += sizeof(decltype(m_Mesh->vertex_normals)::value_type);
-	}
-
-	// Vertex Color
-	if (meshAttribsMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
-	{
-		graphic::VertexInputLayout::VertexAttribInfo& attrib = m_CachedVertexInputLayout.vertexAttribInfos.emplace_back();
-		attrib.location = 3;
-		attrib.binding = 1;
-		attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
-		attrib.offset = offset;
-		offset += sizeof(decltype(m_Mesh->vertex_colors)::value_type);
-	}
-
-	graphic::VertexInputLayout::VertexBindInfo bindInfo = {};
-	bindInfo.binding = 0;
-	bindInfo.stride = sizeof(decltype(m_Mesh->vertex_positions)::value_type);
-	bindInfo.inputRate = graphic::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
-	m_CachedVertexInputLayout.vertexBindInfos.push_back(bindInfo);
-
-	bindInfo.binding = 1;
-	bindInfo.stride = offset;
-	bindInfo.inputRate = graphic::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
-	m_CachedVertexInputLayout.vertexBindInfos.push_back(bindInfo);
 }
 
 void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 {
+	Renderer& renderer = Renderer::Get();
+
 	Ref<Material> mat = GetMaterial(index);
+	Ref<graphic::VertexInputLayout> vertexLayout = renderer.GetVertexInputLayout(m_cachedProgramVatriantKey.meshAttributeMask);
 
-	ShaderProgramVariant* programVariant = mat->shaderProgram->GetOrCreateVariant(m_CachedProgramVatriantKey);
-
-	// TODO: Remove hardcoded states after restruct Material class
-	graphic::PipelineDepthStencilState dss = mat->alphaMode == AlphaMode::MODE_OPAQUE ?
-		Renderer::Get().depthStencilState_depthWrite: Renderer::Get().depthStencilState_depthTestOnly;
-
-	graphic::PipelineColorBlendState cbs = mat->alphaMode == AlphaMode::MODE_OPAQUE ?
-		graphic::PipelineColorBlendState::create_disabled(2) : graphic::PipelineColorBlendState::create_blend(2);
-
-	m_GraphicsPipeLines[index] = Renderer::Get().GetOrCreatePipeLine(*programVariant, dss, cbs,
-		Renderer::Get().rasterizationState_fill,
-		Renderer::Get().renderPassInfo2_editorMainPass, //TODO: Remove hardcoded render pass when we have render graph system
-		m_CachedVertexInputLayout);
+	m_graphicsPipeLines[index] = renderer.GetGraphicsPipeline(*(mat->shaderProgram), m_cachedProgramVatriantKey, renderer.renderPassInfo_editorMainPass, *vertexLayout, true, mat->alphaMode);
 }
 
 }

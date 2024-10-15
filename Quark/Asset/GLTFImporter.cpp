@@ -1,10 +1,6 @@
 #include "Quark/qkpch.h"
 #include "Quark/Asset/GLTFImporter.h"
-
-#include <glm/gtc/type_ptr.hpp>
-#include <stb_image.h>
-
-#include <Quark/Core/Application.h>
+#include "Quark/Core/Application.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
@@ -13,6 +9,9 @@
 #include "Quark/Renderer/Renderer.h"
 #include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/AssetManager.h"
+
+#include <glm/gtc/type_ptr.hpp>
+#include <stb_image.h>
 
 namespace quark {
 using namespace quark::graphic;

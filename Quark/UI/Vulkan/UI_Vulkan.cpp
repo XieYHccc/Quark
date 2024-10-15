@@ -29,8 +29,8 @@ void UI_Vulkan::Init(graphic::Device* device, const UiSpecification& specs)
 	io.ConfigViewportsNoAutoMerge = false;
 	io.ConfigViewportsNoTaskBarIcon = true;
 
-    io.Fonts->AddFontFromFileTTF("BuiltInResources/Fonts/OpenSans/OpenSans-Bold.ttf", 18.f);
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("BuiltInResources/Fonts/OpenSans/OpenSans-Regular.ttf", 18.f);
+    io.Fonts->AddFontFromFileTTF("BuiltInResources/Fonts/OpenSans/OpenSans-Bold.ttf", 25.f);
+	io.FontDefault = io.Fonts->AddFontFromFileTTF("BuiltInResources/Fonts/OpenSans/OpenSans-Regular.ttf", 25.f);
 
     // Style
     {

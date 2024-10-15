@@ -320,8 +320,15 @@ void InspectorPanel::OnImGuiUpdate()
         // MeshRenderer component
         DrawComponent<MeshRendererCmpt>("MeshRenderer", m_SelectedEntity, [&](auto& component) 
 		{
-			for (uint32_t i = 0; auto mat : component.GetMaterials())
+            auto* meshCmpt = m_SelectedEntity->GetComponent<MeshCmpt>();
+            if (!meshCmpt)
+				return;
+
+            Ref<Mesh> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
+			for (uint32_t i = 0; i < mesh->subMeshes.size(); i++)
 			{
+                Ref<Material> mat = component.GetMaterial(i);
+
                 std::filesystem::path materialAssetPath = mat->GetAssetID() != 1 ?
 					AssetManager::Get().GetAssetMetadata(mat->GetAssetID()).filePath : std::filesystem::path("Default material");
 

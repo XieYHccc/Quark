@@ -1,23 +1,11 @@
 #pragma once
-#include <glm/glm.hpp>
-
 #include "Quark/Core/Math/Aabb.h"
 #include "Quark/Core/Util/EnumCast.h"
 #include "Quark/Asset/Material.h"
 
+#include <glm/glm.hpp>
+
 namespace quark {
-//struct Vertex {
-//    glm::vec3 position;
-//    float uv_x;
-//    glm::vec3 normal;
-//    float uv_y;
-//    glm::vec4 color;
-//
-//    bool operator==(const Vertex &other) const {
-//        return position == other.position && color == other.color && normal == other.normal &&
-//                uv_x == other.uv_x && uv_y == other.uv_y;
-//    }
-//};
 
 enum class MeshAttribute : unsigned
 {
@@ -98,7 +86,6 @@ private:
 
     bool m_IsDynamic = false;
 
-    friend class SceneRenderer;
     friend class Renderer;
 
 };

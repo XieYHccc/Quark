@@ -31,8 +31,8 @@
 #include <Quark/Graphic/Device.h>
 #include <Quark/Graphic/TextureFormatLayout.h>
 
-// Quark Renderer API
-#include <Quark/Renderer/SceneRenderer.h>
+// Quark Renderer
+#include <Quark/Renderer/Renderer.h>
 
 // Quark Scene API
 #include <Quark/Ecs/Component.h>

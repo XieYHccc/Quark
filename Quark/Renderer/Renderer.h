@@ -5,13 +5,14 @@
 #include "Quark/Renderer/Types.h"
 #include "Quark/Renderer/ShaderLibrary.h"
 
-namespace quark {
 
+namespace quark {
 class Scene;
 
 // 1. high level rendering api
-// 2. this class is a collection of graphics technique implentations and functions 
+// 2. a collection of graphics technique implentations and functions 
 // to draw a scene, shadows, post processes and other things.
+// 3. owner of the shader library
 class Renderer : public util::MakeSingleton<Renderer> {
 public:
     // formats
@@ -39,14 +40,15 @@ public:
     graphic::VertexInputLayout vertexInputLayout_skybox;
 
     // renderPassInfo
-    graphic::RenderPassInfo2 renderPassInfo2_simpleColorPass;
-    graphic::RenderPassInfo2 renderPassInfo2_simpleMainPass;
-    graphic::RenderPassInfo2 renderPassInfo2_editorMainPass;
-    graphic::RenderPassInfo2 renderPassInfo2_uiPass;
+    graphic::RenderPassInfo2 renderPassInfo_swapchainPass;
+    graphic::RenderPassInfo2 renderPassInfo_simpleMainPass;
+    graphic::RenderPassInfo2 renderPassInfo_editorMainPass;
+    graphic::RenderPassInfo2 renderPassInfo_entityIdPass;
 
     // pipeline descs
     graphic::GraphicPipeLineDesc pipelineDesc_skybox;
     graphic::GraphicPipeLineDesc pipelineDesc_infiniteGrid;
+    graphic::GraphicPipeLineDesc pipelineDesc_staticMesh;
 
     // default images
     Ref<graphic::Image> image_white;
@@ -61,12 +63,14 @@ public:
     // pipelines
     Ref<graphic::PipeLine> pipeline_skybox;
     Ref<graphic::PipeLine> pipeline_infiniteGrid;
+    Ref<graphic::PipeLine> pipeline_entityID;
 
-    struct PerFrameData 
+    struct DrawContext 
     {
         std::vector<RenderObject> objects_opaque;
         std::vector<RenderObject> objects_transparent;
-        SceneUniformBufferData sceneData;
+
+        UniformBufferData_Scene sceneData;
 
         // gpu resources
         Ref<graphic::Buffer> sceneUB;
@@ -74,7 +78,7 @@ public:
 
     struct Visibility
     {
-        CameraUniformBufferData cameraData;
+        UniformBufferData_Camera cameraData;
         math::Frustum frustum;
         std::vector<uint32_t> visible_opaque;
         std::vector<uint32_t> visible_transparent;
@@ -87,31 +91,27 @@ public:
     ShaderLibrary& GetShaderLibrary() { return *m_shaderLibrary; }
 
     // these two function is used to sync rendering data with the scene
-    void UpdatePerFrameData(const Ref<Scene>& scene, PerFrameData& perframeData);
-    void UpdateVisibility(const CameraUniformBufferData& cameraData, const PerFrameData& perframeData, Visibility& vis);
-    void UpdateGpuResources(PerFrameData& perframeData, Visibility& vis);
-
-    // update frame data and visibility before you call these draw functions
-    void DrawSkybox(const PerFrameData& frame, const Ref<Texture>& envMap, graphic::CommandList* cmd);
-    void DrawScene(const PerFrameData& frame, const Visibility& vis, graphic::CommandList* cmd);
+    void UpdateDrawContext(const Ref<Scene>& scene, DrawContext& context);
+    void UpdateVisibility(const DrawContext& context, Visibility& vis, const UniformBufferData_Camera& cameraData);
     
-    // scene helpers
-    void DrawGrid(const PerFrameData& frame, graphic::CommandList* cmd);
+    void UpdateGpuResources(DrawContext& context, Visibility& vis);
 
-    Ref<graphic::PipeLine> GetOrCreatePipeLine(
-        const ShaderProgramVariant& programVariant,
-        const graphic::PipelineDepthStencilState& ds,
-        const graphic::PipelineColorBlendState& bs,
-        const graphic::RasterizationState& rs,
-        const graphic::RenderPassInfo2& rp,
-        const graphic::VertexInputLayout& input);
+    // update draw context and visibility before you call these draw functions
+    void DrawSkybox(const DrawContext& context, const Ref<Texture>& envMap, graphic::CommandList* cmd);
+    void DrawScene(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd);
+    void DrawGrid(const DrawContext& context, graphic::CommandList* cmd);
+    void DrawEntityID(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd);
+    // caching
+    Ref<graphic::PipeLine> GetGraphicsPipeline(const ShaderProgramVariant& programVariant, const graphic::PipelineDepthStencilState& ds, const graphic::PipelineColorBlendState& bs, const graphic::RasterizationState& rs, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& input);
+    Ref<graphic::PipeLine> GetGraphicsPipeline(ShaderProgram& program, const ShaderVariantKey& key, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& vertexLayout, bool enableDepth, AlphaMode mode);
+    Ref<graphic::VertexInputLayout> GetVertexInputLayout(uint32_t meshAttributesMask);
 
 private:
     graphic::Device* m_device;
 
     Scope<ShaderLibrary> m_shaderLibrary;
 
-    std::unordered_map<uint64_t, Ref<graphic::PipeLine>> m_pipelines;
-
+    std::unordered_map<uint64_t, Ref<graphic::PipeLine>> m_cached_pipelines;
+    std::unordered_map<uint32_t, Ref<graphic::VertexInputLayout>> m_cached_vertexInputLayouts;
 };
 }

@@ -1,14 +1,15 @@
 #pragma once
-#include <unordered_set>
 #include "Quark/Graphic/Shader.h"
+
+#include <unordered_set>
 
 namespace quark {
 
-/// Helper class to generate SPIRV code from GLSL source
-/// Currently only support compiling for one shader stage and vulkan 1.3
+/// helper class to generate SPIRV code from GLSL source
+/// currently only support compiling for one shader stage and vulkan 1.3
 class GLSLCompiler {
 public:
-	// Adds support for C style preprocessor macros to glsl shaders
+	// adds support for C style preprocessor macros to glsl shaders
 	// enabling you to define or undefine certain symbols
 	class CompileOptions {
 	public:
@@ -63,7 +64,5 @@ private:
 	graphic::ShaderStage m_ShaderStage = graphic::ShaderStage::MAX_ENUM;
 
 	bool m_IsPreprocessed = false;
-
-
 };
 }

@@ -94,7 +94,7 @@ CommandList_Vulkan::~CommandList_Vulkan()
     vkDestroyCommandPool(m_device->vkDevice, m_cmdPool, nullptr); 
 }
 
-void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier *imageBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier *bufferBarriers, u32 bufferBarriersCount)
+void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier *imageBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier *bufferBarriers, uint32_t bufferBarriersCount)
 {
     QK_CORE_ASSERT(bufferBarriers == nullptr);   // do not support buffer barrier for now
 
@@ -416,6 +416,17 @@ void CommandList_Vulkan::EndRenderPass()
     m_device->vkContext->extendFunction.pVkCmdEndRenderingKHR(m_cmdBuffer);
 }
 
+const RenderPassInfo2& CommandList_Vulkan::GetCurrentRenderPassInfo() const
+{
+    return m_currentRenderPassInfo;
+}
+
+const PipeLine* CommandList_Vulkan::GetCurrentGraphicsPipeline() const
+{
+    return m_currentPipeline;
+}
+
+
 void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_t size)
 {
     QK_CORE_ASSERT(offset + size < PUSH_CONSTANT_DATA_SIZE)
@@ -445,7 +456,7 @@ void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_
 	_SetDirtyFlags(COMMAND_LIST_DIRTY_PUSH_CONSTANTS_BIT);
 }
 
-void CommandList_Vulkan::BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer &buffer, u64 offset, u64 size)
+void CommandList_Vulkan::BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer &buffer, uint64_t offset, uint64_t size)
 {
     QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
@@ -492,7 +503,7 @@ void CommandList_Vulkan::BindUniformBuffer(uint32_t set, uint32_t binding, const
 
 }
 
-void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &buffer, u64 offset, u64 size)
+void CommandList_Vulkan::BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer &buffer, u64 offset, u64 size)
 {
     QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
@@ -528,7 +539,7 @@ void CommandList_Vulkan::BindStorageBuffer(u32 set, u32 binding, const Buffer &b
     m_dirtySetMask |= 1u << set;
 }
 
-void CommandList_Vulkan::BindImage(u32 set, u32 binding, const Image &image, ImageLayout layout)
+void CommandList_Vulkan::BindImage(uint32_t set, uint32_t binding, const Image &image, ImageLayout layout)
 {
     QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
@@ -616,7 +627,7 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
     m_currentPipeline = &internal_pipeline;
 }
 
-void CommandList_Vulkan::BindSampler(u32 set, u32 binding, const Sampler& sampler)
+void CommandList_Vulkan::BindSampler(uint32_t set, uint32_t binding, const Sampler& sampler)
 {
     QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
@@ -675,7 +686,7 @@ void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const
     vkCmdBindIndexBuffer(m_cmdBuffer, internal_buffer.GetHandle(), offset, (format == IndexBufferFormat::UINT16? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32));
 }
 
-void CommandList_Vulkan::BindVertexBuffer(u32 binding, const Buffer &buffer, u64 offset)
+void CommandList_Vulkan::BindVertexBuffer(uint32_t binding, const Buffer &buffer, u64 offset)
 {
     auto& internal_buffer = ToInternal(&buffer);
     // TODO: add some state track for debuging here
@@ -816,10 +827,10 @@ void CommandList_Vulkan::RebindDescriptorSet(uint32_t set)
     auto& set_layout = m_currentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set];
     auto& bindings = m_bindingState.descriptorBindings[set];
 
-	u32 num_dynamic_offsets = 0;
+	uint32_t num_dynamic_offsets = 0;
 	uint32_t dynamic_offsets[SET_BINDINGS_MAX_NUM];
 
-    util::for_each_bit(set_layout.uniform_buffer_mask, [&](u32 binding) 
+    util::for_each_bit(set_layout.uniform_buffer_mask, [&](uint32_t binding) 
     {
         for (size_t i = 0; i < set_layout.vk_bindings[binding].descriptorCount; ++i) 
         {
@@ -842,7 +853,7 @@ void CommandList_Vulkan::DrawIndexed(uint32_t index_count, uint32_t instance_cou
     vkCmdDrawIndexed(m_cmdBuffer, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
-void CommandList_Vulkan::Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance)
+void CommandList_Vulkan::Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance)
 {
     // Flush render state : update descriptor sets and bind vertex buffers 
     FlushRenderState();
@@ -857,8 +868,8 @@ void CommandList_Vulkan::FlushRenderState()
     const PipeLineLayout* pipeline_layout = m_currentPipeline->GetLayout();
 
     // 1. flush dirty descriptor set
-    u32 sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_dirtySetMask;
-    util::for_each_bit(sets_need_update, [&](u32 set) { FlushDescriptorSet(set); });
+    uint32_t sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_dirtySetMask;
+    util::for_each_bit(sets_need_update, [&](uint32_t set) { FlushDescriptorSet(set); });
     m_dirtySetMask &= ~sets_need_update;
 
     // ff we update a set, we also bind dynamically
@@ -866,8 +877,8 @@ void CommandList_Vulkan::FlushRenderState()
 
     // if only rebound dynamic uniform buffers with different offset,
     // we only need to rebinding descriptor set with different dynamic offsets
-    u32 dynamic_sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_dirtySetRebindMask;
-    util::for_each_bit(dynamic_sets_need_update, [&](u32 set) {RebindDescriptorSet(set);});
+    uint32_t dynamic_sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_dirtySetRebindMask;
+    util::for_each_bit(dynamic_sets_need_update, [&](uint32_t set) {RebindDescriptorSet(set);});
     m_dirtySetRebindMask&= ~dynamic_sets_need_update;
 
     // 2. flush push constant
@@ -883,7 +894,7 @@ void CommandList_Vulkan::FlushRenderState()
 
     // 3. flush dirty vertex buffer
     auto& vertex_buffer_bindings = m_bindingState.vertexBufferBindingState;
-    util::for_each_bit_range(m_dirtyVertexBufferMask, [&](u32 first_binding, u32 count) {
+    util::for_each_bit_range(m_dirtyVertexBufferMask, [&](uint32_t first_binding, uint32_t count) {
 #ifdef QK_DEBUG_BUILD
         for (size_t binding = first_binding; binding < count; ++binding)
             QK_CORE_ASSERT(vertex_buffer_bindings.buffers[binding] != VK_NULL_HANDLE)

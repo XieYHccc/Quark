@@ -4,12 +4,13 @@
 #include "Quark/Asset/Texture.h"
 
 namespace quark {
+class ShaderProgram;
+
 enum class AlphaMode {
     MODE_OPAQUE,
     MODE_TRANSPARENT
 };
 
-class ShaderProgram;
 struct Material : public Asset {
     struct UniformBufferBlock 
     {

@@ -1,6 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
-#include "include/setStructure_scene.glslh"
+#include "include/uniform_scene.glslh"
 
 layout (location = 0) in vec3 inPos;
 layout (location = 0) out vec3 outUVW;

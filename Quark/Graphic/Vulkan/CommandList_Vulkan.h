@@ -29,26 +29,29 @@ public:
 
     void PushConstant(const void* data, uint32_t offset, uint32_t size) override final;
     void BindPipeLine(const PipeLine& pipeline) override final;
-    void BindUniformBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override final;
-    void BindStorageBuffer(u32 set, u32 binding, const Buffer& buffer, u64 offset, u64 size) override final;
-    void BindImage(u32 set, u32 binding, const Image& image, ImageLayout layout) override final;
-    void BindVertexBuffer(u32 binding, const Buffer& buffer, u64 offset) override final;
+    void BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) override final;
+    void BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, u64 offset, u64 size) override final;
+    void BindImage(uint32_t set, uint32_t binding, const Image& image, ImageLayout layout) override final;
+    void BindVertexBuffer(uint32_t binding, const Buffer& buffer, u64 offset) override final;
     void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) override final;
-    void BindSampler(u32 set, u32 binding, const Sampler& sampler) override final;
+    void BindSampler(uint32_t set, uint32_t binding, const Sampler& sampler) override final;
     
     void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) override final;
     
-    void Draw(u32 vertex_count, u32 instance_count, u32 first_vertex, u32 first_instance) override final;
-    void DrawIndexed(u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) override final;
+    void Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) override final;
+    void DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance) override final;
 
     void SetViewPort(const Viewport& viewport) override final;
     void SetScissor(const Scissor& scissor) override final;
 
-    void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, u32 memoryBarriersCount, const PipelineImageBarrier* imageBarriers, u32 iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, u32 bufferBarriersCount) override final;
+    void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier* imageBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, uint32_t bufferBarriersCount) override final;
     
     void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) override final;
     // void BeginRenderPass(const RenderPassInfo& info) override;
     void EndRenderPass() override final;
+
+    const RenderPassInfo2& GetCurrentRenderPassInfo() const override final;
+    const PipeLine* GetCurrentGraphicsPipeline() const override final;
 
     ///////////////////////// Vulkan specific /////////////////////////
 

@@ -25,8 +25,8 @@ void RelationshipCmpt::AddChildEntity(Entity* child)
         }
     }
 
-    childRelationship->m_ParentEntity = GetEntity();
-    m_ChildEntities.push_back(child);
+    childRelationship->m_parentEntity = GetEntity();
+    m_childEntities.push_back(child);
 }
 
 void RelationshipCmpt::RemoveChildEntity(Entity* child)
@@ -45,7 +45,7 @@ void RelationshipCmpt::RemoveChildEntity(Entity* child)
     if (it != children.end())
     {
         children.erase(it);
-        childRelationship->m_ParentEntity = nullptr;
+        childRelationship->m_parentEntity = nullptr;
         return;
     }
 

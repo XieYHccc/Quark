@@ -7,23 +7,32 @@ layout(location = 2) in vec3 farPoint; // farPoint calculated in vertex shader
 
 layout(location = 0) out vec4 outColor;
 
-vec4 Grid(vec3 fragPos3D, float scale) 
+// scale better be a multiple of 10 which make more sense
+// scale = 1 : unit is meter, scale = 10, unit = centimeter .....
+vec4 Grid(vec3 fragPos3D, float scale, float lineWidth) 
 {
+    // scale coordinates to control grid density
     vec2 coord = fragPos3D.xz * scale;
+
+    // compute screen-space derivatives for anti-aliasing
     vec2 derivative = fwidth(coord);
-    vec2 grid = abs(fract(coord - 0.5) - 0.5) / derivative;
-    float line = min(grid.x, grid.y);
-    float minimumz = min(derivative.y, 1);
-    float minimumx = min(derivative.x, 1);
-    vec4 color = vec4(0.3, 0.3, 0.3, 1.0 - min(line, 1.0));
 
-    float line_distantce = 1 / scale;
+    //calculate distance from the nearest grid line
+    vec2 distance = abs(fract(coord - 0.5) - 0.5) / derivative;
 
-    // z axis
-    if(fragPos3D.x > -line_distantce * minimumx && fragPos3D.x < line_distantce * minimumx)
+    // determine the intensity of the grid lines
+    float line = min(distance.x, distance.y) / lineWidth;
+    float alpha = 1.0 - clamp(line, 0.0, 1.0);
+
+    // base grid color
+    vec4 color = vec4(0.2, 0.2, 0.2, alpha);
+
+    // highlight the Z axis (X = 0)
+    if (abs(fragPos3D.x) < (0.1 / scale))
         color.z = 1.0;
-    // x axis
-    if(fragPos3D.z > -line_distantce * minimumz && fragPos3D.z < line_distantce * minimumz)
+
+    // highlight the X axis (Z = 0)
+    if (abs(fragPos3D.z) < (0.1 / scale))
         color.x = 1.0;
     
     return color;
@@ -37,21 +46,36 @@ float ComputeDepth(vec3 pos)
 
 float ComputeLinearDepth(float fragDepth, float near, float far) 
 {
-    float linear_depth = near * far / (far - fragDepth * (far - near)); // get linear value between 0.01 and 100
-    return (linear_depth  - near) / (far - near); // normalize
+    float z = fragDepth * 2.0 - 1.0; // Back to NDC
+    float linear_depth = (2.0 * near * far) / (far + near - z * (far - near));
+    return (linear_depth - near) / (far - near); // normalize to [0,1]
 }
 
 void main() 
 {
+    // calculate the intersection parameter 't' with the Y=0 plane
     float t = -nearPoint.y / (farPoint.y - nearPoint.y);
+
+    if (t < 0.0 || t > 1.0)
+        discard;
+
     vec3 fragPos3D = nearPoint + t * (farPoint - nearPoint);
 
     float frag_depth = ComputeDepth(fragPos3D);
-    float linear_depth = ComputeLinearDepth(frag_depth, 0.1f, 100.f);
-    float fading = max(0, (1.f - 4 * linear_depth));
+
+    // transform fragment position to eye space
+    vec4 eyePos4D = sceneData.view * vec4(fragPos3D, 1.0);
+    float eyeDepth = -eyePos4D.z; // Distance along the view direction
+
+    // define fade start and end distances
+    const float startFadeDist = 0.0;  // Start fading at 10 units
+    const float endFadeDist = 200.0;    // Fully faded at 50 units
+
+    // compute the fading factor using smoothstep for gradual fading
+    float fading = 1.0 - smoothstep(startFadeDist, endFadeDist, eyeDepth);
 
     gl_FragDepth = frag_depth;
 
-    outColor = Grid(fragPos3D, 1) * float(t > 0);
+    outColor = Grid(fragPos3D, 0.1, 3) * float(t > 0);
     outColor.a *= fading;
 }

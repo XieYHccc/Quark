@@ -1,14 +1,15 @@
 #include "Quark/qkpch.h"
 #include "Quark/Renderer/GLSLCompiler.h"
+#include "Quark/Core/FileSystem.h"
+#include "Quark/Core/Util/Hash.h"
+#include "Quark/Core/Util/StringUtils.h"
+
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
 #include <StandAlone/DirStackFileIncluder.h>
 #include <SPIRV/GlslangToSpv.h>
 #include <SPIRV/GLSL.std.450.h>
 #include <SPIRV/disassemble.h>
-#include "Quark/Core/FileSystem.h"
-#include "Quark/Core/Util/Hash.h"
-#include "Quark/Core/Util/StringUtils.h"
 
 namespace quark {
 

@@ -65,15 +65,15 @@ struct PipelineBufferBarrier
 // In addition to memory barrier, we need to convert the layout(a state) of a image
 struct PipelineImageBarrier
 {
-    Image* image;
+    Image* image = nullptr;
     uint32_t srcStageBits = 0;
     uint32_t dstStageBits = 0;
     uint32_t srcMemoryAccessBits = 0;
     uint32_t dstMemoryAccessBits = 0;
-    ImageLayout layoutBefore;
-    ImageLayout layoutAfter;
     uint32_t baseMipLevel = UINT32_MAX;
     uint32_t baseArrayLayer = UINT32_MAX;
+    ImageLayout layoutBefore = ImageLayout::UNDEFINED;
+    ImageLayout layoutAfter = ImageLayout::UNDEFINED;
 };
 
 class CommandList : public GpuResource {
@@ -100,11 +100,13 @@ public:
 
     virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, uint32_t bufferBarriersCount) = 0;
     
-    // RenderPassInfo2 here is used to check the formats compatibilies between renderpass and framebuffer
     virtual void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) = 0;
     // virtual void BeginRenderPass(const RenderPassInfo& info) = 0;
     virtual void EndRenderPass() = 0;
     
+    virtual const RenderPassInfo2& GetCurrentRenderPassInfo() const = 0;
+    virtual const PipeLine* GetCurrentGraphicsPipeline() const = 0;
+
     QueueType GetQueueType() const { return m_QueueType; }
     GpuResourceType GetGpuResourceType() const override { return GpuResourceType::COMMAND_LIST; }
 

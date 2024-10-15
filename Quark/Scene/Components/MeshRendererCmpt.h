@@ -17,29 +17,25 @@ public:
 	void SetMaterial(uint32_t index, const Ref<Material>& mat);
 
 	Ref<Material> GetMaterial(uint32_t index);
-	const std::vector<Ref<Material>>& GetMaterials() const { return m_Materials; }
-
 	Ref<graphic::PipeLine> GetGraphicsPipeLine(uint32_t index);
-private:
 
-	void UpdateCachedVertexAttribs(uint32_t meshAttribsMask);
+private:
 	void UpdateGraphicsPipeLine(uint32_t index);
 
 private:
-	Ref<Mesh> m_Mesh;
+	Ref<Mesh> m_mesh;
 	
 	// The count of materials should be equal to the count of submeshes in the mesh
-	std::vector<Ref<Material>> m_Materials;
-	uint32_t m_DirtyMaterialMask = 0;
+	std::vector<Ref<Material>> m_materials;
+	uint32_t m_dirtyMaterialMask = 0;
 
 	// TODO: Change this when we have a render graph system
 	// A mesh could be processed through multiple render pass and multiple pipelines
-	std::vector<Ref<graphic::PipeLine>> m_GraphicsPipeLines;
+	std::vector<Ref<graphic::PipeLine>> m_graphicsPipeLines;
 
 	// Local rendering state
-	VariantSignatureKey m_CachedProgramVatriantKey;
+	ShaderVariantKey m_cachedProgramVatriantKey;
 
-	graphic::VertexInputLayout m_CachedVertexInputLayout;
 
 };
 }

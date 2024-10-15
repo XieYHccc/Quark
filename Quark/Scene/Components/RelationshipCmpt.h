@@ -8,15 +8,15 @@ public:
     using Component::Component;
     QK_COMPONENT_TYPE_DECL(RelationshipCmpt)
 
-    Entity* GetParentEntity() const { return m_ParentEntity; }
-    std::vector<Entity*>& GetChildEntities() { return m_ChildEntities; }
+    Entity* GetParentEntity() const { return m_parentEntity; }
+    std::vector<Entity*>& GetChildEntities() { return m_childEntities; }
 
     void AddChildEntity(Entity* child) ;
 
     void RemoveChildEntity(Entity* child);
 
 private:
-    Entity* m_ParentEntity = nullptr;
-    std::vector<Entity*> m_ChildEntities;
+    Entity* m_parentEntity = nullptr;
+    std::vector<Entity*> m_childEntities;
 };
 }

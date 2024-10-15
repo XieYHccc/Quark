@@ -1,6 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
-#include "include/setStructure_scene.glslh"
+#include "include/uniform_scene.glslh"
 
 layout (set = 1, binding = 0) uniform samplerCube samplerCubeMap;
 

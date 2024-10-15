@@ -1,12 +1,13 @@
 #pragma once
-#include <string>
 #include "Quark/Core/Util/EnumCast.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Renderer/GLSLCompiler.h"
 
+#include <string>
+
 namespace quark {
 
-struct VariantSignatureKey
+struct ShaderVariantKey
 {
 	uint32_t meshAttributeMask = 0;
 
@@ -16,7 +17,7 @@ struct VariantSignatureKey
 // a shaderTemplateVariant instance contains a gpu shader resource
 struct ShaderTemplateVariant
 {
-	VariantSignatureKey signatureKey;
+	ShaderVariantKey signatureKey;
 	Ref<graphic::Shader> gpuShaderHandle;
 	
 	std::vector<uint32_t> spirv;	// maybe used for serialization
@@ -32,18 +33,18 @@ public:
 	ShaderTemplate(const std::string& path, graphic::ShaderStage stage);
 
 	// static shader template won't be able to (compile)create any variant
-	ShaderTemplateVariant* GetOrCreateVariant(const VariantSignatureKey& key);
+	ShaderTemplateVariant* GetOrCreateVariant(const ShaderVariantKey& key);
 	ShaderTemplateVariant* GetPrecompiledVariant();
 
-	std::string GetPath() const { return m_Path; }
+	std::string GetPath() const { return m_path; }
 
-	bool IsStatic() const { return m_Compiler == nullptr; } // we don't compile anything in static template
+	bool IsStatic() const { return m_compiler == nullptr; } // we don't compile anything in static template
 
 private:
-	std::string m_Path;
-	graphic::ShaderStage m_Stage;
+	std::string m_path;
+	graphic::ShaderStage m_stage;
 
-	Scope<GLSLCompiler> m_Compiler;
+	Scope<GLSLCompiler> m_compiler;
 	std::unordered_map<uint64_t, Scope<ShaderTemplateVariant>> m_Variants;
 };
 
@@ -54,12 +55,12 @@ public:
 	ShaderProgramVariant(ShaderTemplateVariant* vert, ShaderTemplateVariant* frag);
 	ShaderProgramVariant(ShaderTemplateVariant* compute);
 
-	const Ref<graphic::Shader> GetShader(graphic::ShaderStage stage) const { return m_Stages[util::ecast(stage)]->gpuShaderHandle; }
+	const Ref<graphic::Shader> GetShader(graphic::ShaderStage stage) const { return m_stages[util::ecast(stage)]->gpuShaderHandle; }
 
 	uint64_t GetHash() const;
 
 private:
-	ShaderTemplateVariant* m_Stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
+	ShaderTemplateVariant* m_stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
 
 };
 
@@ -70,25 +71,26 @@ public:
 	ShaderProgram(ShaderTemplate* compute);
 	ShaderProgram(ShaderTemplate* vert, ShaderTemplate* frag);
 
-	ShaderProgramVariant* GetOrCreateVariant(const VariantSignatureKey& key);
+	ShaderProgramVariant* GetOrCreateVariant(const ShaderVariantKey& key);
 	ShaderProgramVariant* GetPrecompiledVariant();
 
-	std::string GetSourcePath(graphic::ShaderStage stage) const { return m_Stages[util::ecast(stage)]->GetPath(); }
+	std::string GetSourcePath(graphic::ShaderStage stage) const { return m_stages[util::ecast(stage)]->GetPath(); }
 
 	bool IsStatic() const;
 
 private:
-	ShaderTemplate* m_Stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
-	std::unordered_map<uint64_t, Scope<ShaderProgramVariant>> m_Variants;
+	ShaderTemplate* m_stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
+	std::unordered_map<uint64_t, Scope<ShaderProgramVariant>> m_variants;
 };
 
 class ShaderLibrary
 {
 public:
 	ShaderProgram* program_staticMesh;
-	ShaderProgram* program_editor;
+	ShaderProgram* program_staticMeshEditor;
 	ShaderProgram* staticProgram_skybox;
 	ShaderProgram* staticProgram_infiniteGrid;
+	ShaderProgram* staticProgram_entityID;
 
 public:
 	ShaderLibrary();
@@ -98,8 +100,8 @@ public:
 	ShaderTemplate* GetOrCreateShaderTemplate(const std::string& path, graphic::ShaderStage stage);
 
 private:
-	std::unordered_map<uint64_t, Scope<ShaderTemplate>> m_ShaderTemplates;
-	std::unordered_map<uint64_t, Scope<ShaderProgram>> m_ShaderPrograms;
+	std::unordered_map<uint64_t, Scope<ShaderTemplate>> m_shaderTemplates;
+	std::unordered_map<uint64_t, Scope<ShaderProgram>> m_shaderPrograms;
 	
 };
 
