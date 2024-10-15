@@ -58,10 +58,10 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
     )
 
 foreach(GLSL ${GLSL_SOURCE_FILES})
-  message(STATUS "BUILDING SHADER")
+  # message(STATUS "BUILDING SHADER")
   get_filename_component(FILE_NAME ${GLSL} NAME)
   set(SPIRV "${BUILTIN_REOURCES_DIR}/Shaders/Spirv/${FILE_NAME}.spv")
-  message(STATUS ${GLSL})
+  # message(STATUS ${GLSL})
   add_custom_command(
     OUTPUT ${SPIRV}
     COMMAND ${GLSL_VALIDATOR} -V ${GLSL} -o ${SPIRV}
@@ -69,10 +69,10 @@ foreach(GLSL ${GLSL_SOURCE_FILES})
   list(APPEND SPIRV_BINARY_FILES ${SPIRV})
 endforeach(GLSL)
 
-add_custom_target(
-    Shaders 
-    DEPENDS ${SPIRV_BINARY_FILES}
-)
+add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES})
+
+# set_source_files_properties(${GLSL_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
+# add_custom_target(GLSL_Files SOURCES ${GLSL_SOURCE_FILES})
 
 # copy Assets to build directory
 file(COPY ${BUILTIN_REOURCES_DIR} DESTINATION ${EXECUTABLE_OUTPUT_PATH})
