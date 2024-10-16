@@ -46,9 +46,8 @@ public:
     graphic::RenderPassInfo2 renderPassInfo_entityIdPass;
 
     // pipeline descs
-    graphic::GraphicPipeLineDesc pipelineDesc_skybox;
-    graphic::GraphicPipeLineDesc pipelineDesc_infiniteGrid;
-    graphic::GraphicPipeLineDesc pipelineDesc_staticMesh;
+    //graphic::GraphicPipeLineDesc pipelineDesc_skybox;
+    //graphic::GraphicPipeLineDesc pipelineDesc_infiniteGrid;
 
     // default images
     Ref<graphic::Image> image_white;
@@ -61,8 +60,8 @@ public:
     Ref<graphic::Sampler> sampler_cube;
 
     // pipelines
-    Ref<graphic::PipeLine> pipeline_skybox;
-    Ref<graphic::PipeLine> pipeline_infiniteGrid;
+    //Ref<graphic::PipeLine> pipeline_skybox;
+    //Ref<graphic::PipeLine> pipeline_infiniteGrid;
     Ref<graphic::PipeLine> pipeline_entityID;
 
     struct DrawContext 
@@ -101,6 +100,7 @@ public:
     void DrawScene(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd);
     void DrawGrid(const DrawContext& context, graphic::CommandList* cmd);
     void DrawEntityID(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd);
+
     // caching
     Ref<graphic::PipeLine> GetGraphicsPipeline(const ShaderProgramVariant& programVariant, const graphic::PipelineDepthStencilState& ds, const graphic::PipelineColorBlendState& bs, const graphic::RasterizationState& rs, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& input);
     Ref<graphic::PipeLine> GetGraphicsPipeline(ShaderProgram& program, const ShaderVariantKey& key, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& vertexLayout, bool enableDepth, AlphaMode mode);

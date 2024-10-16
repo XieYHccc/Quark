@@ -35,10 +35,12 @@ private:
 
     Ref<graphic::Image> m_depth_attachment;
     Ref<graphic::Image> m_color_attachment;
-    Ref<graphic::Image> m_entityID_attachment;
+    Ref<graphic::Image> m_entityID_color_attachment;
+    Ref<graphic::Image> m_entityID_depth_attachment;
+
     Ref<graphic::Buffer> m_stage_buffer;
 
-    Renderer::DrawContext m_frameData;
+    Renderer::DrawContext m_drawContext;
     Renderer::Visibility m_visibility;
 
     Ref<Texture> m_cubeMapTexture;
@@ -59,7 +61,7 @@ private:
     ContentBrowserPanel m_ContentBrowserPanel;
     
     // Debug
-    double m_CmdListRecordTime = 0;
+    double m_cmdListRecordTime = 0;
 };
 
 }

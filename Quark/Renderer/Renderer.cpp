@@ -114,25 +114,25 @@ Renderer::Renderer(graphic::Device* device)
 
     // pipeline descs
     {
-        pipelineDesc_skybox.vertShader = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
-        pipelineDesc_skybox.fragShader = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
-        pipelineDesc_skybox.blendState = blendState_opaque;
-        pipelineDesc_skybox.depthStencilState = depthStencilState_disabled;
-        pipelineDesc_skybox.rasterState = rasterizationState_fill;
-        pipelineDesc_skybox.topologyType = TopologyType::TRANGLE_LIST;
-        pipelineDesc_skybox.vertexInputLayout = vertexInputLayout_skybox;
-        
-        //TODO: remove hardcoded renderpass
-        pipelineDesc_skybox.renderPassInfo = renderPassInfo_editorMainPass;
+        //pipelineDesc_skybox.vertShader = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
+        //pipelineDesc_skybox.fragShader = GetShaderLibrary().staticProgram_skybox->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
+        //pipelineDesc_skybox.blendState = blendState_opaque;
+        //pipelineDesc_skybox.depthStencilState = depthStencilState_disabled;
+        //pipelineDesc_skybox.rasterState = rasterizationState_fill;
+        //pipelineDesc_skybox.topologyType = TopologyType::TRANGLE_LIST;
+        //pipelineDesc_skybox.vertexInputLayout = vertexInputLayout_skybox;
+        //
+        ////TODO: remove hardcoded renderpass
+        //pipelineDesc_skybox.renderPassInfo = renderPassInfo_editorMainPass;
 
-        pipelineDesc_infiniteGrid.vertShader = GetShaderLibrary().staticProgram_infiniteGrid->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
-        pipelineDesc_infiniteGrid.fragShader = GetShaderLibrary().staticProgram_infiniteGrid->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
-        pipelineDesc_infiniteGrid.blendState = blendState_opaque;
-        pipelineDesc_infiniteGrid.depthStencilState = depthStencilState_depthWrite;
-        pipelineDesc_infiniteGrid.rasterState = rasterizationState_fill;
-        pipelineDesc_infiniteGrid.topologyType = TopologyType::TRANGLE_LIST;
+        //pipelineDesc_infiniteGrid.vertShader = GetShaderLibrary().staticProgram_infiniteGrid->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
+        //pipelineDesc_infiniteGrid.fragShader = GetShaderLibrary().staticProgram_infiniteGrid->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
+        //pipelineDesc_infiniteGrid.blendState = blendState_opaque;
+        //pipelineDesc_infiniteGrid.depthStencilState = depthStencilState_depthWrite;
+        //pipelineDesc_infiniteGrid.rasterState = rasterizationState_fill;
+        //pipelineDesc_infiniteGrid.topologyType = TopologyType::TRANGLE_LIST;
 
-        pipelineDesc_infiniteGrid.renderPassInfo = renderPassInfo_editorMainPass;
+        //pipelineDesc_infiniteGrid.renderPassInfo = renderPassInfo_editorMainPass;
     }
 
     // images
@@ -209,8 +209,8 @@ Renderer::Renderer(graphic::Device* device)
 
     // Pipelines
     {
-        pipeline_skybox = m_device->CreateGraphicPipeLine(pipelineDesc_skybox);
-        pipeline_infiniteGrid = m_device->CreateGraphicPipeLine(pipelineDesc_infiniteGrid);
+        //pipeline_skybox = m_device->CreateGraphicPipeLine(pipelineDesc_skybox);
+        //pipeline_infiniteGrid = m_device->CreateGraphicPipeLine(pipelineDesc_infiniteGrid);
 
         // entityId pipeline
         graphic::GraphicPipeLineDesc desc;
@@ -272,7 +272,7 @@ void Renderer::UpdateDrawContext(const Ref<Scene>& scene, DrawContext& context)
             newObj.positionBuffer = mesh->GetPositionBuffer();
             newObj.material = mesh_renderer_cmpt->GetMaterial(i);
             newObj.transform = transform_cmpt->GetWorldMatrix();
-            newObj.pipeLine = mesh_renderer_cmpt->GetGraphicsPipeLine(i);
+            newObj.mainPassPipeLine = mesh_renderer_cmpt->GetGraphicsPipeLine(i);
             newObj.entityID = id_cmpt->id;
             if (newObj.material->alphaMode == AlphaMode::MODE_OPAQUE)
                 context.objects_opaque.push_back(newObj);
@@ -335,33 +335,37 @@ void Renderer::UpdateVisibility(const DrawContext& drawContext, Visibility& vis,
     });
 }
 
-void Renderer::UpdateGpuResources(DrawContext& DrawContext, Visibility& vis)
+void Renderer::UpdateGpuResources(DrawContext& context, Visibility& vis)
 {
-    // Create scene uniform buffer
+    // create scene uniform buffer per frame
 	BufferDesc desc;
 	desc.domain = BufferMemoryDomain::CPU;
 	desc.size = sizeof(UniformBufferData_Scene);
 	desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-	DrawContext.sceneUB = m_device->CreateBuffer(desc);
+	context.sceneUB = m_device->CreateBuffer(desc);
+    context.sceneData.cameraUboData = vis.cameraData;
 
-    UniformBufferData_Scene sceneData = DrawContext.sceneData;
+    UniformBufferData_Scene sceneData = context.sceneData;
 	sceneData.cameraUboData = vis.cameraData;
-    UniformBufferData_Scene* mappedData = (UniformBufferData_Scene*)DrawContext.sceneUB->GetMappedDataPtr();
+
+    UniformBufferData_Scene* mappedData = (UniformBufferData_Scene*)context.sceneUB->GetMappedDataPtr();
 	*mappedData = sceneData;
+
 }
 
 void Renderer::DrawSkybox(const DrawContext& context, const Ref<Texture>& envMap, graphic::CommandList* cmd)
 {
     Ref<Mesh> cubeMesh = AssetManager::Get().mesh_cube;
-    Ref<graphic::PipeLine> skybox_pipeline = GetGraphicsPipeline(*m_shaderLibrary->staticProgram_skybox, {}, cmd->GetCurrentRenderPassInfo(), vertexInputLayout_skybox, false, AlphaMode::MODE_OPAQUE);
+    Ref<graphic::PipeLine> pipeline_skybox = GetGraphicsPipeline(*m_shaderLibrary->staticProgram_skybox, {}, cmd->GetCurrentRenderPassInfo(), vertexInputLayout_skybox, false, AlphaMode::MODE_OPAQUE);
     
     cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
 
-    cmd->BindPipeLine(*skybox_pipeline);
     cmd->BindImage(1, 0, *envMap->image, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd->BindSampler(1, 0, *envMap->sampler);
     cmd->BindVertexBuffer(0, *cubeMesh->GetPositionBuffer(), 0);
     cmd->BindIndexBuffer(*cubeMesh->GetIndexBuffer(), 0, IndexBufferFormat::UINT32);
+
+    cmd->BindPipeLine(*pipeline_skybox);
     cmd->DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);
 }
 
@@ -375,6 +379,7 @@ void Renderer::DrawGrid(const DrawContext& context, graphic::CommandList* cmd)
     cmd->Draw(6, 1, 0, 0);
 
 }
+
 void Renderer::DrawEntityID(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd)
 {
     QK_CORE_ASSERT(cmd->GetCurrentRenderPassInfo().colorAttachmentFormats[0] == graphic::DataFormat::R32G32_UINT)
@@ -386,8 +391,8 @@ void Renderer::DrawEntityID(const DrawContext& context, const Visibility& vis, g
     {
         const RenderObject& obj = context.objects_opaque[id];
         cmd->BindVertexBuffer(0, *obj.positionBuffer, 0);
-        cmd->BindVertexBuffer(1, *obj.attributeBuffer, 0);
         cmd->BindIndexBuffer(*obj.indexBuffer, 0, IndexBufferFormat::UINT32);
+        cmd->PushConstant(&obj.transform, 0, 64);
         cmd->PushConstant(&obj.entityID, 64, 8);
 
         cmd->DrawIndexed(obj.indexCount, 1, obj.firstIndex, 0, 0);
@@ -424,9 +429,9 @@ void Renderer::DrawScene(const DrawContext& context, const Visibility& vis, grap
         }
 
         // rebind Pipeline
-        if (obj.pipeLine != lastPipeline)
+        if (obj.mainPassPipeLine != lastPipeline)
         {
-            lastPipeline = obj.pipeLine;
+            lastPipeline = obj.mainPassPipeLine;
             cmd->BindPipeLine(*lastPipeline);
         }
 
@@ -445,8 +450,6 @@ void Renderer::DrawScene(const DrawContext& context, const Visibility& vis, grap
         //push_constant.vertexBufferGpuAddress = obj.attributeBuffer->GetGpuAddress();
 
         cmd->PushConstant(&push_constant, 0, 64);  // only push model matrix
-        cmd->PushConstant(&obj.entityID, 88, 8);
-
         cmd->DrawIndexed(obj.indexCount, 1, obj.firstIndex, 0, 0);
     };
 

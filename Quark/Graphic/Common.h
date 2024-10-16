@@ -10,6 +10,7 @@ namespace quark::graphic {
 #define PUSH_CONSTANT_DATA_SIZE 128
 #define VERTEX_BUFFER_MAX_NUM 8
 #define MAX_COLOR_ATTHACHEMNT_NUM 8
+#define MAX_FRAME_NUM_IN_FLIGHT 2
 
 // Forward declaraton
 class Device;

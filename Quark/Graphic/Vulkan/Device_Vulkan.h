@@ -69,7 +69,6 @@ public:
     };
 
 public:
-    static constexpr uint8_t MAX_FRAME_NUM_IN_FLIGHT = 2;
     VkDevice vkDevice; // Borrowed from context, no lifetime management here
     VmaAllocator vmaAllocator; // Borrowed from context, no lifetime management here
     Scope<VulkanContext> vkContext;
@@ -101,7 +100,7 @@ public:
     CommandList* BeginCommandList(QueueType type = QueueType::QUEUE_TYPE_GRAPHICS) override final;
     void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) override final;
 
-    Image* GetPresentImage() override final { return m_SwapChainImages[m_CurrentSwapChainImageIdx].get(); }
+    Image* GetPresentImage() override final { return m_swapChainImages[m_currentSwapChainImageIdx].get(); }
     DataFormat GetPresentImageFormat() override final;
 
     bool isFormatSupported(DataFormat format) override final;
@@ -114,7 +113,7 @@ public:
 
     PipeLineLayout* Request_PipeLineLayout(const ShaderResourceLayout& combinedLayout);
 
-    PerFrameData& GetCurrentFrame() { return m_Frames[m_elapsedFrame % MAX_FRAME_NUM_IN_FLIGHT]; }
+    PerFrameData& GetCurrentFrame() { return m_frames[m_elapsedFrame % MAX_FRAME_NUM_IN_FLIGHT]; }
 
 private:
     void ResizeSwapchain();
@@ -141,13 +140,13 @@ private:
         void submit(VkFence fence = nullptr);
     };
 
-    std::vector<Ref<Image>> m_SwapChainImages; // Owned by Context' swapchain, no lifetime management here
-    uint32_t m_CurrentSwapChainImageIdx;
+    std::vector<Ref<Image>> m_swapChainImages; // Owned by Context' swapchain, no lifetime management here
+    uint32_t m_currentSwapChainImageIdx;
 
-    PerFrameData m_Frames[MAX_FRAME_NUM_IN_FLIGHT];
-    CommandQueue m_Queues[QUEUE_TYPE_MAX_ENUM];
+    PerFrameData m_frames[MAX_FRAME_NUM_IN_FLIGHT];
+    CommandQueue m_queues[QUEUE_TYPE_MAX_ENUM];
 
-    bool m_RecreateSwapchain;
+    bool m_recreateSwapchain;
 
 };
 }

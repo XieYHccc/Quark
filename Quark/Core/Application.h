@@ -16,12 +16,12 @@ struct ApplicationSpecification
     std::uint32_t width = 1200;
     std::uint32_t height = 800;
     bool isFullScreen = false;
-    UiSpecification uiSpecs;
+    UiSpecification uiSpecs = {};
 };  
 
 class Application {
 public:
-    static Application& Get() { return *s_Instance; }
+    static Application& Get() { return *s_instance; }
     
     Application(const ApplicationSpecification& specs);
     virtual ~Application();
@@ -41,10 +41,10 @@ public:
     void OnWindowClose(const WindowCloseEvent& event);
     void OnWindowResize(const WindowResizeEvent& event);
 
-    graphic::Device* GetGraphicDevice() { return m_GraphicDevice.get(); }
-    JobSystem* GetJobSystem() { return m_JobSystem.get(); }
+    graphic::Device* GetGraphicDevice() { return m_graphicDevice.get(); }
+    JobSystem* GetJobSystem() { return m_jobSystem.get(); }
 
-    Window* GetWindow() { return m_Window.get(); }
+    Window* GetWindow() { return m_window.get(); }
 
 protected:
     struct ApplicationStatus
@@ -53,16 +53,16 @@ protected:
         bool isRunning = true;
         bool isMinimized = false;
         float lastFrameDuration = 0; // in seconds
-    } m_Status;
+    } m_status;
 
-    Timer m_Timer;
+    Timer m_timer;
 
-    Scope<graphic::Device> m_GraphicDevice;
-    Scope<JobSystem> m_JobSystem;
-    Scope<Window> m_Window;
+    Scope<graphic::Device> m_graphicDevice;
+    Scope<JobSystem> m_jobSystem;
+    Scope<Window> m_window;
 
 private:
-    static Application* s_Instance;
+    static Application* s_instance;
 };
 
 // To be defined in CLIENT

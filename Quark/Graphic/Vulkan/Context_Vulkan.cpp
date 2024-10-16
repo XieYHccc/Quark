@@ -1,12 +1,10 @@
 #include "Quark/qkpch.h"
 #include "Quark/Graphic/Vulkan/Context_Vulkan.h"
+#include "Quark/Core/Application.h"
 
 #include <GLFW/glfw3.h>
 
-#include "Quark/Core/Application.h"
-
 namespace quark::graphic {
-
 
 VulkanContext::VulkanContext()
 {
@@ -575,24 +573,28 @@ bool VulkanContext::IsPhysicalDeviceSuitable(VkPhysicalDevice device, physicalDe
 
 #ifndef QK_PLATFORM_MACOS
     // Require dynamic rendering except on Moltenvk
-    if (!features13.dynamicRendering) {
+    if (!features13.dynamicRendering) 
+    {
         QK_CORE_LOGT_TAG("Graphic", "  Device do not support dynamic rendering. Skipping.");
         return false;
     }
     // Require synchonazition2 except on Moltenvk
-    if (!features13.dynamicRendering) {
+    if (!features13.dynamicRendering) 
+    {
         QK_CORE_LOGT_TAG("Graphic", "  Device do not support synchronization2. Skipping.");
         return false;
     }
 #endif
 
     // Require device buffer address
-    if (!features12.bufferDeviceAddress) {
+    if (!features12.bufferDeviceAddress) 
+    {
         QK_CORE_LOGT_TAG("Graphic", "  Device do not support buffer device address. Skipping.");
         return false;
     }
     // Require descriptor indexing
-    if (!features12.descriptorIndexing) {
+    if (!features12.descriptorIndexing) 
+    {
         QK_CORE_LOGT_TAG("Graphic", "  Device do not support descriptor indexing. Skipping.");
         return false;
     }

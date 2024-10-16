@@ -74,7 +74,7 @@ void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 	Ref<Material> mat = GetMaterial(index);
 	Ref<graphic::VertexInputLayout> vertexLayout = renderer.GetVertexInputLayout(m_cachedProgramVatriantKey.meshAttributeMask);
 
-	m_graphicsPipeLines[index] = renderer.GetGraphicsPipeline(*(mat->shaderProgram), m_cachedProgramVatriantKey, renderer.renderPassInfo_editorMainPass, *vertexLayout, true, mat->alphaMode);
+	m_graphicsPipeLines[index] = renderer.GetGraphicsPipeline(*(mat->shaderProgram), m_cachedProgramVatriantKey, renderer.renderPassInfo_simpleMainPass, *vertexLayout, true, mat->alphaMode);
 }
 
 }

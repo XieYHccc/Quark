@@ -135,7 +135,7 @@ bool MaterialSerializer::DeserializeFromYaml(const std::string& yamlString, Ref<
 
     QK_CORE_VERIFY(!vertexShaderPath.empty() && !fragmentShaderPath.empty())
         //TODO: Remove hardcoded program
-    outMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().program_staticMeshEditor;
+    outMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().program_staticMesh;
 
     return true;
 }

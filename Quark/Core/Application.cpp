@@ -20,16 +20,16 @@
 
 namespace quark {
 
-Application* Application::s_Instance = nullptr;
+Application* Application::s_instance = nullptr;
 
 Application::Application(const ApplicationSpecification& specs) 
 {
-    s_Instance = this;
+    s_instance = this;
 
     Logger::Init();
 
     // Init Job System
-    m_JobSystem = CreateScope<JobSystem>();
+    m_jobSystem = CreateScope<JobSystem>();
 
     // Init Event Manager
     EventManager::CreateSingleton();
@@ -47,8 +47,8 @@ Application::Application(const ApplicationSpecification& specs)
         windowSpec.is_fullscreen = specs.isFullScreen;
 
 #if defined(QK_PLATFORM_WINDOWS) || defined(QK_PLATFORM_MACOS)
-        m_Window = CreateScope<WindowGLFW>(windowSpec);
-        m_Window->Init();
+        m_window = CreateScope<WindowGLFW>(windowSpec);
+        m_window->Init();
 #endif
         NFD::Init();
 
@@ -56,37 +56,37 @@ Application::Application(const ApplicationSpecification& specs)
     }
 
 #ifdef USE_VULKAN_DRIVER
-    m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
-    m_GraphicDevice->Init();
+    m_graphicDevice = CreateScope<graphic::Device_Vulkan>();
+    m_graphicDevice->Init();
 #endif
 
     // Init Graphic Device and Renderer
     JobSystem::Counter counter;
-    m_JobSystem->Execute([this]()
+    m_jobSystem->Execute([this]()
     {
 // #ifdef USE_VULKAN_DRIVER
 //         m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
 //         m_GraphicDevice->Init();
 // #endif
-        Renderer::CreateSingleton(m_GraphicDevice.get());
+        Renderer::CreateSingleton(m_graphicDevice.get());
     }, &counter);
 
     // Init Asset system
-    m_JobSystem->Execute([this, &counter]() 
+    m_jobSystem->Execute([this, &counter]() 
     {
-        m_JobSystem->Wait(&counter, 1);
+        m_jobSystem->Wait(&counter, 1);
         AssetManager::CreateSingleton(); 
     });
 
     // Init UI system
-    m_JobSystem->Execute([this, &specs, &counter]() 
+    m_jobSystem->Execute([this, &specs, &counter]() 
     {
-        m_JobSystem->Wait(&counter, 1);
+        m_jobSystem->Wait(&counter, 1);
         UI::CreateSingleton();
-        UI::Get()->Init(m_GraphicDevice.get(), specs.uiSpecs);
+        UI::Get()->Init(m_graphicDevice.get(), specs.uiSpecs);
     });
 
-    m_JobSystem->Wait(&counter, 1);
+    m_jobSystem->Wait(&counter, 1);
 
     // Register application callback functions
     EventManager::Get().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});
@@ -102,65 +102,65 @@ Application::~Application() {
 
     Renderer::FreeSingleton();
 
-    m_GraphicDevice->ShutDown();
-    m_GraphicDevice.reset();
+    m_graphicDevice->ShutDown();
+    m_graphicDevice.reset();
 
     // Destroy InputManager
     Input::Get()->Finalize();
     Input::FreeSingleton();
 
     // Destroy window
-    m_Window->ShutDown();
-    m_Window.reset();
+    m_window->ShutDown();
+    m_window.reset();
 
     EventManager::FreeSingleton();
 
-    m_JobSystem.reset();
+    m_jobSystem.reset();
 
     Logger::ShutDown();
 }
 
 void Application::Run()
 {
-    while (m_Status.isRunning) 
+    while (m_status.isRunning) 
     {
-        float start_frame = m_Timer.ElapsedSeconds();
+        float start_frame = m_timer.ElapsedSeconds();
 
         // Poll events
         Input::Get()->OnUpdate();
         
-        if (!m_Status.isMinimized)
+        if (!m_status.isMinimized)
         {
             // TODO: Multithreading
-            OnUpdate(m_Status.lastFrameDuration);
+            OnUpdate(m_status.lastFrameDuration);
 
             OnImGuiUpdate();
 
-            OnRender(m_Status.lastFrameDuration);
+            OnRender(m_status.lastFrameDuration);
         }
 
         // Dispatch events
         EventManager::Get().DispatchEvents();
 
-        m_Status.lastFrameDuration = m_Timer.ElapsedSeconds() - start_frame;
-        m_Status.fps = 1.f / m_Status.lastFrameDuration;
+        m_status.lastFrameDuration = m_timer.ElapsedSeconds() - start_frame;
+        m_status.fps = 1.f / m_status.lastFrameDuration;
     }
 }
 
 void Application::OnWindowClose(const WindowCloseEvent& e)
 {
-    m_Status.isRunning = false;
+    m_status.isRunning = false;
 }
 
 void Application::OnWindowResize(const WindowResizeEvent& event)
 {
     if (event.width == 0 || event.height == 0)
     {
-        m_Status.isMinimized = true;
+        m_status.isMinimized = true;
         return;
     }
 
-    m_Status.isMinimized = false;
+    m_status.isMinimized = false;
 }
 
 }

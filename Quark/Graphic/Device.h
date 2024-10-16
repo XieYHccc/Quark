@@ -36,6 +36,8 @@ public:
 
     uint32_t GetResolutionWidth() { return m_frameBufferWidth;}
     uint32_t GetResolutionHeight() { return m_frameBufferHeight;}
+    uint32_t GetCurrentFrameIndex() { return m_elapsedFrame % MAX_FRAME_NUM_IN_FLIGHT; }
+    uint32_t GetFrameCount() { return MAX_FRAME_NUM_IN_FLIGHT; }
 
     const DeviceProperties& GetDeviceProperties() const { return m_properties; }
     const DeviceFeatures& GetDeviceFeatures() const { return m_features; }

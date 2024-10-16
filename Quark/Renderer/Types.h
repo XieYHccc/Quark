@@ -46,7 +46,7 @@ struct RenderObject
     Ref<graphic::Buffer> indexBuffer;
     Ref<graphic::Buffer> attributeBuffer;
     Ref<graphic::Buffer> positionBuffer;
-    Ref<graphic::PipeLine> pipeLine;
+    Ref<graphic::PipeLine> mainPassPipeLine;
     Ref<Material> material;
     math::Aabb aabb = {};
     glm::mat4 transform;

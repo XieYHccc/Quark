@@ -36,7 +36,8 @@ void Device_Vulkan::CommandQueue::submit(VkFence fence)
     QK_CORE_ASSERT(!submissions.empty() || fence != VK_NULL_HANDLE)
 
     std::vector<VkSubmitInfo2> submit_infos(submissions.size());
-    for (size_t i = 0; i < submissions.size(); ++i) {
+    for (size_t i = 0; i < submissions.size(); ++i) 
+    {
         auto& info = submit_infos[i];
         auto& submission = submissions[i];
         info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
@@ -51,7 +52,8 @@ void Device_Vulkan::CommandQueue::submit(VkFence fence)
     device->vkContext->extendFunction.pVkQueueSubmit2KHR(queue, (uint32_t)submit_infos.size(), submit_infos.data(), fence);
     
     // Clear submissions
-    for(auto& submission : submissions){
+    for(auto& submission : submissions)
+    {
         submission.cmdInfos.clear();
         submission.signalSemaphoreInfos.clear();
         submission.waitSemaphoreInfos.clear();
@@ -84,25 +86,20 @@ void Device_Vulkan::PerFrameData::init(Device_Vulkan *device)
 void Device_Vulkan::PerFrameData::clear()
 {
     VkDevice vk_device = device->vkDevice;
+
     // Destroy deferred destroyed resources
-    for (auto& sampler : garbageSamplers) {
+    for (auto& sampler : garbageSamplers) 
         vkDestroySampler(vk_device, sampler, nullptr);
-    }
-    for (auto& view : grabageViews) {
+    for (auto& view : grabageViews) 
         vkDestroyImageView(vk_device, view, nullptr);
-    }
-    for (auto& buffer : garbageBuffers) {
+    for (auto& buffer : garbageBuffers) 
         vmaDestroyBuffer(vmaAllocator, buffer.first, buffer.second);
-    }
-    for (auto& image : garbageImages) {
+    for (auto& image : garbageImages) 
         vmaDestroyImage(vmaAllocator, image.first, image.second);
-    }
-    for (auto& pipeline : garbagePipelines) {
+    for (auto& pipeline : garbagePipelines) 
         vkDestroyPipeline(vk_device, pipeline, nullptr);
-    }
-    for (auto& shaderModule_ : garbageShaderModules) {
+    for (auto& shaderModule_ : garbageShaderModules)
         vkDestroyShaderModule(vk_device, shaderModule_, nullptr);
-    }
 
     garbageSamplers.clear();
     garbageBuffers.clear();
@@ -114,18 +111,18 @@ void Device_Vulkan::PerFrameData::clear()
 
 void Device_Vulkan::PerFrameData::reset()
 {
-    if (!waitedFences.empty()) {
+    if (!waitedFences.empty()) 
+    {
         vkResetFences(device->vkDevice, (uint32_t)waitedFences.size(), waitedFences.data());
         waitedFences.clear();
     }
 
-    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++){
+    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++)
         cmdListCount[i] = 0;
-    }
 
     imageAvailableSemaphoreConsumed = false;
 
-    // Destroy deferred-destroyed resources
+    // destroy deferred-destroyed resources
     clear();
 }
 
@@ -156,7 +153,7 @@ void Device_Vulkan::CopyCmdAllocator::init(Device_Vulkan *device)
 void Device_Vulkan::CopyCmdAllocator::destroy()
 {   
     // Make sure all allocated cmd are in free list
-    vkQueueWaitIdle(m_Device->m_Queues[QUEUE_TYPE_ASYNC_TRANSFER].queue);
+    vkQueueWaitIdle(m_Device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].queue);
     for (auto& x : m_FreeList)
     {
         vkDestroyCommandPool(m_Device->vkDevice, x.transferCmdPool, nullptr);
@@ -280,9 +277,9 @@ void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
         submitInfo.signalSemaphoreInfoCount = 1;
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
-        std::scoped_lock lock(m_Device->m_Queues[QUEUE_TYPE_ASYNC_TRANSFER].locker);
+        std::scoped_lock lock(m_Device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].locker);
         m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
-            m_Device->m_Queues[QUEUE_TYPE_ASYNC_TRANSFER].queue, 1, &submitInfo, VK_NULL_HANDLE);
+            m_Device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
     // Submit to graphics queue
@@ -301,9 +298,9 @@ void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
         submitInfo.signalSemaphoreInfoCount = 1;
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
-        std::scoped_lock lock(m_Device->m_Queues[QUEUE_TYPE_GRAPHICS].locker);
+        std::scoped_lock lock(m_Device->m_queues[QUEUE_TYPE_GRAPHICS].locker);
         m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
-			m_Device->m_Queues[QUEUE_TYPE_GRAPHICS].queue, 1, &submitInfo, VK_NULL_HANDLE);
+			m_Device->m_queues[QUEUE_TYPE_GRAPHICS].queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
     // insert semaphore to compute queue to make sure the copy and transition is done
@@ -319,9 +316,9 @@ void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
 		submitInfo.signalSemaphoreInfoCount = 0;
 		submitInfo.pSignalSemaphoreInfos = nullptr;
 
-		std::scoped_lock lock(m_Device->m_Queues[QUEUE_TYPE_ASYNC_COMPUTE].locker);
+		std::scoped_lock lock(m_Device->m_queues[QUEUE_TYPE_ASYNC_COMPUTE].locker);
 		m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
-			m_Device->m_Queues[QUEUE_TYPE_ASYNC_COMPUTE].queue, 1, &submitInfo, cmd.fence);
+			m_Device->m_queues[QUEUE_TYPE_ASYNC_COMPUTE].queue, 1, &submitInfo, cmd.fence);
 	}
 
     std::scoped_lock lock(m_Locker);
@@ -332,7 +329,7 @@ void Device_Vulkan::OnWindowResize(const WindowResizeEvent &event)
 {
     m_frameBufferWidth = event.width;
     m_frameBufferHeight = event.height;
-    m_RecreateSwapchain = true;
+    m_recreateSwapchain = true;
     QK_CORE_LOGT_TAG("Graphic", "Device_Vulkan hook window resize event. Width: {} Height: {}", m_frameBufferWidth, m_frameBufferHeight);
 }
 
@@ -341,7 +338,7 @@ bool Device_Vulkan::Init()
     QK_CORE_LOGI_TAG("Graphic", "==========Initializing Vulkan Backend...========");
 
     // Default values
-    m_RecreateSwapchain = false;
+    m_recreateSwapchain = false;
     m_elapsedFrame = 0;
     m_frameBufferWidth = Application::Get().GetWindow()->GetFrambufferWidth();
     m_frameBufferHeight = Application::Get().GetWindow()->GetFrambufferHeight();
@@ -357,12 +354,12 @@ bool Device_Vulkan::Init()
     
     // Create frame data
     for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
-        m_Frames[i].init(this);
+        m_frames[i].init(this);
 
     // Setup command queues
-    m_Queues[QUEUE_TYPE_GRAPHICS].init(this, QUEUE_TYPE_GRAPHICS);
-    m_Queues[QUEUE_TYPE_ASYNC_COMPUTE].init(this, QUEUE_TYPE_ASYNC_COMPUTE);
-    m_Queues[QUEUE_TYPE_ASYNC_TRANSFER].init(this, QUEUE_TYPE_ASYNC_TRANSFER);
+    m_queues[QUEUE_TYPE_GRAPHICS].init(this, QUEUE_TYPE_GRAPHICS);
+    m_queues[QUEUE_TYPE_ASYNC_COMPUTE].init(this, QUEUE_TYPE_ASYNC_COMPUTE);
+    m_queues[QUEUE_TYPE_ASYNC_TRANSFER].init(this, QUEUE_TYPE_ASYNC_TRANSFER);
 
     // Create Swapchain
     ResizeSwapchain();
@@ -392,7 +389,7 @@ void Device_Vulkan::ShutDown()
 
     // Destroy frames data
     for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
-        m_Frames[i].destroy();
+        m_frames[i].destroy();
 
     // Destroy vulkan context
     vkContext.reset();
@@ -401,26 +398,26 @@ void Device_Vulkan::ShutDown()
 
 bool Device_Vulkan::BeiginFrame(TimeStep ts)
 {
-    // Move to next frame
+    // move to next frame
     m_elapsedFrame++;
 
-    // Resize the swapchain if needed. 
-    if (m_RecreateSwapchain) 
+    // resize swapchain if needed. 
+    if (m_recreateSwapchain) 
     {
         ResizeSwapchain();
-        m_RecreateSwapchain = false;
+        m_recreateSwapchain = false;
     }
 
     auto& frame = GetCurrentFrame();
     
-    // Wait for in-flight fences
+    // wait for in-flight fences
     if (!frame.waitedFences.empty())
         vkWaitForFences(vkDevice, (uint32_t)frame.waitedFences.size(), frame.waitedFences.data(), true, 1000000000);
     
-    // Reset per frame data
+    // reset per frame data
     frame.reset();
 
-    // Put unused (more than 8 frames) descriptor set back to vacant pool
+    // put unused (more than 8 frames) descriptor set back to vacant pool
     for (auto& [k, value] : cached_descriptorSetAllocator)
         value.BeginFrame();   
 
@@ -431,14 +428,15 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
         100000000,
         frame.imageAvailableSemaphore,
         nullptr,
-        &m_CurrentSwapChainImageIdx);
+        &m_currentSwapChainImageIdx);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) 
     {
         // Trigger swapchain recreation, then boot out of the render loop.
         ResizeSwapchain();
         return false;
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
+    } 
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
     {
         QK_CORE_VERIFY(0, "Failed to acquire swapchain image!");
         return false;
@@ -452,11 +450,11 @@ bool Device_Vulkan::EndFrame(TimeStep ts)
     auto& frame = GetCurrentFrame();
 
     // Submit queued command lists with fence which would block the next next frame
-    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; ++i) {
-
+    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; ++i) 
+    {
         if (frame.cmdListCount[i] > 0) 
         { // This queue is in use in this frame
-            m_Queues[i].submit(frame.queueFences[i]);
+            m_queues[i].submit(frame.queueFences[i]);
             frame.waitedFences.push_back(frame.queueFences[i]);
         }
     }
@@ -470,7 +468,7 @@ bool Device_Vulkan::EndFrame(TimeStep ts)
 	presentInfo.swapchainCount = 1;
 	presentInfo.pWaitSemaphores = &frame.imageReleaseSemaphore;
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pImageIndices = &m_CurrentSwapChainImageIdx;
+	presentInfo.pImageIndices = &m_currentSwapChainImageIdx;
 	VkResult presentResult = vkQueuePresentKHR(vkContext->graphicQueue, &presentInfo);
 
     if (presentResult != VK_SUCCESS && presentResult != VK_ERROR_OUT_OF_DATE_KHR && presentResult != VK_SUBOPTIMAL_KHR)
@@ -582,7 +580,7 @@ CommandList* Device_Vulkan::BeginCommandList(QueueType type)
 void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds, uint32_t waitedCmdCounts, bool signal)
 {
     auto& internal_cmdList = ToInternal(cmd);
-    auto& queue = m_Queues[internal_cmdList.GetQueueType()];
+    auto& queue = m_queues[internal_cmdList.GetQueueType()];
 
     vkEndCommandBuffer(internal_cmdList.GetHandle());
     internal_cmdList.state = CommandListState::READY_FOR_SUBMIT;
@@ -656,7 +654,7 @@ void Device_Vulkan::ResizeSwapchain()
     vkContext->DestroySwapChain();
     vkContext->CreateSwapChain();
 
-    m_SwapChainImages.clear();
+    m_swapChainImages.clear();
     for (size_t i = 0; i < vkContext->swapChianImages.size(); i++) {
         ImageDesc desc;
         desc.type = ImageType::TYPE_2D;
@@ -671,8 +669,7 @@ void Device_Vulkan::ResizeSwapchain()
         internal_image.m_Handle = vkContext->swapChianImages[i];
         internal_image.m_View = vkContext->swapChainImageViews[i];
         internal_image.m_IsSwapChainImage = true;
-        m_SwapChainImages.push_back(newImage);
-        
+        m_swapChainImages.push_back(newImage);
     }
 
 }
