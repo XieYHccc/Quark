@@ -1,6 +1,4 @@
 #pragma once
-#include <unordered_set>
-
 #include "Quark/Core/Base.h"
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Asset/Asset.h"
@@ -8,6 +6,8 @@
 #include "Quark/Asset/Texture.h"
 #include "Quark/Asset/Material.h"
 #include "Quark/Asset/Mesh.h"
+
+#include <unordered_set>
 
 namespace quark {
 

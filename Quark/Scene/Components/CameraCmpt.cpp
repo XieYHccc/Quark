@@ -1,10 +1,10 @@
 #include "Quark/qkpch.h"
-#include <glm/gtx/transform.hpp>
 #include "Quark/Core/Window.h"
 #include "Quark/Ecs/Entity.h"
 #include "Quark/Events/EventManager.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 
+#include <glm/gtx/transform.hpp>
 namespace quark {
 
 CameraCmpt::CameraCmpt(float _aspect, float _fov, float _zNear, float _zFar)

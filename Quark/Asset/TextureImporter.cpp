@@ -1,14 +1,13 @@
 #include "Quark/qkpch.h"
 #include "Quark/Asset/TextureImporter.h"
-
-#include <ktx.h>
-#include <basisu_transcoder.h>
-#include <stb_image.h>
-
 #include "Quark/Core/Application.h"
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Graphic/TextureFormatLayout.h"
 #include "Quark/Renderer/Renderer.h"
+
+#include <ktx.h>
+#include <basisu_transcoder.h>
+#include <stb_image.h>
 
 namespace quark {
 Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCubemap)
@@ -82,7 +81,8 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
     }
 
     // Transcode data
-    if (ktxTranscoder.start_transcoding()) {
+    if (ktxTranscoder.start_transcoding()) 
+    {
         const uint32_t layers = std::max(1u, ktxTranscoder.get_layers());
         const uint32_t faces = ktxTranscoder.get_faces();
         const uint32_t levels = ktxTranscoder.get_levels();

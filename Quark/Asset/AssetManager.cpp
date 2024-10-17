@@ -1,9 +1,5 @@
 #include "Quark/qkpch.h"
 #include "Quark/Asset/AssetManager.h"
-
-#include <fstream>
-#include <yaml-cpp/yaml.h>
-
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/StringUtils.h"
@@ -12,6 +8,10 @@
 #include "Quark/Asset/MeshImporter.h"
 #include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/MaterialSerializer.h"
+
+#include <yaml-cpp/yaml.h>
+
+#include <fstream>
 
 namespace quark {
 static std::filesystem::path s_AssetDirectory = "Assets";

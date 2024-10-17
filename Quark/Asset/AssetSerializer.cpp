@@ -1,9 +1,8 @@
 #include "Quark/qkpch.h"
 #include "Quark/Asset/AssetSerializer.h"
+#include "Quark/Core/Util/SerializationUtils.h"
 
 #include <yaml-cpp/yaml.h>
-
-#include "Quark/Core/Util/SerializationUtils.h"
 
 namespace quark {
 

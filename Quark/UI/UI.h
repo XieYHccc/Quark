@@ -1,7 +1,8 @@
 #pragma once
-#include <imgui.h>
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Asset/Texture.h"
+
+#include <imgui.h>
 
 namespace quark {
 

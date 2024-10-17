@@ -1,7 +1,7 @@
 #pragma once
-#include <filesystem>
-
 #include "Quark/Asset/Asset.h"
+
+#include <filesystem>
 
 namespace quark {
 class Scene;

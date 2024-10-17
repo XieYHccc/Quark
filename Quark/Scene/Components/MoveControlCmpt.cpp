@@ -1,6 +1,7 @@
 #include "Quark/qkpch.h"
 #include "Quark/Ecs/Entity.h"
 #include "Quark/Scene/Components/MoveControlCmpt.h"
+
 #include <glm/gtx/quaternion.hpp>
 
 namespace quark {

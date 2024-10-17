@@ -1,7 +1,9 @@
 #pragma once
-#include <iostream>
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Events/EventHandler.h"
+
+#include <iostream>
+
 namespace quark {
 
 class EventManager : public util::MakeSingleton<EventManager> {

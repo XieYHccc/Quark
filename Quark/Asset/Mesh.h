@@ -58,8 +58,8 @@ public:
     size_t GetPositionBufferStride() const;
     size_t GetAttributeBufferStride() const;
 
-    void SetDynamic(bool isDynamic) { this->m_IsDynamic = isDynamic; }
-    bool IsDynamic() const { return m_IsDynamic; }
+    void SetDynamic(bool isDynamic) { this->m_isDynamic = isDynamic; }
+    bool IsDynamic() const { return m_isDynamic; }
 
     void CalculateAabbs();
     void CalculateNormals();
@@ -75,16 +75,14 @@ private:
 
 private:
     // Gpu resources
-    Ref<graphic::Buffer> m_PositionBuffer;
-    Ref<graphic::Buffer> m_AttributeBuffer;
-    Ref<graphic::Buffer> m_IndexBuffer;
+    Ref<graphic::Buffer> m_positionBuffer;
+    Ref<graphic::Buffer> m_attributeBuffer;
+    Ref<graphic::Buffer> m_indexBuffer;
 
     // Overlapped vertex data
-    std::vector<uint8_t> m_CachedAttributeData;
+    std::vector<uint8_t> m_cachedAttributeData;
 
-    uint32_t m_CachedAttributesMask = 0;
-
-    bool m_IsDynamic = false;
+    bool m_isDynamic = false;
 
     friend class Renderer;
 

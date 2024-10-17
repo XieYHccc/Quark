@@ -1,8 +1,8 @@
 #pragma once
-#include <glm/glm.hpp>
-
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
+
+#include <glm/glm.hpp>
 
 namespace quark {
 

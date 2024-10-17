@@ -1,5 +1,6 @@
 #pragma once
 #include "Quark/Core/Base.h"
+
 #include <chrono>
 
 namespace quark {

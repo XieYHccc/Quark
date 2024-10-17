@@ -1,7 +1,8 @@
 #pragma once
-#include <GLFW/glfw3.h>
 #include "Quark/Core/Window.h"
 #include "Quark/Platform/MacOS/InputGLFW.h"
+
+#include <GLFW/glfw3.h>
 
 namespace quark {
 

@@ -71,6 +71,7 @@ private:
     void _SetDirtyFlags(CommandListDirtyFlagBits flags) { m_dirtyMask |= flags; }
 
     CommandListDirtyFlagBits _GetAndClearDirtyFlags(CommandListDirtyFlagBits flags);
+
 private:
     struct BindingState
     {
@@ -91,7 +92,6 @@ private:
 
         uint8_t pushConstantData[PUSH_CONSTANT_DATA_SIZE];
     };
-
 
     Device_Vulkan* m_device;
 

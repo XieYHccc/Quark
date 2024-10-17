@@ -435,7 +435,6 @@ void EditorApp::OnRender(TimeStep ts)
     }
 }
 
-
 void EditorApp::OnKeyPressed(const KeyPressedEvent& e)
 {
     if (e.repeatCount > 0)

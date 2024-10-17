@@ -1,7 +1,7 @@
 #pragma once
+#include "Quark/Events/Event.h"
 
 #include <iostream>
-#include "Quark/Events/Event.h"
 
 namespace quark {
 

@@ -1,7 +1,7 @@
 #include "Quark/qkpch.h"
-#include <nfd.hpp>
-
 #include "Quark/Core/FileSystem.h"
+
+#include <nfd.hpp>
 
 namespace quark {
 std::filesystem::path FileSystem::GetWorkingDirectory()

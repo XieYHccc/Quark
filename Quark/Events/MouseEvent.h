@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Quark/Core/KeyMouseCodes.h"
 #include "Quark/Events/Event.h"
 
