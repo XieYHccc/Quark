@@ -1,6 +1,6 @@
 #pragma once
 #include "Quark/UI/UI.h"
-#include "Quark/Graphic/Vulkan/Device_Vulkan.h"
+#include "Quark/RHI/Vulkan/Device_Vulkan.h"
 #include "Quark/Events/MouseEvent.h"
 
 namespace quark {
@@ -10,18 +10,18 @@ public:
     UI_Vulkan() = default;
     ~UI_Vulkan() = default;
 
-    void Init(graphic::Device* device, const UiSpecification& specs) override;
+    void Init(rhi::Device* device, const UiSpecification& specs) override;
     void Finalize() override;
 
     void BeginFrame() override;
     void EndFrame() override;
-    void OnRender(graphic::CommandList* cmd) override;
+    void OnRender(rhi::CommandList* cmd) override;
 
     ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) override;
-    ImTextureID GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler) override;
+    ImTextureID GetOrCreateTextureId(const Ref<rhi::Image>& image, const Ref<rhi::Sampler>& sampler) override;
 
 private:
-    graphic::Device_Vulkan* m_device;
+    rhi::Device_Vulkan* m_device;
 
     VkDescriptorPool m_descriptorPool;
     VkFormat m_colorFormat;

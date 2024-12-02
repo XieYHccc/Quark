@@ -15,15 +15,15 @@ namespace quark {
 
 static glslang::EShTargetLanguage  s_TargetLanguage = glslang::EShTargetLanguage::EShTargetSpv;
 
-static EShLanguage FindShaderLanguage(graphic::ShaderStage stage)
+static EShLanguage FindShaderLanguage(rhi::ShaderStage stage)
 {
 	switch (stage)
 	{
-	case graphic::ShaderStage::STAGE_VERTEX:
+	case rhi::ShaderStage::STAGE_VERTEX:
 		return EShLangVertex;
-	case graphic::ShaderStage::STAGE_FRAGEMNT:
+	case rhi::ShaderStage::STAGE_FRAGEMNT:
 		return EShLangFragment;
-	case graphic::ShaderStage::STAGE_COMPUTE:
+	case rhi::ShaderStage::STAGE_COMPUTE:
 		return EShLangCompute;
 	default:
 		QK_CORE_LOGE_TAG("Rernderer", "FindShaderLanguage: Unsupported shader stage");
@@ -84,7 +84,7 @@ void GLSLCompiler::SetTarget(Target target)
 	m_Target = target;
 }
 
-void GLSLCompiler::SetSource(std::string source, std::string sourcePath, graphic::ShaderStage stage)
+void GLSLCompiler::SetSource(std::string source, std::string sourcePath, rhi::ShaderStage stage)
 {
 	Clear();
 
@@ -93,7 +93,7 @@ void GLSLCompiler::SetSource(std::string source, std::string sourcePath, graphic
 	m_ShaderStage = stage;
 }
 
-void GLSLCompiler::SetSourceFromFile(const std::string& filePath, graphic::ShaderStage stage)
+void GLSLCompiler::SetSourceFromFile(const std::string& filePath, rhi::ShaderStage stage)
 {
 	Clear();
 

@@ -18,10 +18,10 @@ struct ShaderVariantKey
 struct ShaderTemplateVariant
 {
 	ShaderVariantKey signatureKey;
-	Ref<graphic::Shader> gpuShaderHandle;
+	Ref<rhi::Shader> gpuShaderHandle;
 	
 	std::vector<uint32_t> spirv;	// maybe used for serialization
-	util::Hash spirvHash; // <=> Ref<graphic::Shader>
+	util::Hash spirvHash; // <=> Ref<rhi::Shader>
 };
 
 // shader source class
@@ -30,7 +30,7 @@ class ShaderTemplate
 public:
 	// if is a spv file, this becomes a static shader template(Runtime case)
 	// we want all glsl files to be compiled to spv at the first time you run the application.
-	ShaderTemplate(const std::string& path, graphic::ShaderStage stage);
+	ShaderTemplate(const std::string& path, rhi::ShaderStage stage);
 
 	// static shader template won't be able to (compile)create any variant
 	ShaderTemplateVariant* GetOrCreateVariant(const ShaderVariantKey& key);
@@ -42,25 +42,25 @@ public:
 
 private:
 	std::string m_path;
-	graphic::ShaderStage m_stage;
+	rhi::ShaderStage m_stage;
 
 	Scope<GLSLCompiler> m_compiler;
 	std::unordered_map<uint64_t, Scope<ShaderTemplateVariant>> m_Variants;
 };
 
-// This class can be represented as a combination of Ref<graphic::Shader>
+// This class can be represented as a combination of Ref<rhi::Shader>
 class ShaderProgramVariant 
 {
 public:
 	ShaderProgramVariant(ShaderTemplateVariant* vert, ShaderTemplateVariant* frag);
 	ShaderProgramVariant(ShaderTemplateVariant* compute);
 
-	const Ref<graphic::Shader> GetShader(graphic::ShaderStage stage) const { return m_stages[util::ecast(stage)]->gpuShaderHandle; }
+	const Ref<rhi::Shader> GetShader(rhi::ShaderStage stage) const { return m_stages[util::ecast(stage)]->gpuShaderHandle; }
 
 	uint64_t GetHash() const;
 
 private:
-	ShaderTemplateVariant* m_stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
+	ShaderTemplateVariant* m_stages[util::ecast(rhi::ShaderStage::MAX_ENUM)] = {};
 
 };
 
@@ -74,12 +74,12 @@ public:
 	ShaderProgramVariant* GetOrCreateVariant(const ShaderVariantKey& key);
 	ShaderProgramVariant* GetPrecompiledVariant();
 
-	std::string GetSourcePath(graphic::ShaderStage stage) const { return m_stages[util::ecast(stage)]->GetPath(); }
+	std::string GetSourcePath(rhi::ShaderStage stage) const { return m_stages[util::ecast(stage)]->GetPath(); }
 
 	bool IsStatic() const;
 
 private:
-	ShaderTemplate* m_stages[util::ecast(graphic::ShaderStage::MAX_ENUM)] = {};
+	ShaderTemplate* m_stages[util::ecast(rhi::ShaderStage::MAX_ENUM)] = {};
 	std::unordered_map<uint64_t, Scope<ShaderProgramVariant>> m_variants;
 };
 
@@ -97,7 +97,7 @@ public:
 
 	ShaderProgram* GetOrCreateGraphicsProgram(const std::string& vert_path, const std::string& frag_path);
 	ShaderProgram* GetOrCreateComputeProgram(const std::string& comp_path);
-	ShaderTemplate* GetOrCreateShaderTemplate(const std::string& path, graphic::ShaderStage stage);
+	ShaderTemplate* GetOrCreateShaderTemplate(const std::string& path, rhi::ShaderStage stage);
 
 private:
 	std::unordered_map<uint64_t, Scope<ShaderTemplate>> m_shaderTemplates;

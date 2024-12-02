@@ -30,8 +30,8 @@
 #include <Quark/Project/ProjectSerializer.h>
 
 // Quark Graphic API
-#include <Quark/Graphic/Device.h>
-#include <Quark/Graphic/TextureFormatLayout.h>
+#include <Quark/RHI/Device.h>
+#include <Quark/RHI/TextureFormatLayout.h>
 
 // Quark Renderer
 #include <Quark/Renderer/Renderer.h>

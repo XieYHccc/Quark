@@ -1,5 +1,5 @@
 #pragma once
-#include "Quark/Graphic/Device.h"
+#include "Quark/RHI/Device.h"
 #include "Quark/Asset/Mesh.h"
 
 namespace quark {

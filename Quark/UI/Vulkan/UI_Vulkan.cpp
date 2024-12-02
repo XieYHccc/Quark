@@ -3,7 +3,7 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Events/EventManager.h"
-#include "Quark/Graphic/Vulkan/CommandList_Vulkan.h"
+#include "Quark/RHI/Vulkan/CommandList_Vulkan.h"
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -13,11 +13,11 @@
 
 namespace quark {
 
-void UI_Vulkan::Init(graphic::Device* device, const UiSpecification& specs)
+void UI_Vulkan::Init(rhi::Device* device, const UiSpecification& specs)
 {
     QK_CORE_ASSERT(device)
 
-    m_device = static_cast<graphic::Device_Vulkan*>(device);
+    m_device = static_cast<rhi::Device_Vulkan*>(device);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -116,7 +116,7 @@ void UI_Vulkan::Init(graphic::Device* device, const UiSpecification& specs)
         init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
         
         // This format pointer must be cached due to some weird state tracking of imgui
-        m_colorFormat = graphic::ConvertDataFormat(m_device->GetPresentImageFormat());
+        m_colorFormat = rhi::ConvertDataFormat(m_device->GetPresentImageFormat());
         init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_colorFormat;
         ImGui_ImplVulkan_Init(&init_info);
     }
@@ -155,9 +155,9 @@ void UI_Vulkan::EndFrame()
     ImGui::Render();
 }
 
-void UI_Vulkan::OnRender(graphic::CommandList* cmd)
+void UI_Vulkan::OnRender(rhi::CommandList* cmd)
 {
-    auto& internal = graphic::ToInternal(cmd);
+    auto& internal = rhi::ToInternal(cmd);
 
     auto* data = ImGui::GetDrawData();
     if (data) {
@@ -185,8 +185,8 @@ ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<Texture>& texture)
     }
     else
     {
-        VkSampler samp = graphic::ToInternal(texture->sampler.get()).GetHandle();
-        VkImageView view = graphic::ToInternal(texture->image.get()).GetView();
+        VkSampler samp = rhi::ToInternal(texture->sampler.get()).GetHandle();
+        VkImageView view = rhi::ToInternal(texture->image.get()).GetView();
 
         ImTextureID newId = (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         m_textureIdMap[hash] = newId;
@@ -196,7 +196,7 @@ ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<Texture>& texture)
 }
 
 
-ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler)
+ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<rhi::Image>& image, const Ref<rhi::Sampler>& sampler)
 {
     util::Hasher h;
     h.pointer(image.get());
@@ -210,8 +210,8 @@ ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<graphic::Image>& image, co
     }
     else
     {
-        VkSampler samp = graphic::ToInternal(sampler.get()).GetHandle();
-        VkImageView view = graphic::ToInternal(image.get()).GetView();
+        VkSampler samp = rhi::ToInternal(sampler.get()).GetHandle();
+        VkImageView view = rhi::ToInternal(image.get()).GetView();
 
         ImTextureID newId = (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         m_textureIdMap[hash] = newId;

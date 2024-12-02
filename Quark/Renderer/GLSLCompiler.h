@@ -1,5 +1,5 @@
 #pragma once
-#include "Quark/Graphic/Shader.h"
+#include "Quark/RHI/Shader.h"
 
 #include <unordered_set>
 
@@ -40,8 +40,8 @@ public:
 
 	void SetTarget(Target target);
 
-	void SetSource(std::string source, std::string sourcePath, graphic::ShaderStage stage);
-	void SetSourceFromFile(const std::string& filePath, graphic::ShaderStage stage);
+	void SetSource(std::string source, std::string sourcePath, rhi::ShaderStage stage);
+	void SetSourceFromFile(const std::string& filePath, rhi::ShaderStage stage);
 
 	bool Compile(std::string& outMessages, std::vector<uint32_t>& outSpirv, const CompileOptions& ops = {});
 
@@ -61,7 +61,7 @@ private:
 
 	Target m_Target = Target::VULKAN_VERSION_1_1;
 
-	graphic::ShaderStage m_ShaderStage = graphic::ShaderStage::MAX_ENUM;
+	rhi::ShaderStage m_ShaderStage = rhi::ShaderStage::MAX_ENUM;
 
 	bool m_IsPreprocessed = false;
 };

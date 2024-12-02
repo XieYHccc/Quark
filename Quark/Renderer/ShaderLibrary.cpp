@@ -18,13 +18,13 @@ uint64_t ShaderVariantKey::GetHash() const
 
 ShaderProgram::ShaderProgram(ShaderTemplate* compute)
 {
-	m_stages[util::ecast(graphic::ShaderStage::STAGE_COMPUTE)] = compute;
+	m_stages[util::ecast(rhi::ShaderStage::STAGE_COMPUTE)] = compute;
 }
 
 ShaderProgram::ShaderProgram(ShaderTemplate* vert, ShaderTemplate* frag)
 {
-	m_stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)] = vert;
-	m_stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)] = frag;
+	m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)] = vert;
+	m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)] = frag;
 }
 
 ShaderProgramVariant* ShaderProgram::GetOrCreateVariant(const ShaderVariantKey& key)
@@ -38,8 +38,8 @@ ShaderProgramVariant* ShaderProgram::GetOrCreateVariant(const ShaderVariantKey& 
 	}
 	else
 	{
-		ShaderTemplateVariant* vert = m_stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->GetOrCreateVariant(key);
-		ShaderTemplateVariant* frag = m_stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->GetOrCreateVariant(key);
+		ShaderTemplateVariant* vert = m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)]->GetOrCreateVariant(key);
+		ShaderTemplateVariant* frag = m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)]->GetOrCreateVariant(key);
 
 		Scope<ShaderProgramVariant> newVariant = CreateScope<ShaderProgramVariant>(vert, frag);
 
@@ -68,8 +68,8 @@ ShaderProgramVariant* ShaderProgram::GetPrecompiledVariant()
 	}
 	else
 	{
-		ShaderTemplateVariant* vert = m_stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->GetPrecompiledVariant();
-		ShaderTemplateVariant* frag = m_stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->GetPrecompiledVariant();
+		ShaderTemplateVariant* vert = m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)]->GetPrecompiledVariant();
+		ShaderTemplateVariant* frag = m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)]->GetPrecompiledVariant();
 		Scope<ShaderProgramVariant> newProgram = CreateScope<ShaderProgramVariant>(vert, frag);
 		
 		m_variants[hash] = std::move(newProgram);
@@ -79,12 +79,12 @@ ShaderProgramVariant* ShaderProgram::GetPrecompiledVariant()
 
 bool ShaderProgram::IsStatic() const
 {
-	if(m_stages[util::ecast(graphic::ShaderStage::STAGE_COMPUTE)])
-		return m_stages[util::ecast(graphic::ShaderStage::STAGE_COMPUTE)]->IsStatic();
+	if(m_stages[util::ecast(rhi::ShaderStage::STAGE_COMPUTE)])
+		return m_stages[util::ecast(rhi::ShaderStage::STAGE_COMPUTE)]->IsStatic();
 	else
 	{
-		return m_stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->IsStatic() &&
-			m_stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->IsStatic();
+		return m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)]->IsStatic() &&
+			m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)]->IsStatic();
 	}
 
 }
@@ -124,8 +124,8 @@ ShaderProgram* ShaderLibrary::GetOrCreateGraphicsProgram(const std::string& vert
 	}
 	else // Create ShaderProgram
 	{
-		ShaderTemplate* vertTemp = GetOrCreateShaderTemplate(vert_path, graphic::ShaderStage::STAGE_VERTEX);
-		ShaderTemplate* fragTemp = GetOrCreateShaderTemplate(frag_path, graphic::ShaderStage::STAGE_FRAGEMNT);
+		ShaderTemplate* vertTemp = GetOrCreateShaderTemplate(vert_path, rhi::ShaderStage::STAGE_VERTEX);
+		ShaderTemplate* fragTemp = GetOrCreateShaderTemplate(frag_path, rhi::ShaderStage::STAGE_FRAGEMNT);
 
 		Scope<ShaderProgram> newProgram = CreateScope<ShaderProgram>(vertTemp, fragTemp);
 
@@ -141,7 +141,7 @@ ShaderProgram* ShaderLibrary::GetOrCreateComputeProgram(const std::string& comp_
 	return nullptr;
 }
 
-ShaderTemplate* ShaderLibrary::GetOrCreateShaderTemplate(const std::string& path, graphic::ShaderStage stage)
+ShaderTemplate* ShaderLibrary::GetOrCreateShaderTemplate(const std::string& path, rhi::ShaderStage stage)
 {
 	util::Hasher h;
 	h.string(path);
@@ -161,7 +161,7 @@ ShaderTemplate* ShaderLibrary::GetOrCreateShaderTemplate(const std::string& path
 }
 
 
-ShaderTemplate::ShaderTemplate(const std::string& path, graphic::ShaderStage stage)
+ShaderTemplate::ShaderTemplate(const std::string& path, rhi::ShaderStage stage)
 	:m_path(path), m_stage(stage)
 {
 	if (FileSystem::GetExtension(path) == "spv")
@@ -212,7 +212,7 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const ShaderVariantKey
 			return nullptr;
 		}
 
-		Ref<graphic::Shader> newShader = Application::Get().GetGraphicDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size() * sizeof(uint32_t));
+		Ref<rhi::Shader> newShader = Application::Get().GetGraphicDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size() * sizeof(uint32_t));
 
 		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
 		newVariant->gpuShaderHandle = newShader;
@@ -241,7 +241,7 @@ ShaderTemplateVariant* ShaderTemplate::GetPrecompiledVariant()
 		if (!FileSystem::ReadFileBytes(m_path, spirv))
 			return nullptr;
 
-		Ref<graphic::Shader> newShader = Application::Get().GetGraphicDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size());
+		Ref<rhi::Shader> newShader = Application::Get().GetGraphicDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size());
 		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
 		newVariant->gpuShaderHandle = newShader;
 		newVariant->signatureKey = ShaderVariantKey();
@@ -253,15 +253,15 @@ ShaderTemplateVariant* ShaderTemplate::GetPrecompiledVariant()
 }
 ShaderProgramVariant::ShaderProgramVariant(ShaderTemplateVariant* vert, ShaderTemplateVariant* frag)
 {
-	m_stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)] = vert;
-	m_stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)] = frag;
+	m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)] = vert;
+	m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)] = frag;
 }
 
 uint64_t ShaderProgramVariant::GetHash() const
 {
 	util::Hasher h;
-	h.u64(m_stages[util::ecast(graphic::ShaderStage::STAGE_VERTEX)]->spirvHash);
-	h.u64(m_stages[util::ecast(graphic::ShaderStage::STAGE_FRAGEMNT)]->spirvHash);
+	h.u64(m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)]->spirvHash);
+	h.u64(m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)]->spirvHash);
 
 	return h.get();
 }

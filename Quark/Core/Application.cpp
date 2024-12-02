@@ -8,7 +8,7 @@
 #include "Quark/Renderer/ShaderLibrary.h"
 
 #ifdef USE_VULKAN_DRIVER
-#include "Quark/Graphic/Vulkan/Device_Vulkan.h"
+#include "Quark/RHI/Vulkan/Device_Vulkan.h"
 #endif
 
 #if defined(QK_PLATFORM_WINDOWS) || defined(QK_PLATFORM_MACOS)
@@ -58,7 +58,7 @@ Application::Application(const ApplicationSpecification& specs)
     }
 
 #ifdef USE_VULKAN_DRIVER
-    m_graphicDevice = CreateScope<graphic::Device_Vulkan>();
+    m_graphicDevice = CreateScope<rhi::Device_Vulkan>();
     m_graphicDevice->Init();
 #endif
 
@@ -67,7 +67,7 @@ Application::Application(const ApplicationSpecification& specs)
     m_jobSystem->Execute([this]()
     {
 // #ifdef USE_VULKAN_DRIVER
-//         m_GraphicDevice = CreateScope<graphic::Device_Vulkan>();
+//         m_GraphicDevice = CreateScope<rhi::Device_Vulkan>();
 //         m_GraphicDevice->Init();
 // #endif
         Renderer::CreateSingleton(m_graphicDevice.get());

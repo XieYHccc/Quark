@@ -3,7 +3,7 @@
 #include <string>
 #include <Quark/Core/Logger.h>
 #include <Quark/Core/JobSystem.h>
-#include <Quark/Graphic/Vulkan/Device_Vulkan.h>
+#include <Quark/RHI/Vulkan/Device_Vulkan.h>
 #include <Quark/Asset/GLTFImporter.h>
 
 using namespace std;
@@ -39,7 +39,7 @@ int main()
 {
 	Logger::Init();
 	JobSystem jobSystem;
-	//graphic::Device* device = new graphic::Device_Vulkan();
+	//rhi::Device* device = new rhi::Device_Vulkan();
 	//device->Init();
 
 	// Serial test

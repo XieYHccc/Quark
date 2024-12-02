@@ -5,7 +5,7 @@
 #include "Quark/Core/Window.h"
 #include "Quark/Core/JobSystem.h"
 #include "Quark/Events/ApplicationEvent.h"
-#include "Quark/Graphic/Device.h"
+#include "Quark/RHI/Device.h"
 #include "Quark/UI/UI.h"
 
 namespace quark {
@@ -43,7 +43,7 @@ public:
     void OnWindowResize(const WindowResizeEvent& event);
 
 
-    graphic::Device* GetGraphicDevice() { return m_graphicDevice.get(); }
+    rhi::Device* GetGraphicDevice() { return m_graphicDevice.get(); }
 
     JobSystem* GetJobSystem() { return m_jobSystem.get(); }
 
@@ -60,7 +60,7 @@ protected:
 
     Timer m_timer;
 
-    Scope<graphic::Device> m_graphicDevice;
+    Scope<rhi::Device> m_graphicDevice;
     Scope<JobSystem> m_jobSystem;
     Scope<Window> m_window;
 

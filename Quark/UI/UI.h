@@ -23,15 +23,15 @@ public:
     UI() = default;
     virtual ~UI() = default;
 
-    virtual void Init(graphic::Device* device, const UiSpecification& sepcs) = 0;
+    virtual void Init(rhi::Device* device, const UiSpecification& sepcs) = 0;
     virtual void Finalize() = 0;
 
     virtual void BeginFrame() = 0;
     virtual void EndFrame() = 0;
-    virtual void OnRender(graphic::CommandList* cmd) = 0;
+    virtual void OnRender(rhi::CommandList* cmd) = 0;
 
     virtual ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) = 0;
-    virtual ImTextureID GetOrCreateTextureId(const Ref<graphic::Image>& image, const Ref<graphic::Sampler>& sampler) = 0;
+    virtual ImTextureID GetOrCreateTextureId(const Ref<rhi::Image>& image, const Ref<rhi::Sampler>& sampler) = 0;
 };
 
 template <>

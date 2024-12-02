@@ -60,7 +60,7 @@ size_t Mesh::GetAttributeBufferStride() const
     return stride;
 }
 
-Ref<graphic::Buffer> Mesh::GetAttributeBuffer()
+Ref<rhi::Buffer> Mesh::GetAttributeBuffer()
 {
     if (!m_attributeBuffer)
         UpdateGpuBuffers();
@@ -68,7 +68,7 @@ Ref<graphic::Buffer> Mesh::GetAttributeBuffer()
     return m_attributeBuffer;
 }
 
-Ref<graphic::Buffer> Mesh::GetPositionBuffer()
+Ref<rhi::Buffer> Mesh::GetPositionBuffer()
 {
     if (!m_positionBuffer)
         UpdateGpuBuffers();
@@ -76,7 +76,7 @@ Ref<graphic::Buffer> Mesh::GetPositionBuffer()
     return m_positionBuffer;
 }
 
-Ref<graphic::Buffer> Mesh::GetIndexBuffer()
+Ref<rhi::Buffer> Mesh::GetIndexBuffer()
 {
     if (!m_indexBuffer)
         UpdateGpuBuffers();
@@ -131,27 +131,27 @@ void Mesh::UpdateGpuBuffers()
     // Update position buffer
     if (!m_positionBuffer)
     {
-        graphic::BufferDesc pos_buffer_desc;
-		pos_buffer_desc.domain = (IsDynamic() ? graphic::BufferMemoryDomain::CPU : graphic::BufferMemoryDomain::GPU);
+        rhi::BufferDesc pos_buffer_desc;
+		pos_buffer_desc.domain = (IsDynamic() ? rhi::BufferMemoryDomain::CPU : rhi::BufferMemoryDomain::GPU);
 		pos_buffer_desc.size = vertex_positions.size() * sizeof(decltype(vertex_positions)::value_type);
-        pos_buffer_desc.usageBits = graphic::BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        pos_buffer_desc.usageBits |= (IsDynamic() ? 0 : graphic::BUFFER_USAGE_TRANSFER_TO_BIT);
+        pos_buffer_desc.usageBits = rhi::BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        pos_buffer_desc.usageBits |= (IsDynamic() ? 0 : rhi::BUFFER_USAGE_TRANSFER_TO_BIT);
 		m_positionBuffer = graphic_device->CreateBuffer(pos_buffer_desc, vertex_positions.data());
     }
 
     // Update vertex buffer
     if (!m_attributeBuffer)
     {
-        graphic::BufferDesc desc;
-        desc.domain = (IsDynamic() ? graphic::BufferMemoryDomain::CPU : graphic::BufferMemoryDomain::GPU);
+        rhi::BufferDesc desc;
+        desc.domain = (IsDynamic() ? rhi::BufferMemoryDomain::CPU : rhi::BufferMemoryDomain::GPU);
         desc.size = m_cachedAttributeData.size();
-        desc.usageBits = graphic::BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        desc.usageBits |= (IsDynamic() ? 0 : graphic::BUFFER_USAGE_TRANSFER_TO_BIT);
+        desc.usageBits = rhi::BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        desc.usageBits |= (IsDynamic() ? 0 : rhi::BUFFER_USAGE_TRANSFER_TO_BIT);
         m_attributeBuffer = graphic_device->CreateBuffer(desc, m_cachedAttributeData.data());
     }
     else
     {   // Only dynamic mesh can be updated
-        QK_CORE_ASSERT(IsDynamic() && m_attributeBuffer->GetDesc().domain == graphic::BufferMemoryDomain::CPU)
+        QK_CORE_ASSERT(IsDynamic() && m_attributeBuffer->GetDesc().domain == rhi::BufferMemoryDomain::CPU)
 
         void* mappedData = m_attributeBuffer->GetMappedDataPtr();
         memcpy(mappedData, m_cachedAttributeData.data(), m_cachedAttributeData.size());
@@ -162,10 +162,10 @@ void Mesh::UpdateGpuBuffers()
     {
         const size_t indexBufferSize = indices.size() * sizeof(uint32_t);
 
-        graphic::BufferDesc index_buffer_desc;
-        index_buffer_desc.domain = graphic::BufferMemoryDomain::GPU;
+        rhi::BufferDesc index_buffer_desc;
+        index_buffer_desc.domain = rhi::BufferMemoryDomain::GPU;
         index_buffer_desc.size = indexBufferSize;
-        index_buffer_desc.usageBits = graphic::BUFFER_USAGE_INDEX_BUFFER_BIT | graphic::BUFFER_USAGE_TRANSFER_TO_BIT;
+        index_buffer_desc.usageBits = rhi::BUFFER_USAGE_INDEX_BUFFER_BIT | rhi::BUFFER_USAGE_TRANSFER_TO_BIT;
         m_indexBuffer = graphic_device->CreateBuffer(index_buffer_desc, indices.data());
     }
 }

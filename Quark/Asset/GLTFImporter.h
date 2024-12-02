@@ -1,5 +1,5 @@
 #pragma once
-#include "Quark/Graphic/Common.h"
+#include "Quark/RHI/Common.h"
 #include "Quark/Asset/Material.h"
 #include "Quark/Asset/Mesh.h"
 
@@ -31,7 +31,7 @@ public:
 	};
 
     GLTFImporter();
-    GLTFImporter(graphic::Device* device);
+    GLTFImporter(rhi::Device* device);
 
     void Import(const std::string& file_path, uint32_t flags = 0);
 
@@ -40,13 +40,13 @@ public:
     std::vector<Ref<Mesh>>& GetMeshes() { return m_Meshes; }
 
 private:
-    Ref<graphic::Sampler> ParseSampler(const tinygltf::Sampler& gltf_sampler);
-    Ref<graphic::Image> ParseImage(const tinygltf::Image& gltf_image);
+    Ref<rhi::Sampler> ParseSampler(const tinygltf::Sampler& gltf_sampler);
+    Ref<rhi::Image> ParseImage(const tinygltf::Image& gltf_image);
     Ref<Material> ParseMaterial(const tinygltf::Material& gltf_material);
     Ref<Mesh> ParseMesh(const tinygltf::Mesh& gltf_mesh);
     Entity* ParseNode(const tinygltf::Node& gltf_node);
 
-    graphic::Device* m_GraphicDevice;
+    rhi::Device* m_GraphicDevice;
 
     tinygltf::Model m_Model;
 
@@ -54,8 +54,8 @@ private:
     std::string m_FilePath;
 
     // Temporary storage for indexing
-    std::vector<Ref<graphic::Sampler>> m_Samplers;
-    std::vector<Ref<graphic::Image>> m_Images;
+    std::vector<Ref<rhi::Sampler>> m_Samplers;
+    std::vector<Ref<rhi::Image>> m_Images;
     std::vector<Ref<Texture>> m_Textures;
     std::vector<Ref<Material>> m_Materials;
     std::vector<Ref<Mesh>> m_Meshes;

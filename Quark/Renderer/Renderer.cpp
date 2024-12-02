@@ -2,7 +2,7 @@
 #include "Quark/Renderer/Renderer.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Asset/Mesh.h"
-#include "Quark/Graphic/Device.h"
+#include "Quark/RHI/Device.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
@@ -11,9 +11,9 @@
 
 namespace quark {
 
-using namespace graphic;
+using namespace rhi;
 
-Renderer::Renderer(graphic::Device* device)
+Renderer::Renderer(rhi::Device* device)
     : m_device(device)
 {
     m_shaderLibrary = CreateScope<ShaderLibrary>();
@@ -56,7 +56,7 @@ Renderer::Renderer(graphic::Device* device)
 
     // blend states
 	{
-        graphic::PipelineColorBlendState bs;
+        rhi::PipelineColorBlendState bs;
         bs.enable_independent_blend = false;
         bs.attachments[0].enable_blend = false;
         bs.attachments[0].colorWriteMask = util::ecast(ColorWriteFlagBits::ENABLE_ALL);
@@ -213,7 +213,7 @@ Renderer::Renderer(graphic::Device* device)
         //pipeline_infiniteGrid = m_device->CreateGraphicPipeLine(pipelineDesc_infiniteGrid);
 
         // entityId pipeline
-        graphic::GraphicPipeLineDesc desc;
+        rhi::GraphicPipeLineDesc desc;
         desc.vertShader = GetShaderLibrary().staticProgram_entityID->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
         desc.fragShader = GetShaderLibrary().staticProgram_entityID->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
         desc.depthStencilState = depthStencilState_depthWrite;
@@ -353,10 +353,10 @@ void Renderer::UpdateGpuResources(DrawContext& context, Visibility& vis)
 
 }
 
-void Renderer::DrawSkybox(const DrawContext& context, const Ref<Texture>& envMap, graphic::CommandList* cmd)
+void Renderer::DrawSkybox(const DrawContext& context, const Ref<Texture>& envMap, rhi::CommandList* cmd)
 {
     Ref<Mesh> cubeMesh = AssetManager::Get().mesh_cube;
-    Ref<graphic::PipeLine> pipeline_skybox = GetGraphicsPipeline(*m_shaderLibrary->staticProgram_skybox, {}, cmd->GetCurrentRenderPassInfo(), vertexInputLayout_skybox, false, AlphaMode::MODE_OPAQUE);
+    Ref<rhi::PipeLine> pipeline_skybox = GetGraphicsPipeline(*m_shaderLibrary->staticProgram_skybox, {}, cmd->GetCurrentRenderPassInfo(), vertexInputLayout_skybox, false, AlphaMode::MODE_OPAQUE);
     
     cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
 
@@ -369,9 +369,9 @@ void Renderer::DrawSkybox(const DrawContext& context, const Ref<Texture>& envMap
     cmd->DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);
 }
 
-void Renderer::DrawGrid(const DrawContext& context, graphic::CommandList* cmd)
+void Renderer::DrawGrid(const DrawContext& context, rhi::CommandList* cmd)
 {
-    Ref<graphic::PipeLine> infiniteGrid_pipeline = GetGraphicsPipeline(*m_shaderLibrary->staticProgram_infiniteGrid, {}, cmd->GetCurrentRenderPassInfo(), {}, true, AlphaMode::MODE_OPAQUE);
+    Ref<rhi::PipeLine> infiniteGrid_pipeline = GetGraphicsPipeline(*m_shaderLibrary->staticProgram_infiniteGrid, {}, cmd->GetCurrentRenderPassInfo(), {}, true, AlphaMode::MODE_OPAQUE);
     
     cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
 
@@ -380,9 +380,9 @@ void Renderer::DrawGrid(const DrawContext& context, graphic::CommandList* cmd)
 
 }
 
-void Renderer::DrawEntityID(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd)
+void Renderer::DrawEntityID(const DrawContext& context, const Visibility& vis, rhi::CommandList* cmd)
 {
-    QK_CORE_ASSERT(cmd->GetCurrentRenderPassInfo().colorAttachmentFormats[0] == graphic::DataFormat::R32G32_UINT)
+    QK_CORE_ASSERT(cmd->GetCurrentRenderPassInfo().colorAttachmentFormats[0] == rhi::DataFormat::R32G32_UINT)
     
     cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
     cmd->BindPipeLine(*pipeline_entityID);
@@ -399,11 +399,11 @@ void Renderer::DrawEntityID(const DrawContext& context, const Visibility& vis, g
     }
 }
 
-void Renderer::DrawScene(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd)
+void Renderer::DrawScene(const DrawContext& context, const Visibility& vis, rhi::CommandList* cmd)
 {
     Ref<Material> lastMaterial = nullptr;
     Ref<PipeLine> lastPipeline = nullptr;
-    Ref<graphic::Buffer> lastIndexBuffer = nullptr;
+    Ref<rhi::Buffer> lastIndexBuffer = nullptr;
 
     // Bind scene uniform buffer(assume all pipeline are using the same pipeline layout)
     cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));
@@ -457,7 +457,7 @@ void Renderer::DrawScene(const DrawContext& context, const Visibility& vis, grap
         draw(context.objects_opaque[idx]);
 }
 
-Ref<graphic::PipeLine> Renderer::GetGraphicsPipeline(const ShaderProgramVariant& programVariant, const graphic::PipelineDepthStencilState& ds, const graphic::PipelineColorBlendState& bs, const graphic::RasterizationState& rs, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& input)
+Ref<rhi::PipeLine> Renderer::GetGraphicsPipeline(const ShaderProgramVariant& programVariant, const rhi::PipelineDepthStencilState& ds, const rhi::PipelineColorBlendState& bs, const rhi::RasterizationState& rs, const rhi::RenderPassInfo2& rp, const rhi::VertexInputLayout& input)
 {
     util::Hasher h;
 
@@ -520,28 +520,28 @@ Ref<graphic::PipeLine> Renderer::GetGraphicsPipeline(const ShaderProgramVariant&
     }
     else
     {
-        graphic::GraphicPipeLineDesc desc = {};
-        desc.vertShader = programVariant.GetShader(graphic::ShaderStage::STAGE_VERTEX);
-        desc.fragShader = programVariant.GetShader(graphic::ShaderStage::STAGE_FRAGEMNT);
+        rhi::GraphicPipeLineDesc desc = {};
+        desc.vertShader = programVariant.GetShader(rhi::ShaderStage::STAGE_VERTEX);
+        desc.fragShader = programVariant.GetShader(rhi::ShaderStage::STAGE_FRAGEMNT);
         desc.depthStencilState = ds;
         desc.blendState = bs;
         desc.rasterState = rs;
-        desc.topologyType = graphic::TopologyType::TRANGLE_LIST;
+        desc.topologyType = rhi::TopologyType::TRANGLE_LIST;
         desc.renderPassInfo = rp;
         desc.vertexInputLayout = input;
 
-        Ref<graphic::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
+        Ref<rhi::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
         m_cached_pipelines[hash] = newPipeline;
 
         return newPipeline;
     }
 }
 
-Ref<graphic::PipeLine> Renderer::GetGraphicsPipeline(ShaderProgram& program, const ShaderVariantKey& key, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& vertexLayout, bool enableDepth, AlphaMode mode)
+Ref<rhi::PipeLine> Renderer::GetGraphicsPipeline(ShaderProgram& program, const ShaderVariantKey& key, const rhi::RenderPassInfo2& rp, const rhi::VertexInputLayout& vertexLayout, bool enableDepth, AlphaMode mode)
 {
     ShaderProgramVariant* programVariant = program.IsStatic()? program.GetPrecompiledVariant() : program.GetOrCreateVariant(key);
-    graphic::PipelineColorBlendState& bs = mode == AlphaMode::MODE_OPAQUE ? blendState_opaque : blendState_transparent;
-    graphic::PipelineDepthStencilState ds = depthStencilState_disabled;
+    rhi::PipelineColorBlendState& bs = mode == AlphaMode::MODE_OPAQUE ? blendState_opaque : blendState_transparent;
+    rhi::PipelineDepthStencilState ds = depthStencilState_disabled;
     if (enableDepth)
         ds = mode == AlphaMode::MODE_OPAQUE ? depthStencilState_depthWrite : depthStencilState_depthTestOnly;
 
@@ -599,39 +599,39 @@ Ref<graphic::PipeLine> Renderer::GetGraphicsPipeline(ShaderProgram& program, con
     }
     else
     {
-        graphic::GraphicPipeLineDesc desc = {};
-        desc.vertShader = programVariant->GetShader(graphic::ShaderStage::STAGE_VERTEX);
-        desc.fragShader = programVariant->GetShader(graphic::ShaderStage::STAGE_FRAGEMNT);
+        rhi::GraphicPipeLineDesc desc = {};
+        desc.vertShader = programVariant->GetShader(rhi::ShaderStage::STAGE_VERTEX);
+        desc.fragShader = programVariant->GetShader(rhi::ShaderStage::STAGE_FRAGEMNT);
         desc.depthStencilState = ds;
         desc.blendState = bs;
         desc.rasterState = rasterizationState_fill;
-        desc.topologyType = graphic::TopologyType::TRANGLE_LIST;
+        desc.topologyType = rhi::TopologyType::TRANGLE_LIST;
         desc.renderPassInfo = rp;
         if (vertexLayout.isValid())
             desc.vertexInputLayout = vertexLayout;
 
-        Ref<graphic::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
+        Ref<rhi::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
         m_cached_pipelines[hash] = newPipeline;
 
         return newPipeline;
     }
 }
 
-Ref<graphic::VertexInputLayout> Renderer::GetVertexInputLayout(uint32_t meshAttributesMask)
+Ref<rhi::VertexInputLayout> Renderer::GetVertexInputLayout(uint32_t meshAttributesMask)
 {
     auto it = m_cached_vertexInputLayouts.find(meshAttributesMask);
     if (it != m_cached_vertexInputLayouts.end())
 		return it->second;
 
-    Ref<graphic::VertexInputLayout> newLayout = CreateRef<graphic::VertexInputLayout>();
+    Ref<rhi::VertexInputLayout> newLayout = CreateRef<rhi::VertexInputLayout>();
 
     // Position
     if (meshAttributesMask & MESH_ATTRIBUTE_POSITION_BIT)
     {
-        graphic::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
+        rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
         attrib.location = 0;
         attrib.binding = 0;
-        attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+        attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
         attrib.offset = 0;
     }
 
@@ -640,10 +640,10 @@ Ref<graphic::VertexInputLayout> Renderer::GetVertexInputLayout(uint32_t meshAttr
     // UV
     if (meshAttributesMask & MESH_ATTRIBUTE_UV_BIT)
     {
-        graphic::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
+        rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
         attrib.location = 1;
         attrib.binding = 1;
-        attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
+        attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
         attrib.offset = offset;
         offset += sizeof(glm::vec2);
     }
@@ -651,10 +651,10 @@ Ref<graphic::VertexInputLayout> Renderer::GetVertexInputLayout(uint32_t meshAttr
     // Normal
     if (meshAttributesMask & MESH_ATTRIBUTE_NORMAL_BIT)
     {
-        graphic::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
+        rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
         attrib.location = 2;
         attrib.binding = 1;
-        attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+        attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
         attrib.offset = offset;
         offset += sizeof(glm::vec3);
     }
@@ -662,23 +662,23 @@ Ref<graphic::VertexInputLayout> Renderer::GetVertexInputLayout(uint32_t meshAttr
     // Vertex Color
     if (meshAttributesMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
     {
-        graphic::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
+        rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
         attrib.location = 3;
         attrib.binding = 1;
-        attrib.format = graphic::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
+        attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
         attrib.offset = offset;
         offset += sizeof(glm::vec4);
     }
 
-    graphic::VertexInputLayout::VertexBindInfo bindInfo = {};
+    rhi::VertexInputLayout::VertexBindInfo bindInfo = {};
     bindInfo.binding = 0;
     bindInfo.stride = sizeof(glm::vec3);
-    bindInfo.inputRate = graphic::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+    bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
     newLayout->vertexBindInfos.push_back(bindInfo);
 
     bindInfo.binding = 1;
     bindInfo.stride = offset;
-    bindInfo.inputRate = graphic::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+    bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
     newLayout->vertexBindInfos.push_back(bindInfo);
 
     m_cached_vertexInputLayouts[meshAttributesMask] = newLayout;

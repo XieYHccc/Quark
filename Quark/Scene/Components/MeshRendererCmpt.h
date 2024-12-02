@@ -2,7 +2,7 @@
 #include "Quark/Ecs/Component.h"
 #include "Quark/Asset/Mesh.h"
 #include "Quark/Asset/Material.h"
-#include "Quark/Graphic/PipeLine.h"
+#include "Quark/RHI/PipeLine.h"
 #include "Quark/Renderer/ShaderLibrary.h"
 
 namespace quark {
@@ -17,7 +17,7 @@ public:
 	void SetMaterial(uint32_t index, const Ref<Material>& mat);
 
 	Ref<Material> GetMaterial(uint32_t index);
-	Ref<graphic::PipeLine> GetGraphicsPipeLine(uint32_t index);
+	Ref<rhi::PipeLine> GetGraphicsPipeLine(uint32_t index);
 
 private:
 	void UpdateGraphicsPipeLine(uint32_t index);
@@ -31,7 +31,7 @@ private:
 
 	// TODO: Change this when we have a render graph system
 	// A mesh could be processed through multiple render pass and multiple pipelines
-	std::vector<Ref<graphic::PipeLine>> m_graphicsPipeLines;
+	std::vector<Ref<rhi::PipeLine>> m_graphicsPipeLines;
 
 	// Local rendering state
 	ShaderVariantKey m_cachedProgramVatriantKey;

@@ -14,7 +14,7 @@
 #include <stb_image.h>
 
 namespace quark {
-using namespace quark::graphic;
+using namespace quark::rhi;
 
 std::unordered_map<std::string, bool> GLTFImporter::s_SupportedExtensions = {
     {"KHR_lights_punctual", false}};
@@ -82,7 +82,7 @@ GLTFImporter::GLTFImporter()
 
 }
 
-GLTFImporter::GLTFImporter(graphic::Device* device)
+GLTFImporter::GLTFImporter(rhi::Device* device)
 	:m_GraphicDevice(device)
 {
 
@@ -198,7 +198,7 @@ void GLTFImporter::Import(const std::string &filename, uint32_t flags)
  //       .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
  //   };
 
-    //Ref<graphic::Buffer> materialUniformBuffer = m_GraphicDevice->CreateBuffer(uniform_buffer_desc);
+    //Ref<rhi::Buffer> materialUniformBuffer = m_GraphicDevice->CreateBuffer(uniform_buffer_desc);
     //auto* mapped_data = (Material::UniformBufferBlock*)materialUniformBuffer->GetMappedDataPtr();
 
     // Load materials
@@ -308,7 +308,7 @@ Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
     return newObj;
 }
 
-Ref<graphic::Sampler> GLTFImporter::ParseSampler(const tinygltf::Sampler &gltf_sampler)
+Ref<rhi::Sampler> GLTFImporter::ParseSampler(const tinygltf::Sampler &gltf_sampler)
 {
     SamplerDesc desc = 
     {
@@ -321,7 +321,7 @@ Ref<graphic::Sampler> GLTFImporter::ParseSampler(const tinygltf::Sampler &gltf_s
     return m_GraphicDevice->CreateSampler(desc);
 }
 
-Ref<graphic::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
+Ref<rhi::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
 {
     if (!gltf_image.image.empty()) { // Image embedded in gltf file or loaded with stb
         ImageDesc desc;

@@ -28,7 +28,7 @@ struct Material : public Asset {
     ShaderProgram* shaderProgram = nullptr;
 
     // (deprecated) we are using push constant to send uniform buffer
-    Ref<graphic::Buffer> uniformBuffer;
+    Ref<rhi::Buffer> uniformBuffer;
     size_t uniformBufferOffset = 0;
 
     

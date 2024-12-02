@@ -2,7 +2,7 @@
 #include "Quark/Asset/TextureImporter.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Core/FileSystem.h"
-#include "Quark/Graphic/TextureFormatLayout.h"
+#include "Quark/RHI/TextureFormatLayout.h"
 #include "Quark/Renderer/Renderer.h"
 
 #include <ktx.h>
@@ -45,37 +45,37 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
     }
 
     // Image description
-    graphic::ImageDesc desc;
+    rhi::ImageDesc desc;
     desc.width = ktxTranscoder.get_width();
     desc.height = ktxTranscoder.get_height();
     desc.arraySize = std::max(1u, ktxTranscoder.get_layers());
     desc.mipLevels = ktxTranscoder.get_levels();
-    desc.format = graphic::DataFormat::R8G8B8A8_UNORM;
-    desc.initialLayout = graphic::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
-    desc.type = graphic::ImageType::TYPE_2D;
-    desc.usageBits = graphic::ImageUsageBits::IMAGE_USAGE_SAMPLING_BIT | graphic::ImageUsageBits::IMAGE_USAGE_CAN_COPY_TO_BIT;
+    desc.format = rhi::DataFormat::R8G8B8A8_UNORM;
+    desc.initialLayout = rhi::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+    desc.type = rhi::ImageType::TYPE_2D;
+    desc.usageBits = rhi::ImageUsageBits::IMAGE_USAGE_SAMPLING_BIT | rhi::ImageUsageBits::IMAGE_USAGE_CAN_COPY_TO_BIT;
     if (ktxTranscoder.get_faces() == 6) {
-        desc.type = graphic::ImageType::TYPE_CUBE;
+        desc.type = rhi::ImageType::TYPE_CUBE;
         desc.arraySize = desc.arraySize * 6;
     }
 
     // Find a suitable format
-    desc.format = graphic::DataFormat::R8G8B8A8_UNORM;
+    desc.format = rhi::DataFormat::R8G8B8A8_UNORM;
     basist::transcoder_texture_format targetFormat = basist::transcoder_texture_format::cTFRGBA32;
 
     auto* graphicDevice = Application::Get().GetGraphicDevice();
     if (graphicDevice->GetDeviceFeatures().textureCompressionBC) 
     {
         // BC7 is the preferred block compression if available
-        if (graphicDevice->isFormatSupported(graphic::DataFormat::BC7_UNORM_BLOCK)) {
+        if (graphicDevice->isFormatSupported(rhi::DataFormat::BC7_UNORM_BLOCK)) {
             targetFormat = basist::transcoder_texture_format::cTFBC7_RGBA;
-            desc.format = graphic::DataFormat::BC7_UNORM_BLOCK;
+            desc.format = rhi::DataFormat::BC7_UNORM_BLOCK;
         } 
         else 
         {
-            if (graphicDevice->isFormatSupported(graphic::DataFormat::BC3_UNORM_BLOCK)) {
+            if (graphicDevice->isFormatSupported(rhi::DataFormat::BC3_UNORM_BLOCK)) {
                 targetFormat = basist::transcoder_texture_format::cTFBC3_RGBA;
-                desc.format = graphic::DataFormat::BC3_UNORM_BLOCK;
+                desc.format = rhi::DataFormat::BC3_UNORM_BLOCK;
             }
         }
     }
@@ -88,12 +88,12 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
         const uint32_t levels = ktxTranscoder.get_levels();
 
         // Setup mip level infos : we use our own function to get mipmap infos for algning offset with 16 bytes
-        graphic::TextureFormatLayout layout;
+        rhi::TextureFormatLayout layout;
         layout.SetUp2D(desc.format, desc.width, desc.height, desc.arraySize, desc.mipLevels);
 
         const uint32_t bytesPerBlockOrPixel = layout.GetBlockStride();
         std::vector<uint8_t> transcodedData(layout.GetRequiredSize());
-        std::vector<graphic::ImageInitData> initData;
+        std::vector<rhi::ImageInitData> initData;
         for (uint32_t level = 0; level < levels; ++level) {
             const auto mipInfo = layout.GetMipInfo(level);
             const uint32_t numBlocksOrPixels = mipInfo.num_block_x * mipInfo.num_block_y;
@@ -104,7 +104,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
                     void* pDst = transcodedData.data() + mipInfo.offset + (slicePitch * faces) * layer + slicePitch * face;
 
                     if (ktxTranscoder.transcode_image_level(level, layer, face, pDst, numBlocksOrPixels, targetFormat)) {
-                        graphic::ImageInitData newSubresource;
+                        rhi::ImageInitData newSubresource;
                         newSubresource.data = pDst;
                         newSubresource.rowPitch = mipInfo.num_block_x * bytesPerBlockOrPixel;
                         newSubresource.slicePitch = newSubresource.rowPitch * mipInfo.num_block_y;
@@ -135,7 +135,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
 
 Ref<Texture> TextureImporter::ImportStb(const std::string& file_path)
 {
-    using namespace graphic;
+    using namespace rhi;
 
     int width, height, channels;
     // stbi_set_flip_vertically_on_load(true);
@@ -189,20 +189,20 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
     result = ktxTexture_CreateFromNamedFile(file_path.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
     QK_CORE_VERIFY(result == KTX_SUCCESS);
 
-    graphic::ImageDesc desc;
+    rhi::ImageDesc desc;
     desc.width = ktxTexture->baseWidth;
     desc.height = ktxTexture->baseHeight;
     desc.depth = ktxTexture->baseDepth;
     desc.mipLevels = ktxTexture->numLevels;
     desc.arraySize = ktxTexture->numLayers;
-    desc.initialLayout = graphic::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
-    desc.usageBits = graphic::ImageUsageBits::IMAGE_USAGE_SAMPLING_BIT | graphic::ImageUsageBits::IMAGE_USAGE_CAN_COPY_TO_BIT;
+    desc.initialLayout = rhi::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+    desc.usageBits = rhi::ImageUsageBits::IMAGE_USAGE_SAMPLING_BIT | rhi::ImageUsageBits::IMAGE_USAGE_CAN_COPY_TO_BIT;
     // TODO: Support 3D
-    desc.type = graphic::ImageType::TYPE_2D;
+    desc.type = rhi::ImageType::TYPE_2D;
     QK_CORE_VERIFY(desc.depth == 1);
     QK_CORE_VERIFY(desc.arraySize == 1);
     //TODO: Support other formats
-    desc.format = graphic::DataFormat::R8G8B8A8_UNORM;
+    desc.format = rhi::DataFormat::R8G8B8A8_UNORM;
 
     ktx_uint8_t* ktxTextureData = ktxTexture_GetData(ktxTexture);
 	ktx_size_t ktxTextureSize = ktxTexture_GetSize(ktxTexture);
@@ -210,7 +210,7 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
     // Cubemap?
     bool isCubeMap = false;
     if (ktxTexture->numLayers == 1 && ktxTexture->numFaces == 6) {
-        desc.type = graphic::ImageType::TYPE_CUBE;
+        desc.type = rhi::ImageType::TYPE_CUBE;
         desc.arraySize = 6;
         isCubeMap = true;
     }
@@ -219,7 +219,7 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
     QK_CORE_VERIFY(ktxTexture->isCompressed == KTX_FALSE);
 
     // Prepare Image's init data
-    std::vector<graphic::ImageInitData> initData;
+    std::vector<rhi::ImageInitData> initData;
     for (uint32_t level = 0; level < desc.mipLevels; level++) {
         for (uint32_t layer = 0; layer < desc.arraySize; layer++) {
             auto& newSubresource = initData.emplace_back();

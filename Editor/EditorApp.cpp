@@ -310,7 +310,7 @@ void EditorApp::OnRender(TimeStep ts)
         auto* swap_chain_image = m_graphicDevice->GetPresentImage();
 
         // Viewport and scissor
-        graphic::Viewport viewport;
+        rhi::Viewport viewport;
         viewport.x = 0;
         viewport.y = 0;
         viewport.width = (float)m_color_attachment->GetDesc().width;
@@ -318,7 +318,7 @@ void EditorApp::OnRender(TimeStep ts)
         viewport.minDepth = 0;
         viewport.maxDepth = 1;
 
-        graphic::Scissor scissor;
+        rhi::Scissor scissor;
         scissor.extent.width = (int)viewport.width;
         scissor.extent.height = (int)viewport.height;
         scissor.offset.x = 0;
@@ -326,25 +326,25 @@ void EditorApp::OnRender(TimeStep ts)
 
         // Main pass
         {
-            graphic::PipelineImageBarrier image_barrier;
+            rhi::PipelineImageBarrier image_barrier;
             image_barrier.image = m_color_attachment.get();
-            image_barrier.srcStageBits = graphic::PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+            image_barrier.srcStageBits = rhi::PIPELINE_STAGE_ALL_GRAPHICS_BIT;
             image_barrier.srcMemoryAccessBits = 0;
-            image_barrier.dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            image_barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            image_barrier.layoutBefore = graphic::ImageLayout::UNDEFINED;
-            image_barrier.layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            image_barrier.dstStageBits = rhi::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barrier.dstMemoryAccessBits = rhi::BARRIER_ACCESS_COLOR_ATTACHMENT_READ_BIT | rhi::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barrier.layoutBefore = rhi::ImageLayout::UNDEFINED;
+            image_barrier.layoutAfter = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
             graphic_cmd->PipeLineBarriers(nullptr, 0, &image_barrier, 1, nullptr, 0);
 
             // Begin pass
-            graphic::FrameBufferInfo fb_info;
-            fb_info.colorAttatchemtsLoadOp[0] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            rhi::FrameBufferInfo fb_info;
+            fb_info.colorAttatchemtsLoadOp[0] = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.colorAttatchemtsStoreOp[0] = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.colorAttachments[0] = m_color_attachment.get();
             fb_info.clearColors[0] = { 0.2f, 0.2f, 0.2f, 0.f };
             fb_info.depthAttachment = m_depth_attachment.get();
-            fb_info.depthAttachmentLoadOp = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            fb_info.depthAttachmentStoreOp = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            fb_info.depthAttachmentLoadOp = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.depthAttachmentStoreOp = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
             graphic_cmd->BeginRenderPass(renderer.renderPassInfo_simpleMainPass, fb_info);
@@ -367,26 +367,26 @@ void EditorApp::OnRender(TimeStep ts)
 
         // ui pass
         {
-            graphic::PipelineImageBarrier image_barriers[2];
+            rhi::PipelineImageBarrier image_barriers[2];
             image_barriers[0].image = swap_chain_image;
-            image_barriers[0].srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            image_barriers[0].srcStageBits = rhi::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             image_barriers[0].srcMemoryAccessBits = 0;
-            image_barriers[0].dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            image_barriers[0].dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            image_barriers[0].layoutBefore = graphic::ImageLayout::UNDEFINED;
-            image_barriers[0].layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            image_barriers[0].dstStageBits = rhi::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barriers[0].dstMemoryAccessBits = rhi::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barriers[0].layoutBefore = rhi::ImageLayout::UNDEFINED;
+            image_barriers[0].layoutAfter = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
             image_barriers[1].image = m_color_attachment.get();
-            image_barriers[1].srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            image_barriers[1].srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            image_barriers[1].dstStageBits = graphic::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            image_barriers[1].dstMemoryAccessBits = graphic::BARRIER_ACCESS_SHADER_READ_BIT;
-            image_barriers[1].layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            image_barriers[1].layoutAfter = graphic::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+            image_barriers[1].srcStageBits = rhi::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barriers[1].srcMemoryAccessBits = rhi::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barriers[1].dstStageBits = rhi::PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            image_barriers[1].dstMemoryAccessBits = rhi::BARRIER_ACCESS_SHADER_READ_BIT;
+            image_barriers[1].layoutBefore = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            image_barriers[1].layoutAfter = rhi::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
             graphic_cmd->PipeLineBarriers(nullptr, 0, image_barriers, 2, nullptr, 0);
 
-            graphic::FrameBufferInfo fb_info;
-            fb_info.colorAttatchemtsLoadOp[0] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            rhi::FrameBufferInfo fb_info;
+            fb_info.colorAttatchemtsLoadOp[0] = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.colorAttatchemtsStoreOp[0] = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.colorAttachments[0] = swap_chain_image;
 
             graphic_cmd->BeginRenderPass(renderer.renderPassInfo_swapchainPass, fb_info);
@@ -396,14 +396,14 @@ void EditorApp::OnRender(TimeStep ts)
 
         // transit swapchain image to present layout for presenting
         {
-            graphic::PipelineImageBarrier present_barrier;
+            rhi::PipelineImageBarrier present_barrier;
             present_barrier.image = swap_chain_image;
-            present_barrier.srcStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            present_barrier.srcMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            present_barrier.dstStageBits = graphic::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+            present_barrier.srcStageBits = rhi::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            present_barrier.srcMemoryAccessBits = rhi::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            present_barrier.dstStageBits = rhi::PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
             present_barrier.dstMemoryAccessBits = 0;
-            present_barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            present_barrier.layoutAfter = graphic::ImageLayout::PRESENT;
+            present_barrier.layoutBefore = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            present_barrier.layoutAfter = rhi::ImageLayout::PRESENT;
             graphic_cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
 
             // Submit graphic command list
@@ -414,27 +414,27 @@ void EditorApp::OnRender(TimeStep ts)
         if (m_viewportHovered)
         {
             // color ID pass
-            graphic::CommandList* cmd = m_graphicDevice->BeginCommandList();
+            rhi::CommandList* cmd = m_graphicDevice->BeginCommandList();
 
-            graphic::PipelineImageBarrier image_barrier;
+            rhi::PipelineImageBarrier image_barrier;
             image_barrier.image = m_entityID_color_attachment.get();
-            image_barrier.srcStageBits = graphic::PIPELINE_STAGE_TRANSFER_BIT;
-            image_barrier.srcMemoryAccessBits = graphic::BARRIER_ACCESS_TRANSFER_READ_BIT;
-            image_barrier.dstStageBits = graphic::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            image_barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            image_barrier.layoutBefore = graphic::ImageLayout::UNDEFINED;
-            image_barrier.layoutAfter = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            image_barrier.srcStageBits = rhi::PIPELINE_STAGE_TRANSFER_BIT;
+            image_barrier.srcMemoryAccessBits = rhi::BARRIER_ACCESS_TRANSFER_READ_BIT;
+            image_barrier.dstStageBits = rhi::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            image_barrier.dstMemoryAccessBits = rhi::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            image_barrier.layoutBefore = rhi::ImageLayout::UNDEFINED;
+            image_barrier.layoutAfter = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
             cmd->PipeLineBarriers(nullptr, 0, &image_barrier, 1, nullptr, 0);
 
-            graphic::FrameBufferInfo fb_info;
-            fb_info.colorAttatchemtsLoadOp[0] = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            fb_info.colorAttatchemtsStoreOp[0] = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            rhi::FrameBufferInfo fb_info;
+            fb_info.colorAttatchemtsLoadOp[0] = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.colorAttatchemtsStoreOp[0] = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.colorAttachments[0] = m_entityID_color_attachment.get();
             fb_info.clearColors[0].color.uint32[0] = 0;
             fb_info.clearColors[0].color.uint32[1] = 10;
             fb_info.depthAttachment = m_entityID_depth_attachment.get();
-            fb_info.depthAttachmentLoadOp = graphic::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            fb_info.depthAttachmentStoreOp = graphic::FrameBufferInfo::AttachmentStoreOp::STORE;
+            fb_info.depthAttachmentLoadOp = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+            fb_info.depthAttachmentStoreOp = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
             cmd->BeginRenderPass(renderer.renderPassInfo_entityIdPass, fb_info);
@@ -444,14 +444,14 @@ void EditorApp::OnRender(TimeStep ts)
             cmd->EndRenderPass();
 
             // transfer data back to cpu buffer
-            graphic::PipelineImageBarrier barrier;
+            rhi::PipelineImageBarrier barrier;
             barrier.image = m_entityID_color_attachment.get();
-            barrier.srcStageBits = graphic::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            barrier.srcStageBits = rhi::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
             barrier.srcMemoryAccessBits = 0;
-            barrier.dstStageBits = graphic::PIPELINE_STAGE_TRANSFER_BIT;
-            barrier.dstMemoryAccessBits = graphic::BARRIER_ACCESS_TRANSFER_READ_BIT;
-            barrier.layoutBefore = graphic::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            barrier.layoutAfter = graphic::ImageLayout::TRANSFER_SRC_OPTIMAL;
+            barrier.dstStageBits = rhi::PIPELINE_STAGE_TRANSFER_BIT;
+            barrier.dstMemoryAccessBits = rhi::BARRIER_ACCESS_TRANSFER_READ_BIT;
+            barrier.layoutBefore = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+            barrier.layoutAfter = rhi::ImageLayout::TRANSFER_SRC_OPTIMAL;
             cmd->PipeLineBarriers(nullptr, 0, &barrier, 1, nullptr, 0);
 
             auto [mx, my] = ImGui::GetMousePos();
@@ -465,7 +465,7 @@ void EditorApp::OnRender(TimeStep ts)
             int x = static_cast<int>(((mouseX / viewportSize.x) * image_width));
             int y = static_cast<int>(((mouseY / viewportSize.y) * image_height));
             cmd->CopyImageToBuffer(*m_stage_buffer, *m_entityID_color_attachment, 0, { x, y, 0 },
-                { 1, 1, 1 }, 0, 0, { graphic::ImageAspect::COLOR, 0, 0, 1 });
+                { 1, 1, 1 }, 0, 0, { rhi::ImageAspect::COLOR, 0, 0, 1 });
 
             m_graphicDevice->SubmitCommandList(cmd, nullptr, 0, false);
         }
@@ -525,7 +525,7 @@ void EditorApp::OnMouseButtonPressed(const MouseButtonPressedEvent& e)
 
 void EditorApp::CreateGraphicResources()
 {
-    using namespace quark::graphic;
+    using namespace quark::rhi;
 
     // Create depth image
     ImageDesc image_desc;
@@ -545,7 +545,7 @@ void EditorApp::CreateGraphicResources()
     // Create color image
     image_desc.format = Renderer::Get().format_colorAttachment_main;
     image_desc.initialLayout = ImageLayout::UNDEFINED;
-    image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | graphic::IMAGE_USAGE_SAMPLING_BIT;
+    image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | rhi::IMAGE_USAGE_SAMPLING_BIT;
     m_color_attachment = m_graphicDevice->CreateImage(image_desc);
 
     // Create entityID image
@@ -561,7 +561,7 @@ void EditorApp::CreateGraphicResources()
     m_stage_buffer = m_graphicDevice->CreateBuffer(buffer_desc);
 }
 
-void EditorApp::MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, graphic::CommandList* cmd)
+void EditorApp::MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, rhi::CommandList* cmd)
 {
     // Bind scene uniform buffer(assume all pipeline are using the same pipeline layout)
     cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));

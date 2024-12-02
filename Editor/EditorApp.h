@@ -34,14 +34,14 @@ public:
 
 private:
     void CreateGraphicResources();
-    void MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, graphic::CommandList* cmd);
+    void MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, rhi::CommandList* cmd);
 
-    Ref<graphic::Image> m_depth_attachment;
-    Ref<graphic::Image> m_color_attachment;
-    Ref<graphic::Image> m_entityID_color_attachment;
-    Ref<graphic::Image> m_entityID_depth_attachment;
+    Ref<rhi::Image> m_depth_attachment;
+    Ref<rhi::Image> m_color_attachment;
+    Ref<rhi::Image> m_entityID_color_attachment;
+    Ref<rhi::Image> m_entityID_depth_attachment;
 
-    Ref<graphic::Buffer> m_stage_buffer;
+    Ref<rhi::Buffer> m_stage_buffer;
 
     Renderer::DrawContext m_drawContext;
     Renderer::Visibility m_visibility;

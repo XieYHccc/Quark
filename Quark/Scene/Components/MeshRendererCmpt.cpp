@@ -30,7 +30,7 @@ Ref<Material> MeshRendererCmpt::GetMaterial(uint32_t index)
 	return m_materials[index];
 }
 
-Ref<graphic::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
+Ref<rhi::PipeLine> MeshRendererCmpt::GetGraphicsPipeLine(uint32_t index)
 {
 	QK_CORE_ASSERT(index < m_graphicsPipeLines.size())
 
@@ -72,7 +72,7 @@ void MeshRendererCmpt::UpdateGraphicsPipeLine(uint32_t index)
 	Renderer& renderer = Renderer::Get();
 
 	Ref<Material> mat = GetMaterial(index);
-	Ref<graphic::VertexInputLayout> vertexLayout = renderer.GetVertexInputLayout(m_cachedProgramVatriantKey.meshAttributeMask);
+	Ref<rhi::VertexInputLayout> vertexLayout = renderer.GetVertexInputLayout(m_cachedProgramVatriantKey.meshAttributeMask);
 
 	m_graphicsPipeLines[index] = renderer.GetGraphicsPipeline(*(mat->shaderProgram), m_cachedProgramVatriantKey, renderer.renderPassInfo_simpleMainPass, *vertexLayout, true, mat->alphaMode);
 }

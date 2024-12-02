@@ -1,7 +1,7 @@
 #pragma once
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Core/Math/Frustum.h"
-#include "Quark/Graphic/Device.h"
+#include "Quark/RHI/Device.h"
 #include "Quark/Renderer/Types.h"
 #include "Quark/Renderer/ShaderLibrary.h"
 
@@ -15,53 +15,53 @@ class Scene;
 class Renderer : public util::MakeSingleton<Renderer> {
 public:
     // formats
-    graphic::DataFormat format_depthAttachment_main = graphic::DataFormat::D32_SFLOAT;
-    graphic::DataFormat format_colorAttachment_main = graphic::DataFormat::R16G16B16A16_SFLOAT;
+    rhi::DataFormat format_depthAttachment_main = rhi::DataFormat::D32_SFLOAT;
+    rhi::DataFormat format_colorAttachment_main = rhi::DataFormat::R16G16B16A16_SFLOAT;
 
     // stencil states
-    graphic::PipelineDepthStencilState depthStencilState_depthWrite;
-    graphic::PipelineDepthStencilState depthStencilState_disabled;
-    graphic::PipelineDepthStencilState depthStencilState_depthTestOnly;
+    rhi::PipelineDepthStencilState depthStencilState_depthWrite;
+    rhi::PipelineDepthStencilState depthStencilState_disabled;
+    rhi::PipelineDepthStencilState depthStencilState_depthTestOnly;
 
     // color blending states
-    graphic::PipelineColorBlendState blendState_opaque;
-    graphic::PipelineColorBlendState blendState_transparent;
+    rhi::PipelineColorBlendState blendState_opaque;
+    rhi::PipelineColorBlendState blendState_transparent;
 
     // rasterization states
-    graphic::RasterizationState rasterizationState_fill;
-    graphic::RasterizationState rasterizationState_wireframe;
+    rhi::RasterizationState rasterizationState_fill;
+    rhi::RasterizationState rasterizationState_wireframe;
 
     // blend states
-    graphic::PipelineColorBlendState colorBlendState_opaque;
-    graphic::PipelineColorBlendState colorBlendState_transparent;
+    rhi::PipelineColorBlendState colorBlendState_opaque;
+    rhi::PipelineColorBlendState colorBlendState_transparent;
 
     // vertex input layout
-    graphic::VertexInputLayout vertexInputLayout_skybox;
+    rhi::VertexInputLayout vertexInputLayout_skybox;
 
     // renderPassInfo
-    graphic::RenderPassInfo2 renderPassInfo_swapchainPass;
-    graphic::RenderPassInfo2 renderPassInfo_simpleMainPass;
-    graphic::RenderPassInfo2 renderPassInfo_editorMainPass;
-    graphic::RenderPassInfo2 renderPassInfo_entityIdPass;
+    rhi::RenderPassInfo2 renderPassInfo_swapchainPass;
+    rhi::RenderPassInfo2 renderPassInfo_simpleMainPass;
+    rhi::RenderPassInfo2 renderPassInfo_editorMainPass;
+    rhi::RenderPassInfo2 renderPassInfo_entityIdPass;
 
     // pipeline descs
-    //graphic::GraphicPipeLineDesc pipelineDesc_skybox;
-    //graphic::GraphicPipeLineDesc pipelineDesc_infiniteGrid;
+    //rhi::GraphicPipeLineDesc pipelineDesc_skybox;
+    //rhi::GraphicPipeLineDesc pipelineDesc_infiniteGrid;
 
     // default images
-    Ref<graphic::Image> image_white;
-    Ref<graphic::Image> image_black;
-    Ref<graphic::Image> image_checkboard;
+    Ref<rhi::Image> image_white;
+    Ref<rhi::Image> image_black;
+    Ref<rhi::Image> image_checkboard;
 
     // default samplers
-    Ref<graphic::Sampler> sampler_linear;
-    Ref<graphic::Sampler> sampler_nearst;
-    Ref<graphic::Sampler> sampler_cube;
+    Ref<rhi::Sampler> sampler_linear;
+    Ref<rhi::Sampler> sampler_nearst;
+    Ref<rhi::Sampler> sampler_cube;
 
     // pipelines
-    //Ref<graphic::PipeLine> pipeline_skybox;
-    //Ref<graphic::PipeLine> pipeline_infiniteGrid;
-    Ref<graphic::PipeLine> pipeline_entityID;
+    //Ref<rhi::PipeLine> pipeline_skybox;
+    //Ref<rhi::PipeLine> pipeline_infiniteGrid;
+    Ref<rhi::PipeLine> pipeline_entityID;
 
     struct DrawContext 
     {
@@ -71,7 +71,7 @@ public:
         UniformBufferData_Scene sceneData;
 
         // gpu resources
-        Ref<graphic::Buffer> sceneUB;
+        Ref<rhi::Buffer> sceneUB;
     };
 
     struct Visibility
@@ -83,7 +83,7 @@ public:
     };
 
 public:
-    Renderer(graphic::Device* device);
+    Renderer(rhi::Device* device);
     ~Renderer();
 
     ShaderLibrary& GetShaderLibrary() { return *m_shaderLibrary; }
@@ -95,22 +95,22 @@ public:
     void UpdateGpuResources(DrawContext& context, Visibility& vis);
 
     // update draw context and visibility before you call these draw functions
-    void DrawSkybox(const DrawContext& context, const Ref<Texture>& envMap, graphic::CommandList* cmd);
-    void DrawScene(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd);
-    void DrawGrid(const DrawContext& context, graphic::CommandList* cmd);
-    void DrawEntityID(const DrawContext& context, const Visibility& vis, graphic::CommandList* cmd);
+    void DrawSkybox(const DrawContext& context, const Ref<Texture>& envMap, rhi::CommandList* cmd);
+    void DrawScene(const DrawContext& context, const Visibility& vis, rhi::CommandList* cmd);
+    void DrawGrid(const DrawContext& context, rhi::CommandList* cmd);
+    void DrawEntityID(const DrawContext& context, const Visibility& vis, rhi::CommandList* cmd);
 
     // caching
-    Ref<graphic::PipeLine> GetGraphicsPipeline(const ShaderProgramVariant& programVariant, const graphic::PipelineDepthStencilState& ds, const graphic::PipelineColorBlendState& bs, const graphic::RasterizationState& rs, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& input);
-    Ref<graphic::PipeLine> GetGraphicsPipeline(ShaderProgram& program, const ShaderVariantKey& key, const graphic::RenderPassInfo2& rp, const graphic::VertexInputLayout& vertexLayout, bool enableDepth, AlphaMode mode);
-    Ref<graphic::VertexInputLayout> GetVertexInputLayout(uint32_t meshAttributesMask);
+    Ref<rhi::PipeLine> GetGraphicsPipeline(const ShaderProgramVariant& programVariant, const rhi::PipelineDepthStencilState& ds, const rhi::PipelineColorBlendState& bs, const rhi::RasterizationState& rs, const rhi::RenderPassInfo2& rp, const rhi::VertexInputLayout& input);
+    Ref<rhi::PipeLine> GetGraphicsPipeline(ShaderProgram& program, const ShaderVariantKey& key, const rhi::RenderPassInfo2& rp, const rhi::VertexInputLayout& vertexLayout, bool enableDepth, AlphaMode mode);
+    Ref<rhi::VertexInputLayout> GetVertexInputLayout(uint32_t meshAttributesMask);
 
 private:
-    graphic::Device* m_device;
+    rhi::Device* m_device;
 
     Scope<ShaderLibrary> m_shaderLibrary;
 
-    std::unordered_map<uint64_t, Ref<graphic::PipeLine>> m_cached_pipelines;
-    std::unordered_map<uint32_t, Ref<graphic::VertexInputLayout>> m_cached_vertexInputLayouts;
+    std::unordered_map<uint64_t, Ref<rhi::PipeLine>> m_cached_pipelines;
+    std::unordered_map<uint32_t, Ref<rhi::VertexInputLayout>> m_cached_vertexInputLayouts;
 };
 }

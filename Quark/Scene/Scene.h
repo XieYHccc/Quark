@@ -1,7 +1,7 @@
 #pragma once
 #include "Quark/Core/Util/ObjectPool.h"
 #include "Quark/Core/UUID.h"
-#include "Quark/Graphic/Common.h"
+#include "Quark/RHI/Common.h"
 #include "Quark/Ecs/EntityRegistry.h"
 
 #include <glm/glm.hpp>

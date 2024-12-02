@@ -66,18 +66,18 @@ public:
 
 private:
     // Called from renderer
-    Ref<graphic::Buffer> GetAttributeBuffer();
-    Ref<graphic::Buffer> GetPositionBuffer();
-    Ref<graphic::Buffer> GetIndexBuffer();
+    Ref<rhi::Buffer> GetAttributeBuffer();
+    Ref<rhi::Buffer> GetPositionBuffer();
+    Ref<rhi::Buffer> GetIndexBuffer();
 
     void UpdateGpuBuffers();
     bool IsVertexDataArraysValid() const;
 
 private:
     // Gpu resources
-    Ref<graphic::Buffer> m_positionBuffer;
-    Ref<graphic::Buffer> m_attributeBuffer;
-    Ref<graphic::Buffer> m_indexBuffer;
+    Ref<rhi::Buffer> m_positionBuffer;
+    Ref<rhi::Buffer> m_attributeBuffer;
+    Ref<rhi::Buffer> m_indexBuffer;
 
     // Overlapped vertex data
     std::vector<uint8_t> m_cachedAttributeData;

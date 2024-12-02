@@ -1,6 +1,6 @@
 #pragma once
 #include "Quark/Core/Math/Aabb.h"
-#include "Quark/Graphic/Common.h"
+#include "Quark/RHI/Common.h"
 #include "Quark/Asset/Material.h"
 
 #include <glm/glm.hpp>
@@ -43,10 +43,10 @@ struct RenderObject
 {
     uint32_t indexCount = 0;
     uint32_t firstIndex = 0;
-    Ref<graphic::Buffer> indexBuffer;
-    Ref<graphic::Buffer> attributeBuffer;
-    Ref<graphic::Buffer> positionBuffer;
-    Ref<graphic::PipeLine> mainPassPipeLine;
+    Ref<rhi::Buffer> indexBuffer;
+    Ref<rhi::Buffer> attributeBuffer;
+    Ref<rhi::Buffer> positionBuffer;
+    Ref<rhi::PipeLine> mainPassPipeLine;
     Ref<Material> material;
     math::Aabb aabb = {};
     glm::mat4 transform;

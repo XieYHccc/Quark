@@ -45,8 +45,8 @@ std::string MaterialSerializer::SerializeToYaml(const Ref<Material>& materialAss
         out << YAML::BeginMap;
 
         // Shaders
-        QK_SERIALIZE_PROPERTY(VertexShader, materialAsset->shaderProgram->GetSourcePath(graphic::ShaderStage::STAGE_VERTEX), out);
-        QK_SERIALIZE_PROPERTY(FragmentShader, materialAsset->shaderProgram->GetSourcePath(graphic::ShaderStage::STAGE_FRAGEMNT), out);
+        QK_SERIALIZE_PROPERTY(VertexShader, materialAsset->shaderProgram->GetSourcePath(rhi::ShaderStage::STAGE_VERTEX), out);
+        QK_SERIALIZE_PROPERTY(FragmentShader, materialAsset->shaderProgram->GetSourcePath(rhi::ShaderStage::STAGE_FRAGEMNT), out);
 
         QK_SERIALIZE_PROPERTY(AlphaMode, AlphaModetoString(materialAsset->alphaMode), out);
 
