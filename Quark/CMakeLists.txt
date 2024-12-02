@@ -1,15 +1,10 @@
-set(CMAKE_CXX_STANDARD 20)
-
 set(QUARK_SOURCE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(QUARK_INCLUDE_DIRS ${QUARK_SOURCE_ROOT_DIR})
 
 FILE(GLOB_RECURSE QUARK_SOURCE_FILES ${QUARK_SOURCE_ROOT_DIR} "*.cpp" "*.c" "*.h")
-
-# Group source files
 source_group(TREE ${QUARK_SOURCE_ROOT_DIR} FILES ${QUARK_SOURCE_FILES})
 
 add_library(quark ${QUARK_SOURCE_FILES})
-#target_compile_definitions(quark PUBLIC SPDLOG_USE_STD_FORMAT)
 
 if(MSVC)
     target_compile_definitions(quark PUBLIC _CRT_SECURE_NO_WARNINGS)
@@ -18,13 +13,10 @@ else()
     target_compile_options(quark PRIVATE -Wno-nullability-completeness)
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    target_compile_definitions(quark PUBLIC QK_DEBUG_BUILD)
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_definitions(quark PUBLIC QK_RELEASE_BUILD)
-else()
-    message( FATAL_ERROR "Unknown build type!" )
-endif()
+add_compile_definitions(
+    $<$<CONFIG:Debug>:QK_DEBUG_BUILD>
+    $<$<CONFIG:Release>:QK_RELEASE_BUILD> 
+)
 
 target_include_directories(quark PUBLIC ${CMAKE_SOURCE_DIR} )
 
@@ -35,7 +27,7 @@ target_link_libraries(quark glm tinygltf tiny_obj_loader stb_image glfw Vulkan::
 
 target_precompile_headers(quark PRIVATE ${QUARK_SOURCE_ROOT_DIR}/qkpch.h)
 
-add_dependencies(quark Shaders)
+set_target_properties(quark PROPERTIES FOLDER "Core")
 
 # copy shader to binary file directory
 # set(SPIRV_SOURCE_DIR "${ASSETS_PATH}")

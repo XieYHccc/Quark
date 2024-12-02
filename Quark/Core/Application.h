@@ -15,6 +15,7 @@ struct ApplicationSpecification
     std::string title = "Quark Application";
     std::uint32_t width = 1200;
     std::uint32_t height = 800;
+    std::string workingDirectory;
     bool isFullScreen = false;
     UiSpecification uiSpecs = {};
 };  
@@ -41,7 +42,9 @@ public:
     void OnWindowClose(const WindowCloseEvent& event);
     void OnWindowResize(const WindowResizeEvent& event);
 
+
     graphic::Device* GetGraphicDevice() { return m_graphicDevice.get(); }
+
     JobSystem* GetJobSystem() { return m_jobSystem.get(); }
 
     Window* GetWindow() { return m_window.get(); }
@@ -66,6 +69,6 @@ private:
 };
 
 // To be defined in CLIENT
-Application* CreateApplication();
+Application* CreateApplication(int argc, char** argv);
 
 }

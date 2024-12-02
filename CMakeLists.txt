@@ -1,56 +1,37 @@
-cmake_minimum_required(VERSION 3.10)
-project(Quark)
+cmake_minimum_required(VERSION 3.19)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+project(Quark VERSION 0.1.0)
 
-set(CMAKE_CXX_STANDARD 20)              
+set(CMAKE_CXX_STANDARD 20)      
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(BUILD_SHARED_LIBS OFF)
 
-message("-- [Quark] CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
-
-# set output path
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin )
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(QUARK_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(CMAKE_INSTALL_PREFIX "${QUARK_ROOT_DIR}/bin")
+set(BINARY_ROOT_DIR "${CMAKE_INSTALL_PREFIX}/")
 set(BUILTIN_REOURCES_DIR ${PROJECT_SOURCE_DIR}/BuiltInResources)
 
-# find_package(OpenGL REQUIRED)
-find_package(Vulkan REQUIRED)
-
-################################################################################
-# Third Party                                                                  #
-################################################################################
-add_subdirectory(ThirdParty)
-
-set(EXTERNAL_PATH ${CMAKE_SOURCE_DIR}/ThirdParty) # path to dependencies
-
-set(GLAD_SOURCE_DIR ${EXTERNAL_PATH}/glad-4.6)
-
-# add_subdirectory(${GLAD_SOURCE_DIR})
-
-# Find glslang
-find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
-
-################################################################################
-# Configuration                                                                #
-################################################################################
-
-if (MSVC)
-    add_compile_options(/MP)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options("/MP")
+    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT QuarkEditor)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
 
-################################################################################
-# Quark                                                                        #
-################################################################################
-add_subdirectory(./Quark)
-#add_subdirectory(./TestBed)
-#add_subdirectory(./Examples)
-add_subdirectory(./Editor)
-add_subdirectory(./Tests)
+# find_package(OpenGL REQUIRED)
+find_package(Vulkan REQUIRED)
+find_program(GLSL_VALIDATOR glslangValidator HINTS /usr/bin /usr/local/bin $ENV{VULKAN_SDK}/Bin/ $ENV{VULKAN_SDK}/Bin32/)
 
-################################################################################
-# Shaders Compilation                                                           #
-################################################################################
+add_subdirectory(ThirdParty)
+add_subdirectory(Quark)
+# add_subdirectory(./TestBed)
+# add_subdirectory(./Examples)
+add_subdirectory(Editor)
+add_subdirectory(Tests)
+
+
 file(GLOB_RECURSE GLSL_SOURCE_FILES
     "${BUILTIN_REOURCES_DIR}/Shaders/*.frag"
     "${BUILTIN_REOURCES_DIR}/Shaders/*.vert"
@@ -74,6 +55,3 @@ add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES})
 # set_source_files_properties(${GLSL_SOURCE_FILES} PROPERTIES HEADER_FILE_ONLY TRUE)
 # add_custom_target(GLSL_Files SOURCES ${GLSL_SOURCE_FILES})
 
-# copy Assets to build directory
-file(COPY ${BUILTIN_REOURCES_DIR} DESTINATION ${EXECUTABLE_OUTPUT_PATH})
-file(COPY ${PROJECT_SOURCE_DIR}/Editor/imgui.ini DESTINATION ${EXECUTABLE_OUTPUT_PATH})

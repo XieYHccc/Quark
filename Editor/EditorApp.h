@@ -29,6 +29,9 @@ public:
     void OpenScene(const std::filesystem::path& path);
     void SaveSceneAs();
 
+    bool OpenProject(const std::filesystem::path& path);
+    bool OpenProject();
+
 private:
     void CreateGraphicResources();
     void MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, graphic::CommandList* cmd);
@@ -56,9 +59,9 @@ private:
     int m_gizmoType = -1;
 
     // UI window
-    SceneHeirarchyPanel m_HeirarchyPanel;
-    InspectorPanel m_InspectorPanel;
-    ContentBrowserPanel m_ContentBrowserPanel;
+    SceneHeirarchyPanel m_heirarchyPanel;
+    InspectorPanel m_inspectorPanel;
+    ContentBrowserPanel m_contentBrowserPanel;
     
     // Debug
     double m_cmdListRecordTime = 0;

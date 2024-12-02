@@ -5,7 +5,6 @@
 #include "Quark/Renderer/Types.h"
 #include "Quark/Renderer/ShaderLibrary.h"
 
-
 namespace quark {
 class Scene;
 

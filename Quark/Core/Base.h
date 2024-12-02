@@ -97,3 +97,6 @@ constexpr Ref<T> CreateRef(Args&& ... args)
 }
 
 }
+
+#include "Quark/Core/Logger.h"
+#include "Quark/Core/Assert.h"

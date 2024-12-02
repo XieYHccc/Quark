@@ -2,6 +2,7 @@
 
 #include <Quark/Quark.h>
 #include <Quark/Asset/TextureImporter.h>
+#include <Quark/EntryPoint.h>
 
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -10,49 +11,45 @@
 
 namespace quark {
 
-Application* CreateApplication()
-{    
+Application* CreateApplication(int argc, char** argv)
+{   
     ApplicationSpecification specs;
     specs.uiSpecs.flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS;
     specs.title = "Quark Editor";
     specs.width = 2500;
     specs.height = 1600;
     specs.isFullScreen = false;
+    specs.workingDirectory = "D:/Dev/Quark/bin";
 
     return new EditorApp(specs);
 }
 
 EditorApp::EditorApp(const ApplicationSpecification& specs)
     : Application(specs), m_viewportFocused(false), m_viewportHovered(false), 
-    m_editorCamera(60, 1280, 720, 0.1f, 256.f), m_viewportSize(1000, 800), // dont'care here, will be overwrited
+    m_editorCamera(45.0f, 1280.0f, 720.0f, 0.1f, 1000.0f), m_viewportSize(1000, 800), // dont'care here, will be overwrited
     m_hoverdEntity(nullptr)
 {
     CreateGraphicResources();
 
-    // Load cube map
+    // load cube map
     TextureImporter textureLoader;
     m_cubeMapTexture = textureLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
 
-    // Load scene
-    m_scene = CreateScope<Scene>("");
+    OpenProject("SandboxProject/Sandbox.qkproject");
 
-    // Init UI Panels
-    m_HeirarchyPanel.SetScene(m_scene);
-    m_InspectorPanel.SetScene(m_scene);
-
-    // Adjust editor camera's aspect ratio
-    m_editorCamera.viewportWidth = (float)Application::Get().GetWindow()->GetWidth();
-    m_editorCamera.viewportHeight = (float)Application::Get().GetWindow()->GetHeight();
-    m_editorCamera.SetPosition(glm::vec3(0, 5, 5));
-
+    // register event callbacks
     EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
     EventManager::Get().Subscribe<MouseButtonPressedEvent>([&](const MouseButtonPressedEvent& e) { OnMouseButtonPressed(e); });
+    
 }
 
 EditorApp::~EditorApp()
 {   
     // save asset registry
-    AssetManager::Get().SaveAssetRegistry();
+    //AssetManager::Get().SaveAssetRegistry();
+    //Ref<Project> project = CreateRef<Project>();
+    //ProjectSerializer serializer(project);
+    //serializer.Serialize("SandboxProject/Sandbox.qkproj");
 }
 
 void EditorApp::OnUpdate(TimeStep ts)
@@ -116,6 +113,9 @@ void EditorApp::OnImGuiUpdate()
             if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
                 SaveSceneAs();
 
+            if (ImGui::MenuItem("Open Project..."))
+				OpenProject();
+
             //if (ImGui::MenuItem("Exit"))
 
             ImGui::EndMenu();
@@ -140,14 +140,14 @@ void EditorApp::OnImGuiUpdate()
     ImGui::End();
 
     // Scene Heirarchy
-    m_HeirarchyPanel.OnImGuiUpdate();
+    m_heirarchyPanel.OnImGuiUpdate();
     
     // Inspector
-    m_InspectorPanel.SetSelectedEntity(m_HeirarchyPanel.GetSelectedEntity());
-    m_InspectorPanel.OnImGuiUpdate();
+    m_inspectorPanel.SetSelectedEntity(m_heirarchyPanel.GetSelectedEntity());
+    m_inspectorPanel.OnImGuiUpdate();
 
     // Content Browser
-    m_ContentBrowserPanel.OnImGuiUpdate();
+    m_contentBrowserPanel.OnImGuiUpdate();
 
     // Scene view port
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
@@ -181,7 +181,7 @@ void EditorApp::OnImGuiUpdate()
     }
 
     // Gizmos
-    Entity* selectedEntity = m_HeirarchyPanel.GetSelectedEntity();
+    Entity* selectedEntity = m_heirarchyPanel.GetSelectedEntity();
     if (selectedEntity && m_gizmoType != -1)
     {
         ImGuizmo::SetOrthographic(false);
@@ -227,8 +227,8 @@ void EditorApp::NewScene()
 {
     m_scene = CreateRef<Scene>("New Scene");
 
-    m_HeirarchyPanel.SetScene(m_scene);
-    m_InspectorPanel.SetScene(m_scene);
+    m_heirarchyPanel.SetScene(m_scene);
+    m_inspectorPanel.SetScene(m_scene);
 }
 
 void EditorApp::OpenScene()
@@ -244,8 +244,10 @@ void EditorApp::OpenScene(const std::filesystem::path& path)
     SceneSerializer serializer(m_scene);
     serializer.Deserialize(path.string());
 
-    m_HeirarchyPanel.SetScene(m_scene);
-    m_InspectorPanel.SetScene(m_scene);
+    m_heirarchyPanel.SetScene(m_scene);
+    m_inspectorPanel.SetScene(m_scene);
+
+    m_hoverdEntity = nullptr;
 }
 
 void EditorApp::SaveSceneAs()
@@ -256,6 +258,43 @@ void EditorApp::SaveSceneAs()
         SceneSerializer serializer(m_scene);
         serializer.Serialize(filepath.string());
     }
+}
+
+bool EditorApp::OpenProject(const std::filesystem::path& filepath)
+{
+    if (!FileSystem::Exists(filepath))
+    {
+        QK_CORE_LOGE_TAG("Editor", "Tried to open a project that doesn't exist. Project path: {0}", filepath.string());
+        return false;
+    }
+
+    if (auto active_proj = Project::GetActive())
+        active_proj.reset();
+
+    Ref<Project> newProject = CreateRef<Project>();
+    ProjectSerializer serializer(newProject);
+    serializer.Deserialize(filepath);
+    Project::SetActive(newProject);
+
+    m_contentBrowserPanel.Init(newProject->GetAssetDirectory());
+
+    bool hasStartScene = FileSystem::Exists(newProject->GetStartScenePath());
+
+    if (hasStartScene)
+		OpenScene(newProject->GetStartScenePath());
+
+    m_editorCamera = EditorCamera(45.0f, 1280.0f, 720.0f, 0.1f, 1000.0f);
+    return true;
+}
+
+bool EditorApp::OpenProject()
+{
+    std::filesystem::path filepath = FileSystem::OpenFileDialog({ { "Quark Project", "qkproject" } });
+    if (filepath.empty())
+        return false;
+
+    OpenProject(filepath);
+    return true;
 }
 
 void EditorApp::OnRender(TimeStep ts)
@@ -480,7 +519,7 @@ void EditorApp::OnMouseButtonPressed(const MouseButtonPressedEvent& e)
     if (e.button == Mouse::ButtonLeft)
 	{
 		if (m_viewportHovered && !ImGuizmo::IsOver() && !Input::Get()->IsKeyPressed(Key::LeftAlt, true))
-			m_HeirarchyPanel.SetSelectedEntity(m_hoverdEntity);
+			m_heirarchyPanel.SetSelectedEntity(m_hoverdEntity);
 	}
 }
 

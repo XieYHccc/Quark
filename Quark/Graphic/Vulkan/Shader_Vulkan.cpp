@@ -1,12 +1,13 @@
 #include "Quark/qkpch.h"
-#include "Quark/Graphic/Vulkan/Shader_Vulkan.h"
-#include <spirv_reflect.h>
 #include "Quark/Graphic/Vulkan/Device_Vulkan.h"
+#include "Quark/Graphic/Vulkan/Shader_Vulkan.h"
+
+#include <spirv_reflect.h>
+
+#define SPV_REFLECT_CHECK(x) QK_CORE_VERIFY(x == SPV_REFLECT_RESULT_SUCCESS)
 
 namespace quark::graphic {
-    
-#define SPV_REFLECT_CHECK(x) QK_CORE_ASSERT(x == SPV_REFLECT_RESULT_SUCCESS)
-
+   
 Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const void* shaderCode, size_t codeSize)
     : Shader(stage), m_Device(device)
 {

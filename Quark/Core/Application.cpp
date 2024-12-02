@@ -1,7 +1,4 @@
 #include "Quark/qkpch.h"
-
-#include <nfd.hpp>
-
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Input.h"
 #include "Quark/Events/EventManager.h"
@@ -18,6 +15,8 @@
 #include "Quark/Platform/MacOS/WindowGLFW.h"
 #endif
 
+#include <nfd.hpp>
+
 namespace quark {
 
 Application* Application::s_instance = nullptr;
@@ -25,6 +24,9 @@ Application* Application::s_instance = nullptr;
 Application::Application(const ApplicationSpecification& specs) 
 {
     s_instance = this;
+
+    if (!specs.workingDirectory.empty())
+        std::filesystem::current_path(specs.workingDirectory);
 
     Logger::Init();
 

@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
-
-project(third_party LANGUAGES C CXX)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 set(THIRD_PARTY_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+set(THIRD_PARTY_FLODER "ThirdParty")
 
 # glm
 add_library(glm INTERFACE)
@@ -30,14 +29,14 @@ target_link_libraries(vma INTERFACE Vulkan::Vulkan)
 # spdlog
 set(SPDLOG_USE_STD_FORMAT ON)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/spdlog)
-set_property(TARGET spdlog PROPERTY FOLDER "ThirdParty")
+set_property(TARGET spdlog PROPERTY FOLDER ${THIRD_PARTY_FLODER})
 
 # spirv
 set(SPIRV_REFLECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/spirv_reflect")
 add_library(spirv_reflect STATIC "${SPIRV_REFLECT_DIR}/spirv_reflect.c" 
     "${SPIRV_REFLECT_DIR}/spirv_reflect.h")
 target_include_directories(spirv_reflect SYSTEM PUBLIC ${SPIRV_REFLECT_DIR})
-set_target_properties(spirv_reflect PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(spirv_reflect PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 # imgui
 set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui_docking")
@@ -61,7 +60,7 @@ set(IMGUI_FILES
 add_library(imgui STATIC ${IMGUI_FILES})
 target_include_directories(imgui SYSTEM PUBLIC ${IMGUI_DIR})
 target_link_libraries(imgui glfw Vulkan::Vulkan)
-set_target_properties(imgui PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(imgui PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 # glfw
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
@@ -70,14 +69,15 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "")
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "")
 set(GLFW_INSTALL OFF CACHE BOOL "")
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/glfw)
-set_target_properties(glfw PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(glfw PROPERTIES FOLDER ${THIRD_PARTY_FLODER}/glfw)
+set_target_properties(update_mappings PROPERTIES FOLDER ${THIRD_PARTY_FLODER}/glfw)
 
 # tinyobjloader
 set(TINYOBJLOADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader")
 add_library(tiny_obj_loader STATIC "${TINYOBJLOADER_DIR}/tiny_obj_loader.h" 
     "${TINYOBJLOADER_DIR}/tiny_obj_loader.cpp")
 target_include_directories(tiny_obj_loader PUBLIC ${TINYOBJLOADER_DIR})
-set_target_properties(tiny_obj_loader PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(tiny_obj_loader PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 # stb image
 set(STB_IMAGE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/stb_image")
@@ -85,7 +85,7 @@ add_library(stb_image STATIC "${STB_IMAGE_DIR}/stb_image.h"
     "${STB_IMAGE_DIR}/stb_image_write.h"
     "${STB_IMAGE_DIR}/stb_image.cpp")
 target_include_directories(stb_image PUBLIC ${STB_IMAGE_DIR})
-set_target_properties(stb_image PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(stb_image PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 # tinygltf
 set(TINYGLTF_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf)
@@ -94,7 +94,7 @@ add_library(tinygltf STATIC "${TINYGLTF_DIR}/tiny_gltf.cpp"
     "${TINYGLTF_DIR}/stb_image.h" 
     "${TINYGLTF_DIR}/stb_image_write.h")
 target_include_directories(tinygltf SYSTEM PUBLIC ${TINYGLTF_DIR})
-set_target_properties(tinygltf PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(tinygltf PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 # libktx
 set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ktx)
@@ -115,7 +115,7 @@ set(KTX_INCLUDE_DIRS
 add_library(ktx STATIC ${KTX_SOURCES})
 target_include_directories(ktx SYSTEM PUBLIC ${KTX_INCLUDE_DIRS})
 target_link_libraries(ktx PUBLIC Vulkan::Vulkan)
-set_target_properties(ktx PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(ktx PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 # basisu
 set(BASISU_DIR ${CMAKE_CURRENT_SOURCE_DIR}/basisu)
@@ -137,19 +137,19 @@ else()
     target_compile_options(basisu PRIVATE -Wno-deprecated-declarations)
     target_compile_options(basisu PRIVATE -Wno-deprecated-builtins)
 endif()
-set_target_properties(basisu PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(basisu PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 # yaml-cpp
 set(YAML_DIR ${THIRD_PARTY_ROOT}/yaml-cpp)
 set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Disable YAML tools")
 set(BUILD_TESTING OFF CACHE BOOL "Disable ctest") # TODO: This doesn't belong here, move it in the future
 add_subdirectory(${YAML_DIR})
-set_target_properties(yaml-cpp PROPERTIES FOLDER "ThirdParty")
+set_target_properties(yaml-cpp PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 # nfd-extended
 set(NFD_EXTENDED_DIR ${THIRD_PARTY_ROOT}/nfd-extended)
 add_subdirectory(${NFD_EXTENDED_DIR})
-set_target_properties(nfd PROPERTIES FOLDER "ThirdParty")
+set_target_properties(nfd PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 
 # imguizmo
@@ -161,7 +161,7 @@ set(IMGUIZMO_SOURCES
 add_library(imguizmo STATIC ${IMGUIZMO_SOURCES})
 target_include_directories(imguizmo SYSTEM PUBLIC ${IMGUIZMO_DIR})
 target_link_libraries(imguizmo imgui)
-set_target_properties(imguizmo PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(imguizmo PROPERTIES FOLDER ${THIRD_PARTY_FLODER})
 
 #glslang
 option(ENABLE_SPVREMAPPER OFF)
@@ -178,16 +178,16 @@ add_subdirectory(glslang)
 
 
 if (TARGET GenericCodeGen) #TODO: Will be removed in the future, currently here for compatability
-    set_target_properties(GenericCodeGen PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(GenericCodeGen PROPERTIES FOLDER ${THIRD_PARTY_FLODER}/glslang)
 endif()
 if (TARGET MachineIndependent)
-    set_target_properties(MachineIndependent PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(MachineIndependent PROPERTIES FOLDER ${THIRD_PARTY_FLODER}/glslang)
 endif()
 if (TARGET OSDependent)
-    set_target_properties(OSDependent PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(OSDependent PROPERTIES FOLDER ${THIRD_PARTY_FLODER}/glslang)
 endif()
 if (TARGET SPIRV)
-    set_target_properties(SPIRV PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(SPIRV PROPERTIES FOLDER ${THIRD_PARTY_FLODER}/glslang)
 endif()
 
 if (NOT TARGET glslang-default-resource-limits)
@@ -208,5 +208,5 @@ if(NOT MSVC)
         "-Wno-unused-parameter")
 endif()
 
-set_target_properties(glslang PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
-set_target_properties(glslang-default-resource-limits PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
+set_target_properties(glslang PROPERTIES FOLDER ${THIRD_PARTY_FLODER}/glslang)
+set_target_properties(glslang-default-resource-limits PROPERTIES FOLDER ${THIRD_PARTY_FLODER}/glslang)

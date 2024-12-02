@@ -10,13 +10,16 @@ class ContentBrowserPanel final : public Panel
 {
 public:
 	ContentBrowserPanel();
+	ContentBrowserPanel(const std::filesystem::path& basePath);
 
+	void Init(const std::filesystem::path& basePath);
 	void OnImGuiUpdate() override;
 
 private:
-	std::filesystem::path m_CurrentDirectory;
+	std::filesystem::path m_currentDirectory;
+	std::filesystem::path m_baseDirectory;
 
-	Ref<Texture> m_FolderIcon;
-	Ref<Texture> m_FileIcon;
+	Ref<Texture> m_folderIcon;
+	Ref<Texture> m_fileIcon;
 };
 }

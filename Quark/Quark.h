@@ -26,6 +26,8 @@
 
 // Quark Asset system
 #include <Quark/Asset/AssetManager.h>
+#include <Quark/Project/Project.h>
+#include <Quark/Project/ProjectSerializer.h>
 
 // Quark Graphic API
 #include <Quark/Graphic/Device.h>
