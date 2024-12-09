@@ -92,7 +92,7 @@ void Mesh::UpdateGpuBuffers()
 		return;
     }
 
-    auto* graphic_device = Application::Get().GetGraphicDevice();
+    auto graphic_device = Application::Get().GetGraphicDevice();
 
     // Prepare overlapped data
     size_t vertexNum = vertex_positions.size();

@@ -4,8 +4,8 @@
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Asset/AssetManager.h"
-#include "Quark/Renderer/Renderer.h"
-#include "Quark/Renderer/ShaderLibrary.h"
+#include "Quark/Render/Renderer.h"
+#include "Quark/Render/ShaderLibrary.h"
 
 #ifdef USE_VULKAN_DRIVER
 #include "Quark/RHI/Vulkan/Device_Vulkan.h"
@@ -31,7 +31,7 @@ Application::Application(const ApplicationSpecification& specs)
     Logger::Init();
 
     // Init Job System
-    m_jobSystem = CreateScope<JobSystem>();
+    m_jobSystem = CreateRef<JobSystem>();
 
     // Init Event Manager
     EventManager::CreateSingleton();
@@ -58,7 +58,7 @@ Application::Application(const ApplicationSpecification& specs)
     }
 
 #ifdef USE_VULKAN_DRIVER
-    m_graphicDevice = CreateScope<rhi::Device_Vulkan>();
+    m_graphicDevice = CreateRef<rhi::Device_Vulkan>();
     m_graphicDevice->Init();
 #endif
 

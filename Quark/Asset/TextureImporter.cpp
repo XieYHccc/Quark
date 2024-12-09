@@ -3,7 +3,7 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Core/FileSystem.h"
 #include "Quark/RHI/TextureFormatLayout.h"
-#include "Quark/Renderer/Renderer.h"
+#include "Quark/Render/Renderer.h"
 
 #include <ktx.h>
 #include <basisu_transcoder.h>
@@ -63,7 +63,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
     desc.format = rhi::DataFormat::R8G8B8A8_UNORM;
     basist::transcoder_texture_format targetFormat = basist::transcoder_texture_format::cTFRGBA32;
 
-    auto* graphicDevice = Application::Get().GetGraphicDevice();
+    auto graphicDevice = Application::Get().GetGraphicDevice();
     if (graphicDevice->GetDeviceFeatures().textureCompressionBC) 
     {
         // BC7 is the preferred block compression if available

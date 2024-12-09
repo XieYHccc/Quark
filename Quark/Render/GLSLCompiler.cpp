@@ -1,5 +1,5 @@
 #include "Quark/qkpch.h"
-#include "Quark/Renderer/GLSLCompiler.h"
+#include "Quark/Render/GLSLCompiler.h"
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Core/Util/StringUtils.h"

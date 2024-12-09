@@ -1,7 +1,7 @@
 #pragma once
 #include "Quark/Core/Util/EnumCast.h"
 #include "Quark/Core/Util/Hash.h"
-#include "Quark/Renderer/GLSLCompiler.h"
+#include "Quark/Render/GLSLCompiler.h"
 
 #include <string>
 

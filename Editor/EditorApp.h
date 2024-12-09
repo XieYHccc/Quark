@@ -2,7 +2,7 @@
 #include <Quark/Core/Application.h>
 #include <Quark/Core/FileSystem.h>
 #include <Quark/Scene/Scene.h>
-#include <Quark/Renderer/Renderer.h>
+#include <Quark/Render/Renderer.h>
 #include <Quark/Events/KeyEvent.h>
 #include <Quark/Events/MouseEvent.h>
 

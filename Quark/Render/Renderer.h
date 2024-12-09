@@ -1,9 +1,10 @@
 #pragma once
+#include "Quark/Render/RenderTypes.h"
+#include "Quark/Render/ShaderLibrary.h"
+#include "Quark/RHI/Device.h"
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Core/Math/Frustum.h"
-#include "Quark/RHI/Device.h"
-#include "Quark/Renderer/Types.h"
-#include "Quark/Renderer/ShaderLibrary.h"
+
 
 namespace quark {
 class Scene;

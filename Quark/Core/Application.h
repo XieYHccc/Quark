@@ -43,9 +43,9 @@ public:
     void OnWindowResize(const WindowResizeEvent& event);
 
 
-    rhi::Device* GetGraphicDevice() { return m_graphicDevice.get(); }
+    Ref<rhi::Device> GetGraphicDevice() { return m_graphicDevice; }
 
-    JobSystem* GetJobSystem() { return m_jobSystem.get(); }
+    Ref<JobSystem> GetJobSystem() { return m_jobSystem; }
 
     Window* GetWindow() { return m_window.get(); }
 
@@ -60,8 +60,8 @@ protected:
 
     Timer m_timer;
 
-    Scope<rhi::Device> m_graphicDevice;
-    Scope<JobSystem> m_jobSystem;
+    Ref<rhi::Device> m_graphicDevice;
+    Ref<JobSystem> m_jobSystem;
     Scope<Window> m_window;
 
 private:

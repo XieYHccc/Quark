@@ -6,7 +6,7 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
-#include "Quark/Renderer/Renderer.h"
+#include "Quark/Render/Renderer.h"
 #include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/AssetManager.h"
 
@@ -82,7 +82,7 @@ GLTFImporter::GLTFImporter()
 
 }
 
-GLTFImporter::GLTFImporter(rhi::Device* device)
+GLTFImporter::GLTFImporter(Ref<rhi::Device> device)
 	:m_GraphicDevice(device)
 {
 

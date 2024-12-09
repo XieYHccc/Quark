@@ -31,7 +31,7 @@ public:
 	};
 
     GLTFImporter();
-    GLTFImporter(rhi::Device* device);
+    GLTFImporter(Ref<rhi::Device> device);
 
     void Import(const std::string& file_path, uint32_t flags = 0);
 
@@ -46,7 +46,7 @@ private:
     Ref<Mesh> ParseMesh(const tinygltf::Mesh& gltf_mesh);
     Entity* ParseNode(const tinygltf::Node& gltf_node);
 
-    rhi::Device* m_GraphicDevice;
+    Ref<rhi::Device> m_GraphicDevice;
 
     tinygltf::Model m_Model;
 

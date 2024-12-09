@@ -38,6 +38,40 @@ struct PushConstants_Material
     float roughnessFactor = 1.f;
 };
 
+struct RenderMesh 
+{
+    Ref<rhi::Buffer> vertex_position_buffer;
+    Ref<rhi::Buffer> vertex_varying_buffer;
+    Ref<rhi::Buffer> index_buffer;
+
+    uint32_t vertex_count;
+    uint32_t index_count;
+};
+
+struct RenderPBRMaterial 
+{
+    Ref<rhi::Image> base_color_texture_image;
+    Ref<rhi::Image> normal_texture_image;
+    Ref<rhi::Image> metallic_roughness_texture_image;
+    Ref<rhi::Image> emissive_texture_image;
+
+    PushConstants_Material material_push_constants;
+};
+
+struct RenderEntity
+{
+    uint32_t instanceId;
+    glm::mat4 modelMatrix;
+
+    // mesh
+    uint32_t gpu_mesh_id;
+    math::Aabb boundingBox;
+
+    // material
+    uint32_t gpu_material_id;
+
+};
+
 // The minimum unit for a single draw call
 struct RenderObject
 {
