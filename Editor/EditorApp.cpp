@@ -2,6 +2,7 @@
 
 #include <Quark/Quark.h>
 #include <Quark/Asset/TextureImporter.h>
+#include <Quark/Asset/ImageAssetImporter.h>
 #include <Quark/EntryPoint.h>
 
 #include <glm/gtx/quaternion.hpp>
@@ -19,7 +20,7 @@ Application* CreateApplication(int argc, char** argv)
     specs.width = 2500;
     specs.height = 1600;
     specs.isFullScreen = false;
-    specs.workingDirectory = "D:/Dev/Quark/bin";
+    specs.workingDirectory = "/Users/xieyhccc/develop/Quark/bin";
 
     return new EditorApp(specs);
 }
@@ -35,6 +36,15 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     TextureImporter textureLoader;
     m_cubeMapTexture = textureLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
 
+    ImageAssetImporter imageLoader;
+    auto cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
+    m_cubeMapId = cubeMap->GetAssetID();
+    AssetManager::Get().AddMemoryOnlyAsset(cubeMap);
+
+    // Ref<Project> project = CreateRef<Project>();
+    // ProjectSerializer serializer(project);
+    // serializer.Serialize("SandboxProject/Sandbox.qkproject");
+
     OpenProject("SandboxProject/Sandbox.qkproject");
 
     // register event callbacks
@@ -47,9 +57,6 @@ EditorApp::~EditorApp()
 {   
     // save asset registry
     //AssetManager::Get().SaveAssetRegistry();
-    //Ref<Project> project = CreateRef<Project>();
-    //ProjectSerializer serializer(project);
-    //serializer.Serialize("SandboxProject/Sandbox.qkproj");
 }
 
 void EditorApp::OnUpdate(TimeStep ts)
@@ -90,9 +97,18 @@ void EditorApp::OnUpdate(TimeStep ts)
     cameraData.view = m_editorCamera.GetViewMatrix();
     cameraData.viewproj = cameraData.proj * cameraData.view;
 
-    //Renderer::Get().UpdateDrawContextEditor(cameraData);
-    Renderer::Get().UpdateDrawContext(m_scene, m_drawContext);
-    Renderer::Get().UpdateVisibility(m_drawContext, m_visibility, cameraData);
+    auto& swap_data = RenderSystem::Get().GetSwapContext().GetLogicSwapData();
+    m_scene->FillMeshSwapData();
+    CameraSwapData cam_swap_data;
+    cam_swap_data.proj = cameraData.proj;
+    cam_swap_data.view = cameraData.view;
+    swap_data.camera_swap_data = cam_swap_data;
+
+    // swap render and logic data
+    // RenderSystem::Get().UpdateDrawContext(m_scene, m_drawContext);
+    // RenderSystem::Get().UpdateVisibility(m_drawContext, m_visibility, cameraData);
+
+    RenderSystem::Get().GetSwapContext().SwapLogicRenderData();
 }   
 
 void EditorApp::OnImGuiUpdate()
@@ -165,7 +181,7 @@ void EditorApp::OnImGuiUpdate()
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     m_viewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
-    ImTextureID colorAttachmentId = UI::Get()->GetOrCreateTextureId(m_color_attachment, Renderer::Get().sampler_linear);
+    ImTextureID colorAttachmentId = UI::Get()->GetOrCreateTextureId(m_color_attachment, RenderSystem::Get().GetRenderResourceManager().sampler_linear);
     ImGui::Image(colorAttachmentId, ImVec2{ m_viewportSize.x, m_viewportSize.y });
 
 
@@ -278,6 +294,7 @@ bool EditorApp::OpenProject(const std::filesystem::path& filepath)
 
     m_contentBrowserPanel.Init(newProject->GetAssetDirectory());
 
+    auto path = newProject->GetStartScenePath();
     bool hasStartScene = FileSystem::Exists(newProject->GetStartScenePath());
 
     if (hasStartScene)
@@ -299,12 +316,13 @@ bool EditorApp::OpenProject()
 
 void EditorApp::OnRender(TimeStep ts)
 {
-    Renderer& renderer = Renderer::Get();
+    auto& render_system = RenderSystem::Get();
+    render_system.ProcessSwapData();
 
     // Rendering commands
     if (m_graphicDevice->BeiginFrame(ts)) 
     {
-        renderer.UpdateGpuResources(m_drawContext, m_visibility);
+        // render_system.UpdateGpuResources(m_drawContext, m_visibility);
 
         auto* graphic_cmd = m_graphicDevice->BeginCommandList();
         auto* swap_chain_image = m_graphicDevice->GetPresentImage();
@@ -347,20 +365,21 @@ void EditorApp::OnRender(TimeStep ts)
             fb_info.depthAttachmentStoreOp = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
-            graphic_cmd->BeginRenderPass(renderer.renderPassInfo_simpleMainPass, fb_info);
+            graphic_cmd->BeginRenderPass(render_system.GetRenderResourceManager().renderPassInfo_simpleMainPass, fb_info);
             graphic_cmd->SetViewPort(viewport);
             graphic_cmd->SetScissor(scissor);
 
             // draw skybox
-            renderer.DrawSkybox(m_drawContext, m_cubeMapTexture, graphic_cmd);
-
+            // render_system.DrawSkybox(m_drawContext, m_cubeMapTexture, graphic_cmd);
+            render_system.DrawSkybox(m_cubeMapId, graphic_cmd);
+            
             // draw infinite grid
-            renderer.DrawGrid(m_drawContext, graphic_cmd);
+            // render_system.DrawGrid(m_drawContext, graphic_cmd);
 
             // draw scene
-            auto geometry_start = m_timer.ElapsedMillis();
-            renderer.DrawScene(m_drawContext, m_visibility, graphic_cmd);
-            m_cmdListRecordTime = m_timer.ElapsedMillis() - geometry_start;
+            // auto geometry_start = m_timer.ElapsedMillis();
+            // render_system.DrawScene(m_drawContext, m_visibility, graphic_cmd);
+            // m_cmdListRecordTime = m_timer.ElapsedMillis() - geometry_start;
 
             graphic_cmd->EndRenderPass();
         }
@@ -389,7 +408,7 @@ void EditorApp::OnRender(TimeStep ts)
             fb_info.colorAttatchemtsStoreOp[0] = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
             fb_info.colorAttachments[0] = swap_chain_image;
 
-            graphic_cmd->BeginRenderPass(renderer.renderPassInfo_swapchainPass, fb_info);
+            graphic_cmd->BeginRenderPass(render_system.GetRenderResourceManager().renderPassInfo_swapchainPass, fb_info);
             UI::Get()->OnRender(graphic_cmd);
             graphic_cmd->EndRenderPass();
         }
@@ -411,64 +430,64 @@ void EditorApp::OnRender(TimeStep ts)
         }
 
         // color picking
-        if (m_viewportHovered)
-        {
-            // color ID pass
-            rhi::CommandList* cmd = m_graphicDevice->BeginCommandList();
+        // if (m_viewportHovered)
+        // {
+        //     // color ID pass
+        //     rhi::CommandList* cmd = m_graphicDevice->BeginCommandList();
 
-            rhi::PipelineImageBarrier image_barrier;
-            image_barrier.image = m_entityID_color_attachment.get();
-            image_barrier.srcStageBits = rhi::PIPELINE_STAGE_TRANSFER_BIT;
-            image_barrier.srcMemoryAccessBits = rhi::BARRIER_ACCESS_TRANSFER_READ_BIT;
-            image_barrier.dstStageBits = rhi::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            image_barrier.dstMemoryAccessBits = rhi::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            image_barrier.layoutBefore = rhi::ImageLayout::UNDEFINED;
-            image_barrier.layoutAfter = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            cmd->PipeLineBarriers(nullptr, 0, &image_barrier, 1, nullptr, 0);
+        //     rhi::PipelineImageBarrier image_barrier;
+        //     image_barrier.image = m_entityID_color_attachment.get();
+        //     image_barrier.srcStageBits = rhi::PIPELINE_STAGE_TRANSFER_BIT;
+        //     image_barrier.srcMemoryAccessBits = rhi::BARRIER_ACCESS_TRANSFER_READ_BIT;
+        //     image_barrier.dstStageBits = rhi::PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        //     image_barrier.dstMemoryAccessBits = rhi::BARRIER_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        //     image_barrier.layoutBefore = rhi::ImageLayout::UNDEFINED;
+        //     image_barrier.layoutAfter = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+        //     cmd->PipeLineBarriers(nullptr, 0, &image_barrier, 1, nullptr, 0);
 
-            rhi::FrameBufferInfo fb_info;
-            fb_info.colorAttatchemtsLoadOp[0] = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            fb_info.colorAttatchemtsStoreOp[0] = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
-            fb_info.colorAttachments[0] = m_entityID_color_attachment.get();
-            fb_info.clearColors[0].color.uint32[0] = 0;
-            fb_info.clearColors[0].color.uint32[1] = 10;
-            fb_info.depthAttachment = m_entityID_depth_attachment.get();
-            fb_info.depthAttachmentLoadOp = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-            fb_info.depthAttachmentStoreOp = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
-            fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
+        //     rhi::FrameBufferInfo fb_info;
+        //     fb_info.colorAttatchemtsLoadOp[0] = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+        //     fb_info.colorAttatchemtsStoreOp[0] = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
+        //     fb_info.colorAttachments[0] = m_entityID_color_attachment.get();
+        //     fb_info.clearColors[0].color.uint32[0] = 0;
+        //     fb_info.clearColors[0].color.uint32[1] = 10;
+        //     fb_info.depthAttachment = m_entityID_depth_attachment.get();
+        //     fb_info.depthAttachmentLoadOp = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
+        //     fb_info.depthAttachmentStoreOp = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
+        //     fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
-            cmd->BeginRenderPass(renderer.renderPassInfo_entityIdPass, fb_info);
-            cmd->SetViewPort(viewport);
-            cmd->SetScissor(scissor);
-            renderer.DrawEntityID(m_drawContext, m_visibility, cmd);
-            cmd->EndRenderPass();
+        //     cmd->BeginRenderPass(render_system.GetRenderResourceManager().renderPassInfo_entityIdPass, fb_info);
+        //     cmd->SetViewPort(viewport);
+        //     cmd->SetScissor(scissor);
+        //     render_system.DrawEntityID(m_drawContext, m_visibility, cmd);
+        //     cmd->EndRenderPass();
 
-            // transfer data back to cpu buffer
-            rhi::PipelineImageBarrier barrier;
-            barrier.image = m_entityID_color_attachment.get();
-            barrier.srcStageBits = rhi::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            barrier.srcMemoryAccessBits = 0;
-            barrier.dstStageBits = rhi::PIPELINE_STAGE_TRANSFER_BIT;
-            barrier.dstMemoryAccessBits = rhi::BARRIER_ACCESS_TRANSFER_READ_BIT;
-            barrier.layoutBefore = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
-            barrier.layoutAfter = rhi::ImageLayout::TRANSFER_SRC_OPTIMAL;
-            cmd->PipeLineBarriers(nullptr, 0, &barrier, 1, nullptr, 0);
+        //     // transfer data back to cpu buffer
+        //     rhi::PipelineImageBarrier barrier;
+        //     barrier.image = m_entityID_color_attachment.get();
+        //     barrier.srcStageBits = rhi::PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        //     barrier.srcMemoryAccessBits = 0;
+        //     barrier.dstStageBits = rhi::PIPELINE_STAGE_TRANSFER_BIT;
+        //     barrier.dstMemoryAccessBits = rhi::BARRIER_ACCESS_TRANSFER_READ_BIT;
+        //     barrier.layoutBefore = rhi::ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+        //     barrier.layoutAfter = rhi::ImageLayout::TRANSFER_SRC_OPTIMAL;
+        //     cmd->PipeLineBarriers(nullptr, 0, &barrier, 1, nullptr, 0);
 
-            auto [mx, my] = ImGui::GetMousePos();
-            mx -= m_viewportBounds[0].x;
-            my -= m_viewportBounds[0].y;
-            glm::vec2 viewportSize = m_viewportBounds[1] - m_viewportBounds[0];
-            int mouseX = (int)mx;
-            int mouseY = (int)my;
-            uint32_t image_width = m_color_attachment->GetDesc().width;
-            uint32_t image_height = m_color_attachment->GetDesc().height;
-            int x = static_cast<int>(((mouseX / viewportSize.x) * image_width));
-            int y = static_cast<int>(((mouseY / viewportSize.y) * image_height));
-            cmd->CopyImageToBuffer(*m_stage_buffer, *m_entityID_color_attachment, 0, { x, y, 0 },
-                { 1, 1, 1 }, 0, 0, { rhi::ImageAspect::COLOR, 0, 0, 1 });
+        //     auto [mx, my] = ImGui::GetMousePos();
+        //     mx -= m_viewportBounds[0].x;
+        //     my -= m_viewportBounds[0].y;
+        //     glm::vec2 viewportSize = m_viewportBounds[1] - m_viewportBounds[0];
+        //     int mouseX = (int)mx;
+        //     int mouseY = (int)my;
+        //     uint32_t image_width = m_color_attachment->GetDesc().width;
+        //     uint32_t image_height = m_color_attachment->GetDesc().height;
+        //     int x = static_cast<int>(((mouseX / viewportSize.x) * image_width));
+        //     int y = static_cast<int>(((mouseY / viewportSize.y) * image_height));
+        //     cmd->CopyImageToBuffer(*m_stage_buffer, *m_entityID_color_attachment, 0, { x, y, 0 },
+        //         { 1, 1, 1 }, 0, 0, { rhi::ImageAspect::COLOR, 0, 0, 1 });
 
-            m_graphicDevice->SubmitCommandList(cmd, nullptr, 0, false);
-        }
+        //     m_graphicDevice->SubmitCommandList(cmd, nullptr, 0, false);
+        // }
 
         m_graphicDevice->EndFrame(ts);
     }
@@ -534,7 +553,7 @@ void EditorApp::CreateGraphicResources()
     image_desc.width = uint32_t(Application::Get().GetWindow()->GetMonitorWidth() * Application::Get().GetWindow()->GetRatio());
     image_desc.height = uint32_t(Application::Get().GetWindow()->GetMonitorHeight() * Application::Get().GetWindow()->GetRatio());
     image_desc.depth = 1;
-    image_desc.format = Renderer::Get().format_depthAttachment_main;
+    image_desc.format = RenderSystem::Get().GetRenderResourceManager().format_depthAttachment_main;
     image_desc.arraySize = 1;
     image_desc.mipLevels = 1;
     image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -543,7 +562,7 @@ void EditorApp::CreateGraphicResources()
     m_entityID_depth_attachment = m_graphicDevice->CreateImage(image_desc);
 
     // Create color image
-    image_desc.format = Renderer::Get().format_colorAttachment_main;
+    image_desc.format = RenderSystem::Get().GetRenderResourceManager().format_colorAttachment_main;
     image_desc.initialLayout = ImageLayout::UNDEFINED;
     image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | rhi::IMAGE_USAGE_SAMPLING_BIT;
     m_color_attachment = m_graphicDevice->CreateImage(image_desc);
@@ -561,7 +580,7 @@ void EditorApp::CreateGraphicResources()
     m_stage_buffer = m_graphicDevice->CreateBuffer(buffer_desc);
 }
 
-void EditorApp::MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, rhi::CommandList* cmd)
+void EditorApp::MainPass(RenderSystem::DrawContext& context, RenderSystem::Visibility& vis, rhi::CommandList* cmd)
 {
     // Bind scene uniform buffer(assume all pipeline are using the same pipeline layout)
     cmd->BindUniformBuffer(0, 0, *context.sceneUB, 0, sizeof(UniformBufferData_Scene));

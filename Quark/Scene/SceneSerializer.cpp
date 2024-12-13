@@ -234,9 +234,10 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 					}
 					else
 					{
-						auto material = AssetManager::Get().GetAsset<Material>(assetId);
-						QK_CORE_ASSERT(material)
-						mrc->SetMaterial(i, material);
+						// auto material = AssetManager::Get().GetAsset<Material>(assetId);
+						// QK_CORE_ASSERT(material)
+						// mrc->SetMaterial(i, material);
+						mrc->SetMaterial(i, assetId);
 					}
 
 					i++;

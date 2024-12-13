@@ -34,7 +34,7 @@
 #include <Quark/RHI/TextureFormatLayout.h>
 
 // Quark Renderer
-#include <Quark/Render/Renderer.h>
+#include <Quark/Render/RenderSystem.h>
 
 // Quark Scene API
 #include <Quark/Ecs/Component.h>

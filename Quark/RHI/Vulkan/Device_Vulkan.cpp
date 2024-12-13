@@ -528,6 +528,21 @@ Ref<Sampler> Device_Vulkan::CreateSampler(const SamplerDesc &desc)
     return newSamper;
 }
 
+void Device_Vulkan::CopyBuffer(Buffer& dst, Buffer& src, uint64_t size, uint64_t dstOffset, uint64_t srcOffset)
+{
+    auto& dst_internal = ToInternal(&dst);
+    auto& src_internal = ToInternal(&src);
+
+    VkBufferCopy copyRegion = {};
+    copyRegion.size = size;
+    copyRegion.srcOffset = srcOffset;
+    copyRegion.dstOffset = dstOffset;
+
+    CopyCmdAllocator::CopyCmd copyCmd = copyAllocator.allocate(0);
+    vkCmdCopyBuffer(copyCmd.transferCmdBuffer, src_internal.GetHandle(), dst_internal.GetHandle(), 1, &copyRegion);
+    copyAllocator.submit(copyCmd);
+}
+
 void Device_Vulkan::SetDebugName(const Ref<GpuResource>& resouce, const char* name)
 {
     if (!vkContext->enableDebugUtils || !resouce)

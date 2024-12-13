@@ -5,6 +5,7 @@
 namespace quark {
 
 struct Texture : public Asset {
+    QUARK_ASSET_TYPE_DECL(TEXTURE)
     Ref<rhi::Image> image;
     Ref<rhi::Sampler> sampler;
 };

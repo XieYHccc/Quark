@@ -1,0 +1,9 @@
+Material:
+  VertexShader: BuiltInResources/Shaders/static_mesh.vert
+  FragmentShader: BuiltInResources/Shaders/static_mesh.frag
+  AlphaMode: Opaque
+  BaseColorFactor: [1, 1, 1, 1]
+  MetalicFactor: 1
+  RoughNessFactor: 1
+  BaseColorImage: 13708746397499321603
+  MetallicRoughnessImage: 0

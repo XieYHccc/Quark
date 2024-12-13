@@ -56,6 +56,10 @@ public:
     virtual Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) = 0;
     virtual Ref<Sampler> CreateSampler(const SamplerDesc& desc) = 0;
 
+    // helper functions to upload data to GPU
+    // only use in the initialization stage
+    virtual void CopyBuffer(Buffer& dst, Buffer& src, uint64_t size, uint64_t dstOffset = 0, uint64_t srcOffset = 0) = 0;
+
 	/*** COMMAND LIST ***/
     virtual CommandList* BeginCommandList(QueueType type = QueueType::QUEUE_TYPE_GRAPHICS) = 0;
     virtual void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) = 0;

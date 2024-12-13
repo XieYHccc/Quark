@@ -15,8 +15,13 @@ public:
 
 	void SetMesh(const Ref<Mesh>& mesh);
 	void SetMaterial(uint32_t index, const Ref<Material>& mat);
+	void SetMaterial(uint32_t index, AssetID id);
+	void SetDirty(bool dirty);
+	bool IsRenderStateDirty() const { return m_dirty; }
 
 	Ref<Material> GetMaterial(uint32_t index);
+	AssetID GetMaterialID(uint32_t index);
+	
 	Ref<rhi::PipeLine> GetGraphicsPipeLine(uint32_t index);
 
 private:
@@ -25,8 +30,12 @@ private:
 private:
 	Ref<Mesh> m_mesh;
 	
+	bool m_dirty = true;
+
 	// The count of materials should be equal to the count of submeshes in the mesh
 	std::vector<Ref<Material>> m_materials;
+	std::vector<AssetID>  m_material_ids;
+
 	uint32_t m_dirtyMaterialMask = 0;
 
 	// TODO: Change this when we have a render graph system

@@ -1,0 +1,16 @@
+Scene: SandBoxScene
+Entities:
+  - Entity: 5815961188514487367
+    Parent: 0
+    Children:
+      []
+    NameComponent: Plane
+    TransformComponent:
+      Position: [7.30145502, -1.12324333, -4.32862139]
+      Rotation: [1.10000002, -0, 0]
+      Scale: [9.94289684, 1.03001046, 9.82011318]
+    MeshComponent:
+      AssetID: 16653824437552389498
+    MeshRendererComponent:
+      Materials:
+        - AssetID: 13708746397499321602

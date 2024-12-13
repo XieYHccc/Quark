@@ -41,11 +41,16 @@ struct PushConstants_Material
 struct RenderMesh 
 {
     Ref<rhi::Buffer> vertex_position_buffer;
-    Ref<rhi::Buffer> vertex_varying_buffer;
+    Ref<rhi::Buffer> vertex_varying_enable_blending_buffer; // normal, tangent..
+    Ref<rhi::Buffer> vertex_varying_buffer; // uv, color...
+    Ref<rhi::Buffer> vertex_joint_binding_buffer;
     Ref<rhi::Buffer> index_buffer;
 
     uint32_t vertex_count;
     uint32_t index_count;
+    uint32_t mesh_attribute_mask;
+
+    bool isDynamic = false;
 };
 
 struct RenderPBRMaterial 
@@ -58,19 +63,22 @@ struct RenderPBRMaterial
     PushConstants_Material material_push_constants;
 };
 
-struct RenderEntity
+struct RenderObject1
 {
-    uint32_t instanceId;
-    glm::mat4 modelMatrix;
+    uint64_t id;
+    glm::mat4 model_matrix;
 
     // mesh
-    uint32_t gpu_mesh_id;
-    math::Aabb boundingBox;
+    uint64_t render_mesh_id;
+    uint32_t start_index;
+    uint32_t index_count;
+    math::Aabb bounding_box;
 
     // material
-    uint32_t gpu_material_id;
+    uint64_t render_material_id;
 
 };
+
 
 // The minimum unit for a single draw call
 struct RenderObject

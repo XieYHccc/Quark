@@ -96,6 +96,8 @@ public:
     Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) override final;
     Ref<Sampler> CreateSampler(const SamplerDesc& desc) override final;
 
+    void CopyBuffer(Buffer& dst, Buffer& src, uint64_t size, uint64_t dstOffset = 0, uint64_t srcOffset = 0) override final;
+    
     /*** COMMAND LIST ***/
     CommandList* BeginCommandList(QueueType type = QueueType::QUEUE_TYPE_GRAPHICS) override final;
     void SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) override final;

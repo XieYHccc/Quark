@@ -7,6 +7,7 @@
 
 namespace quark {
 
+//TODO: move this to render module
 enum class MeshAttribute : unsigned
 {
     POSITION = 0,
@@ -33,6 +34,7 @@ enum MeshAttributeFlagBits
 
 class Mesh : public Asset {
 public:
+    QUARK_ASSET_TYPE_DECL(MESH)
     struct SubMeshDescriptor 
     {
         uint32_t startVertex = 0;
@@ -46,6 +48,7 @@ public:
     std::vector<glm::vec3> vertex_positions;
     std::vector<glm::vec2> vertex_uvs;
     std::vector<glm::vec3> vertex_normals;
+    std::vector<glm::vec3> vertex_tangents;
     std::vector<glm::vec4> vertex_colors;
 
     math::Aabb aabb = {};
@@ -84,7 +87,7 @@ private:
 
     bool m_isDynamic = false;
 
-    friend class Renderer;
+    friend class RenderSystem;
 
 };
 }

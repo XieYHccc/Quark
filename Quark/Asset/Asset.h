@@ -16,6 +16,8 @@ enum class AssetType : uint16_t {
 	SCRIPT,
 	AUDIO,
 	FONT,
+	MATERIAL1,
+	IMAGE
 };
  
 // An asset is globally unique and can be identified by its AssetID
@@ -24,7 +26,7 @@ public:
 	Asset() = default;
 	virtual ~Asset() = default;
 
-	virtual AssetType GetAssetType() { return AssetType::None; }
+	virtual AssetType GetAssetType() = 0;
 	static AssetType GetStaticAssetType() { return AssetType::None; }
 
 	AssetID GetAssetID() const { return m_AssetID; }

@@ -2,7 +2,7 @@
 #include <Quark/Core/Application.h>
 #include <Quark/Core/FileSystem.h>
 #include <Quark/Scene/Scene.h>
-#include <Quark/Render/Renderer.h>
+#include <Quark/Render/RenderSystem.h>
 #include <Quark/Events/KeyEvent.h>
 #include <Quark/Events/MouseEvent.h>
 
@@ -34,7 +34,7 @@ public:
 
 private:
     void CreateGraphicResources();
-    void MainPass(Renderer::DrawContext& context, Renderer::Visibility& vis, rhi::CommandList* cmd);
+    void MainPass(RenderSystem::DrawContext& context, RenderSystem::Visibility& vis, rhi::CommandList* cmd);
 
     Ref<rhi::Image> m_depth_attachment;
     Ref<rhi::Image> m_color_attachment;
@@ -43,10 +43,12 @@ private:
 
     Ref<rhi::Buffer> m_stage_buffer;
 
-    Renderer::DrawContext m_drawContext;
-    Renderer::Visibility m_visibility;
+    RenderSystem::DrawContext m_drawContext;
+    RenderSystem::Visibility m_visibility;
 
     Ref<Texture> m_cubeMapTexture;
+    AssetID m_cubeMapId;
+    
     Ref<Scene> m_scene;
     Entity* m_hoverdEntity;
     EditorCamera m_editorCamera;

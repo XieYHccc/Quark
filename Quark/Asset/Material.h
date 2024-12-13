@@ -12,6 +12,8 @@ enum class AlphaMode {
 };
 
 struct Material : public Asset {
+
+    QUARK_ASSET_TYPE_DECL(MATERIAL)
     struct UniformBufferBlock 
     {
         glm::vec4 baseColorFactor = glm::vec4(1.0f);

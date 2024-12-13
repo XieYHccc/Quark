@@ -1,8 +1,6 @@
 #pragma once
-#include "Quark/Core/Util/ObjectPool.h"
-#include "Quark/Core/UUID.h"
-#include "Quark/RHI/Common.h"
 #include "Quark/Ecs/EntityRegistry.h"
+#include "Quark/Core/UUID.h"
 
 #include <glm/glm.hpp>
 
@@ -23,10 +21,14 @@ public:
 
     void OnUpdate();
 
-    // Updating Systems
+    // updating Systems
     void RunTransformUpdateSystem();
 
-    // Entity
+    // fill swap Data
+    void FillMeshSwapData();
+    void FillCameraSwapData();
+    
+    // entity
     Entity* CreateEntity(const std::string& name = "", Entity* parent = nullptr);
     Entity* CreateEntityWithID(UUID id, const std::string& name = "", Entity* parent = nullptr);
     Entity* GetEntityWithID(UUID id);

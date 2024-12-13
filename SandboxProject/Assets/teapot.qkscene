@@ -1,0 +1,90 @@
+Scene: Scene
+Entities:
+  - Entity: 11632426920981080989
+    Parent: 0
+    Children:
+      []
+    NameComponent: Light
+    TransformComponent:
+      Position: [4.07624531, 5.903862, -1.00545394]
+      Rotation: [-132.46637, 72.7793579, -169.256317]
+      Scale: [1, 1, 1]
+  - Entity: 10190271248827583272
+    Parent: 0
+    Children:
+      - Id: 7363486925301583441
+      - Id: 5476451773588120119
+    NameComponent: Camera
+    TransformComponent:
+      Position: [7.35889149, 4.95830917, 6.92579079]
+      Rotation: [63.5593109, 46.6919479, 0]
+      Scale: [1, 1, 1]
+  - Entity: 5815961188514487367
+    Parent: 0
+    Children:
+      []
+    NameComponent: Plane
+    TransformComponent:
+      Position: [7.30145502, -1.12324333, -4.32862139]
+      Rotation: [1.10000002, -0, 0]
+      Scale: [9.94289684, 1.03001046, 9.82011318]
+    MeshComponent:
+      AssetID: 16653824437552389498
+    MeshRendererComponent:
+      Materials:
+        - AssetID: 4541837899442148147
+  - Entity: 384267254884713850
+    Parent: 7363486925301583441
+    Children:
+      []
+    NameComponent: holy shit
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 8529890325842747922
+    Parent: 0
+    Children:
+      []
+    NameComponent: plane1
+    TransformComponent:
+      Position: [20.5997238, 8.87443542, -5.26663923]
+      Rotation: [66.6314392, 4.01852417, 0.170746088]
+      Scale: [0.999999762, 0.999803603, 0.999785483]
+    MeshComponent:
+      AssetID: 16653824437552389498
+    MeshRendererComponent:
+      Materials:
+        - AssetID: 1
+  - Entity: 7363486925301583441
+    Parent: 10190271248827583272
+    Children:
+      - Id: 384267254884713850
+    NameComponent: HolyFuck
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 5476451773588120119
+    Parent: 10190271248827583272
+    Children:
+      []
+    NameComponent: Not named
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+  - Entity: 17983047938396472623
+    Parent: 0
+    Children:
+      []
+    NameComponent: Cube
+    TransformComponent:
+      Position: [1.30726242, 3.29431486, -25.1766014]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      AssetID: 13708746397499321601
+    MeshRendererComponent:
+      Materials:
+        - AssetID: 1

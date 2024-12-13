@@ -1,19 +1,48 @@
 #pragma once
 #include "Quark/Render/RenderTypes.h"
-
+#include "Quark/Core/Math/Frustum.h"
 
 namespace quark
 {
 	class RenderScene
 	{
 	public:
-		// lights
+		struct Visibility 
+		{
+			// visible objects (updated per frame)
+			std::vector<uint32_t> main_camera_visible_object_indexes;
+			std::vector<uint32_t> directional_light_visible_object_indexes;
+			std::vector<uint32_t> point_lights_visible_object_indexes;
+
+			UniformBufferData_Camera camera_ubo_data;
+			math::Aabb aabb;
+		};
+
+		// lights TODO: rewrite after we have light components
+		glm::vec4 ambientColor;
+		glm::vec4 sunlightDirection; // w for sun power
+		glm::vec4 sunlightColor;
 
 		// render entities
-		std::vector<RenderEntity> renderEntities;
+		std::vector<RenderObject1> render_objects;
 
-		// axex, for editor
-		std::optional<RenderEntity> axisRenderEntity;
-	
+		// ubo data
+		UniformBufferData_Scene ubo_data_scene;
+
+		// cache
+		std::unordered_map<uint64_t, size_t> render_object_to_offset;
+		std::unordered_map<uint64_t, uint64_t> render_object_to_entity;
+
+		RenderScene();
+		
+		void DeleteRenderObjectsByEntityID(uint64_t entity_id);
+		void AddOrUpdateRenderObject(const RenderObject1& entity, uint64_t entity_id);
+
+		void UpdateVisibility(Visibility& out_vis, const UniformBufferData_Camera& cameraData);
+
+	private:
+		void UpdateMainCameraVisibility(const UniformBufferData_Camera& cameraData);
+		void UpdateDirectionalLightVisibility();
+		void UpdatePointLightVisibility();
 	};
 }

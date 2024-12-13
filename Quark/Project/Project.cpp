@@ -1,5 +1,6 @@
 #include "Quark/qkpch.h"
-#include "Project.h"
+#include "Quark/Project/Project.h"
+#include "Quark/Asset/AssetManager.h"
 
 namespace quark {
     std::filesystem::path Project::GetProjectDirectory()
@@ -20,6 +21,12 @@ namespace quark {
     std::filesystem::path Project::GetStartScenePath()
     {
         return GetAssetDirectory() / m_startScenePath;
+    }
+
+    void Project::SetActive(Ref<Project> proj)
+    {
+        s_activeProject = proj;
+        AssetManager::Get().Init();
     }
 }
 

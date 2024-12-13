@@ -1,0 +1,5 @@
+Project:
+  Name: Sandbox
+  AssetDirectory: Assets
+  AssetRegistry: Assets/AssetRegistry.qkr
+  StartScene: testScene.qkscene

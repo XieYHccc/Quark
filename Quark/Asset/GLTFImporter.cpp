@@ -6,7 +6,7 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
-#include "Quark/Render/Renderer.h"
+#include "Quark/Render/RenderSystem.h"
 #include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/AssetManager.h"
 
@@ -166,8 +166,8 @@ void GLTFImporter::Import(const std::string &filename, uint32_t flags)
             auto newTexture = CreateRef<Texture>();
 
             // Default values
-            newTexture->image = Renderer::Get().image_white;
-            newTexture->sampler = Renderer::Get().sampler_linear;
+            newTexture->image = RenderSystem::Get().GetRenderResourceManager().image_white;
+            newTexture->sampler = RenderSystem::Get().GetRenderResourceManager().sampler_linear;
 
             if (m_Model.textures[texture_index].source > -1) {
                 newTexture->image = m_Images[m_Model.textures[texture_index].source];
@@ -295,10 +295,12 @@ Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
         meshRenderer->SetMesh(mesh_cmpt->sharedMesh);
         for (uint32_t i = 0; auto& p : m_Model.meshes[gltf_node.mesh].primitives)
         {
-            if (p.material > -1)
-				meshRenderer->SetMaterial(i, m_Materials[p.material]);
-			else
-				meshRenderer->SetMaterial(i, AssetManager::Get().defaultMaterial);
+            if (p.material > -1) {
+                meshRenderer->SetMaterial(i, m_Materials[p.material]);
+            }
+            else {
+                meshRenderer->SetMaterial(i, AssetManager::Get().defaultMaterial);
+            }
 
             i++;
         }
@@ -362,7 +364,7 @@ Ref<rhi::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
     
     QK_CORE_LOGW_TAG("AssetManger", "GLTFImporter::ParseImage::Failed to load image: {}", gltf_image.uri);
 
-    return Renderer::Get().image_checkboard;
+    return RenderSystem::Get().GetRenderResourceManager().image_checkboard;
 }
 
 Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
@@ -370,7 +372,7 @@ Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
     auto newMaterial = CreateRef<Material>();
     newMaterial->SetName(mat.name);
     newMaterial->alphaMode = AlphaMode::MODE_OPAQUE;
-    newMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().program_staticMesh;
+    newMaterial->shaderProgram = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh;
 
     auto find = mat.additionalValues.find("alphaMode");
     if (find != mat.additionalValues.end()) 

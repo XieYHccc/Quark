@@ -3,25 +3,27 @@
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Core/Util/StringUtils.h"
-#include "Quark/Render/Renderer.h"
+#include "Quark/Render/RenderSystem.h"
 #include "Quark/Asset/AssetExtensions.h"
 #include "Quark/Asset/MeshImporter.h"
 #include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/MaterialSerializer.h"
+#include "Quark/Asset/ImageAssetImporter.h"
+#include "Quark/Project/Project.h"
 
 #include <yaml-cpp/yaml.h>
 
 #include <fstream>
 
 namespace quark {
-static std::filesystem::path s_AssetDirectory = "Assets";
-static std::filesystem::path s_AssetRegistryPath = "Assets/AssetRegistry.qkr";
+// static std::filesystem::path s_AssetDirectory = "Assets";
+// static std::filesystem::path s_AssetRegistryPath = "Assets/AssetRegistry.qkr";
 
 static AssetMetadata s_NullMetadata;
 
 static AssetType  GetAssetTypeFromString(std::string_view assetType)
 {
-	if (assetType == "None")                return AssetType::None;
+	if (assetType == "None")                   return AssetType::None;
 	if (assetType == "Scene")				   return AssetType::SCENE;
 	if (assetType == "Mesh")				   return AssetType::MESH;
 	if (assetType == "Material")			   return AssetType::MATERIAL;
@@ -29,6 +31,8 @@ static AssetType  GetAssetTypeFromString(std::string_view assetType)
 	if (assetType == "Shader")				   return AssetType::SHADER;
 	if (assetType == "Script")				   return AssetType::SCRIPT;
 	if (assetType == "Audio")				   return AssetType::AUDIO;
+	if (assetType == "Image")				   return AssetType::IMAGE;
+	if (assetType == "Material1")			   return AssetType::MATERIAL1;
 
 	return AssetType::None;
 }
@@ -50,8 +54,16 @@ static std::string AssetTypeToString(AssetType type)
 AssetManager::AssetManager()
 {
 	CreateDefaultAssets();
-	LoadAssetRegistry();
 
+	QK_CORE_LOGI_TAG("AssetManager", "AssetManager Created");
+}
+
+void AssetManager::Init()
+{
+	m_loadedAssets.clear();
+	m_assetMetadata.clear();
+
+	LoadAssetRegistry();
 	QK_CORE_LOGI_TAG("AssetManager", "AssetManager Initialized");
 }
 
@@ -59,13 +71,18 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 {
 	Ref<Asset> asset = nullptr;
 
+	// builtin assets?
+	auto find = m_memoryOnlyAssets.find(id);
+	if (find != m_memoryOnlyAssets.end())
+		return find->second;
+	
 	AssetMetadata metadata = GetAssetMetadata(id);
-
+	std::filesystem::path filePath = Project::GetActive()->GetAssetDirectory() / metadata.filePath;
 	if (metadata.IsValid()) 
 	{
 		if (metadata.isDataLoaded)
 		{
-			asset = m_LoadedAssets[id];
+			asset = m_loadedAssets[id];
 			return asset;
 		}
 		else 
@@ -76,21 +93,35 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 			{
 				// TODO: Use MeshSerializer instead of MeshImporter
 				MeshImporter meshImporter;
-				asset = meshImporter.ImportGLTF(metadata.filePath.string());
+				asset = meshImporter.ImportGLTF(filePath);
 				break;
 			}
 			case AssetType::TEXTURE:
 			{
 				// TODO: Use TextureSerializer instead of TextureImporter
 				TextureImporter textureImporter;
-				asset = textureImporter.ImportStb(metadata.filePath.string());
+				asset = textureImporter.ImportStb(filePath);
 				break;
 			}
 			case AssetType::MATERIAL:
 			{
 				MaterialSerializer matSerializer;
 				Ref<Material> newMat = CreateRef<Material>();
-				if (matSerializer.TryLoadData(metadata.filePath.string(), newMat))
+				if (matSerializer.TryLoadData(filePath, newMat))
+					asset = newMat;
+				break;
+			}
+			case AssetType::IMAGE:
+			{
+				ImageAssetImporter imageImporter;
+				asset = imageImporter.Import(filePath);
+				break;
+			}
+			case AssetType::MATERIAL1:
+			{
+				MaterialSerializer matSerializer;
+				Ref<MaterialAsset> newMat = CreateRef<MaterialAsset>();
+				if (matSerializer.TryLoadData(filePath, newMat))
 					asset = newMat;
 				break;
 			}
@@ -102,7 +133,7 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 			if (asset)
 			{
 				asset->SetAssetID(id);
-				m_LoadedAssets[id] = asset;
+				m_loadedAssets[id] = asset;
 				metadata.isDataLoaded = true;
 				SetMetadata(id, metadata);
 			}
@@ -114,7 +145,7 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 
 bool AssetManager::IsAssetLoaded(AssetID id)
 {
-	return m_LoadedAssets.contains(id);
+	return m_loadedAssets.contains(id);
 }
 
 bool AssetManager::IsAssetIdValid(AssetID id)
@@ -122,13 +153,18 @@ bool AssetManager::IsAssetIdValid(AssetID id)
 	return GetAssetMetadata(id).IsValid();
 }
 
+void AssetManager::AddMemoryOnlyAsset(Ref<Asset> asset)
+{
+	m_memoryOnlyAssets[asset->GetAssetID()] = asset;
+}
+
 void AssetManager::RemoveAsset(AssetID id)
 {
-	if (m_LoadedAssets.contains(id))
-		m_LoadedAssets.erase(id);
+	if (m_loadedAssets.contains(id))
+		m_loadedAssets.erase(id);
 
-	if (m_AssetMetadata.contains(id))
-		m_AssetMetadata.erase(id);
+	if (m_assetMetadata.contains(id))
+		m_assetMetadata.erase(id);
 }
 
 AssetType AssetManager::GetAssetTypeFromPath(const std::filesystem::path& filepath)
@@ -166,7 +202,7 @@ std::unordered_set<AssetID> AssetManager::GetAllAssetsWithType(AssetType type)
 {
 	std::unordered_set<AssetID> result;
 
-	for (auto& [id, metadata] : m_AssetMetadata)
+	for (auto& [id, metadata] : m_assetMetadata)
 	{
 		if (metadata.type == type)
 			result.insert(id);
@@ -178,7 +214,7 @@ std::unordered_set<AssetID> AssetManager::GetAllAssetsWithType(AssetType type)
 void AssetManager::SetMetadata(AssetID id, AssetMetadata metaData)
 {    
 	
-	m_AssetMetadata[metaData.id] = metaData;
+	m_assetMetadata[metaData.id] = metaData;
 	QK_CORE_VERIFY(metaData.IsValid())
 }
 
@@ -209,15 +245,15 @@ AssetID AssetManager::ImportAsset(const std::filesystem::path &filepath)
 
 AssetMetadata AssetManager::GetAssetMetadata(AssetID id)
 {
-	if (m_AssetMetadata.contains(id))
-		return m_AssetMetadata[id];
+	if (m_assetMetadata.contains(id))
+		return m_assetMetadata[id];
 
 	return s_NullMetadata;
 }
 
 AssetMetadata AssetManager::GetAssetMetadata(const std::filesystem::path& filepath)
 {
-	for (auto& [id, metadata] : m_AssetMetadata)
+	for (auto& [id, metadata] : m_assetMetadata)
 	{
 		if (metadata.filePath == filepath)
 			return metadata;
@@ -228,11 +264,12 @@ AssetMetadata AssetManager::GetAssetMetadata(const std::filesystem::path& filepa
 
 void AssetManager::LoadAssetRegistry()
 {
-	if (!FileSystem::Exists(s_AssetRegistryPath))
-		return;
+	auto registryPath = Project::GetActive()->GetAssetRegistryPath();
+	if (!FileSystem::Exists(registryPath))
+		QK_CORE_VERIFY(0)
 
 	// Parse registry file into yaml
-	std::ifstream stream(s_AssetRegistryPath);
+	std::ifstream stream(registryPath);
 	QK_CORE_VERIFY(stream)
 	std::stringstream strStream;
 	strStream << stream.rdbuf();
@@ -272,17 +309,17 @@ void AssetManager::LoadAssetRegistry()
 
 	}
 
-	QK_CORE_LOGI_TAG("AssetManager", "Loaded {0} asset entries", m_AssetMetadata.size());
+	QK_CORE_LOGI_TAG("AssetManager", "Loaded {0} asset entries", m_assetMetadata.size());
 }
 void AssetManager::SaveAssetRegistry()
 {
-	QK_CORE_LOGI_TAG("AssetManager", "Saving asset registry with{0} assets", m_AssetMetadata.size());
+	QK_CORE_LOGI_TAG("AssetManager", "Saving asset registry with{0} assets", m_assetMetadata.size());
 
 	YAML::Emitter out;
 	out << YAML::BeginMap;
 	out << YAML::Key << "Assets" << YAML::BeginSeq;
 
-	for (auto& [id, entry] : m_AssetMetadata)
+	for (auto& [id, entry] : m_assetMetadata)
 	{
 		out << YAML::BeginMap;
 		out << YAML::Key << "Id" << YAML::Value << entry.id;
@@ -293,7 +330,7 @@ void AssetManager::SaveAssetRegistry()
 	out << YAML::EndSeq;
 	out << YAML::EndMap;
 
-	std::ofstream fout(s_AssetRegistryPath);
+	std::ofstream fout(Project::GetActive()->GetAssetRegistryPath());
 	fout << out.c_str();
 }
 
@@ -305,14 +342,15 @@ void AssetManager::ReloadAssets()
 void AssetManager::CreateDefaultAssets()
 {
 	// Create defalult texture
+	auto& resourceMngr = RenderSystem::Get().GetRenderResourceManager();
 	defaultColorTexture = CreateRef<Texture>();
-	defaultColorTexture->image = Renderer::Get().image_white;
-	defaultColorTexture->sampler = Renderer::Get().sampler_linear;
+	defaultColorTexture->image = resourceMngr.image_white;
+	defaultColorTexture->sampler = resourceMngr.sampler_linear;
 	defaultColorTexture->SetName("Default color texture");
 	
 	defaultMetalTexture = CreateRef<Texture>();
-	defaultMetalTexture->image = Renderer::Get().image_white;
-	defaultMetalTexture->sampler = Renderer::Get().sampler_linear;
+	defaultMetalTexture->image = resourceMngr.image_white;
+	defaultMetalTexture->sampler = resourceMngr.sampler_linear;
 	defaultMetalTexture->SetName("Default metalic roughness texture");
 
 	defaultMaterial = CreateRef<Material>();
@@ -323,7 +361,7 @@ void AssetManager::CreateDefaultAssets()
 	defaultMaterial->uniformBufferData.metalicFactor = 1.0f;
 	defaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
 	// TODO: Remove hardcoded shader
-	defaultMaterial->shaderProgram = Renderer::Get().GetShaderLibrary().program_staticMesh;
+	defaultMaterial->shaderProgram = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh;
 	defaultMaterial->SetName("Default material");
 	
 	MeshImporter mesh_loader;
@@ -333,7 +371,9 @@ void AssetManager::CreateDefaultAssets()
 	defaultColorTexture->SetAssetID(1);
 	defaultMetalTexture->SetAssetID(1);
 	defaultMaterial->SetAssetID(1);
-	mesh_cube->SetAssetID(1);
+	mesh_cube->SetAssetID(15);
+
+	AddMemoryOnlyAsset(mesh_cube);
 }
 
 }

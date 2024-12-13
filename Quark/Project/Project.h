@@ -18,7 +18,7 @@ namespace quark
 		const std::string& GetProjectName() const { return m_name; }
 		const std::string& GetProjectFileName() const { return m_projectFileName; }
 
-		static void SetActive(Ref<Project> proj) { s_activeProject = proj; }
+		static void SetActive(Ref<Project> proj);
 		static Ref<Project> GetActive() { return s_activeProject; }
 
 	private:

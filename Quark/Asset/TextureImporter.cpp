@@ -3,7 +3,7 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Core/FileSystem.h"
 #include "Quark/RHI/TextureFormatLayout.h"
-#include "Quark/Render/Renderer.h"
+#include "Quark/Render/RenderSystem.h"
 
 #include <ktx.h>
 #include <basisu_transcoder.h>
@@ -123,7 +123,7 @@ Ref<Texture> TextureImporter::ImportKtx2(const std::string &file_path, bool isCu
         {
             Ref<Texture> newTexture = CreateRef<Texture>();
             newTexture->image = graphicDevice->CreateImage(desc, initData.data());
-            newTexture->sampler = isCubemap? Renderer::Get().sampler_cube : Renderer::Get().sampler_linear;
+            newTexture->sampler = isCubemap? RenderSystem::Get().GetRenderResourceManager().sampler_cube : RenderSystem::Get().GetRenderResourceManager().sampler_linear;
             ktxTranscoder.clear();
             return newTexture;
         }
@@ -165,10 +165,10 @@ Ref<Texture> TextureImporter::ImportStb(const std::string& file_path)
 
     Ref<Texture> newTexture = CreateRef<Texture>();
     newTexture->image = Application::Get().GetGraphicDevice()->CreateImage(desc, &init_data);
-    newTexture->sampler = Renderer::Get().sampler_linear;
+    newTexture->sampler = RenderSystem::Get().GetRenderResourceManager().sampler_linear;
 
     QK_CORE_LOGI_TAG("AssetManager", "TextureImporter: Import texture asset: {0}", file_path);
-
+    stbi_image_free(data);
     return newTexture;
 }
 
@@ -239,7 +239,7 @@ Ref<Texture> TextureImporter::ImportKtx(const std::string& file_path, bool isCub
 
     Ref<Texture> newTexture = CreateRef<Texture>();
     newTexture->image = Application::Get().GetGraphicDevice()->CreateImage(desc, initData.data());
-    newTexture->sampler = isCubeMap ? Renderer::Get().sampler_cube : Renderer::Get().sampler_linear;
+    newTexture->sampler = isCubeMap ? RenderSystem::Get().GetRenderResourceManager().sampler_cube : RenderSystem::Get().GetRenderResourceManager().sampler_linear;
 
     return newTexture;
 }
