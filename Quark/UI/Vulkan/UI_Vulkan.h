@@ -17,7 +17,6 @@ public:
     void EndFrame() override;
     void OnRender(rhi::CommandList* cmd) override;
 
-    ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) override;
     ImTextureID GetOrCreateTextureId(const Ref<rhi::Image>& image, const Ref<rhi::Sampler>& sampler) override;
 
 private:

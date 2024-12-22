@@ -3,16 +3,16 @@
 #extension GL_GOOGLE_include_directive : require
 #include "include/input_structures.glsl"
 
-#ifdef HAVE_UV
-layout(location = 1) in vec2 vUV;
+#ifdef HAVE_NORMAL
+layout(location = 1) in vec3 vNormal;
 #endif
 
-#ifdef HAVE_NORMAL
-layout(location = 2) in vec3 vNormal;
+#ifdef HAVE_UV
+layout(location = 3) in vec2 vUV;
 #endif
 
 #ifdef HAVE_VERTEX_COLOR
-layout(location = 3) in vec4 vColor;
+layout(location = 4) in vec4 vColor;
 #endif
 
 layout (location = 0) out vec4 outFragColor;

@@ -1,16 +1,27 @@
 #include "Editor/Panel/ContentBrowserPanel.h"
 
 #include <Quark/Core/FileSystem.h>
-#include <Quark/Asset/TextureImporter.h>
+#include <Quark/Asset/ImageImporter.h>
+#include <Quark/Asset/AssetManager.h>
+#include <Quark/Render/RenderSystem.h>
 #include <Quark/UI/UI.h>
 
 namespace quark {
 
 ContentBrowserPanel::ContentBrowserPanel()
 {
-	TextureImporter loader;
-	m_fileIcon = loader.ImportStb("BuiltInResources/Icons/ContentBrowser/FileIcon.png");
-	m_folderIcon = loader.ImportStb("BuiltInResources/Icons/ContentBrowser/DirectoryIcon.png");
+	ImageImporter loader;
+	auto fileIconAsset = loader.ImportStb("BuiltInResources/Icons/ContentBrowser/FileIcon.png");
+	auto folderIconAsset = loader.ImportStb("BuiltInResources/Icons/ContentBrowser/DirectoryIcon.png");
+	AssetManager::Get().AddMemoryOnlyAsset(fileIconAsset);
+	AssetManager::Get().AddMemoryOnlyAsset(folderIconAsset);
+
+	RenderSystem::Get().GetRenderResourceManager().CreateImageRenderResource(fileIconAsset->GetAssetID());
+	RenderSystem::Get().GetRenderResourceManager().CreateImageRenderResource(folderIconAsset->GetAssetID());
+
+	m_fileIcon = RenderSystem::Get().GetRenderResourceManager().GetImage(fileIconAsset->GetAssetID());
+	m_folderIcon = RenderSystem::Get().GetRenderResourceManager().GetImage(folderIconAsset->GetAssetID());
+
 }
 
 ContentBrowserPanel::ContentBrowserPanel(const std::filesystem::path& basePath)
@@ -57,8 +68,9 @@ void ContentBrowserPanel::OnImGuiUpdate()
 			const auto& path = directoryEntry.path();
 			std::string filenameString = path.filename().string();
 
+			Ref<rhi::Sampler> sampler = RenderSystem::Get().GetRenderResourceManager().sampler_linear;
 			ImTextureID textureId = directoryEntry.is_directory() ?
-				UI::Get()->GetOrCreateTextureId(m_folderIcon) : UI::Get()->GetOrCreateTextureId(m_fileIcon);
+				UI::Get()->GetOrCreateTextureId(m_folderIcon, sampler) : UI::Get()->GetOrCreateTextureId(m_fileIcon, sampler);
 
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 			ImGui::ImageButton(filenameString.c_str(), textureId, { thumbnailSize, thumbnailSize }, { 0, 1 }, { 1, 0 });

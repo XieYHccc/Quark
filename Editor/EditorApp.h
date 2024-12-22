@@ -34,7 +34,6 @@ public:
 
 private:
     void CreateGraphicResources();
-    void MainPass(RenderSystem::DrawContext& context, RenderSystem::Visibility& vis, rhi::CommandList* cmd);
 
     Ref<rhi::Image> m_depth_attachment;
     Ref<rhi::Image> m_color_attachment;
@@ -42,9 +41,6 @@ private:
     Ref<rhi::Image> m_entityID_depth_attachment;
 
     Ref<rhi::Buffer> m_stage_buffer;
-
-    RenderSystem::DrawContext m_drawContext;
-    RenderSystem::Visibility m_visibility;
 
     Ref<Texture> m_cubeMapTexture;
     AssetID m_cubeMapId;

@@ -1,5 +1,7 @@
 #include "Quark/qkpch.h"
 #include "Quark/Asset/GLTFImporter.h"
+#include "Quark/Asset/ImageImporter.h"
+#include "Quark/Asset/AssetManager.h"
 #include "Quark/Core/Application.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
@@ -7,8 +9,6 @@
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
 #include "Quark/Render/RenderSystem.h"
-#include "Quark/Asset/TextureImporter.h"
-#include "Quark/Asset/AssetManager.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <stb_image.h>
@@ -158,26 +158,6 @@ void GLTFImporter::Import(const std::string &filename, uint32_t flags)
             Ref<Image> newImage = ParseImage(m_Model.images[image_index]);
             m_Images[image_index] = newImage;
         }
-
-        // Load textures
-        m_Textures.resize(m_Model.textures.size());
-        for (size_t texture_index = 0; texture_index < m_Model.textures.size(); texture_index++)
-        {
-            auto newTexture = CreateRef<Texture>();
-
-            // Default values
-            newTexture->image = RenderSystem::Get().GetRenderResourceManager().image_white;
-            newTexture->sampler = RenderSystem::Get().GetRenderResourceManager().sampler_linear;
-
-            if (m_Model.textures[texture_index].source > -1) {
-                newTexture->image = m_Images[m_Model.textures[texture_index].source];
-            }
-            if (m_Model.textures[texture_index].sampler > -1) {
-                newTexture->sampler = m_Samplers[m_Model.textures[texture_index].sampler];
-            }
-
-            m_Textures[texture_index] = newTexture;
-        }
     }
 
 
@@ -202,23 +182,23 @@ void GLTFImporter::Import(const std::string &filename, uint32_t flags)
     //auto* mapped_data = (Material::UniformBufferBlock*)materialUniformBuffer->GetMappedDataPtr();
 
     // Load materials
-    if (flags & ImportingFlags::ImportMaterials)
-    {
-        m_Materials.reserve(m_Model.materials.size()); // one more default material
-        for (size_t material_index = 0; material_index < m_Model.materials.size(); material_index++)
-        {
-            auto newMaterial = ParseMaterial(m_Model.materials[material_index]);
-            // auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (material_index * dynamic_alignment));
-            // *ubo = newMaterial->uniformBufferData;
-            // newMaterial->uniformBuffer = materialUniformBuffer;
-            // newMaterial->uniformBufferOffset = material_index * dynamic_alignment;
-            m_Materials.push_back(newMaterial);
-        }
+    //if (flags & ImportingFlags::ImportMaterials)
+    //{
+    //    m_Materials.reserve(m_Model.materials.size()); // one more default material
+    //    for (size_t material_index = 0; material_index < m_Model.materials.size(); material_index++)
+    //    {
+    //        auto newMaterial = ParseMaterial(m_Model.materials[material_index]);
+    //        // auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (material_index * dynamic_alignment));
+    //        // *ubo = newMaterial->uniformBufferData;
+    //        // newMaterial->uniformBuffer = materialUniformBuffer;
+    //        // newMaterial->uniformBufferOffset = material_index * dynamic_alignment;
+    //        m_Materials.push_back(newMaterial);
+    //    }
 
         // data copy
         // std::copy(ubo_data, ubo_data + buffer_size, mapped_data);
         // util::memalign_free(ubo_data);
-    }
+    //}
 
     // Load meshes
     m_Meshes.reserve(m_Model.meshes.size());
@@ -293,17 +273,17 @@ Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
         // Material
         MeshRendererCmpt* meshRenderer = newObj->AddComponent<MeshRendererCmpt>();
         meshRenderer->SetMesh(mesh_cmpt->sharedMesh);
-        for (uint32_t i = 0; auto& p : m_Model.meshes[gltf_node.mesh].primitives)
-        {
-            if (p.material > -1) {
-                meshRenderer->SetMaterial(i, m_Materials[p.material]);
-            }
-            else {
-                meshRenderer->SetMaterial(i, AssetManager::Get().defaultMaterial);
-            }
+        //for (uint32_t i = 0; auto& p : m_Model.meshes[gltf_node.mesh].primitives)
+        //{
+        //    if (p.material > -1) {
+        //        meshRenderer->SetMaterial(i, m_Materials[p.material]);
+        //    }
+        //    else {
+        //        meshRenderer->SetMaterial(i, AssetManager::Get().defaultMaterial);
+        //    }
 
-            i++;
-        }
+        //    i++;
+        //}
     }
     //TODO: Parse camera component
 
@@ -356,10 +336,10 @@ Ref<rhi::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
             }
         }
         
-        if (is_ktx) {
-            TextureImporter textureImporter;
-            return textureImporter.ImportKtx(gltf_image.uri)->image;
-        }
+        //if (is_ktx) {
+        //    ImageAssetImporter textureImporter;
+        //    return textureImporter.ImportKtx(gltf_image.uri);
+        //}
     }
     
     QK_CORE_LOGW_TAG("AssetManger", "GLTFImporter::ParseImage::Failed to load image: {}", gltf_image.uri);
@@ -367,57 +347,57 @@ Ref<rhi::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
     return RenderSystem::Get().GetRenderResourceManager().image_checkboard;
 }
 
-Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
+//Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
+//{
+//    auto newMaterial = CreateRef<Material>();
+//    newMaterial->SetName(mat.name);
+//    newMaterial->alphaMode = AlphaMode::MODE_OPAQUE;
+//    newMaterial->shaderProgram = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh;
+//
+//    auto find = mat.additionalValues.find("alphaMode");
+//    if (find != mat.additionalValues.end()) 
+//    {
+//        tinygltf::Parameter param = find->second;
+//        if (param.string_value == "BLEND")
+//            newMaterial->alphaMode = AlphaMode::MODE_TRANSPARENT;
+//    }
+//
+//    // fill uniform buffer data
+//    find = mat.values.find("roughnessFactor");
+//    if (find != mat.values.end()) {
+//        newMaterial->uniformBufferData.metalicFactor = static_cast<float>(find->second.Factor());
+//    }
+//
+//    find = mat.values.find("metallicFactor");
+//    if (find != mat.values.end()) {
+//        newMaterial->uniformBufferData.roughNessFactor = static_cast<float>(find->second.Factor());
+//    }
+//
+//    find = mat.values.find("baseColorFactor");
+//    if (find != mat.values.end()) {
+//        newMaterial->uniformBufferData.baseColorFactor = glm::make_vec4(find->second.ColorFactor().data());
+//    }
+//    
+//    // Default textures
+//    newMaterial->baseColorTexture = AssetManager::Get().defaultColorTexture;
+//    newMaterial->metallicRoughnessTexture = AssetManager::Get().defaultMetalTexture;
+//
+//    find = mat.values.find("metallicRoughnessTexture");
+//    if (find != mat.values.end()) {
+//        newMaterial->metallicRoughnessTexture = m_Textures[find->second.TextureIndex()];
+//    }
+//
+//    find = mat.values.find("baseColorTexture");
+//    if (find != mat.values.end()) {
+//        newMaterial->baseColorTexture = m_Textures[find->second.TextureIndex()];
+//    }
+//
+//    return newMaterial;
+//}
+
+Ref<MeshAsset> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
 {
-    auto newMaterial = CreateRef<Material>();
-    newMaterial->SetName(mat.name);
-    newMaterial->alphaMode = AlphaMode::MODE_OPAQUE;
-    newMaterial->shaderProgram = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh;
-
-    auto find = mat.additionalValues.find("alphaMode");
-    if (find != mat.additionalValues.end()) 
-    {
-        tinygltf::Parameter param = find->second;
-        if (param.string_value == "BLEND")
-            newMaterial->alphaMode = AlphaMode::MODE_TRANSPARENT;
-    }
-
-    // fill uniform buffer data
-    find = mat.values.find("roughnessFactor");
-    if (find != mat.values.end()) {
-        newMaterial->uniformBufferData.metalicFactor = static_cast<float>(find->second.Factor());
-    }
-
-    find = mat.values.find("metallicFactor");
-    if (find != mat.values.end()) {
-        newMaterial->uniformBufferData.roughNessFactor = static_cast<float>(find->second.Factor());
-    }
-
-    find = mat.values.find("baseColorFactor");
-    if (find != mat.values.end()) {
-        newMaterial->uniformBufferData.baseColorFactor = glm::make_vec4(find->second.ColorFactor().data());
-    }
-    
-    // Default textures
-    newMaterial->baseColorTexture = AssetManager::Get().defaultColorTexture;
-    newMaterial->metallicRoughnessTexture = AssetManager::Get().defaultMetalTexture;
-
-    find = mat.values.find("metallicRoughnessTexture");
-    if (find != mat.values.end()) {
-        newMaterial->metallicRoughnessTexture = m_Textures[find->second.TextureIndex()];
-    }
-
-    find = mat.values.find("baseColorTexture");
-    if (find != mat.values.end()) {
-        newMaterial->baseColorTexture = m_Textures[find->second.TextureIndex()];
-    }
-
-    return newMaterial;
-}
-
-Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
-{
-    Ref<Mesh> newMesh = CreateRef<Mesh>();
+    Ref<MeshAsset> newMesh = CreateRef<MeshAsset>();
     newMesh->SetName(gltf_mesh.name);
 
     size_t vertexCount = 0;
@@ -438,7 +418,7 @@ Ref<Mesh> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
     newMesh->vertex_colors.reserve(vertexCount);
     newMesh->indices.reserve(indexCount);
 
-    std::vector<Mesh::SubMeshDescriptor> submeshes;
+    std::vector<MeshAsset::SubMeshDescriptor> submeshes;
     submeshes.reserve(gltf_mesh.primitives.size());
     
     // loop primitives

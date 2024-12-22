@@ -1,8 +1,8 @@
 #pragma once
 #include "Quark/Core/Math/Aabb.h"
 #include "Quark/RHI/Common.h"
-#include "Quark/Asset/Material.h"
-
+#include "Quark/Render/ShaderLibrary.h"
+#include "Quark/Asset/MaterialAsset.h"
 #include <glm/glm.hpp>
 
 namespace quark {
@@ -60,10 +60,15 @@ struct RenderPBRMaterial
     Ref<rhi::Image> metallic_roughness_texture_image;
     Ref<rhi::Image> emissive_texture_image;
 
-    PushConstants_Material material_push_constants;
+    glm::vec4 colorFactors = glm::vec4(1.f);
+    float metallicFactor = 1.f;
+    float roughnessFactor = 1.f;
+
+    ShaderProgram* shaderProgram;
+    AlphaMode alphaMode;
 };
 
-struct RenderObject1
+struct RenderObject
 {
     uint64_t id;
     glm::mat4 model_matrix;
@@ -72,28 +77,9 @@ struct RenderObject1
     uint64_t render_mesh_id;
     uint32_t start_index;
     uint32_t index_count;
-    math::Aabb bounding_box;
+    math::Aabb aabb;
 
     // material
     uint64_t render_material_id;
-
-};
-
-
-// The minimum unit for a single draw call
-struct RenderObject
-{
-    uint32_t indexCount = 0;
-    uint32_t firstIndex = 0;
-    Ref<rhi::Buffer> indexBuffer;
-    Ref<rhi::Buffer> attributeBuffer;
-    Ref<rhi::Buffer> positionBuffer;
-    Ref<rhi::PipeLine> mainPassPipeLine;
-    Ref<Material> material;
-    math::Aabb aabb = {};
-    glm::mat4 transform;
-
-    //Editor
-    uint64_t entityID = 0;
 };
 }

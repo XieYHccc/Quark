@@ -61,7 +61,7 @@ Application::Application(const ApplicationSpecification& specs)
     m_graphicDevice->Init();
 #endif
 
-    // Init Graphic Device and Renderer
+    // Init Render System
     JobSystem::Counter counter;
     m_jobSystem->Execute([this]()
     {

@@ -207,10 +207,10 @@ void InspectorPanel::OnImGuiUpdate()
                     
                     if (meshCmpt)
                     {
-                        Ref<Mesh> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
+                        Ref<MeshAsset> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
                         cmpt->SetMesh(mesh);
                         for (uint32_t i = 0; i < mesh->subMeshes.size(); i++)
-                            cmpt->SetMaterial(i, AssetManager::Get().defaultMaterial);
+                            cmpt->SetMaterial(i, 0);
                     }
                 }
 				ImGui::CloseCurrentPopup();
@@ -259,7 +259,7 @@ void InspectorPanel::OnImGuiUpdate()
         DrawComponent<MeshCmpt>("Mesh", m_SelectedEntity, [&](auto& component) {
             bool hasMesh = component.sharedMesh != nullptr;
 
-            Mesh& mesh = *component.sharedMesh;
+            MeshAsset& mesh = *component.sharedMesh;
             std::filesystem::path meshAssetPath = hasMesh? AssetManager::Get().GetAssetMetadata(mesh.GetAssetID()).filePath : 
                 std::filesystem::path("None");
 
@@ -278,7 +278,7 @@ void InspectorPanel::OnImGuiUpdate()
 					auto metadata = AssetManager::Get().GetAssetMetadata(id);
 					if (ImGui::MenuItem(metadata.filePath.string().c_str()))
 					{
-						component.sharedMesh = AssetManager::Get().GetAsset<Mesh>(id);
+						component.sharedMesh = AssetManager::Get().GetAsset<MeshAsset>(id);
 						break;
 					}
 				}
@@ -324,18 +324,18 @@ void InspectorPanel::OnImGuiUpdate()
             if (!meshCmpt)
 				return;
 
-            Ref<Mesh> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
+            Ref<MeshAsset> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
 			for (uint32_t i = 0; i < mesh->subMeshes.size(); i++)
 			{
-                Ref<Material> mat = component.GetMaterial(i);
+                auto id = component.GetMaterialID(i);
 
-                std::filesystem::path materialAssetPath = mat->GetAssetID() != 1 ?
-					AssetManager::Get().GetAssetMetadata(mat->GetAssetID()).filePath : std::filesystem::path("Default material");
+                std::filesystem::path materialAssetPath = id != 0 ?
+					AssetManager::Get().GetAssetMetadata(id).filePath : std::filesystem::path("Default material");
 
 				ImGui::Text("Material %u", i);
                 if (ImGui::Button(materialAssetPath.string().c_str()))
                 {
-                    m_SelectedMaterial = mat;
+                    m_SelectedMaterial = AssetManager::Get().GetAsset<MaterialAsset>(id);
                     SetInspectorViewType(InspectorViewType::MATERIAL);
                 }
 
@@ -350,8 +350,8 @@ void InspectorPanel::OnImGuiUpdate()
 						auto metadata = AssetManager::Get().GetAssetMetadata(id);
 						if (ImGui::MenuItem(metadata.filePath.string().c_str()))
 						{
-                            Ref<Material> materialAsset = AssetManager::Get().GetAsset<Material>(id);
-                            component.SetMaterial(i, materialAsset);
+                            Ref<MaterialAsset> materialAsset = AssetManager::Get().GetAsset<MaterialAsset>(id);
+                            component.SetMaterial(i, id);
 							break;
 						}
 					}
@@ -374,9 +374,9 @@ void InspectorPanel::UpdateMaterialView()
     if (ImGui::Button("Back to entity view"))
         m_InspectorViewType = InspectorViewType::ENTITY;
 
-    ImGui::ColorEdit4("Base Color Factor", glm::value_ptr(m_SelectedMaterial->uniformBufferData.baseColorFactor));
-    ImGui::SliderFloat("Metallic Factor", &m_SelectedMaterial->uniformBufferData.metalicFactor, 0.f, 1.f);
-    ImGui::SliderFloat("Roughness Factor", &m_SelectedMaterial->uniformBufferData.roughNessFactor, 0.f, 1.f);
+    ImGui::ColorEdit4("Base Color Factor", glm::value_ptr(m_SelectedMaterial->baseColorFactor));
+    ImGui::SliderFloat("Metallic Factor", &m_SelectedMaterial->metalicFactor, 0.f, 1.f);
+    ImGui::SliderFloat("Roughness Factor", &m_SelectedMaterial->roughNessFactor, 0.f, 1.f);
 
     // Alpha Mode
     static const char* alphaModes[] = { "Opaque",  "Transparent" };
@@ -386,8 +386,8 @@ void InspectorPanel::UpdateMaterialView()
 
     // Textures
     std::string baseColorTexturePath = "Defalut Color Texture";
-    if (m_SelectedMaterial->baseColorTexture->GetAssetID() != 1)
-        baseColorTexturePath = AssetManager::Get().GetAssetMetadata(m_SelectedMaterial->baseColorTexture->GetAssetID()).filePath.string();
+    if (m_SelectedMaterial->baseColorImage != 0)
+        baseColorTexturePath = AssetManager::Get().GetAssetMetadata(m_SelectedMaterial->baseColorImage).filePath.string();
 
     ImGui::Text("Base Color Texture");
     ImGui::SameLine();

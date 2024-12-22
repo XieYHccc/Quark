@@ -171,31 +171,6 @@ void UI_Vulkan::OnRender(rhi::CommandList* cmd)
 	}
 }
 
-ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<Texture>& texture)
-{
-    util::Hasher h;
-    h.pointer(texture->image.get());
-    h.pointer(texture->sampler.get());
-    util::Hash hash = h.get();
-
-    auto it = m_textureIdMap.find(hash);
-    if (it != m_textureIdMap.end())
-    {
-        return it->second;
-    }
-    else
-    {
-        VkSampler samp = rhi::ToInternal(texture->sampler.get()).GetHandle();
-        VkImageView view = rhi::ToInternal(texture->image.get()).GetView();
-
-        ImTextureID newId = (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        m_textureIdMap[hash] = newId;
-
-        return newId;
-    }
-}
-
-
 ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<rhi::Image>& image, const Ref<rhi::Sampler>& sampler)
 {
     util::Hasher h;

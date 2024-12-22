@@ -1,5 +1,5 @@
 #pragma once
-#include <Quark/Asset/Material.h>
+#include <Quark/Asset/MaterialAsset.h>
 #include <Quark/Scene/Scene.h>
 
 #include "Editor/Panel/Panel.h"
@@ -25,7 +25,7 @@ private:
 
     Entity* m_SelectedEntity;
     Ref<Scene> m_Scene;
-    Ref<Material> m_SelectedMaterial;
+    Ref<MaterialAsset> m_SelectedMaterial;
 
     InspectorViewType m_InspectorViewType = InspectorViewType::ENTITY;
 

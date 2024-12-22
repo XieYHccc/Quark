@@ -1,9 +1,10 @@
 #pragma once
-#include <imgui.h>
+#include "Panel.h"
+
 #include <Quark/Core/TimeStep.h>
 #include <Quark/Core/FileSystem.h>
-#include <Quark/Asset/Texture.h>
-#include "Panel.h"
+#include <Quark/RHI/Common.h>
+#include <imgui.h>
 
 namespace quark {
 class ContentBrowserPanel final : public Panel 
@@ -19,7 +20,7 @@ private:
 	std::filesystem::path m_currentDirectory;
 	std::filesystem::path m_baseDirectory;
 
-	Ref<Texture> m_folderIcon;
-	Ref<Texture> m_fileIcon;
+	Ref<rhi::Image> m_folderIcon;
+	Ref<rhi::Image> m_fileIcon;
 };
 }

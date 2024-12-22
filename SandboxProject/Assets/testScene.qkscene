@@ -6,7 +6,7 @@ Entities:
       []
     NameComponent: Plane
     TransformComponent:
-      Position: [7.30145502, -1.12324333, -4.32862139]
+      Position: [7.30145502, 7.33021975, -4.16630983]
       Rotation: [1.10000002, -0, 0]
       Scale: [9.94289684, 1.03001046, 9.82011318]
     MeshComponent:
@@ -14,3 +14,28 @@ Entities:
     MeshRendererComponent:
       Materials:
         - AssetID: 13708746397499321602
+  - Entity: 12757684185671509934
+    Parent: 0
+    Children:
+      []
+    NameComponent: cube
+    TransformComponent:
+      Position: [0, 20.7426739, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      AssetID: 13708746397499321601
+    MeshRendererComponent:
+      Materials:
+        - AssetID: 0
+  - Entity: 14023279415732729204
+    Parent: 0
+    Children:
+      []
+    NameComponent: teapot
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      AssetID: 4055062536632250099

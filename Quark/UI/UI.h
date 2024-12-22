@@ -1,6 +1,6 @@
 #pragma once
 #include "Quark/Core/Util/Singleton.h"
-#include "Quark/Asset/Texture.h"
+#include "Quark/RHI/Common.h"
 
 #include <imgui.h>
 
@@ -30,7 +30,6 @@ public:
     virtual void EndFrame() = 0;
     virtual void OnRender(rhi::CommandList* cmd) = 0;
 
-    virtual ImTextureID GetOrCreateTextureId(const Ref<Texture>& texture) = 0;
     virtual ImTextureID GetOrCreateTextureId(const Ref<rhi::Image>& image, const Ref<rhi::Sampler>& sampler) = 0;
 };
 

@@ -1,12 +1,12 @@
 #pragma once
 #include "Quark/Ecs/Component.h"
-#include "Quark/Asset/Mesh.h"
+#include "Quark/Asset/MeshAsset.h"
 
 namespace quark {
 struct MeshCmpt : public Component {
     // Use mesh if it exists, otherwise use sharedMesh
-    Ref<Mesh> sharedMesh;
-    Ref<Mesh> uniqueMesh;
+    Ref<MeshAsset> sharedMesh;
+    Ref<MeshAsset> uniqueMesh;
 
     QK_COMPONENT_TYPE_DECL(MeshCmpt)
     using Component::Component;
@@ -14,7 +14,7 @@ struct MeshCmpt : public Component {
 
 // If you need to change the mesh's vertex data, use this
 struct DynamicMeshCmpt : public Component {
-	Ref<Mesh> mesh;
+	Ref<MeshAsset> mesh;
 
 	QK_COMPONENT_TYPE_DECL(DynamicMeshCmpt)
 	using Component::Component;
@@ -22,7 +22,7 @@ struct DynamicMeshCmpt : public Component {
 
 // Mesh's vertex data is static(won't be changed) after being generated
 struct StaticMeshCmpt : public Component {
-	Ref<Mesh> mesh;
+	Ref<MeshAsset> mesh;
 
 	QK_COMPONENT_TYPE_DECL(StaticMeshCmpt)
 	using Component::Component;

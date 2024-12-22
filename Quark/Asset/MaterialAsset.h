@@ -1,10 +1,18 @@
 #pragma once
-#include "Quark/Asset/Material.h"
+#include "Quark/Asset/Asset.h"
+
+#include <glm/glm.hpp>
 
 namespace quark 
 {
+    enum class AlphaMode 
+    {
+        MODE_OPAQUE,
+        MODE_TRANSPARENT
+    };
+
     struct MaterialAsset : public Asset {
-        QUARK_ASSET_TYPE_DECL(MATERIAL1)
+        QUARK_ASSET_TYPE_DECL(MATERIAL)
 
         glm::vec4 baseColorFactor = glm::vec4(1.0f);
         float metalicFactor = 1.f;

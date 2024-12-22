@@ -16,7 +16,6 @@ enum class AssetType : uint16_t {
 	SCRIPT,
 	AUDIO,
 	FONT,
-	MATERIAL1,
 	IMAGE
 };
  

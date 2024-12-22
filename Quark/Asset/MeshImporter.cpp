@@ -9,28 +9,14 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Scene.h"
 
-// namespace std {
-//    template<> struct hash<quark::Vertex> {
-//        size_t operator()(quark::Vertex const& vertex) const {
-//            size_t pos_hash = hash<glm::vec3>()(vertex.position);
-//            size_t uv_x_hash = hash<float>()(vertex.uv_x);
-//            size_t normal_hash = hash<glm::vec3>()(vertex.normal);
-//            size_t uv_y_hash = hash<float>()(vertex.uv_y);
-//            size_t color_hash = hash<glm::vec4>()(vertex.color);
-//
-//            return (((((pos_hash ^ (uv_x_hash << 1)) >> 1) ^ (normal_hash << 1)) >> 1) ^ (uv_y_hash << 1)) ^ (color_hash << 1);
-//        }
-//    };
-//}
-
 namespace quark {
 
-Ref<Mesh> MeshImporter::ImportGLTF(const std::string& filepath) {
+Ref<MeshAsset> MeshImporter::ImportGLTF(const std::string& filepath) {
 	GLTFImporter gltf_importer;
 	GLTFImporter::ImportingFlags flags = GLTFImporter::ImportingFlags::ImportMeshes;
     gltf_importer.Import(filepath, flags);
 
-	std::vector<Ref<Mesh>>& meshes = gltf_importer.GetMeshes();
+	std::vector<Ref<MeshAsset>>& meshes = gltf_importer.GetMeshes();
 	if (meshes.empty())
 	{
 		QK_CORE_LOGW_TAG("No mesh found in gltf file: {}", filepath);
@@ -50,7 +36,7 @@ Ref<Mesh> MeshImporter::ImportGLTF(const std::string& filepath) {
 
 }
 
-Ref<Mesh> MeshImporter::ImportOBJ(const std::string &filepath)
+Ref<MeshAsset> MeshImporter::ImportOBJ(const std::string &filepath)
 {
     tinyobj::ObjReader reader;
 	tinyobj::ObjReaderConfig config;

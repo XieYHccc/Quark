@@ -114,6 +114,8 @@ namespace quark
 
         // vertex input layout
         {
+            mesh_attrib_mask_skybox = MESH_ATTRIBUTE_POSITION_BIT;
+
             VertexInputLayout::VertexBindInfo vert_bind_info;
             vert_bind_info.binding = 0; // position buffer
             vert_bind_info.stride = 12; // hardcoded stride, since we know cube mesh's attrib layout
@@ -224,10 +226,11 @@ namespace quark
             RenderPBRMaterial default_material;
             default_material.base_color_texture_image = image_white;
             default_material.metallic_roughness_texture_image = image_white;
-            default_material.material_push_constants.colorFactors = glm::vec4(1.f);
-            default_material.material_push_constants.metallicFactor = 1.f;
-            default_material.material_push_constants.roughnessFactor = 1.f;
-
+            default_material.colorFactors = glm::vec4(1.f);
+            default_material.metallicFactor = 1.f;
+            default_material.roughnessFactor = 1.f;
+            default_material.alphaMode = AlphaMode::MODE_OPAQUE;
+            default_material.shaderProgram = GetShaderLibrary().program_staticMesh;
             default_material_id = uint64_t(UUID());
             m_render_materials[default_material_id] = default_material;
         }
@@ -235,7 +238,7 @@ namespace quark
 
     void RenderResourceManager::CreateMeshRenderResouce(AssetID mesh_asset_id)
     {
-        auto mesh_asset = AssetManager::Get().GetAsset<Mesh>(mesh_asset_id);
+        auto mesh_asset = AssetManager::Get().GetAsset<MeshAsset>(mesh_asset_id);
         QK_CORE_VERIFY(mesh_asset)
 
         RenderMesh new_render_mesh;
@@ -364,10 +367,12 @@ namespace quark
             new_render_material.metallic_roughness_texture_image = GetImage(material_asset->metallicRoughnessImage); 
         }
 
-        new_render_material.material_push_constants.colorFactors = material_asset->baseColorFactor;
-        new_render_material.material_push_constants.metallicFactor = material_asset->metalicFactor;
-        new_render_material.material_push_constants.roughnessFactor = material_asset->roughNessFactor;
+        new_render_material.colorFactors = material_asset->baseColorFactor;
+        new_render_material.metallicFactor = material_asset->metalicFactor;
+        new_render_material.roughnessFactor = material_asset->roughNessFactor;
+        new_render_material.alphaMode = material_asset->alphaMode;
 
+        new_render_material.shaderProgram = m_shaderLibrary->GetOrCreateGraphicsProgram(material_asset->vertexShaderPath, material_asset->fragmentShaderPath);
         m_render_materials[material_asset_id] = new_render_material;
     }
 
@@ -428,89 +433,14 @@ namespace quark
         return it->second;
     }
 
-    Ref<rhi::PipeLine> RenderResourceManager::GetOrCreateGraphicsPipeline(const ShaderProgramVariant& programVariant, const rhi::PipelineDepthStencilState& ds, const rhi::PipelineColorBlendState& bs, const rhi::RasterizationState& rs, const rhi::RenderPassInfo2& rp, const rhi::VertexInputLayout& input)
+    Ref<rhi::PipeLine> RenderResourceManager::GetOrCreateGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, uint32_t mesh_attrib_mask, bool enableDepth, AlphaMode mode)
     {
-        util::Hasher h;
 
-        // hash depth stencil state
-        h.u32(static_cast<uint32_t>(ds.enableDepthTest));
-        h.u32(static_cast<uint32_t>(ds.enableDepthWrite));
-        h.u32(util::ecast(ds.depthCompareOp));
-        h.u32(util::ecast(rs.polygonMode));
-        h.u32(util::ecast(rs.cullMode));
-        h.u32(util::ecast(rs.frontFaceType));
-        h.u64(programVariant.GetHash());
-
-        // hash blend state
-        h.u32(uint32_t(bs.enable_independent_blend));
-
-        for (uint32_t i = 0; i < rp.numColorAttachments; i++)
-        {
-            size_t attachmentIndex = 0;
-            if (bs.enable_independent_blend)
-                attachmentIndex = i;
-
-            const auto& att = bs.attachments[attachmentIndex];
-
-            h.u32(static_cast<uint32_t>(att.enable_blend));
-            if (att.enable_blend)
-            {
-                h.u32(util::ecast(att.colorBlendOp));
-                h.u32(util::ecast(att.srcColorBlendFactor));
-                h.u32(util::ecast(att.dstColorBlendFactor));
-                h.u32(util::ecast(att.alphaBlendOp));
-                h.u32(util::ecast(att.srcAlphaBlendFactor));
-                h.u32(util::ecast(att.dstAlphaBlendFactor));
-            }
-        }
-
-        // hash render pass info
-        h.u64(rp.GetHash());
-
-        // hash vertex input layout
-        for (const auto& attrib : input.vertexAttribInfos)
-        {
-            h.u32(util::ecast(attrib.format));
-            h.u32(attrib.offset);
-            h.u32(attrib.binding);
-        }
-
-        for (const auto& b : input.vertexBindInfos)
-        {
-            h.u32(b.binding);
-            h.u32(b.stride);
-            h.u32(util::ecast(b.inputRate));
-        }
-
-        uint64_t hash = h.get();
-
-        auto it = m_cached_pipelines.find(hash);
-        if (it != m_cached_pipelines.end())
-        {
-            return it->second;
-        }
-        else
-        {
-            rhi::GraphicPipeLineDesc desc = {};
-            desc.vertShader = programVariant.GetShader(rhi::ShaderStage::STAGE_VERTEX);
-            desc.fragShader = programVariant.GetShader(rhi::ShaderStage::STAGE_FRAGEMNT);
-            desc.depthStencilState = ds;
-            desc.blendState = bs;
-            desc.rasterState = rs;
-            desc.topologyType = rhi::TopologyType::TRANGLE_LIST;
-            desc.renderPassInfo = rp;
-            desc.vertexInputLayout = input;
-
-            Ref<rhi::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
-            m_cached_pipelines[hash] = newPipeline;
-
-            return newPipeline;
-        }
-    }
-
-    Ref<rhi::PipeLine> RenderResourceManager::GetOrCreateGraphicsPipeline(ShaderProgram& program, const ShaderVariantKey& key, const rhi::RenderPassInfo2& rp, const rhi::VertexInputLayout& vertexLayout, bool enableDepth, AlphaMode mode)
-    {
+        auto& vertex_layout = GetOrCreateMeshVertexLayout(mesh_attrib_mask);
+        ShaderVariantKey key;
+        key.meshAttributeMask = mesh_attrib_mask;
         ShaderProgramVariant* programVariant = program.IsStatic()? program.GetPrecompiledVariant() : program.GetOrCreateVariant(key);
+        
         rhi::PipelineColorBlendState& bs = mode == AlphaMode::MODE_OPAQUE ? blendState_opaque : blendState_transparent;
         rhi::PipelineDepthStencilState ds = depthStencilState_disabled;
         if (enableDepth)
@@ -548,14 +478,14 @@ namespace quark
         }
 
         // hash vertex input layout
-        for (const auto& attrib : vertexLayout.vertexAttribInfos)
+        for (const auto& attrib : vertex_layout.vertexAttribInfos)
         {
             h.u32(util::ecast(attrib.format));
             h.u32(attrib.offset);
             h.u32(attrib.binding);
         }
 
-        for (const auto& b : vertexLayout.vertexBindInfos)
+        for (const auto& b : vertex_layout.vertexBindInfos)
         {
             h.u32(b.binding);
             h.u32(b.stride);
@@ -578,8 +508,8 @@ namespace quark
             desc.rasterState = rasterizationState_fill;
             desc.topologyType = rhi::TopologyType::TRANGLE_LIST;
             desc.renderPassInfo = rp;
-            if (vertexLayout.isValid())
-                desc.vertexInputLayout = vertexLayout;
+            if (vertex_layout.isValid())
+                desc.vertexInputLayout = vertex_layout;
 
             Ref<rhi::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
             m_cached_pipelines[hash] = newPipeline;
@@ -642,18 +572,120 @@ namespace quark
         }
 
         rhi::VertexInputLayout::VertexBindInfo bindInfo = {};
-        bindInfo.binding = 0;
-        bindInfo.stride = sizeof(glm::vec3);
-        bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
-        newLayout->vertexBindInfos.push_back(bindInfo);
+        if (meshAttributesMask & MESH_ATTRIBUTE_POSITION_BIT)
+        {
+            bindInfo.binding = 0;
+            bindInfo.stride = sizeof(glm::vec3);
+            bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+            newLayout->vertexBindInfos.push_back(bindInfo);
+        }
 
-        bindInfo.binding = 1;
-        bindInfo.stride = offset;
-        bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
-        newLayout->vertexBindInfos.push_back(bindInfo);
+        if (offset > 0)
+        {
+            bindInfo.binding = 1;
+            bindInfo.stride = offset;
+            bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+            newLayout->vertexBindInfos.push_back(bindInfo);
+        }
 
         m_cached_vertexInputLayouts[meshAttributesMask] = newLayout;
         return newLayout;
+    }
+
+    rhi::VertexInputLayout& RenderResourceManager::GetOrCreateMeshVertexLayout(uint32_t meshAttributesMask)
+    {
+        util::Hasher h;
+        h.u32(meshAttributesMask);
+        uint64_t hash = h.get();
+
+        auto it = m_mesh_vertex_layouts.find(hash);
+        if (it != m_mesh_vertex_layouts.end())
+            return it->second;
+
+        rhi::VertexInputLayout newLayout = {};
+
+        // position
+        if (meshAttributesMask & MESH_ATTRIBUTE_POSITION_BIT)
+        {
+            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout.vertexAttribInfos.emplace_back();
+            attrib.location = 0;
+            attrib.binding = 0;
+            attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+            attrib.offset = 0;
+        }
+
+        // varying enable blending attris
+        uint32_t enable_blending_buffer_offset = 0;
+        if (meshAttributesMask & MESH_ATTRIBUTE_NORMAL_BIT)
+        {
+            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout.vertexAttribInfos.emplace_back();
+			attrib.location = 1;
+			attrib.binding = 1;
+			attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+			attrib.offset = enable_blending_buffer_offset;
+            enable_blending_buffer_offset += sizeof(glm::vec3);
+        }
+           
+        if (meshAttributesMask & MESH_ATTRIBUTE_TANGENT_BIT)
+        {
+            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout.vertexAttribInfos.emplace_back();
+            attrib.location = 2;
+            attrib.binding = 1;
+            attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
+            attrib.offset = enable_blending_buffer_offset;
+            enable_blending_buffer_offset += sizeof(glm::vec3);
+        }
+
+        // varying attris
+        uint32_t varing_offset = 0;
+        if (meshAttributesMask & MESH_ATTRIBUTE_UV_BIT)
+        {
+            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout.vertexAttribInfos.emplace_back();
+			attrib.location = 3;
+			attrib.binding = 2;
+			attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
+			attrib.offset = varing_offset;
+            varing_offset += sizeof(glm::vec2);
+        }
+
+        if (meshAttributesMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
+        {
+            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout.vertexAttribInfos.emplace_back();
+			attrib.location = 4;
+			attrib.binding = 2;
+			attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
+			attrib.offset = varing_offset;
+            varing_offset += sizeof(glm::vec4);
+        }
+
+        rhi::VertexInputLayout::VertexBindInfo bindInfo = {};
+        if (meshAttributesMask & MESH_ATTRIBUTE_POSITION_BIT)
+        {
+            bindInfo.binding = 0;
+            bindInfo.stride = sizeof(glm::vec3);
+            bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+            newLayout.vertexBindInfos.push_back(bindInfo);
+        }
+
+        if (enable_blending_buffer_offset > 0)
+        {
+            bindInfo.binding = 1;
+			bindInfo.stride = enable_blending_buffer_offset;
+			bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+			newLayout.vertexBindInfos.push_back(bindInfo);
+        }
+
+        if (varing_offset > 0)
+        {
+            bindInfo.binding = 2;
+            bindInfo.stride = varing_offset;
+            bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+            newLayout.vertexBindInfos.push_back(bindInfo);
+        }
+
+        m_mesh_vertex_layouts[hash] = newLayout;
+
+        return m_mesh_vertex_layouts[hash];
     }
 
     void RenderResourceManager::UpdatePerFrameBuffer(const Ref<RenderScene>& scene)

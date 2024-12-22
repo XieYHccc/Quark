@@ -4,19 +4,23 @@
 
 namespace quark
 {
+	class RenderScene;
+	struct Visibility
+	{
+		Ref<RenderScene> render_scene;
+
+		// visible objects (updated per frame)
+		std::vector<uint32_t> main_camera_visible_object_indexes;
+		std::vector<uint32_t> directional_light_visible_object_indexes;
+		std::vector<uint32_t> point_lights_visible_object_indexes;
+
+		UniformBufferData_Camera camera_ubo_data;
+		math::Frustum frustum;
+	};
+
 	class RenderScene
 	{
 	public:
-		struct Visibility 
-		{
-			// visible objects (updated per frame)
-			std::vector<uint32_t> main_camera_visible_object_indexes;
-			std::vector<uint32_t> directional_light_visible_object_indexes;
-			std::vector<uint32_t> point_lights_visible_object_indexes;
-
-			UniformBufferData_Camera camera_ubo_data;
-			math::Aabb aabb;
-		};
 
 		// lights TODO: rewrite after we have light components
 		glm::vec4 ambientColor;
@@ -24,7 +28,7 @@ namespace quark
 		glm::vec4 sunlightColor;
 
 		// render entities
-		std::vector<RenderObject1> render_objects;
+		std::vector<RenderObject> render_objects;
 
 		// ubo data
 		UniformBufferData_Scene ubo_data_scene;
@@ -33,10 +37,12 @@ namespace quark
 		std::unordered_map<uint64_t, size_t> render_object_to_offset;
 		std::unordered_map<uint64_t, uint64_t> render_object_to_entity;
 
+		Visibility main_camera_visibility;
+
 		RenderScene();
 		
 		void DeleteRenderObjectsByEntityID(uint64_t entity_id);
-		void AddOrUpdateRenderObject(const RenderObject1& entity, uint64_t entity_id);
+		void AddOrUpdateRenderObject(const RenderObject& entity, uint64_t entity_id);
 
 		void UpdateVisibility(Visibility& out_vis, const UniformBufferData_Camera& cameraData);
 

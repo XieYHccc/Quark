@@ -1,12 +1,13 @@
 #include "Quark/qkpch.h"
 #include "Quark/Render/RenderScene.h"
+
 namespace quark 
 {
     RenderScene::RenderScene()
     {
-        ambientColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-        sunlightDirection = glm::vec4(0.0f, -1.0f, 0.0f, 1.0f);
-        sunlightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        ambientColor = glm::vec4(.1f);
+        sunlightDirection = glm::vec4(1.f);
+        sunlightColor = glm::vec4(0, 1, 0.5, 1.f);
 
         ubo_data_scene.ambientColor = ambientColor;
         ubo_data_scene.sunlightDirection = sunlightDirection;
@@ -33,7 +34,7 @@ namespace quark
         }
     }
 
-    void RenderScene::AddOrUpdateRenderObject(const RenderObject1& obj, uint64_t entity_id)
+    void RenderScene::AddOrUpdateRenderObject(const RenderObject& obj, uint64_t entity_id)
     {
         auto find = render_object_to_offset.find(obj.id);
         if (find != render_object_to_offset.end())
@@ -47,4 +48,28 @@ namespace quark
             render_object_to_entity[obj.id] = entity_id;
         }
     }
+
+    void RenderScene::UpdateVisibility(Visibility& out_vis, const UniformBufferData_Camera& cameraData)
+    {
+        out_vis.main_camera_visible_object_indexes.clear();
+        out_vis.camera_ubo_data = cameraData;
+        out_vis.frustum.Build(glm::inverse(cameraData.viewproj));
+
+        auto is_visible = [&](const RenderObject& obj)
+        {
+            math::Aabb transformed_aabb = obj.aabb.Transform(obj.model_matrix);
+            if (out_vis.frustum.CheckSphere(transformed_aabb))
+                return true;
+            else
+                return false;
+        };
+
+        for (size_t i = 0; i < render_objects.size(); i++)
+        {
+            if (is_visible(render_objects[i]))
+                out_vis.main_camera_visible_object_indexes.push_back((uint32_t)i);
+        }
+		
+    }
+
 }

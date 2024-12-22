@@ -1,6 +1,7 @@
 #pragma once
 #include "Quark/Asset/Asset.h"
 #include "Quark/Core/Math/Aabb.h"
+
 #include <glm/glm.hpp>
 
 namespace quark 
@@ -16,8 +17,8 @@ namespace quark
 
     struct StaticMeshRenderProxy 
     {
-        uint32_t entity_id;
-        AssetID mesh_asset_id;
+        uint64_t entity_id = 0;
+        AssetID mesh_asset_id = 0;
         glm::mat4 transform;
 
         std::vector<MeshSectionDesc> mesh_sections;

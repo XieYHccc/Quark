@@ -3,9 +3,7 @@
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Asset/Asset.h"
 #include "Quark/Asset/AssetMetadata.h"
-#include "Quark/Asset/Texture.h"
-#include "Quark/Asset/Material.h"
-#include "Quark/Asset/Mesh.h"
+#include "Quark/Asset/MeshAsset.h"
 #include "Quark/Asset/MaterialAsset.h"
 #include "Quark/Asset/ImageAsset.h"
 #include "Quark/Project/Project.h"
@@ -15,13 +13,8 @@
 namespace quark {
 
 class AssetManager : public util::MakeSingleton<AssetManager> {
-
 public:
-	// All default assets' id is 1
-	Ref<Texture> defaultColorTexture;
-	Ref<Texture> defaultMetalTexture;
-	Ref<Material> defaultMaterial;
-	Ref<Mesh> mesh_cube;
+	Ref<MeshAsset> mesh_cube;
 
 public:
 	AssetManager();

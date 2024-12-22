@@ -1,7 +1,6 @@
 #pragma once
 #include "Quark/Ecs/Component.h"
-#include "Quark/Asset/Mesh.h"
-#include "Quark/Asset/Material.h"
+#include "Quark/Asset/MeshAsset.h"
 #include "Quark/RHI/PipeLine.h"
 #include "Quark/Render/ShaderLibrary.h"
 
@@ -13,27 +12,19 @@ public:
 
 	MeshRendererCmpt() = default;
 
-	void SetMesh(const Ref<Mesh>& mesh);
-	void SetMaterial(uint32_t index, const Ref<Material>& mat);
+	void SetMesh(const Ref<MeshAsset>& mesh);
 	void SetMaterial(uint32_t index, AssetID id);
 	void SetDirty(bool dirty);
 	bool IsRenderStateDirty() const { return m_dirty; }
 
-	Ref<Material> GetMaterial(uint32_t index);
 	AssetID GetMaterialID(uint32_t index);
 	
-	Ref<rhi::PipeLine> GetGraphicsPipeLine(uint32_t index);
-
 private:
-	void UpdateGraphicsPipeLine(uint32_t index);
-
-private:
-	Ref<Mesh> m_mesh;
+	Ref<MeshAsset> m_mesh;
 	
 	bool m_dirty = true;
 
 	// The count of materials should be equal to the count of submeshes in the mesh
-	std::vector<Ref<Material>> m_materials;
 	std::vector<AssetID>  m_material_ids;
 
 	uint32_t m_dirtyMaterialMask = 0;

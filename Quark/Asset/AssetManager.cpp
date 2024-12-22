@@ -6,9 +6,8 @@
 #include "Quark/Render/RenderSystem.h"
 #include "Quark/Asset/AssetExtensions.h"
 #include "Quark/Asset/MeshImporter.h"
-#include "Quark/Asset/TextureImporter.h"
 #include "Quark/Asset/MaterialSerializer.h"
-#include "Quark/Asset/ImageAssetImporter.h"
+#include "Quark/Asset/ImageImporter.h"
 #include "Quark/Project/Project.h"
 
 #include <yaml-cpp/yaml.h>
@@ -16,9 +15,6 @@
 #include <fstream>
 
 namespace quark {
-// static std::filesystem::path s_AssetDirectory = "Assets";
-// static std::filesystem::path s_AssetRegistryPath = "Assets/AssetRegistry.qkr";
-
 static AssetMetadata s_NullMetadata;
 
 static AssetType  GetAssetTypeFromString(std::string_view assetType)
@@ -32,7 +28,6 @@ static AssetType  GetAssetTypeFromString(std::string_view assetType)
 	if (assetType == "Script")				   return AssetType::SCRIPT;
 	if (assetType == "Audio")				   return AssetType::AUDIO;
 	if (assetType == "Image")				   return AssetType::IMAGE;
-	if (assetType == "Material1")			   return AssetType::MATERIAL1;
 
 	return AssetType::None;
 }
@@ -77,9 +72,10 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 		return find->second;
 	
 	AssetMetadata metadata = GetAssetMetadata(id);
-	std::filesystem::path filePath = Project::GetActive()->GetAssetDirectory() / metadata.filePath;
 	if (metadata.IsValid()) 
 	{
+		std::filesystem::path filePath = Project::GetActive()->GetAssetDirectory() / metadata.filePath;
+		std::string filePathString = filePath.string();
 		if (metadata.isDataLoaded)
 		{
 			asset = m_loadedAssets[id];
@@ -93,35 +89,20 @@ Ref<Asset> AssetManager::GetAsset(AssetID id)
 			{
 				// TODO: Use MeshSerializer instead of MeshImporter
 				MeshImporter meshImporter;
-				asset = meshImporter.ImportGLTF(filePath);
+				asset = meshImporter.ImportGLTF(filePathString);
 				break;
 			}
-			case AssetType::TEXTURE:
+			case AssetType::IMAGE:
 			{
-				// TODO: Use TextureSerializer instead of TextureImporter
-				TextureImporter textureImporter;
-				asset = textureImporter.ImportStb(filePath);
+				ImageImporter imageImporter;
+				asset = imageImporter.Import(filePathString);
 				break;
 			}
 			case AssetType::MATERIAL:
 			{
 				MaterialSerializer matSerializer;
-				Ref<Material> newMat = CreateRef<Material>();
-				if (matSerializer.TryLoadData(filePath, newMat))
-					asset = newMat;
-				break;
-			}
-			case AssetType::IMAGE:
-			{
-				ImageAssetImporter imageImporter;
-				asset = imageImporter.Import(filePath);
-				break;
-			}
-			case AssetType::MATERIAL1:
-			{
-				MaterialSerializer matSerializer;
 				Ref<MaterialAsset> newMat = CreateRef<MaterialAsset>();
-				if (matSerializer.TryLoadData(filePath, newMat))
+				if (matSerializer.TryLoadData(filePathString, newMat))
 					asset = newMat;
 				break;
 			}
@@ -341,36 +322,8 @@ void AssetManager::ReloadAssets()
 
 void AssetManager::CreateDefaultAssets()
 {
-	// Create defalult texture
-	auto& resourceMngr = RenderSystem::Get().GetRenderResourceManager();
-	defaultColorTexture = CreateRef<Texture>();
-	defaultColorTexture->image = resourceMngr.image_white;
-	defaultColorTexture->sampler = resourceMngr.sampler_linear;
-	defaultColorTexture->SetName("Default color texture");
-	
-	defaultMetalTexture = CreateRef<Texture>();
-	defaultMetalTexture->image = resourceMngr.image_white;
-	defaultMetalTexture->sampler = resourceMngr.sampler_linear;
-	defaultMetalTexture->SetName("Default metalic roughness texture");
-
-	defaultMaterial = CreateRef<Material>();
-	defaultMaterial->alphaMode = AlphaMode::MODE_OPAQUE;
-	defaultMaterial->baseColorTexture = defaultColorTexture;
-	defaultMaterial->metallicRoughnessTexture = defaultMetalTexture;
-	defaultMaterial->uniformBufferData.baseColorFactor = glm::vec4(1.0f);
-	defaultMaterial->uniformBufferData.metalicFactor = 1.0f;
-	defaultMaterial->uniformBufferData.roughNessFactor = 1.0f;
-	// TODO: Remove hardcoded shader
-	defaultMaterial->shaderProgram = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh;
-	defaultMaterial->SetName("Default material");
-	
 	MeshImporter mesh_loader;
 	mesh_cube = mesh_loader.ImportGLTF("BuiltInResources/Gltf/cube.gltf");
-
-	// All default assets' id is 1
-	defaultColorTexture->SetAssetID(1);
-	defaultMetalTexture->SetAssetID(1);
-	defaultMaterial->SetAssetID(1);
 	mesh_cube->SetAssetID(15);
 
 	AddMemoryOnlyAsset(mesh_cube);

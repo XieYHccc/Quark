@@ -89,7 +89,7 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 		auto* meshRendererCmpt = entity->GetComponent<MeshRendererCmpt>();
 		auto* meshCmpt = entity->GetComponent<MeshCmpt>();
 		QK_CORE_ASSERT(meshCmpt)
-		Ref<Mesh> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
+		Ref<MeshAsset> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
 
 		out << YAML::Key << "MeshRendererComponent";
 		out << YAML::BeginMap; // MeshRendererComponent
@@ -100,7 +100,7 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 		for (size_t i = 0; i < mesh->subMeshes.size(); i++)
 		{
 			out << YAML::BeginMap;
-			QK_SERIALIZE_PROPERTY_ASSET(AssetID, meshRendererCmpt->GetMaterial((uint32_t)i), out);
+			QK_SERIALIZE_PROPERTY(AssetID, meshRendererCmpt->GetMaterialID((uint32_t)i), out);
 			out << YAML::EndMap;
 		}
 
@@ -206,7 +206,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 			{
 				auto* mc = deserializedEntity->AddComponent<MeshCmpt>();
 				uint64_t assetId = meshCmpt["AssetID"].as<uint64_t>();
-				auto mesh = AssetManager::Get().GetAsset<Mesh>(assetId);
+				auto mesh = AssetManager::Get().GetAsset<MeshAsset>(assetId);
 				
 				mc->sharedMesh = mesh;
 				mc->uniqueMesh = nullptr;
@@ -219,7 +219,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 				auto* mc = deserializedEntity->GetComponent<MeshCmpt>();
 				QK_CORE_ASSERT(mc)
 
-				Ref<Mesh> mesh = mc->uniqueMesh ? mc->uniqueMesh : mc->sharedMesh;
+				Ref<MeshAsset> mesh = mc->uniqueMesh ? mc->uniqueMesh : mc->sharedMesh;
 				mrc->SetMesh(mesh);
 
 				auto materials = meshRendererCmpt["Materials"];
@@ -227,19 +227,7 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 				for (auto mat : materials)
 				{
 					AssetID assetId = mat["AssetID"].as<AssetID>();
-
-					if (assetId == 1)	// Default material
-					{
-						mrc->SetMaterial(i, AssetManager::Get().defaultMaterial);
-					}
-					else
-					{
-						// auto material = AssetManager::Get().GetAsset<Material>(assetId);
-						// QK_CORE_ASSERT(material)
-						// mrc->SetMaterial(i, material);
-						mrc->SetMaterial(i, assetId);
-					}
-
+					mrc->SetMaterial(i, assetId);
 					i++;
 				}
 				QK_CORE_ASSERT(i == mesh->subMeshes.size())

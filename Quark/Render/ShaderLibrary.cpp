@@ -3,7 +3,7 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Util/Hash.h"
-#include "Quark/Asset/Mesh.h"
+#include "Quark/Asset/MeshAsset.h"
 
 namespace quark {
 
