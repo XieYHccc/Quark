@@ -49,7 +49,7 @@ namespace quark
         }
     }
 
-    void RenderScene::UpdateVisibility(Visibility& out_vis, const UniformBufferData_Camera& cameraData)
+    void RenderScene::UpdateVisibility(Visibility& out_vis, const UniformBufferObject_Camera& cameraData)
     {
         out_vis.main_camera_visible_object_indexes.clear();
         out_vis.camera_ubo_data = cameraData;

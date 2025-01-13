@@ -6,7 +6,6 @@
 
 namespace quark {
 
-//TODO: move this to render module
 enum class MeshAttribute : unsigned
 {
     POSITION = 0,
@@ -17,7 +16,6 @@ enum class MeshAttribute : unsigned
     BONE_WIGHTS = 5,
     VERTEX_COLOR = 6,
     MAX_ENUM,
-    NONE
 };
 
 enum MeshAttributeFlagBits
@@ -27,7 +25,7 @@ enum MeshAttributeFlagBits
     MESH_ATTRIBUTE_NORMAL_BIT = 1u << util::ecast(MeshAttribute::NORMAL),
     MESH_ATTRIBUTE_TANGENT_BIT = 1u << util::ecast(MeshAttribute::TANGENT),
     MESH_ATTRIBUTE_BONE_INDEX_BIT = 1u << util::ecast(MeshAttribute::BONE_INDEX),
-    MESH_ATTRIBUTE_BONE_WEIGHTS_BIT = 1u << util::ecast(MeshAttribute::BONE_WIGHTS),
+    MESH_ATTRIBUTE_BONE_WEIGHT_BIT = 1u << util::ecast(MeshAttribute::BONE_WIGHTS),
     MESH_ATTRIBUTE_VERTEX_COLOR_BIT = 1u << util::ecast(MeshAttribute::VERTEX_COLOR)
 };
 
@@ -49,6 +47,8 @@ public:
     std::vector<glm::vec3> vertex_normals;
     std::vector<glm::vec3> vertex_tangents;
     std::vector<glm::vec4> vertex_colors;
+    std::vector<glm::ivec4> vertex_bone_indices;
+    std::vector<glm::vec4> vertex_bone_weights;
 
     math::Aabb aabb = {};
 

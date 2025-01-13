@@ -53,16 +53,16 @@ private:
 	// Recursively parse the source and its includes
 	bool ParseSource(const std::string& source, const std::string sourcePath, std::string& outParsedResult);
 
-	std::string m_SourcePath;
-	std::string m_Source;
-	std::string m_PreprocessedSource;
+	std::string m_sourcePath;
+	std::string m_source;
+	std::string m_preprocessedSource;
 
-	std::unordered_set<std::string> m_IncludeDependencies;
+	std::unordered_set<std::string> m_includeDependencies;
 
-	Target m_Target = Target::VULKAN_VERSION_1_1;
+	Target m_target = Target::VULKAN_VERSION_1_1;
 
-	rhi::ShaderStage m_ShaderStage = rhi::ShaderStage::MAX_ENUM;
+	rhi::ShaderStage m_shaderStage = rhi::ShaderStage::MAX_ENUM;
 
-	bool m_IsPreprocessed = false;
+	bool m_isPreprocessed = false;
 };
 }

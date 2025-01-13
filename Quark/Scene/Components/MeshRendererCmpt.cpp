@@ -7,8 +7,8 @@ namespace quark {
 void MeshRendererCmpt::SetMesh(const Ref<MeshAsset>& mesh)
 {
 	m_mesh = mesh;
-	m_material_ids.resize(mesh->subMeshes.size());
-	m_graphicsPipeLines.resize(mesh->subMeshes.size());
+	m_material_ids.assign(mesh->subMeshes.size(), 0);
+
 }
 
 void MeshRendererCmpt::SetMaterial(uint32_t index, AssetID id)

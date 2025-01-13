@@ -1,6 +1,5 @@
 #pragma once
 #include "Quark/RHI/Common.h"
-#include "Quark/Asset/MeshAsset.h"
 
 // #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
@@ -9,12 +8,12 @@
 
 namespace quark {
 
-namespace graphic {
-class Device;
-}
-
 class Scene;
 class Entity;
+class MeshAsset;
+
+struct SkeletonAsset;
+struct AnimationAsset;
 
 class GLTFImporter {
 public:
@@ -29,14 +28,15 @@ public:
 		ImportAll = ImportMaterials | ImportTextures | ImportMeshes | ImportNodes | ImportAnimations
 	};
 
-    GLTFImporter();
     GLTFImporter(Ref<rhi::Device> device);
 
     void Import(const std::string& file_path, uint32_t flags = 0);
 
-    Ref<Scene> GetScene() { return m_Scene; }
+    Ref<Scene> GetScene() { return m_scene; }
 
-    std::vector<Ref<MeshAsset>>& GetMeshes() { return m_Meshes; }
+    std::vector<Ref<MeshAsset>>& GetMeshes() { return m_meshes; }
+    std::vector<Ref<SkeletonAsset>>& GetSkeletons() { return m_skeletons; }
+    std::vector<Ref<AnimationAsset>>& GetAnimations() { return m_animations; }
 
 private:
     Ref<rhi::Sampler> ParseSampler(const tinygltf::Sampler& gltf_sampler);
@@ -45,19 +45,23 @@ private:
     Ref<MeshAsset> ParseMesh(const tinygltf::Mesh& gltf_mesh);
     Entity* ParseNode(const tinygltf::Node& gltf_node);
 
-    Ref<rhi::Device> m_GraphicDevice;
+    void LoadSkins();
+    void LoadAnimations();
+    void MatchAnimationsToSkeletons();
 
-    tinygltf::Model m_Model;
+    Ref<rhi::Device> m_rhi_device;
+    tinygltf::Model m_gltf_model;
+    Ref<Scene> m_scene;
+    std::string m_filePath;
 
-    Ref<Scene> m_Scene;
-    std::string m_FilePath;
-
-    // Temporary storage for indexing
-    std::vector<Ref<rhi::Sampler>> m_Samplers;
-    std::vector<Ref<rhi::Image>> m_Images;
-    // std::vector<Ref<Texture>> m_Textures;
+    std::vector<Ref<rhi::Sampler>> m_samplers;
+    std::vector<Ref<rhi::Image>> m_images;
     // std::vector<Ref<Material>> m_Materials;
-    std::vector<Ref<MeshAsset>> m_Meshes;
+    std::vector<Ref<MeshAsset>> m_meshes;
+    std::vector<Ref<SkeletonAsset>> m_skeletons;
+    std::vector<std::unordered_map<int, int>> m_node_to_bone_maps;
+    std::vector<Ref<AnimationAsset>> m_animations;
+    std::unordered_map<int, int> m_animation_to_skin_map;
 
     // Supported extensions mapped to whether they are enabled
     static std::unordered_map<std::string, bool> s_SupportedExtensions;

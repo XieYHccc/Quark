@@ -14,14 +14,13 @@ namespace quark
 		std::vector<uint32_t> directional_light_visible_object_indexes;
 		std::vector<uint32_t> point_lights_visible_object_indexes;
 
-		UniformBufferData_Camera camera_ubo_data;
+		UniformBufferObject_Camera camera_ubo_data;
 		math::Frustum frustum;
 	};
 
 	class RenderScene
 	{
 	public:
-
 		// lights TODO: rewrite after we have light components
 		glm::vec4 ambientColor;
 		glm::vec4 sunlightDirection; // w for sun power
@@ -31,7 +30,8 @@ namespace quark
 		std::vector<RenderObject> render_objects;
 
 		// ubo data
-		UniformBufferData_Scene ubo_data_scene;
+		Ref<rhi::Buffer> per_frame_ubo_scene;
+		UniformBufferObject_Scene ubo_data_scene;
 
 		// cache
 		std::unordered_map<uint64_t, size_t> render_object_to_offset;
@@ -44,11 +44,7 @@ namespace quark
 		void DeleteRenderObjectsByEntityID(uint64_t entity_id);
 		void AddOrUpdateRenderObject(const RenderObject& entity, uint64_t entity_id);
 
-		void UpdateVisibility(Visibility& out_vis, const UniformBufferData_Camera& cameraData);
+		void UpdateVisibility(Visibility& out_vis, const UniformBufferObject_Camera& cameraData);
 
-	private:
-		void UpdateMainCameraVisibility(const UniformBufferData_Camera& cameraData);
-		void UpdateDirectionalLightVisibility();
-		void UpdatePointLightVisibility();
 	};
 }

@@ -159,6 +159,7 @@ struct VertexInputLayout
             ATTRIB_FORMAT_VEC2,
             ATTRIB_FORMAT_VEC3,
             ATTRIB_FORMAT_VEC4,
+            ATTRIB_FORMAT_UVEC4
         };
 
         u32 binding;

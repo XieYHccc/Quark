@@ -25,12 +25,6 @@ public:
 
     void ProcessSwapData();
 
-    // these two function is used to sync rendering data with the scene
-    // void UpdateDrawContext(const Ref<Scene>& scene, DrawContext& context);
-    // void UpdateVisibility(const DrawContext& context, Visibility& vis, const UniformBufferData_Camera& cameraData);
-    //
-    // void UpdateGpuResources(DrawContext& context, Visibility& vis);
-
     // update per frame buffer first then draw
     void DrawSkybox(uint64_t env_map_id, rhi::CommandList* cmd);
     void DrawGrid(rhi::CommandList* cmd);
@@ -39,11 +33,8 @@ public:
    
 private:
     Ref<rhi::Device> m_device;
-
     Scope<RenderResourceManager> m_renderResourceManager;
-
     RenderSwapContext m_swapContext;
-
     Ref<RenderScene> m_renderScene;
 
 };

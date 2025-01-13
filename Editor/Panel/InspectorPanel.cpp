@@ -329,14 +329,20 @@ void InspectorPanel::OnImGuiUpdate()
 			{
                 auto id = component.GetMaterialID(i);
 
-                std::filesystem::path materialAssetPath = id != 0 ?
-					AssetManager::Get().GetAssetMetadata(id).filePath : std::filesystem::path("Default material");
+                std::filesystem::path materialAssetPath = "Default material";
+                if (id != 0)
+                {
+                    materialAssetPath = AssetManager::Get().GetAssetMetadata(id).filePath;
+                }
 
 				ImGui::Text("Material %u", i);
                 if (ImGui::Button(materialAssetPath.string().c_str()))
                 {
-                    m_SelectedMaterial = AssetManager::Get().GetAsset<MaterialAsset>(id);
-                    SetInspectorViewType(InspectorViewType::MATERIAL);
+                    if (id != 0)
+                    {
+                        m_SelectedMaterial = AssetManager::Get().GetAsset<MaterialAsset>(id);
+                        SetInspectorViewType(InspectorViewType::MATERIAL);
+                    }
                 }
 
                 ImGui::SameLine();

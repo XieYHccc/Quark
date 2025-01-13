@@ -1,8 +1,9 @@
 #include "Editor/EditorApp.h"
 
 #include <Quark/Quark.h>
-#include <Quark/Asset/ImageImporter.h>
 #include <Quark/EntryPoint.h>
+#include <Quark/Asset/ImageImporter.h>
+#include <Quark/Asset/GLTFImporter.h>
 
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -31,9 +32,16 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
 {
     CreateGraphicResources();
 
+    GLTFImporter importer(m_graphicDevice);
+    importer.Import("BuiltInResources/Gltf/CesiumMan/glTF/CesiumMan.gltf", GLTFImporter::ImportAll);
+    Ref<SkeletonAsset> skeleton = importer.GetSkeletons()[0];
+    Ref<AnimationAsset> animation = importer.GetAnimations()[0];
+    AssetManager::Get().AddMemoryOnlyAsset(skeleton);
+    AssetManager::Get().AddMemoryOnlyAsset(animation);
+
     // load cube map
     ImageImporter imageLoader;
-    auto cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
+    Ref<ImageAsset> cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
     m_cubeMapId = cubeMap->GetAssetID();
     AssetManager::Get().AddMemoryOnlyAsset(cubeMap);
 
@@ -42,6 +50,12 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     // serializer.Serialize("SandboxProject/Sandbox.qkproject");
 
     OpenProject("SandboxProject/Sandbox.qkproject");
+
+    Entity* cesium_entity = m_scene->CreateEntity("Cesium");
+    m_scene->AddArmatureComponent(cesium_entity, skeleton);
+    auto* anim_cmpt = cesium_entity->AddComponent<AnimationCmpt>();
+    anim_cmpt->animation_asset_id = animation->GetAssetID();
+
 
     // register event callbacks
     EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
@@ -52,7 +66,7 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
 EditorApp::~EditorApp()
 {   
     // save asset registry
-    //AssetManager::Get().SaveAssetRegistry();
+    // AssetManager::Get().SaveAssetRegistry();
 }
 
 void EditorApp::OnUpdate(TimeStep ts)
@@ -64,7 +78,7 @@ void EditorApp::OnUpdate(TimeStep ts)
         m_editorCamera.OnUpdate(ts);
 
     // update scene
-    m_scene->OnUpdate();
+    m_scene->OnUpdate(ts);
 
     // TODO: Update physics
 
@@ -87,7 +101,7 @@ void EditorApp::OnUpdate(TimeStep ts)
     }
 
     // Sync the rendering data with game scene
-    UniformBufferData_Camera cameraData;
+    UniformBufferObject_Camera cameraData;
     cameraData.proj = m_editorCamera.GetProjectionMatrix();
     cameraData.proj[1][1] *= -1;
     cameraData.view = m_editorCamera.GetViewMatrix();

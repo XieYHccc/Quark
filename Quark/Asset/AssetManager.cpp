@@ -23,7 +23,6 @@ static AssetType  GetAssetTypeFromString(std::string_view assetType)
 	if (assetType == "Scene")				   return AssetType::SCENE;
 	if (assetType == "Mesh")				   return AssetType::MESH;
 	if (assetType == "Material")			   return AssetType::MATERIAL;
-	if (assetType == "Texture")				   return AssetType::TEXTURE;
 	if (assetType == "Shader")				   return AssetType::SHADER;
 	if (assetType == "Script")				   return AssetType::SCRIPT;
 	if (assetType == "Audio")				   return AssetType::AUDIO;
@@ -38,7 +37,8 @@ static std::string AssetTypeToString(AssetType type)
 	case AssetType::SCENE: 					   return "Scene";
 	case AssetType::MESH: 					   return "Mesh";
 	case AssetType::MATERIAL: 				   return "Material";
-	case AssetType::TEXTURE: 				   return "Texture";
+	case AssetType::IMAGE: 				       return "Image";
+	case AssetType::SKELETON: 				   return "Skeleton";
 	case AssetType::SHADER: 				   return "Shader";
 	case AssetType::SCRIPT: 				   return "Script";
 	case AssetType::AUDIO: 					   return "Audio";

@@ -16,6 +16,10 @@ uint32_t MeshAsset::GetMeshAttributeMask() const
         result |= MESH_ATTRIBUTE_NORMAL_BIT;
     if (!vertex_colors.empty())
         result |= MESH_ATTRIBUTE_VERTEX_COLOR_BIT;
+    if (!vertex_bone_indices.empty())
+        result |= MESH_ATTRIBUTE_BONE_INDEX_BIT;
+    if (!vertex_bone_weights.empty())
+        result |= MESH_ATTRIBUTE_BONE_WEIGHT_BIT;
 
     return result;
 }

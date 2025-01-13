@@ -31,7 +31,7 @@ private:
 
 	// TODO: Change this when we have a render graph system
 	// A mesh could be processed through multiple render pass and multiple pipelines
-	std::vector<Ref<rhi::PipeLine>> m_graphicsPipeLines;
+	// std::vector<Ref<rhi::PipeLine>> m_graphicsPipeLines;
 
 	// Local rendering state
 	ShaderVariantKey m_cachedProgramVatriantKey;

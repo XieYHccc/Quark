@@ -388,6 +388,9 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
             case VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4:
                 attributes[i].format = VK_FORMAT_R32G32B32A32_SFLOAT;
                 break;
+            case VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_UVEC4:
+                attributes[i].format = VK_FORMAT_R32G32B32A32_UINT;
+				break;
             default:
                 QK_CORE_VERIFY(0)
                 break;

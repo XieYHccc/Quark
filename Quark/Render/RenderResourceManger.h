@@ -62,7 +62,7 @@ namespace quark
 
 		RenderResourceManager(Ref<rhi::Device> device);
 
-		ShaderLibrary& GetShaderLibrary() { return *m_shaderLibrary; }
+		ShaderLibrary& GetShaderLibrary() { return *m_shader_library; }
 
 		// these function will overwrite the existing resouce
 		// check if the asset is already registerd before calling these functions
@@ -79,25 +79,21 @@ namespace quark
 		Ref<rhi::Image> GetImage(uint64_t image_id);
 
     	Ref<rhi::PipeLine> GetOrCreateGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, const uint32_t mesh_attrib_mask, bool enableDepth, AlphaMode mode);
-		Ref<rhi::VertexInputLayout> GetOrCreateVertexInputLayout(uint32_t meshAttributesMask);
 		rhi::VertexInputLayout& GetOrCreateMeshVertexLayout(uint32_t meshAttributesMask);
 
+		void UpdateRenderResources(const Ref<RenderScene>& scene);
 		void UpdatePerFrameBuffer(const Ref<RenderScene>& scene);
-		void UpdateMeshRenderResource(AssetID mesh_id);
 
 	private:
 		Ref<rhi::Device> m_device;
-		Scope<ShaderLibrary> m_shaderLibrary;
+		Scope<ShaderLibrary> m_shader_library;
 
-		// caching
+		// cached render resources
 		std::unordered_map<uint64_t, RenderMesh> m_render_meshes;
 		std::unordered_map<uint64_t, RenderPBRMaterial> m_render_materials;
 		std::unordered_map<uint64_t, rhi::VertexInputLayout> m_mesh_vertex_layouts;
 		std::unordered_map<uint64_t, Ref<rhi::Image>> m_images;
-		std::unordered_map<uint64_t, Ref<rhi::PipeLine>> m_cached_pipelines;
-    	std::unordered_map<uint64_t, Ref<rhi::VertexInputLayout>> m_cached_vertexInputLayouts;
-
-		// 
+		std::unordered_map<uint64_t, Ref<rhi::PipeLine>> m_cached_psos;
 	};
 
 }

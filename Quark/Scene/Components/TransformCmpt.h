@@ -53,7 +53,7 @@ private:
         PARENT_DIRTY = 1 << 1 // Need to update parent world matrix
     };
 
-    uint32_t m_flags = Flags::DIRTY;
+    uint32_t m_flags = Flags::DIRTY | Flags::PARENT_DIRTY;
 
     glm::quat m_localQuat;
     glm::vec3 m_localPosition;

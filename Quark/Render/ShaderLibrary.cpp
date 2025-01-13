@@ -203,6 +203,10 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const ShaderVariantKey
 			ops.AddDefine("HAVE_UV");
 		if (key.meshAttributeMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
 			ops.AddDefine("HAVE_VERTEX_COLOR");
+		if (key.meshAttributeMask & MESH_ATTRIBUTE_BONE_INDEX_BIT)
+			ops.AddDefine("HAVE_BONE_INDEX");
+		if (key.meshAttributeMask & MESH_ATTRIBUTE_BONE_WEIGHT_BIT)
+			ops.AddDefine("HAVE_BONE_WEIGHT");
 
 		std::string messages;
 		std::vector<uint32_t> spirv;

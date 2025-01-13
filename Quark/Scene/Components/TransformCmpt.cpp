@@ -3,6 +3,7 @@
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
+#include "Quark/Scene/Components/MeshRendererCmpt.h"
 
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -29,42 +30,48 @@ glm::mat4 TransformCmpt::GetLocalMatrix()
 
 void TransformCmpt::SetLocalRotate(const glm::quat &quat)
 {
-    SetDirty(true);
-    PropagateDirtyFlagToChilds();
+    if (!IsParentDirty() && !IsDirty())
+        PropagateDirtyFlagToChilds();
 
     m_localQuat = quat;
+    SetDirty(true);
 }
 
 void TransformCmpt::SetLocalRotate(const glm::vec3& euler_angle)
 {
-    SetDirty(true);
-    PropagateDirtyFlagToChilds();
+    if (!IsParentDirty() && !IsDirty())
+        PropagateDirtyFlagToChilds();
 
     m_localQuat = glm::quat(euler_angle); 
+    SetDirty(true);
 }
 
 void TransformCmpt::SetLocalPosition(const glm::vec3& position)
 {
-    SetDirty(true);
-    PropagateDirtyFlagToChilds();
-
     m_localPosition = position;
+
+    if (!IsParentDirty() && !IsDirty())
+        PropagateDirtyFlagToChilds();
+
+    SetDirty(true);
 }
 
 void TransformCmpt::SetLocalScale(const glm::vec3& scale)
 {
-    SetDirty(true);
-    PropagateDirtyFlagToChilds();
+    if (!IsParentDirty() && !IsDirty())
+        PropagateDirtyFlagToChilds();
 
     m_localScale = scale;
+    SetDirty(true);
 }
 
 void TransformCmpt::SetLocalMatrix(const glm::mat4 &trs)
 {
-    SetDirty(true);
-    PropagateDirtyFlagToChilds();
+    if (!IsParentDirty() && !IsDirty())
+        PropagateDirtyFlagToChilds();
 
     math::DecomposeTransform(trs, m_localPosition , m_localQuat, m_localScale);
+    SetDirty(true);
 }
 
 glm::vec3 TransformCmpt::GetWorldPosition()
@@ -180,15 +187,18 @@ void TransformCmpt::Scale(const glm::vec3& scale)
 
 void TransformCmpt::UpdateWorldMatrix()
 {
-    m_worldMatrix = GetLocalMatrix() * m_parentWorldMatrix;
+    m_worldMatrix =  m_parentWorldMatrix * GetLocalMatrix();
 }
 
 void TransformCmpt::UpdateWorldMatrix_Parent()
 {
     Entity* parent = GetEntity()->GetComponent<RelationshipCmpt>()->GetParentEntity();
-    QK_CORE_VERIFY(parent);
+    if (parent)
+    {
+        auto* parent_transform = parent->GetComponent<TransformCmpt>();
+        m_parentWorldMatrix = parent_transform->GetWorldMatrix();
+    }
 
-    auto* parent_transform = parent->GetComponent<TransformCmpt>();
     UpdateWorldMatrix();
 }
 
@@ -210,15 +220,16 @@ void TransformCmpt::SetParentDirty(bool b)
 
 void TransformCmpt::PropagateDirtyFlagToChilds()
 {
+    auto* mesh_renderer_cmpt = GetEntity()->GetComponent<MeshRendererCmpt>();
+    if (mesh_renderer_cmpt)
+        mesh_renderer_cmpt->SetDirty(true);
+
     auto* relationshipCmpt = GetEntity()->GetComponent<RelationshipCmpt>();
 	for (auto* child : relationshipCmpt->GetChildEntities())
 	{
 		auto* transform = child->GetComponent<TransformCmpt>();
-        if (!transform->IsParentDirty())
-        {
-            transform->SetParentDirty(true);
-            transform->PropagateDirtyFlagToChilds();
-        }
+        transform->SetParentDirty(true);
+        transform->PropagateDirtyFlagToChilds();
 	}
 }
 

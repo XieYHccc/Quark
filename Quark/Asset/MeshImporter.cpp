@@ -12,7 +12,7 @@
 namespace quark {
 
 Ref<MeshAsset> MeshImporter::ImportGLTF(const std::string& filepath) {
-	GLTFImporter gltf_importer;
+	GLTFImporter gltf_importer(Application::Get().GetGraphicDevice());
 	GLTFImporter::ImportingFlags flags = GLTFImporter::ImportingFlags::ImportMeshes;
     gltf_importer.Import(filepath, flags);
 

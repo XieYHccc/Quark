@@ -81,16 +81,16 @@ void GLSLCompiler::CompileOptions::FixLine(std::string& line)
 
 void GLSLCompiler::SetTarget(Target target)
 {
-	m_Target = target;
+	m_target = target;
 }
 
 void GLSLCompiler::SetSource(std::string source, std::string sourcePath, rhi::ShaderStage stage)
 {
 	Clear();
 
-	m_Source = std::move(source);
-	m_SourcePath = std::move(sourcePath);
-	m_ShaderStage = stage;
+	m_source = std::move(source);
+	m_sourcePath = std::move(sourcePath);
+	m_shaderStage = stage;
 }
 
 void GLSLCompiler::SetSourceFromFile(const std::string& filePath, rhi::ShaderStage stage)
@@ -104,9 +104,9 @@ void GLSLCompiler::SetSourceFromFile(const std::string& filePath, rhi::ShaderSta
 		return;
 	}
 
-	m_ShaderStage = stage;
-	m_Source = std::move(source);
-	m_SourcePath = filePath;
+	m_shaderStage = stage;
+	m_source = std::move(source);
+	m_sourcePath = filePath;
 }
 
 bool GLSLCompiler::Compile(std::string& outMessages, std::vector<uint32_t>& outSpirv, const CompileOptions& ops)
@@ -115,24 +115,24 @@ bool GLSLCompiler::Compile(std::string& outMessages, std::vector<uint32_t>& outS
 	// Initialize glslang library.
 	glslang::InitializeProcess();
 
-	if (m_Source.empty())
+	if (m_source.empty())
 	{
 		QK_CORE_LOGE_TAG("Rernderer", "GLSLCompiler::Compile: Source is empty. Please set source first");
 		return false;
 	}
 
-	if (!m_IsPreprocessed)
+	if (!m_isPreprocessed)
 	{
 		PreProcess();
-		m_IsPreprocessed = true;
+		m_isPreprocessed = true;
 	}
 
 	EShMessages messages = static_cast<EShMessages>(EShMsgDefault | EShMsgVulkanRules | EShMsgSpvRules);
-	EShLanguage language = FindShaderLanguage(m_ShaderStage);
+	EShLanguage language = FindShaderLanguage(m_shaderStage);
 
 	std::string entryPoint = "main";
-	const char* fileNameList[1] = { m_SourcePath.c_str()};
-	const char* shaderSource = reinterpret_cast<const char*>(m_PreprocessedSource.data());
+	const char* fileNameList[1] = { m_sourcePath.c_str()};
+	const char* shaderSource = reinterpret_cast<const char*>(m_preprocessedSource.data());
 
 	glslang::TShader shader(language);
 	shader.setStringsWithLengthsAndNames(&shaderSource, nullptr, fileNameList, 1);
@@ -142,8 +142,8 @@ bool GLSLCompiler::Compile(std::string& outMessages, std::vector<uint32_t>& outS
 	shader.addProcesses(ops.GetProcesses());
 
 	// TODO: Remove hard coded Env Client and Target
-	shader.setEnvTarget(s_TargetLanguage, m_Target == Target::VULKAN_VERSION_1_3? glslang::EShTargetSpv_1_6 : glslang::EShTargetSpv_1_3);
-	shader.setEnvClient(glslang::EShClientVulkan, m_Target == Target::VULKAN_VERSION_1_3 ? glslang::EShTargetVulkan_1_3 : glslang::EShTargetVulkan_1_1);
+	shader.setEnvTarget(s_TargetLanguage, m_target == Target::VULKAN_VERSION_1_3? glslang::EShTargetSpv_1_6 : glslang::EShTargetSpv_1_3);
+	shader.setEnvClient(glslang::EShClientVulkan, m_target == Target::VULKAN_VERSION_1_3 ? glslang::EShTargetVulkan_1_3 : glslang::EShTargetVulkan_1_1);
 
 
 	DirStackFileIncluder includeDir;
@@ -201,19 +201,19 @@ bool GLSLCompiler::Compile(std::string& outMessages, std::vector<uint32_t>& outS
 
 void GLSLCompiler::Clear()
 {
-	m_Source.clear();
-	m_SourcePath.clear();
-	m_PreprocessedSource.clear();
-	m_IncludeDependencies.clear();
-	m_IsPreprocessed = false;
+	m_source.clear();
+	m_sourcePath.clear();
+	m_preprocessedSource.clear();
+	m_includeDependencies.clear();
+	m_isPreprocessed = false;
 
 }
 
 void GLSLCompiler::PreProcess()
 {
-	m_PreprocessedSource.clear();
+	m_preprocessedSource.clear();
 
-	ParseSource(m_Source, m_SourcePath, m_PreprocessedSource);
+	ParseSource(m_source, m_sourcePath, m_preprocessedSource);
 }
 
 bool GLSLCompiler::ParseSource(const std::string& source, const std::string sourcePath, std::string& outParsedResult)
@@ -260,7 +260,7 @@ bool GLSLCompiler::ParseSource(const std::string& source, const std::string sour
 				outParsedResult += incSourceline + "\n";
 			outParsedResult += util::string::Join("#line ", lineIndex + 1, " \"", sourcePath, "\"\n");
 
-			m_IncludeDependencies.insert(includePath);
+			m_includeDependencies.insert(includePath);
 		}
 		else
 		{
@@ -285,7 +285,5 @@ bool GLSLCompiler::ParseSource(const std::string& source, const std::string sour
 
 	return true;
 }
-
-
 
 };

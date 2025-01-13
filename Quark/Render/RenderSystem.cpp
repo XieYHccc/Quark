@@ -41,29 +41,30 @@ void RenderSystem::ProcessSwapData()
             for (size_t section_index = 0; section_index < renderProxy.mesh_sections.size(); section_index++)
             {   
                 const MeshSectionDesc& section_desc = renderProxy.mesh_sections[section_index];
-                RenderObject new_entity;
+                RenderObject new_render_obj;
 
                 // calculate entity's hash id
                 util::Hasher hasher;
                 hasher.u64(renderProxy.entity_id);
                 hasher.u64(section_index);
-                new_entity.id = hasher.get();
+                uint64_t entity_id = hasher.get();
+                new_render_obj.id = entity_id;
 
-                new_entity.model_matrix = renderProxy.transform;
-                new_entity.aabb = section_desc.aabb;
-                new_entity.render_mesh_id = renderProxy.mesh_asset_id;
-                new_entity.render_material_id = section_desc.material_asset_id;
-                new_entity.index_count = section_desc.index_count;
-                new_entity.start_index = section_desc.index_offset;
+                new_render_obj.model_matrix = renderProxy.transform;
+                new_render_obj.aabb = section_desc.aabb;
+                new_render_obj.render_mesh_id = renderProxy.mesh_asset_id;
+                new_render_obj.render_material_id = section_desc.material_asset_id;
+                new_render_obj.index_count = section_desc.index_count;
+                new_render_obj.start_index = section_desc.index_offset;
 
-                // create render resources
+                // create mesh render resources
                 if (!m_renderResourceManager->IsMeshAssetRegisterd(renderProxy.mesh_asset_id)) 
                     m_renderResourceManager->CreateMeshRenderResouce(renderProxy.mesh_asset_id);
 
                 if (section_desc.material_asset_id == 0)
                 {
                     // use default material
-                    new_entity.render_material_id = m_renderResourceManager->default_material_id;
+                    new_render_obj.render_material_id = m_renderResourceManager->default_material_id;
                 }
                 else 
                 {
@@ -71,18 +72,34 @@ void RenderSystem::ProcessSwapData()
                     if (!m_renderResourceManager->IsMaterialAssetRegisterd(section_desc.material_asset_id))
                         m_renderResourceManager->CreateMaterialRenderResource(section_desc.material_asset_id);
                 }
-                
+                // TODO: REMOVE
+                if (renderProxy.joint_matrices.size() > 0)
+                {
+                    new_render_obj.enable_vertex_blending = true;
+                    rhi::BufferDesc joint_matrics_ssbo_desc;
+                    joint_matrics_ssbo_desc.domain = rhi::BufferMemoryDomain::CPU;
+                    joint_matrics_ssbo_desc.size = sizeof(PerDrawCall_StorageBufferObject_EnableMeshVertexBlending);
+                    joint_matrics_ssbo_desc.usageBits = rhi::BUFFER_USAGE_STORAGE_BUFFER_BIT;
+                    new_render_obj.perdrawcall_ssbo_mesh_joint_matrices = m_device->CreateBuffer(joint_matrics_ssbo_desc);
+                    PerDrawCall_StorageBufferObject_EnableMeshVertexBlending& joint_matrices_ssbo_mapped_data =
+                        *(PerDrawCall_StorageBufferObject_EnableMeshVertexBlending*)new_render_obj.perdrawcall_ssbo_mesh_joint_matrices->GetMappedDataPtr();
+                    for (size_t i = 0; i < renderProxy.joint_matrices.size(); i++)
+                    {
+                        joint_matrices_ssbo_mapped_data.joint_matrices[i] = renderProxy.joint_matrices[i];
+                    }
+                }
+
                 // add to render scene
-                auto find = m_renderScene->render_object_to_offset.find(new_entity.id);
+                auto find = m_renderScene->render_object_to_offset.find(new_render_obj.id);
                 if (find != m_renderScene->render_object_to_offset.end())
                 {
-                    m_renderScene->render_objects[find->second] = new_entity;
+                    m_renderScene->render_objects[find->second] = new_render_obj;
                 }
                 else
                 {
-                    m_renderScene->render_objects.push_back(new_entity);
-                    m_renderScene->render_object_to_offset[new_entity.id] = m_renderScene->render_objects.size() - 1;
-                    m_renderScene->render_object_to_entity[new_entity.id] = renderProxy.entity_id;
+                    m_renderScene->render_objects.push_back(new_render_obj);
+                    m_renderScene->render_object_to_offset[new_render_obj.id] = m_renderScene->render_objects.size() - 1;
+                    m_renderScene->render_object_to_entity[new_render_obj.id] = renderProxy.entity_id;
                 }
 
             }
@@ -111,119 +128,9 @@ void RenderSystem::ProcessSwapData()
         renderSwapData.camera_swap_data.reset();
     }
 
-
     m_renderResourceManager->UpdatePerFrameBuffer(m_renderScene);
 
 }
-
-//void RenderSystem::UpdateDrawContext(const Ref<Scene>& scene, DrawContext& context)
-//{
-//    // update light data
-//    context.sceneData.ambientColor = glm::vec4(.1f);
-//    context.sceneData.sunlightColor = glm::vec4(1.f);
-//    context.sceneData.sunlightDirection = glm::vec4(0, 1, 0.5, 1.f);
-//
-//    // Update render objects
-//    context.objects_opaque.clear();
-//    context.objects_transparent.clear();
-//
-//    const auto& cmpts = scene->GetComponents<IdCmpt, MeshCmpt, MeshRendererCmpt, TransformCmpt>();
-//    for (const auto [id_cmpt, mesh_cmpt, mesh_renderer_cmpt, transform_cmpt] : cmpts)
-//    {
-//        auto* mesh = mesh_cmpt->uniqueMesh ? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
-//        if (!mesh) 
-//            continue;
-//
-//        for (uint32_t i = 0; i < mesh->subMeshes.size(); ++i) {
-//            const auto& submesh = mesh->subMeshes[i];
-//
-//            RenderObject newObj;
-//            newObj.aabb = submesh.aabb;
-//            newObj.firstIndex = submesh.startIndex;
-//            newObj.indexCount = submesh.count;
-//            newObj.indexBuffer = mesh->GetIndexBuffer();
-//            newObj.attributeBuffer = mesh->GetAttributeBuffer();
-//            newObj.positionBuffer = mesh->GetPositionBuffer();
-//            newObj.material = mesh_renderer_cmpt->GetMaterial(i);
-//            newObj.transform = transform_cmpt->GetWorldMatrix();
-//            newObj.mainPassPipeLine = mesh_renderer_cmpt->GetGraphicsPipeLine(i);
-//            newObj.entityID = id_cmpt->id;
-//            if (newObj.material->alphaMode == AlphaMode::MODE_OPAQUE)
-//                context.objects_opaque.push_back(newObj);
-//            else
-//                context.objects_transparent.push_back(newObj);
-//        }
-//    }
-//}
-//
-//void RenderSystem::UpdateVisibility(const DrawContext& drawContext, Visibility& vis, const UniformBufferData_Camera& cameraData)
-//{
-//	vis.visible_opaque.clear();
-//    vis.visible_transparent.clear();
-//    vis.cameraData = cameraData;
-//    vis.frustum.Build(glm::inverse(cameraData.viewproj));
-//
-//    auto is_visible = [&](const RenderObject& obj)
-//    {
-//        math::Aabb transformed_aabb = obj.aabb.Transform(obj.transform);
-//        if (vis.frustum.CheckSphere(transformed_aabb))
-//            return true;
-//        else
-//            return false;
-//    };
-//
-//    for (size_t i = 0; i < drawContext.objects_opaque.size(); i++)
-//    {
-//        if (is_visible(drawContext.objects_opaque[i]))
-//            vis.visible_opaque.push_back((uint32_t)i);
-//    }
-//
-//    for (size_t i = 0; i < drawContext.objects_transparent.size(); i++)
-//    {
-//        if (is_visible(drawContext.objects_transparent[i]))
-//            vis.visible_transparent.push_back((uint32_t)i);
-//    }
-//
-//    // Sort render objects by material, pipleine and mesh
-//    // The number of materials < the number of pipelines < the number of meshes
-//    std::sort(vis.visible_opaque.begin(), vis.visible_opaque.end(), [&](const uint32_t& iA, const uint32_t& iB)
-//    {
-//        const RenderObject& A = drawContext.objects_opaque[iA];
-//        const RenderObject& B = drawContext.objects_opaque[iB];
-//        if (A.material == B.material)
-//            return A.indexBuffer < B.indexBuffer;
-//        else
-//            return A.material < B.material;
-//    });
-//
-//    std::sort(vis.visible_transparent.begin(), vis.visible_transparent.end(), [&](const uint32_t& iA, const uint32_t& iB)
-//    {
-//        const RenderObject& A = drawContext.objects_transparent[iA];
-//        const RenderObject& B = drawContext.objects_transparent[iB];
-//        if (A.material == B.material)
-//            return A.indexBuffer < B.indexBuffer;
-//        else
-//            return A.material < B.material;
-//    });
-//}
-//
-//void RenderSystem::UpdateGpuResources(DrawContext& context, Visibility& vis)
-//{
-//    // create scene uniform buffer per frame
-//	BufferDesc desc;
-//	desc.domain = BufferMemoryDomain::CPU;
-//	desc.size = sizeof(UniformBufferData_Scene);
-//	desc.usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-//	context.sceneUB = m_device->CreateBuffer(desc);
-//    context.sceneData.cameraUboData = vis.cameraData;
-//
-//    UniformBufferData_Scene sceneData = context.sceneData;
-//	sceneData.cameraUboData = vis.cameraData;
-//
-//    UniformBufferData_Scene* mappedData = (UniformBufferData_Scene*)context.sceneUB->GetMappedDataPtr();
-//	*mappedData = sceneData;
-//
-//}
 
 void RenderSystem::DrawSkybox(uint64_t env_map_id, rhi::CommandList* cmd)
 {
@@ -243,7 +150,7 @@ void RenderSystem::DrawSkybox(uint64_t env_map_id, rhi::CommandList* cmd)
         m_renderResourceManager->mesh_attrib_mask_skybox,
         false, AlphaMode::MODE_OPAQUE);
 
-    cmd->BindUniformBuffer(0, 0, *m_renderResourceManager->ubo_scene, 0, sizeof(UniformBufferData_Scene));
+    cmd->BindUniformBuffer(0, 0, *m_renderResourceManager->ubo_scene, 0, sizeof(UniformBufferObject_Scene));
 
     cmd->BindImage(1, 0, *envMap, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd->BindSampler(1, 0, *m_renderResourceManager->sampler_cube);
@@ -260,7 +167,7 @@ void RenderSystem::DrawGrid(rhi::CommandList* cmd)
         *m_renderResourceManager->GetShaderLibrary().staticProgram_infiniteGrid,
         cmd->GetCurrentRenderPassInfo(), 0, true, AlphaMode::MODE_OPAQUE);
     
-    cmd->BindUniformBuffer(0, 0, *m_renderResourceManager->ubo_scene, 0, sizeof(UniformBufferData_Scene));
+    cmd->BindUniformBuffer(0, 0, *m_renderResourceManager->ubo_scene, 0, sizeof(UniformBufferObject_Scene));
 
     cmd->BindPipeLine(*infiniteGrid_pipeline);
     cmd->Draw(6, 1, 0, 0);
@@ -284,7 +191,7 @@ void RenderSystem::DrawScene(const RenderScene& scene, const Visibility& vis, rh
             return A.render_material_id < B.render_material_id;
     });
 
-    cmd->BindUniformBuffer(0, 0, *m_renderResourceManager->ubo_scene, 0, sizeof(UniformBufferData_Scene));
+    cmd->BindUniformBuffer(0, 0, *m_renderResourceManager->ubo_scene, 0, sizeof(UniformBufferObject_Scene));
     auto draw = [&](const RenderObject& obj)
     {
         // rebind material
@@ -311,9 +218,18 @@ void RenderSystem::DrawScene(const RenderScene& scene, const Visibility& vis, rh
 			lastMesh = &m_renderResourceManager->GetRenderMesh(obj.render_mesh_id);
 			cmd->BindVertexBuffer(0, *lastMesh->vertex_position_buffer, 0);
 			cmd->BindVertexBuffer(1, *lastMesh->vertex_varying_enable_blending_buffer, 0);
-            cmd->BindVertexBuffer(2, *lastMesh->vertex_varying_buffer, 0);
+            if (lastMesh->vertex_varying_buffer)
+                cmd->BindVertexBuffer(2, *lastMesh->vertex_varying_buffer, 0);
+            if (lastMesh->vertex_joint_binding_buffer)
+                cmd->BindVertexBuffer(3, *lastMesh->vertex_joint_binding_buffer, 0);
 			cmd->BindIndexBuffer(*lastMesh->index_buffer, 0, IndexBufferFormat::UINT32);
 		}
+
+        // bind joint matrics
+        if (obj.enable_vertex_blending)
+        {
+            cmd->BindStorageBuffer(2, 0, *obj.perdrawcall_ssbo_mesh_joint_matrices, 0, sizeof(PerDrawCall_StorageBufferObject_EnableMeshVertexBlending));
+        }
 
         // push model constant
         PushConstants_Model push_constant;
@@ -338,7 +254,7 @@ void RenderSystem::DrawEntityID(const RenderScene& scene, const Visibility& vis,
 {
     QK_CORE_ASSERT(cmd->GetCurrentRenderPassInfo().colorAttachmentFormats[0] == rhi::DataFormat::R32G32_UINT);
     
-    cmd->BindUniformBuffer(0, 0, *m_renderResourceManager->ubo_scene, 0, sizeof(UniformBufferData_Scene));
+    cmd->BindUniformBuffer(0, 0, *m_renderResourceManager->ubo_scene, 0, sizeof(UniformBufferObject_Scene));
     cmd->BindPipeLine(*m_renderResourceManager->pipeline_entityID);
 
     for (const uint32_t idx : vis.main_camera_visible_object_indexes)

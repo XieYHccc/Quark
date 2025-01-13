@@ -22,6 +22,7 @@ namespace quark
         glm::mat4 transform;
 
         std::vector<MeshSectionDesc> mesh_sections;
+        std::vector<glm::mat4> joint_matrices;
     };
 
     struct CameraSwapData 
@@ -33,6 +34,7 @@ namespace quark
     struct RenderSwapData 
     {
         std::vector<StaticMeshRenderProxy> dirty_static_mesh_render_proxies;
+
         std::vector<uint64_t> to_delete_entities;
         std::optional<CameraSwapData> camera_swap_data;
     };  

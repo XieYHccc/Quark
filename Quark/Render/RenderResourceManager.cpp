@@ -11,7 +11,7 @@ namespace quark
         using namespace rhi;
 
         QK_CORE_VERIFY(device);
-        m_shaderLibrary = CreateScope<ShaderLibrary>();
+        m_shader_library = CreateScope<ShaderLibrary>();
 
         // depth stencil states
         {
@@ -239,7 +239,7 @@ namespace quark
     void RenderResourceManager::CreateMeshRenderResouce(AssetID mesh_asset_id)
     {
         auto mesh_asset = AssetManager::Get().GetAsset<MeshAsset>(mesh_asset_id);
-        QK_CORE_VERIFY(mesh_asset)
+        QK_CORE_VERIFY(mesh_asset);
 
         RenderMesh new_render_mesh;
         new_render_mesh.vertex_count = mesh_asset->GetVertexCount();
@@ -260,6 +260,7 @@ namespace quark
         uint64_t vertex_position_buffer_size = sizeof(glm::vec3) * mesh_asset->vertex_positions.size();
         uint64_t vertex_varying_enable_blending_buffer_size = 0;
         uint64_t vertex_varying_buffer_size = 0;
+        uint64_t vertex_joint_binding_buffer_size = 0;
 
         if (!mesh_asset->vertex_normals.empty())
             vertex_varying_enable_blending_buffer_size += sizeof(glm::vec3) * mesh_asset->vertex_normals.size();
@@ -267,9 +268,14 @@ namespace quark
             vertex_varying_enable_blending_buffer_size += sizeof(glm::vec3) * mesh_asset->vertex_tangents.size();
         if (!mesh_asset->vertex_uvs.empty())
             vertex_varying_buffer_size += sizeof(glm::vec2) * mesh_asset->vertex_uvs.size();
+        if (!mesh_asset->vertex_bone_indices.empty())
+            vertex_joint_binding_buffer_size += sizeof(glm::uvec4) * mesh_asset->vertex_bone_indices.size();
+        if (!mesh_asset->vertex_bone_weights.empty())
+            vertex_joint_binding_buffer_size += sizeof(glm::vec4) * mesh_asset->vertex_bone_weights.size();
 
         rhi::BufferDesc stage_buffer_desc;
-        stage_buffer_desc.size = vertex_position_buffer_size + vertex_varying_enable_blending_buffer_size + vertex_varying_buffer_size;
+        stage_buffer_desc.size = vertex_position_buffer_size + vertex_varying_enable_blending_buffer_size +
+            vertex_varying_buffer_size + vertex_joint_binding_buffer_size;
         stage_buffer_desc.usageBits = rhi::BUFFER_USAGE_TRANSFER_FROM_BIT;
         stage_buffer_desc.domain = rhi::BufferMemoryDomain::CPU;
         Ref<rhi::Buffer> stage_buffer = m_device->CreateBuffer(stage_buffer_desc, nullptr);
@@ -280,13 +286,16 @@ namespace quark
         uint64_t vertex_position_buffer_offset = 0;
         uint64_t vertex_varying_enable_blending_buffer_offset = vertex_position_buffer_offset + vertex_position_buffer_size;
         uint64_t vertex_varying_buffer_offset = vertex_varying_enable_blending_buffer_offset + vertex_varying_enable_blending_buffer_size;
+        uint64_t vertex_joint_binding_buffer_offset = vertex_varying_buffer_offset + vertex_varying_buffer_size;
 
         glm::vec3* vertex_positions_buffer_data = reinterpret_cast<glm::vec3*>(reinterpret_cast<uintptr_t>(stage_buffer_data) + vertex_position_buffer_offset);
         uint8_t* vertex_varying_enable_blending_buffer_data = reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(stage_buffer_data) + vertex_varying_enable_blending_buffer_offset);
         uint8_t* vertex_varying_buffer_data = reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(stage_buffer_data) + vertex_varying_buffer_offset);
+        uint8_t* vertex_joint_binding_buffer_data = reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(stage_buffer_data) + vertex_joint_binding_buffer_offset);
 
         size_t offset_in_vertex_varying_enable_blending_buffer = 0;
         size_t offset_in_vertex_varying_buffer = 0;
+        size_t offset_in_vertex_joint_binding_buffer = 0;
         for (uint32_t i = 0; i < new_render_mesh.vertex_count; ++i) 
         {
             vertex_positions_buffer_data[i] = mesh_asset->vertex_positions[i];
@@ -305,13 +314,27 @@ namespace quark
                 offset_in_vertex_varying_enable_blending_buffer += sizeof(glm::vec3);
             }
 
-            if (! mesh_asset->vertex_uvs.empty())
+            if (!mesh_asset->vertex_uvs.empty())
             {
                 memcpy(vertex_varying_buffer_data + offset_in_vertex_varying_buffer,
                      &mesh_asset->vertex_uvs[i], sizeof(glm::vec2));
                 offset_in_vertex_varying_buffer += sizeof(glm::vec2);
             }
-            
+
+            if (!mesh_asset->vertex_bone_indices.empty())
+            {
+                memcpy(vertex_joint_binding_buffer_data + offset_in_vertex_joint_binding_buffer,
+					 &mesh_asset->vertex_bone_indices[i], sizeof(glm::uvec4));
+				offset_in_vertex_joint_binding_buffer += sizeof(glm::uvec4);
+            }
+
+            if (!mesh_asset->vertex_bone_weights.empty())
+            {
+                memcpy(vertex_joint_binding_buffer_data + offset_in_vertex_joint_binding_buffer,
+                    &mesh_asset->vertex_bone_weights[i], sizeof(glm::vec4));
+                offset_in_vertex_joint_binding_buffer += sizeof(glm::vec4);
+            }
+                
         }
 
         // copy staging buffer to gpu buffer
@@ -335,6 +358,13 @@ namespace quark
             buffer_desc.size = vertex_varying_buffer_size;
             new_render_mesh.vertex_varying_buffer = m_device->CreateBuffer(buffer_desc, nullptr);
             m_device->CopyBuffer(*new_render_mesh.vertex_varying_buffer, *stage_buffer, vertex_varying_buffer_size, 0, vertex_varying_buffer_offset);
+        }
+
+        if (vertex_joint_binding_buffer_size > 0)
+        {
+            buffer_desc.size = vertex_joint_binding_buffer_size;
+			new_render_mesh.vertex_joint_binding_buffer = m_device->CreateBuffer(buffer_desc, nullptr);
+			m_device->CopyBuffer(*new_render_mesh.vertex_joint_binding_buffer, *stage_buffer, vertex_joint_binding_buffer_size, 0, vertex_joint_binding_buffer_offset);
         }
 
         m_render_meshes[mesh_asset_id] = new_render_mesh;
@@ -372,7 +402,7 @@ namespace quark
         new_render_material.roughnessFactor = material_asset->roughNessFactor;
         new_render_material.alphaMode = material_asset->alphaMode;
 
-        new_render_material.shaderProgram = m_shaderLibrary->GetOrCreateGraphicsProgram(material_asset->vertexShaderPath, material_asset->fragmentShaderPath);
+        new_render_material.shaderProgram = m_shader_library->GetOrCreateGraphicsProgram(material_asset->vertexShaderPath, material_asset->fragmentShaderPath);
         m_render_materials[material_asset_id] = new_render_material;
     }
 
@@ -493,8 +523,8 @@ namespace quark
         }
 
         util::Hash hash = h.get();
-        auto it = m_cached_pipelines.find(hash);
-        if (it != m_cached_pipelines.end())
+        auto it = m_cached_psos.find(hash);
+        if (it != m_cached_psos.end())
         {
             return it->second;
         }
@@ -512,84 +542,10 @@ namespace quark
                 desc.vertexInputLayout = vertex_layout;
 
             Ref<rhi::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
-            m_cached_pipelines[hash] = newPipeline;
+            m_cached_psos[hash] = newPipeline;
 
             return newPipeline;
         }
-    }
-
-    Ref<rhi::VertexInputLayout> RenderResourceManager::GetOrCreateVertexInputLayout(uint32_t meshAttributesMask)
-    {
-        auto it = m_cached_vertexInputLayouts.find(meshAttributesMask);
-        if (it != m_cached_vertexInputLayouts.end())
-            return it->second;
-
-        Ref<rhi::VertexInputLayout> newLayout = CreateRef<rhi::VertexInputLayout>();
-
-        // Position
-        if (meshAttributesMask & MESH_ATTRIBUTE_POSITION_BIT)
-        {
-            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
-            attrib.location = 0;
-            attrib.binding = 0;
-            attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
-            attrib.offset = 0;
-        }
-
-        uint32_t offset = 0;
-
-        // UV
-        if (meshAttributesMask & MESH_ATTRIBUTE_UV_BIT)
-        {
-            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
-            attrib.location = 1;
-            attrib.binding = 1;
-            attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
-            attrib.offset = offset;
-            offset += sizeof(glm::vec2);
-        }
-
-        // Normal
-        if (meshAttributesMask & MESH_ATTRIBUTE_NORMAL_BIT)
-        {
-            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
-            attrib.location = 2;
-            attrib.binding = 1;
-            attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC3;
-            attrib.offset = offset;
-            offset += sizeof(glm::vec3);
-        }
-
-        // Vertex Color
-        if (meshAttributesMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
-        {
-            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout->vertexAttribInfos.emplace_back();
-            attrib.location = 3;
-            attrib.binding = 1;
-            attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
-            attrib.offset = offset;
-            offset += sizeof(glm::vec4);
-        }
-
-        rhi::VertexInputLayout::VertexBindInfo bindInfo = {};
-        if (meshAttributesMask & MESH_ATTRIBUTE_POSITION_BIT)
-        {
-            bindInfo.binding = 0;
-            bindInfo.stride = sizeof(glm::vec3);
-            bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
-            newLayout->vertexBindInfos.push_back(bindInfo);
-        }
-
-        if (offset > 0)
-        {
-            bindInfo.binding = 1;
-            bindInfo.stride = offset;
-            bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
-            newLayout->vertexBindInfos.push_back(bindInfo);
-        }
-
-        m_cached_vertexInputLayouts[meshAttributesMask] = newLayout;
-        return newLayout;
     }
 
     rhi::VertexInputLayout& RenderResourceManager::GetOrCreateMeshVertexLayout(uint32_t meshAttributesMask)
@@ -658,6 +614,26 @@ namespace quark
             varing_offset += sizeof(glm::vec4);
         }
 
+        // joint binding attributes
+        if (meshAttributesMask & MESH_ATTRIBUTE_BONE_INDEX_BIT)
+        {
+            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout.vertexAttribInfos.emplace_back();
+            attrib.location = 5;
+            attrib.binding = 3;
+            attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_UVEC4;
+            attrib.offset = 0;
+        }
+        
+        if (meshAttributesMask & MESH_ATTRIBUTE_BONE_WEIGHT_BIT)
+        {
+            rhi::VertexInputLayout::VertexAttribInfo& attrib = newLayout.vertexAttribInfos.emplace_back();
+            attrib.location = 6;
+            attrib.binding = 3;
+            attrib.format = rhi::VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC4;
+            attrib.offset = sizeof(glm::uvec4);
+        }
+
+        // buffer binding infos
         rhi::VertexInputLayout::VertexBindInfo bindInfo = {};
         if (meshAttributesMask & MESH_ATTRIBUTE_POSITION_BIT)
         {
@@ -683,9 +659,21 @@ namespace quark
             newLayout.vertexBindInfos.push_back(bindInfo);
         }
 
+        if ((meshAttributesMask & MESH_ATTRIBUTE_BONE_INDEX_BIT) || (meshAttributesMask & MESH_ATTRIBUTE_BONE_WEIGHT_BIT))
+        {
+            bindInfo.binding = 3;
+			bindInfo.stride = sizeof(glm::uvec4) + sizeof(glm::vec4);
+			bindInfo.inputRate = rhi::VertexInputLayout::VertexBindInfo::INPUT_RATE_VERTEX;
+			newLayout.vertexBindInfos.push_back(bindInfo);
+        }
+
         m_mesh_vertex_layouts[hash] = newLayout;
 
         return m_mesh_vertex_layouts[hash];
+    }
+
+    void RenderResourceManager::UpdateRenderResources(const Ref<RenderScene>& scene)
+    {
     }
 
     void RenderResourceManager::UpdatePerFrameBuffer(const Ref<RenderScene>& scene)
@@ -693,11 +681,11 @@ namespace quark
         // create scene uniform buffer per frame
         rhi::BufferDesc desc;
         desc.domain = rhi::BufferMemoryDomain::CPU;
-        desc.size = sizeof(UniformBufferData_Scene);
+        desc.size = sizeof(UniformBufferObject_Scene);
         desc.usageBits = rhi::BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         ubo_scene = m_device->CreateBuffer(desc);
 
-        UniformBufferData_Scene* mappedData = (UniformBufferData_Scene*)ubo_scene->GetMappedDataPtr();
+        UniformBufferObject_Scene* mappedData = (UniformBufferObject_Scene*)ubo_scene->GetMappedDataPtr();
         *mappedData = scene->ubo_data_scene;
     }
 }
