@@ -29,6 +29,10 @@
 #include <Quark/Project/Project.h>
 #include <Quark/Project/ProjectSerializer.h>
 
+// Quark Animation system
+#include <Quark/Animation/AnimationAsset.h>
+#include <Quark/Animation/SkeletonAsset.h>
+
 // Quark Graphic API
 #include <Quark/RHI/Device.h>
 #include <Quark/RHI/TextureFormatLayout.h>
@@ -45,4 +49,8 @@
 #include <Quark/Scene/Components/TransformCmpt.h>
 #include <Quark/Scene/Components/CameraCmpt.h>
 #include <Quark/Scene/Components/MeshCmpt.h>
+#include <Quark/Scene/Components/MeshRendererCmpt.h>
+#include <Quark/Scene/Components/RelationshipCmpt.h>
+#include <Quark/Scene/Components/ArmatureComponent.h>
+
 
