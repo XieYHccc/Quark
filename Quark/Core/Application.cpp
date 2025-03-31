@@ -4,7 +4,6 @@
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"
 #include "Quark/Asset/AssetManager.h"
-#include "Quark/Render/RenderSystem.h"
 
 #ifdef USE_VULKAN_DRIVER
 #include "Quark/RHI/Vulkan/Device_Vulkan.h"
@@ -35,6 +34,9 @@ Application::Application(const ApplicationSpecification& specs)
     // Init Event Manager
     EventManager::CreateSingleton();
 
+    // Init Asset system
+    AssetManager::CreateSingleton();
+
     // Init Input System
     Input::CreateSingleton();
     Input::Get()->Init();
@@ -56,35 +58,19 @@ Application::Application(const ApplicationSpecification& specs)
         QK_CORE_LOGI_TAG("Core", "Window created");
     }
 
-#ifdef USE_VULKAN_DRIVER
-    m_graphicDevice = CreateRef<rhi::Device_Vulkan>();
-    m_graphicDevice->Init();
-#endif
-
     // Init Render System
     JobSystem::Counter counter;
-    m_jobSystem->Execute([this]()
+    m_jobSystem->Execute([&]()
     {
-// #ifdef USE_VULKAN_DRIVER
-//         m_GraphicDevice = CreateScope<rhi::Device_Vulkan>();
-//         m_GraphicDevice->Init();
-// #endif
-        RenderSystem::CreateSingleton(m_graphicDevice);
+        RenderSystem::CreateSingleton(specs.render_system_config);
     }, &counter);
-
-    // Init Asset system
-    m_jobSystem->Execute([this, &counter]() 
-    {
-        m_jobSystem->Wait(&counter, 1);
-        AssetManager::CreateSingleton(); 
-    });
 
     // Init UI system
     m_jobSystem->Execute([this, &specs, &counter]() 
     {
         m_jobSystem->Wait(&counter, 1);
         UI::CreateSingleton();
-        UI::Get()->Init(m_graphicDevice.get(), specs.uiSpecs);
+        UI::Get()->Init(RenderSystem::Get().GetDevice(), specs.uiSpecs);
     });
 
     m_jobSystem->Wait(&counter, 1);
@@ -102,9 +88,6 @@ Application::~Application() {
     AssetManager::FreeSingleton();
 
     RenderSystem::FreeSingleton();
-
-    m_graphicDevice->ShutDown();
-    m_graphicDevice.reset();
 
     // Destroy InputManager
     Input::Get()->Finalize();

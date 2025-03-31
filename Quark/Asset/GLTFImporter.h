@@ -14,6 +14,8 @@ class MeshAsset;
 
 struct SkeletonAsset;
 struct AnimationAsset;
+struct ImageAsset;
+struct MaterialAsset;
 
 class GLTFImporter {
 public:
@@ -29,8 +31,10 @@ public:
 	};
 
     GLTFImporter(Ref<rhi::Device> device);
+    GLTFImporter();
 
     void Import(const std::string& file_path, uint32_t flags = 0);
+    void AddAllAssetsAsMemoryOnly();
 
     Ref<Scene> GetScene() { return m_scene; }
 
@@ -39,9 +43,9 @@ public:
     std::vector<Ref<AnimationAsset>>& GetAnimations() { return m_animations; }
 
 private:
-    Ref<rhi::Sampler> ParseSampler(const tinygltf::Sampler& gltf_sampler);
-    Ref<rhi::Image> ParseImage(const tinygltf::Image& gltf_image);
-    //Ref<Material> ParseMaterial(const tinygltf::Material& gltf_material);
+    // Ref<rhi::Sampler> ParseSampler(const tinygltf::Sampler& gltf_sampler);
+    Ref<ImageAsset> ParseImage(const tinygltf::Image& gltf_image);
+    Ref<MaterialAsset> ParseMaterial(const tinygltf::Material& gltf_material);
     Ref<MeshAsset> ParseMesh(const tinygltf::Mesh& gltf_mesh);
     Entity* ParseNode(const tinygltf::Node& gltf_node);
 
@@ -54,9 +58,9 @@ private:
     Ref<Scene> m_scene;
     std::string m_filePath;
 
-    std::vector<Ref<rhi::Sampler>> m_samplers;
-    std::vector<Ref<rhi::Image>> m_images;
-    // std::vector<Ref<Material>> m_Materials;
+    //std::vector<Ref<rhi::Sampler>> m_samplers;
+    std::vector<Ref<ImageAsset>> m_images;
+    std::vector<Ref<MaterialAsset>> m_materials;
     std::vector<Ref<MeshAsset>> m_meshes;
     std::vector<Ref<SkeletonAsset>> m_skeletons;
     std::vector<std::unordered_map<int, int>> m_node_to_bone_maps;

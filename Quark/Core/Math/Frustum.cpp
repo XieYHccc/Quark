@@ -3,7 +3,7 @@
 
 namespace quark::math {
 
-bool Frustum::CheckSphere(const Aabb &aabb)
+bool Frustum::CheckSphere(const Aabb &aabb) const
 {
 	glm::vec4 center(aabb.GetCenter(), 1.0f);
 	float radius = aabb.GetRadius();

@@ -333,11 +333,13 @@ void Device_Vulkan::OnWindowResize(const WindowResizeEvent &event)
     QK_CORE_LOGT_TAG("RHI", "Device_Vulkan hook window resize event. Width: {} Height: {}", m_frameBufferWidth, m_frameBufferHeight);
 }
 
-bool Device_Vulkan::Init()
+Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
 {
-    QK_CORE_LOGI_TAG("RHI", "==========Initializing Vulkan Backend...========");
+    QK_CORE_LOGI_TAG("RHI", "Creating Device_Vulkan...");
 
-    // Default values
+    // setup default values
+    QK_CORE_ASSERT(config.framesInFlight <= MAX_FRAME_NUM_IN_FLIGHT);
+    m_config = config;
     m_recreateSwapchain = false;
     m_elapsedFrame = 0;
     m_frameBufferWidth = Application::Get().GetWindow()->GetFrambufferWidth();
@@ -346,54 +348,54 @@ bool Device_Vulkan::Init()
     vkDevice = vkContext->logicalDevice; // Borrow from context
     vmaAllocator = vkContext->vmaAllocator;
 
-    // Store device properties in public interface
+    // store device properties in public interface
     m_properties.limits.minUniformBufferOffsetAlignment = vkContext->properties2.properties.limits.minUniformBufferOffsetAlignment;
     m_features.textureCompressionBC = vkContext->features2.features.textureCompressionBC;
     m_features.textureCompressionASTC_LDR = vkContext->features2.features.textureCompressionASTC_LDR;;
     m_features.textureCompressionETC2 = vkContext->features2.features.textureCompressionETC2;
-    
-    // Create frame data
+
+    // create frame data
     for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
         m_frames[i].init(this);
 
-    // Setup command queues
+    // setup command queues
     m_queues[QUEUE_TYPE_GRAPHICS].init(this, QUEUE_TYPE_GRAPHICS);
     m_queues[QUEUE_TYPE_ASYNC_COMPUTE].init(this, QUEUE_TYPE_ASYNC_COMPUTE);
     m_queues[QUEUE_TYPE_ASYNC_TRANSFER].init(this, QUEUE_TYPE_ASYNC_TRANSFER);
 
-    // Create Swapchain
+    // create Swapchain
     ResizeSwapchain();
 
-    // Init copy cmds allocator
+    // init copy cmds allocator
     copyAllocator.init(this);
 
-    // Register callback functions
-    EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event);});
-    QK_CORE_LOGI_TAG("RHI", "==========Vulkan Backend Initialized========");
-    return true;
+    // register callback functions
+    EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event); });
+    
+    QK_CORE_LOGI_TAG("RHI", "Device_Vulkan Created");
 }
 
-void Device_Vulkan::ShutDown()
+Device_Vulkan::~Device_Vulkan()
 {
     QK_CORE_LOGI_TAG("RHI", "Shutdown vulkan device...");
+
     vkDeviceWaitIdle(vkDevice);
-    
-    // Destroy cached pipeline layout
+
+    // destroy cached pipeline layout
     cached_pipelineLayouts.clear();
 
-    // Destory cached descriptor allocator
+    // destory cached descriptor allocator
     cached_descriptorSetAllocator.clear();
 
-    // Destroy copy allocator
+    // destroy copy allocator
     copyAllocator.destroy();
 
-    // Destroy frames data
+    // destroy frames data
     for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
         m_frames[i].destroy();
 
-    // Destroy vulkan context
+    // destroy vulkan context
     vkContext.reset();
-
 }
 
 bool Device_Vulkan::BeiginFrame(TimeStep ts)

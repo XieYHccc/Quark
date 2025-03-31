@@ -74,6 +74,8 @@ public:
 	ShaderProgramVariant* GetOrCreateVariant(const ShaderVariantKey& key);
 	ShaderProgramVariant* GetPrecompiledVariant();
 
+	uint64_t GetHash() const { return m_hash; }
+
 	std::string GetSourcePath(rhi::ShaderStage stage) const { return m_stages[util::ecast(stage)]->GetPath(); }
 
 	bool IsStatic() const;
@@ -81,11 +83,14 @@ public:
 private:
 	ShaderTemplate* m_stages[util::ecast(rhi::ShaderStage::MAX_ENUM)] = {};
 	std::unordered_map<uint64_t, Scope<ShaderProgramVariant>> m_variants;
+
+	uint64_t m_hash;
 };
 
 class ShaderLibrary
 {
 public:
+	ShaderProgram* program_test;
 	ShaderProgram* program_staticMesh;
 	ShaderProgram* program_staticMeshEditor;
 	ShaderProgram* staticProgram_skybox;
@@ -95,9 +100,9 @@ public:
 public:
 	ShaderLibrary();
 
-	ShaderProgram* GetOrCreateGraphicsProgram(const std::string& vert_path, const std::string& frag_path);
-	ShaderProgram* GetOrCreateComputeProgram(const std::string& comp_path);
-	ShaderTemplate* GetOrCreateShaderTemplate(const std::string& path, rhi::ShaderStage stage);
+	ShaderProgram* RequestGraphicsProgram(const std::string& vert_path, const std::string& frag_path);
+	ShaderProgram* RequestComputeProgram(const std::string& comp_path);
+	ShaderTemplate* RequestShaderTemplate(const std::string& path, rhi::ShaderStage stage);
 
 private:
 	std::unordered_map<uint64_t, Scope<ShaderTemplate>> m_shaderTemplates;

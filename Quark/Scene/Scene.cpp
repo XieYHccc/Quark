@@ -16,7 +16,7 @@ namespace quark {
 
 void Scene::BuildBoneEntities(Entity* bone_entity, uint32_t bone_index, ArmatureCmpt* armature_cmpt)
 {
-    auto skeleton_asset = AssetManager::Get().GetAsset<SkeletonAsset>(armature_cmpt->skeleton_asset_id);
+    auto skeleton_asset = armature_cmpt->skeleton_asset;
     armature_cmpt->bone_index_to_entity_map[bone_index] = bone_entity;
 
     auto* transformCmpt = bone_entity->GetComponent<TransformCmpt>();
@@ -34,7 +34,8 @@ void Scene::BuildBoneEntities(Entity* bone_entity, uint32_t bone_index, Armature
 }
 
 Scene::Scene(const std::string& name)
-    : sceneName(name), m_main_camera_entity(nullptr)
+    : sceneName(name), m_main_camera_entity(nullptr),
+      m_opaques(m_entity_registry.GetEntityGroup<RenderableCmpt, RenderInfoCmpt, OpaqueCmpt>()->GetComponentGroup())
 {
 }
 
@@ -120,6 +121,7 @@ Entity* Scene::CreateEntityWithID(UUID id, const std::string& name, Entity* pare
     return newEntity;
 }
 
+
 Entity* Scene::GetEntityWithID(UUID id)
 {
     auto find = m_id_to_entity_map.find(id);
@@ -178,7 +180,7 @@ void Scene::AddArmatureComponent(Entity* entity, Ref<SkeletonAsset> skeleton_ass
 	QK_CORE_VERIFY(!entity->HasComponent<ArmatureCmpt>());
 
     auto* armature_cmpt = entity->AddComponent<ArmatureCmpt>();
-    armature_cmpt->skeleton_asset_id = skeleton_asset->GetAssetID();
+    armature_cmpt->skeleton_asset = skeleton_asset;
 
     // build skeleton hierarchy
     Entity* root_bone_entity = CreateEntity(skeleton_asset->bone_names[skeleton_asset->root_bone_index], entity);
@@ -188,8 +190,43 @@ void Scene::AddArmatureComponent(Entity* entity, Ref<SkeletonAsset> skeleton_ass
     armature_cmpt->bone_entities.push_back(root_bone_entity);
     std::vector<Entity*> child_bone_entities = GetChildEntities(root_bone_entity, true);
     armature_cmpt->bone_entities.insert(armature_cmpt->bone_entities.end(), child_bone_entities.begin(), child_bone_entities.end());
+}
 
+void Scene::AddStaticMeshComponent(Entity* entity, Ref<MeshAsset> mesh_asset)
+{
+    auto* staticmesh_cmpt = entity->AddComponent<StaticMeshCmpt>();
+    staticmesh_cmpt->mesh_asset = mesh_asset;
+    auto renderables = RenderSystem::Get().GetRenderResourceManager().RequestStaticMeshRenderables(mesh_asset);
 
+    QK_CORE_ASSERT(renderables.size() == mesh_asset->subMeshes.size())
+    for (size_t i = 0; i < mesh_asset->subMeshes.size(); i++)
+    {
+        Entity* e = CreateEntity("", entity);
+        auto* renderableCmpt = e->AddComponent<RenderableCmpt>();
+        auto* renderInfoCmpt = e->AddComponent<RenderInfoCmpt>();
+        renderableCmpt->renderable = renderables[i];
+        if (renderables[i]->GetMeshDrawPipeline() == DrawPipeline::Opaque)
+			e->AddComponent<OpaqueCmpt>();
+		else
+			e->AddComponent<TransparentCmpt>();
+        staticmesh_cmpt->submesh_renderables.push_back(renderableCmpt);
+    }
+}
+
+void Scene::GatherVisibleOpaqueRenderables(const math::Frustum& frustum, VisibilityList& list)
+{
+    for (size_t i = 0; i < m_opaques.size(); ++i)
+    {
+        auto& object = m_opaques[i];
+        auto* render_info = GetComponent<RenderInfoCmpt>(object);
+        auto* renderable = GetComponent<RenderableCmpt>(object);
+
+        math::Aabb transfromed_aabb = renderable->renderable->GetStaticAabb()->Transform(render_info->world_transform);
+        if (frustum.CheckSphere(transfromed_aabb))
+		{
+            list.push_back({ renderable->renderable.get(), render_info });
+		}
+    }
 }
 
 void Scene::OnUpdate(TimeStep delta_time)
@@ -197,6 +234,7 @@ void Scene::OnUpdate(TimeStep delta_time)
     RunAnimationUpdateSystem(delta_time);
     // RunTransformUpdateSystem();
     RunJointsUpdateSystem();
+    RunRenderInfoUpdateSystem();
 }
 
 //void Scene::RunTransformUpdateSystem()
@@ -241,7 +279,7 @@ void Scene::RunAnimationUpdateSystem(TimeStep delta_time)
         auto* armature_cmpt = GetComponent<ArmatureCmpt>(group);
         auto* skin_entity_transform_cmpt = GetComponent<TransformCmpt>(group);
 
-        auto skeleton_asset = AssetManager::Get().GetAsset<SkeletonAsset>(armature_cmpt->skeleton_asset_id);
+        auto skeleton_asset = armature_cmpt->skeleton_asset;
         auto animation_asset = AssetManager::Get().GetAsset<AnimationAsset>(animation_cmpt->animation_asset_id);
 
         animation_cmpt->current_time += delta_time.GetSeconds();
@@ -308,7 +346,7 @@ void Scene::RunJointsUpdateSystem()
 		auto* armature_cmpt = GetComponent<ArmatureCmpt>(group);
 		auto* skin_entity_transform_cmpt = GetComponent<TransformCmpt>(group);
 
-		auto skeleton_asset = AssetManager::Get().GetAsset<SkeletonAsset>(armature_cmpt->skeleton_asset_id);
+		auto skeleton_asset = armature_cmpt->skeleton_asset;
 
 		// calculate joint matrices
         armature_cmpt->joint_matrices.resize(skeleton_asset->bone_names.size());
@@ -324,19 +362,28 @@ void Scene::RunJointsUpdateSystem()
     }
 }
 
+void Scene::RunRenderInfoUpdateSystem()
+{
+    // update static meshes
+    auto& static_meshes = GetComponents<RenderInfoCmpt, TransformCmpt>();
+
+    for (auto& group : static_meshes)
+	{
+		auto* renderInfoCmpt = GetComponent<RenderInfoCmpt>(group);
+		auto* transformCmpt = GetComponent<TransformCmpt>(group);
+		renderInfoCmpt->world_transform = transformCmpt->GetWorldMatrix();
+	}
+
+}
+
 void Scene::FillMeshSwapData()
 {
     auto& swapData = RenderSystem::Get().GetSwapContext().GetLogicSwapData();
 
     // static mesh render proxies
-    const auto& cmpts = GetComponents<IdCmpt, MeshCmpt, MeshRendererCmpt, TransformCmpt>();
-    for (const auto [id_cmpt, mesh_cmpt, mesh_renderer_cmpt, transform_cmpt] : cmpts)
+    const auto& cmpts = GetComponents<IdCmpt, MeshCmpt, TransformCmpt>();
+    for (const auto [id_cmpt, mesh_cmpt, transform_cmpt] : cmpts)
     {
-        if (!mesh_renderer_cmpt->IsRenderStateDirty())
-            continue;
-        
-        mesh_renderer_cmpt->SetDirty(false);
-
         auto* mesh = mesh_cmpt->uniqueMesh ? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
         if (!mesh) 
             continue;
@@ -353,7 +400,7 @@ void Scene::FillMeshSwapData()
             newSectionDesc.aabb = submesh.aabb;
             newSectionDesc.index_count = submesh.count;
             newSectionDesc.index_offset = submesh.startIndex;
-            newSectionDesc.material_asset_id = mesh_renderer_cmpt->GetMaterialID(i);
+            newSectionDesc.material_asset_id = submesh.materialID;
             newRenderProxy.mesh_sections.push_back(newSectionDesc);
         }
 
@@ -361,13 +408,12 @@ void Scene::FillMeshSwapData()
     }
 
     // skin mesh render proxies
-    const auto& skinCmpts = GetComponents<NameCmpt, IdCmpt, MeshCmpt, MeshRendererCmpt, TransformCmpt, ArmatureCmpt>();
+    const auto& skinCmpts = GetComponents<NameCmpt, IdCmpt, MeshCmpt, TransformCmpt, ArmatureCmpt>();
     for (auto group : skinCmpts)
     {
         auto* nameCmpt = GetComponent<NameCmpt>(group);
         auto* idCmpt = GetComponent<IdCmpt>(group);
 		auto* meshCmpt = GetComponent<MeshCmpt>(group);
-		auto* meshRendererCmpt = GetComponent<MeshRendererCmpt>(group);
 		auto* transformCmpt = GetComponent<TransformCmpt>(group);
 		auto* armatureCmpt = GetComponent<ArmatureCmpt>(group);
 
@@ -387,7 +433,7 @@ void Scene::FillMeshSwapData()
 			newSectionDesc.aabb = submesh.aabb;
 			newSectionDesc.index_count = submesh.count;
 			newSectionDesc.index_offset = submesh.startIndex;
-			newSectionDesc.material_asset_id = meshRendererCmpt->GetMaterialID(i);
+            newSectionDesc.material_asset_id = submesh.materialID;
 			newRenderProxy.mesh_sections.push_back(newSectionDesc);
 		}
 
@@ -409,4 +455,5 @@ void Scene::FillCameraSwapData()
     cameraSwapData.proj = cameraCmpt->GetProjectionMatrix();
     swapData.camera_swap_data = cameraSwapData;
 }
+
 }

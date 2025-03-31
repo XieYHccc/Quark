@@ -1,8 +1,9 @@
 #include "Quark/qkpch.h"
 #include "Quark/Render/RenderSystem.h"
+#include "Quark/Render/RenderParameters.h"
+#include "Quark/RHI/Vulkan/Device_Vulkan.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Asset/MeshAsset.h"
-#include "Quark/RHI/Device.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
@@ -14,11 +15,15 @@ namespace quark {
 
 using namespace rhi;
 
-RenderSystem::RenderSystem(Ref<rhi::Device> device)
-    : m_device(device)
+RenderSystem::RenderSystem(const RenderSystemConfig& config)
 {
-    m_renderResourceManager = CreateScope<RenderResourceManager>(m_device);
+    rhi::DeviceConfig rhi_config;
+    rhi_config.framesInFlight = 2;
+#ifdef USE_VULKAN_DRIVER
+    m_device = CreateRef<rhi::Device_Vulkan>(rhi_config);
+#endif
 
+    m_renderResourceManager = CreateScope<RenderResourceManager>(m_device);
     m_renderScene = CreateRef<RenderScene>();
 
     QK_CORE_LOGI_TAG("Rernderer", "RenderSystem Initialized");
@@ -26,7 +31,9 @@ RenderSystem::RenderSystem(Ref<rhi::Device> device)
 
 RenderSystem::~RenderSystem()
 {
-    
+    m_renderScene.reset();
+    m_renderResourceManager.reset();
+    m_device.reset();
 }
 
 void RenderSystem::ProcessSwapData()
@@ -132,6 +139,27 @@ void RenderSystem::ProcessSwapData()
 
 }
 
+void RenderSystem::BindCameraParameters(rhi::CommandList& cmd, const RenderContext& cxt)
+{
+    rhi::BufferDesc desc;
+    desc.domain = rhi::BufferMemoryDomain::CPU;
+    desc.size = sizeof(CameraParameters);
+    desc.usageBits = rhi::BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+
+    Ref<rhi::Buffer> camera_ubo = m_device->CreateBuffer(desc);
+    CameraParameters* camera_ubo_mapped_data = (CameraParameters*)camera_ubo->GetMappedDataPtr();
+    *camera_ubo_mapped_data = cxt.GetCameraParameters();
+
+    cmd.BindUniformBuffer(0, 0, *camera_ubo, 0, desc.size);
+}
+
+void RenderSystem::Flush(rhi::CommandList& cmd, const RenderQueue& queue, const RenderContext& ctx)
+{
+    BindCameraParameters(cmd, ctx);
+
+    queue.Dispatch(Queue::Opaque, cmd);
+}
+
 void RenderSystem::DrawSkybox(uint64_t env_map_id, rhi::CommandList* cmd)
 {
     Ref<MeshAsset> cubeMesh = AssetManager::Get().mesh_cube;
@@ -144,7 +172,7 @@ void RenderSystem::DrawSkybox(uint64_t env_map_id, rhi::CommandList* cmd)
 
     auto& cubeRenderMesh = m_renderResourceManager->GetRenderMesh(cubeMesh->GetAssetID());
     Ref<rhi::Image> envMap = m_renderResourceManager->GetImage(env_map_id);
-    Ref<rhi::PipeLine> pipeline_skybox = m_renderResourceManager->GetOrCreateGraphicsPSO(
+    Ref<rhi::PipeLine> pipeline_skybox = m_renderResourceManager->RequestGraphicsPSO(
         *m_renderResourceManager->GetShaderLibrary().staticProgram_skybox,
         cmd->GetCurrentRenderPassInfo(),
         m_renderResourceManager->mesh_attrib_mask_skybox,
@@ -163,7 +191,7 @@ void RenderSystem::DrawSkybox(uint64_t env_map_id, rhi::CommandList* cmd)
 
 void RenderSystem::DrawGrid(rhi::CommandList* cmd)
 {
-    Ref<rhi::PipeLine> infiniteGrid_pipeline = m_renderResourceManager->GetOrCreateGraphicsPSO(
+    Ref<rhi::PipeLine> infiniteGrid_pipeline = m_renderResourceManager->RequestGraphicsPSO(
         *m_renderResourceManager->GetShaderLibrary().staticProgram_infiniteGrid,
         cmd->GetCurrentRenderPassInfo(), 0, true, AlphaMode::MODE_OPAQUE);
     
@@ -238,7 +266,7 @@ void RenderSystem::DrawScene(const RenderScene& scene, const Visibility& vis, rh
         cmd->PushConstant(&push_constant, 0, 64);  // only push model matrix
 
         // rebind Pipeline
-        Ref<rhi::PipeLine> pipeline = m_renderResourceManager->GetOrCreateGraphicsPSO(
+        Ref<rhi::PipeLine> pipeline = m_renderResourceManager->RequestGraphicsPSO(
             *lastMaterial->shaderProgram, cmd->GetCurrentRenderPassInfo(),
             lastMesh->mesh_attribute_mask, true, lastMaterial->alphaMode);
         cmd->BindPipeLine(*pipeline);

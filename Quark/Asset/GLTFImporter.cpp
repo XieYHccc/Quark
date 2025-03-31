@@ -1,6 +1,6 @@
 #include "Quark/qkpch.h"
 #include "Quark/Asset/GLTFImporter.h"
-#include "Quark/Asset/ImageImporter.h"
+#include "Quark/Asset/ImageAsset.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Animation/SkeletonAsset.h"
 #include "Quark/Animation/AnimationAsset.h"
@@ -10,6 +10,7 @@
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
+#include "Quark/Scene/Components/ArmatureComponent.h"
 #include "Quark/Render/RenderSystem.h"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -87,6 +88,12 @@ namespace quark {
 
     }
 
+    GLTFImporter::GLTFImporter()
+        :m_rhi_device(RenderSystem::Get().GetDevice())
+    {
+
+    }
+
     void GLTFImporter::Import(const std::string& filename, uint32_t flags)
     {
         if (flags == 0)
@@ -115,7 +122,7 @@ namespace quark {
         bool importResult = binary ? gltf_loader.LoadBinaryFromFile(&m_gltf_model, &err, &warn, filename.c_str()) : gltf_loader.LoadASCIIFromFile(&m_gltf_model, &err, &warn, filename.c_str());
 
         if (!err.empty())
-            QK_CORE_LOGE_TAG("AssetManager", "Error loading gltf model: {}.", err);
+            // QK_CORE_LOGE_TAG("AssetManager", "Error loading gltf model: {}.", err);
         if (!warn.empty())
             QK_CORE_LOGI_TAG("AssetManager", "{}", warn);
         if (!importResult)
@@ -146,15 +153,15 @@ namespace quark {
         if (flags & ImportingFlags::ImportTextures)
         {
             // Load samplers
-            m_samplers.resize(m_gltf_model.samplers.size());
-            for (size_t sampler_index = 0; sampler_index < m_gltf_model.samplers.size(); sampler_index++)
-                m_samplers[sampler_index] = ParseSampler(m_gltf_model.samplers[sampler_index]);
+            //m_samplers.resize(m_gltf_model.samplers.size());
+            //for (size_t sampler_index = 0; sampler_index < m_gltf_model.samplers.size(); sampler_index++)
+            //    m_samplers[sampler_index] = ParseSampler(m_gltf_model.samplers[sampler_index]);
 
             // Load images
             m_images.resize(m_gltf_model.images.size());
             for (size_t image_index = 0; image_index < m_gltf_model.images.size(); image_index++)
             {
-                Ref<Image> newImage = ParseImage(m_gltf_model.images[image_index]);
+                Ref<ImageAsset> newImage = ParseImage(m_gltf_model.images[image_index]);
                 m_images[image_index] = newImage;
             }
         }
@@ -165,51 +172,21 @@ namespace quark {
 			LoadAnimations();
 		}
 
-        // (deprecated)Using dynamic uniform buffer for material uniform data
-     //   size_t min_ubo_alignment = m_GraphicDevice->GetDeviceProperties().limits.minUniformBufferOffsetAlignment;
-     //   size_t dynamic_alignment = sizeof(Material::UniformBufferBlock);
-        //if (min_ubo_alignment > 0)
-        //	dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
-
-        //size_t buffer_size = (m_gltf_model.materials.size() + 1) * dynamic_alignment; // additional 1 is for default material
-     //   auto* ubo_data = (Material::UniformBufferBlock*)util::memalign_alloc(dynamic_alignment, buffer_size);
-     //   QK_CORE_ASSERT(ubo_data)
-
-     //   // Create uniform buffer for material's uniform data
-     //   BufferDesc uniform_buffer_desc = {
-     //       .size = buffer_size,
-     //       .domain = BufferMemoryDomain::CPU,
-     //       .usageBits = BUFFER_USAGE_UNIFORM_BUFFER_BIT
-     //   };
-
-        //Ref<rhi::Buffer> materialUniformBuffer = m_GraphicDevice->CreateBuffer(uniform_buffer_desc);
-        //auto* mapped_data = (Material::UniformBufferBlock*)materialUniformBuffer->GetMappedDataPtr();
-
         // Load materials
-        //if (flags & ImportingFlags::ImportMaterials)
-        //{
-        //    m_Materials.reserve(m_gltf_model.materials.size()); // one more default material
-        //    for (size_t material_index = 0; material_index < m_gltf_model.materials.size(); material_index++)
-        //    {
-        //        auto newMaterial = ParseMaterial(m_gltf_model.materials[material_index]);
-        //        // auto* ubo = (Material::UniformBufferBlock*)((u64)ubo_data + (material_index * dynamic_alignment));
-        //        // *ubo = newMaterial->uniformBufferData;
-        //        // newMaterial->uniformBuffer = materialUniformBuffer;
-        //        // newMaterial->uniformBufferOffset = material_index * dynamic_alignment;
-        //        m_Materials.push_back(newMaterial);
-        //    }
-
-            // data copy
-            // std::copy(ubo_data, ubo_data + buffer_size, mapped_data);
-            // util::memalign_free(ubo_data);
-        //}
-
+        if (flags & ImportingFlags::ImportMaterials)
+        {
+            m_materials.reserve(m_gltf_model.materials.size()); // one more default material
+            for (size_t material_index = 0; material_index < m_gltf_model.materials.size(); material_index++)
+                m_materials.push_back(ParseMaterial(m_gltf_model.materials[material_index]));
+        }
         // Load meshes
         m_meshes.reserve(m_gltf_model.meshes.size());
         for (const auto& gltf_mesh : m_gltf_model.meshes)
             m_meshes.push_back(ParseMesh(gltf_mesh));
 
-        // Create Scene and load nodes
+        AddAllAssetsAsMemoryOnly(); // TODO:remove
+
+        // create scene and load nodes
         if (flags & ImportingFlags::ImportNodes)
         {
             m_scene = CreateRef<Scene>("gltf scene"); // name would be overwritten later.
@@ -236,6 +213,24 @@ namespace quark {
                     entities[i]->GetComponent<RelationshipCmpt>()->AddChildEntity(entities[child]);
             }
         }
+    }
+
+    void GLTFImporter::AddAllAssetsAsMemoryOnly()
+    {
+        for (auto& mesh : m_meshes)
+			AssetManager::Get().AddMemoryOnlyAsset(mesh);
+
+		for (auto& skeleton : m_skeletons)
+			AssetManager::Get().AddMemoryOnlyAsset(skeleton);
+
+		for (auto& animation : m_animations)
+			AssetManager::Get().AddMemoryOnlyAsset(animation);
+
+		for (auto& material : m_materials)
+			AssetManager::Get().AddMemoryOnlyAsset(material);
+
+		for (auto& image : m_images)
+			AssetManager::Get().AddMemoryOnlyAsset(image);
     }
 
     Entity* GLTFImporter::ParseNode(const tinygltf::Node& gltf_node)
@@ -268,27 +263,21 @@ namespace quark {
             transform->SetLocalMatrix(glm::make_mat4x4(gltf_node.matrix.data()));
         };
 
-        // Parse mesh component
+        // mesh
         if (gltf_node.mesh > -1)
         {
             MeshCmpt* mesh_cmpt = newObj->AddComponent<MeshCmpt>();
             mesh_cmpt->sharedMesh = m_meshes[gltf_node.mesh];
-
-            // Material
-            MeshRendererCmpt* meshRenderer = newObj->AddComponent<MeshRendererCmpt>();
-            meshRenderer->SetMesh(mesh_cmpt->sharedMesh);
-            //for (uint32_t i = 0; auto& p : m_gltf_model.meshes[gltf_node.mesh].primitives)
-            //{
-            //    if (p.material > -1) {
-            //        meshRenderer->SetMaterial(i, m_Materials[p.material]);
-            //    }
-            //    else {
-            //        meshRenderer->SetMaterial(i, AssetManager::Get().defaultMaterial);
-            //    }
-
-            //    i++;
-            //}
+            m_scene->AddStaticMeshComponent(newObj, m_meshes[gltf_node.mesh]);
         }
+        
+        // skeleton
+        if (gltf_node.skin > -1)
+        {
+            Ref<SkeletonAsset> skeleton = m_skeletons[gltf_node.skin];
+            // m_scene->AddArmatureComponent(newObj, skeleton);
+        }
+
         //TODO: Parse camera component
 
         return newObj;
@@ -487,44 +476,43 @@ namespace quark {
 
     }
 
-    Ref<rhi::Sampler> GLTFImporter::ParseSampler(const tinygltf::Sampler& gltf_sampler)
-    {
-        SamplerDesc desc =
-        {
-            .minFilter = convert_min_filter(gltf_sampler.minFilter),
-            .magFliter = convert_mag_filter(gltf_sampler.magFilter),
-            .addressModeU = convert_wrap_mode(gltf_sampler.wrapS),
-            .addressModeV = convert_wrap_mode(gltf_sampler.wrapT)
-        };
+    //Ref<rhi::Sampler> GLTFImporter::ParseSampler(const tinygltf::Sampler& gltf_sampler)
+    //{
+    //    SamplerDesc desc =
+    //    {
+    //        .minFilter = convert_min_filter(gltf_sampler.minFilter),
+    //        .magFliter = convert_mag_filter(gltf_sampler.magFilter),
+    //        .addressModeU = convert_wrap_mode(gltf_sampler.wrapS),
+    //        .addressModeV = convert_wrap_mode(gltf_sampler.wrapT)
+    //    };
 
-        return m_rhi_device->CreateSampler(desc);
-    }
+    //    return m_rhi_device->CreateSampler(desc);
+    //}
 
-    Ref<rhi::Image> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
+    Ref<ImageAsset> GLTFImporter::ParseImage(const tinygltf::Image& gltf_image)
     {
+        auto new_image = CreateRef<ImageAsset>();
         if (!gltf_image.image.empty()) { // Image embedded in gltf file or loaded with stb
-            ImageDesc desc;
-            desc.width = static_cast<u32>(gltf_image.width);
-            desc.height = static_cast<u32>(gltf_image.height);
-            desc.depth = 1u;
-            desc.arraySize = 1;     // Only support 1 layer and 1 mipmap level for embedded image
-            desc.mipLevels = 1;
-            desc.format = DataFormat::R8G8B8A8_UNORM;
-            desc.type = ImageType::TYPE_2D;
-            desc.usageBits = IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
-            desc.initialLayout = ImageLayout::SHADER_READ_ONLY_OPTIMAL;
-            desc.generateMipMaps = true;        // Generate mipmaps for embedded image
-
+            new_image->width = static_cast<u32>(gltf_image.width);
+            new_image->height = static_cast<u32>(gltf_image.height);
+            new_image->depth = 1u;
+            new_image->arraySize = 1;     // Only support 1 layer and 1 mipmap level for embedded image
+            new_image->mipLevels = 1;
+            new_image->format = DataFormat::R8G8B8A8_UNORM;
+            new_image->type = ImageType::TYPE_2D;
+            new_image->data.resize(new_image->width * new_image->height * 4);
+            memcpy(new_image->data.data(), gltf_image.image.data(), new_image->width * new_image->height * 4);
 
             ImageInitData init_data;
-            init_data.data = gltf_image.image.data();
-            init_data.rowPitch = desc.width * 4;
-            init_data.slicePitch = init_data.rowPitch * desc.height;
+            init_data.data = new_image->data.data();
+            init_data.rowPitch = new_image->width * 4;
+            init_data.slicePitch = init_data.rowPitch * new_image->height;
+            new_image->slices.push_back(init_data);
 
-            return m_rhi_device->CreateImage(desc, &init_data);
+            return new_image;
         }
         else { // Image loaded from external file
-
+            QK_CORE_ASSERT(0);
             std::string image_uri = m_filePath + "/" + gltf_image.uri;
             bool is_ktx = false;
             if (image_uri.find_last_of(".") != std::string::npos) {
@@ -532,65 +520,55 @@ namespace quark {
                     is_ktx = true;
                 }
             }
-
-            //if (is_ktx) {
-            //    ImageAssetImporter textureImporter;
-            //    return textureImporter.ImportKtx(gltf_image.uri);
-            //}
         }
 
         QK_CORE_LOGW_TAG("AssetManger", "GLTFImporter::ParseImage::Failed to load image: {}", gltf_image.uri);
-
-        return RenderSystem::Get().GetRenderResourceManager().image_checkboard;
+        return nullptr;
     }
 
-    //Ref<Material> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
-    //{
-    //    auto newMaterial = CreateRef<Material>();
-    //    newMaterial->SetName(mat.name);
-    //    newMaterial->alphaMode = AlphaMode::MODE_OPAQUE;
-    //    newMaterial->shaderProgram = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh;
-    //
-    //    auto find = mat.additionalValues.find("alphaMode");
-    //    if (find != mat.additionalValues.end()) 
-    //    {
-    //        tinygltf::Parameter param = find->second;
-    //        if (param.string_value == "BLEND")
-    //            newMaterial->alphaMode = AlphaMode::MODE_TRANSPARENT;
-    //    }
-    //
-    //    // fill uniform buffer data
-    //    find = mat.values.find("roughnessFactor");
-    //    if (find != mat.values.end()) {
-    //        newMaterial->uniformBufferData.metalicFactor = static_cast<float>(find->second.Factor());
-    //    }
-    //
-    //    find = mat.values.find("metallicFactor");
-    //    if (find != mat.values.end()) {
-    //        newMaterial->uniformBufferData.roughNessFactor = static_cast<float>(find->second.Factor());
-    //    }
-    //
-    //    find = mat.values.find("baseColorFactor");
-    //    if (find != mat.values.end()) {
-    //        newMaterial->uniformBufferData.baseColorFactor = glm::make_vec4(find->second.ColorFactor().data());
-    //    }
-    //    
-    //    // Default textures
-    //    newMaterial->baseColorTexture = AssetManager::Get().defaultColorTexture;
-    //    newMaterial->metallicRoughnessTexture = AssetManager::Get().defaultMetalTexture;
-    //
-    //    find = mat.values.find("metallicRoughnessTexture");
-    //    if (find != mat.values.end()) {
-    //        newMaterial->metallicRoughnessTexture = m_Textures[find->second.TextureIndex()];
-    //    }
-    //
-    //    find = mat.values.find("baseColorTexture");
-    //    if (find != mat.values.end()) {
-    //        newMaterial->baseColorTexture = m_Textures[find->second.TextureIndex()];
-    //    }
-    //
-    //    return newMaterial;
-    //}
+    Ref<MaterialAsset> GLTFImporter::ParseMaterial(const tinygltf::Material& mat)
+    {
+        auto newMaterial = CreateRef<MaterialAsset>();
+        newMaterial->SetName(mat.name);
+        newMaterial->alphaMode = AlphaMode::MODE_OPAQUE;
+    
+        auto find = mat.additionalValues.find("alphaMode");
+        if (find != mat.additionalValues.end()) 
+        {
+            tinygltf::Parameter param = find->second;
+            if (param.string_value == "BLEND")
+                newMaterial->alphaMode = AlphaMode::MODE_TRANSPARENT;
+        }
+    
+        // fill uniform buffer data
+        find = mat.values.find("roughnessFactor");
+        if (find != mat.values.end()) {
+            newMaterial->metalicFactor = static_cast<float>(find->second.Factor());
+        }
+    
+        find = mat.values.find("metallicFactor");
+        if (find != mat.values.end()) {
+            newMaterial->roughNessFactor = static_cast<float>(find->second.Factor());
+        }
+    
+        find = mat.values.find("baseColorFactor");
+        if (find != mat.values.end()) {
+            newMaterial->baseColorFactor = glm::make_vec4(find->second.ColorFactor().data());
+        }
+        
+ 
+        find = mat.values.find("metallicRoughnessTexture");
+        if (find != mat.values.end()) {
+            newMaterial->metallicRoughnessImage = m_images[find->second.TextureIndex()]->GetAssetID();
+        }
+    
+        find = mat.values.find("baseColorTexture");
+        if (find != mat.values.end()) {
+            newMaterial->baseColorImage = m_images[find->second.TextureIndex()]->GetAssetID();
+        }
+    
+        return newMaterial;
+    }
 
     Ref<MeshAsset> GLTFImporter::ParseMesh(const tinygltf::Mesh& gltf_mesh)
     {
@@ -790,8 +768,7 @@ namespace quark {
             newSubmesh.count = (uint32_t)index_num;
             newSubmesh.startIndex = (uint32_t)start_index;
             newSubmesh.startVertex = (uint32_t)start_vertex;
-            // new_submesh.material = p.material > -1? m_Materials[p.material] : m_Materials.back();
-
+            newSubmesh.materialID = p.material > -1 ? m_materials[p.material]->GetAssetID() : AssetID(0);
         }
 
         newMesh->subMeshes = submeshes;

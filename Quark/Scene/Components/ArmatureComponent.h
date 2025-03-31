@@ -1,7 +1,7 @@
 #pragma once
 #include "Quark/Ecs/Component.h"
 #include "Quark/Core/UUID.h"
-#include "Quark/Asset/Asset.h"
+#include "Quark/Animation/SkeletonAsset.h"
 
 #include <glm/glm.hpp>
 
@@ -15,7 +15,8 @@ namespace quark
 		Entity* root_bone_entity = nullptr;
 		std::unordered_map<uint32_t, Entity*> bone_index_to_entity_map;
 		std::vector<glm::mat4> joint_matrices;
-		AssetID skeleton_asset_id;
+		// AssetID skeleton_asset_id;
+		Ref<SkeletonAsset> skeleton_asset;
 		
 	};
 
@@ -30,4 +31,5 @@ namespace quark
 		bool playing = false;
 		bool loop = false;
 	};
+
 }

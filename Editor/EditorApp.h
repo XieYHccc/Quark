@@ -5,6 +5,7 @@
 #include <Quark/Render/RenderSystem.h>
 #include <Quark/Events/KeyEvent.h>
 #include <Quark/Events/MouseEvent.h>
+#include <Quark/Asset/GLTFImporter.h>
 
 #include "Editor/EditorCamera.h"
 #include "Editor/Panel/SceneHeirarchyPanel.h"
@@ -35,6 +36,7 @@ public:
 private:
     void CreateGraphicResources();
 
+    GLTFImporter m_gltfImporter;
     Ref<rhi::Image> m_depth_attachment;
     Ref<rhi::Image> m_color_attachment;
     Ref<rhi::Image> m_entityID_color_attachment;

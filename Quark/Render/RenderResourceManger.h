@@ -1,6 +1,8 @@
 #pragma once
 #include "Quark/Render/RenderScene.h"
 #include "Quark/Render/ShaderLibrary.h"
+#include "Quark/Render/Mesh.h"
+
 #include "Quark/RHI/Device.h"
 
 namespace quark
@@ -64,6 +66,9 @@ namespace quark
 
 		ShaderLibrary& GetShaderLibrary() { return *m_shader_library; }
 
+		std::vector<Ref<IRenderable>> RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset);
+		Ref<RenderPBRMaterial> RequestMateral(Ref<MaterialAsset> mat_asset);
+
 		// these function will overwrite the existing resouce
 		// check if the asset is already registerd before calling these functions
 		void CreateMeshRenderResouce(AssetID mesh_asset_id);
@@ -78,8 +83,8 @@ namespace quark
 		RenderPBRMaterial& GetRenderMaterial(uint64_t material_id);
 		Ref<rhi::Image> GetImage(uint64_t image_id);
 
-    	Ref<rhi::PipeLine> GetOrCreateGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, const uint32_t mesh_attrib_mask, bool enableDepth, AlphaMode mode);
-		rhi::VertexInputLayout& GetOrCreateMeshVertexLayout(uint32_t meshAttributesMask);
+    	Ref<rhi::PipeLine> RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, const uint32_t mesh_attrib_mask, bool enableDepth, AlphaMode mode);
+		rhi::VertexInputLayout& RequestMeshVertexLayout(uint32_t meshAttributesMask);
 
 		void UpdateRenderResources(const Ref<RenderScene>& scene);
 		void UpdatePerFrameBuffer(const Ref<RenderScene>& scene);
@@ -94,6 +99,11 @@ namespace quark
 		std::unordered_map<uint64_t, rhi::VertexInputLayout> m_mesh_vertex_layouts;
 		std::unordered_map<uint64_t, Ref<rhi::Image>> m_images;
 		std::unordered_map<uint64_t, Ref<rhi::PipeLine>> m_cached_psos;
+
+		// new
+		std::unordered_map<uint64_t, std::vector<Ref<IRenderable>>> m_static_meshes;
+		std::unordered_map<uint64_t, Ref<IRenderable>> m_renderables;
+		std::unordered_map<uint64_t, Ref<RenderPBRMaterial>> m_materials;
 	};
 
 }

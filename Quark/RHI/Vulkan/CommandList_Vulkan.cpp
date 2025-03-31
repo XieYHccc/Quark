@@ -37,7 +37,7 @@ CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
     VkCommandPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     // TODO: Support other queue types
-    switch (m_QueueType) {
+    switch (m_queueType) {
     case QUEUE_TYPE_GRAPHICS:
         poolInfo.queueFamilyIndex = vulkan_context->graphicQueueIndex;
         break;
@@ -281,7 +281,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, 
     }
 
     // Depth attatchment
-    if (frameBufferInfo.depthAttachment != nullptr) {
+    if (renderPassInfo.depthAttachmentFormat != DataFormat::UNDEFINED) {
         depth_attachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         depth_attachment.imageView = ToInternal(frameBufferInfo.depthAttachment).GetView();
         depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -292,7 +292,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, 
     }
 
     rendering_info.pColorAttachments = renderPassInfo.numColorAttachments > 0 ? color_attachments : nullptr;
-    rendering_info.pDepthAttachment = frameBufferInfo.depthAttachment ? &depth_attachment : nullptr;
+    rendering_info.pDepthAttachment = renderPassInfo.depthAttachmentFormat != DataFormat::UNDEFINED ? &depth_attachment : nullptr;
     //TODO: Support stencil test
     rendering_info.pStencilAttachment = nullptr;
     rendering_info.pNext = nullptr;

@@ -48,13 +48,14 @@ public:
     ~DescriptorSetAllocator();
 
     void BeginFrame();
-    VkDescriptorSetLayout GetLayout() const { return m_Layout; }
+    VkDescriptorSetLayout GetLayout() const { return m_layout_handle; }
     std::pair<VkDescriptorSet, bool> Find(size_t hash);
 
 private:
     Device_Vulkan* m_Device;
 
-    VkDescriptorSetLayout m_Layout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_layout_handle = VK_NULL_HANDLE;
+    DescriptorSetLayout m_layout;
     std::vector<PoolSizeRatio> m_PoolSizeRatios;
     std::vector<VkDescriptorPool> m_Pools;
 

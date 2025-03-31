@@ -4,7 +4,7 @@
 #include <glm/gtx/hash.hpp>
 #include <tiny_obj_loader.h>
 
-#include "Quark/Core/Application.h"
+#include "Quark/Render/RenderSystem.h"
 #include "Quark/Asset/GLTFImporter.h"
 #include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Scene.h"
@@ -12,8 +12,9 @@
 namespace quark {
 
 Ref<MeshAsset> MeshImporter::ImportGLTF(const std::string& filepath) {
-	GLTFImporter gltf_importer(Application::Get().GetGraphicDevice());
-	GLTFImporter::ImportingFlags flags = GLTFImporter::ImportingFlags::ImportMeshes;
+	GLTFImporter gltf_importer(RenderSystem::Get().GetDevice());
+	uint32_t flags = 0;
+	flags |= (GLTFImporter::ImportMeshes | GLTFImporter::ImportMaterials);
     gltf_importer.Import(filepath, flags);
 
 	std::vector<Ref<MeshAsset>>& meshes = gltf_importer.GetMeshes();

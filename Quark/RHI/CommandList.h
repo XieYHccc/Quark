@@ -78,7 +78,7 @@ struct PipelineImageBarrier
 
 class CommandList : public GpuResource {
 public:
-    CommandList(QueueType type) : m_QueueType(type) {};
+    CommandList(QueueType type) : m_queueType(type) {};
     virtual ~CommandList() = default;
 
     virtual void PushConstant(const void* data, uint32_t offset, uint32_t size) = 0;
@@ -107,11 +107,11 @@ public:
     virtual const RenderPassInfo2& GetCurrentRenderPassInfo() const = 0;
     virtual const PipeLine* GetCurrentGraphicsPipeline() const = 0;
 
-    QueueType GetQueueType() const { return m_QueueType; }
+    QueueType GetQueueType() const { return m_queueType; }
     GpuResourceType GetGpuResourceType() const override { return GpuResourceType::COMMAND_LIST; }
 
 protected:
-    QueueType m_QueueType;
+    QueueType m_queueType;
 };
 
 }

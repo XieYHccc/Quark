@@ -1,8 +1,10 @@
 #pragma once
+#include "Quark/Render/IRenderable.h"
+#include "Quark/Render/ShaderLibrary.h"
 #include "Quark/Core/Math/Aabb.h"
 #include "Quark/RHI/Common.h"
-#include "Quark/Render/ShaderLibrary.h"
 #include "Quark/Asset/MaterialAsset.h"
+
 #include <glm/glm.hpp>
 
 namespace quark {
@@ -60,6 +62,16 @@ namespace quark {
         bool isDynamic = false;
     };
 
+    enum class TextureKind : uint8_t
+    {
+        Albedo = 0,
+        Normal = 1,
+        MetallicRoughness = 2,
+        Occlusion = 3,
+        Emissive = 4,
+        Count
+    };
+
     struct RenderPBRMaterial 
     {
         Ref<rhi::Image> base_color_texture_image;
@@ -73,6 +85,9 @@ namespace quark {
 
         ShaderProgram* shaderProgram;
         AlphaMode alphaMode;
+        
+        DrawPipeline drawPipeline;
+        uint64_t hash;
     };
 
     // minimum unit for a single draw call

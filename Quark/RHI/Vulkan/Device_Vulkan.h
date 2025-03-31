@@ -43,7 +43,8 @@ public:
         std::mutex m_Locker;
     };
 
-    struct PerFrameData {
+    struct PerFrameData 
+    {
         Device_Vulkan* device = nullptr;
         VmaAllocator vmaAllocator = nullptr;
         std::vector<CommandList_Vulkan*> cmdLists[QUEUE_TYPE_MAX_ENUM];
@@ -79,11 +80,9 @@ public:
     std::unordered_map<size_t, DescriptorSetAllocator> cached_descriptorSetAllocator;
 
 public:
-    Device_Vulkan() = default;
-    ~Device_Vulkan() = default;
+    Device_Vulkan(const DeviceConfig& config);
+    virtual ~Device_Vulkan();
     
-    bool Init() override final;
-    void ShutDown() override final;
     bool BeiginFrame(TimeStep ts) override final;
     bool EndFrame(TimeStep ts) override final;
     void OnWindowResize(const WindowResizeEvent& event) override final;

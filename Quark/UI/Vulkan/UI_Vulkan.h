@@ -10,7 +10,7 @@ public:
     UI_Vulkan() = default;
     ~UI_Vulkan() = default;
 
-    void Init(rhi::Device* device, const UiSpecification& specs) override;
+    void Init(Ref<rhi::Device> device, const UiSpecification& specs) override;
     void Finalize() override;
 
     void BeginFrame() override;
@@ -20,7 +20,7 @@ public:
     ImTextureID GetOrCreateTextureId(const Ref<rhi::Image>& image, const Ref<rhi::Sampler>& sampler) override;
 
 private:
-    rhi::Device_Vulkan* m_device;
+    Ref<rhi::Device_Vulkan> m_device;
 
     VkDescriptorPool m_descriptorPool;
     VkFormat m_colorFormat;

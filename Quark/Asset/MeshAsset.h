@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 namespace quark {
+struct MaterialAsset;
 
 enum class MeshAttribute : unsigned
 {
@@ -38,6 +39,7 @@ public:
         uint32_t startIndex = 0; // This is not relative to the startVertex
         uint32_t count = 0;
         math::Aabb aabb = {};
+        AssetID materialID = 0;
     };
     std::vector<SubMeshDescriptor> subMeshes;
 

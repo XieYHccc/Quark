@@ -122,7 +122,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
     for (uint32_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; set++) 
     {
         if ((combinedLayout.descriptorSetLayoutMask & 1u << set) == 0)
-            continue;
+			continue;
 
         setAllocators[set] = this->device->Request_DescriptorSetAllocator(combinedLayout.descriptorSetLayouts[set]);
         vk_descriptorset_layouts.push_back(setAllocators[set]->GetLayout());

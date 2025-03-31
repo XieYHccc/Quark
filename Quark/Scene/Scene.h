@@ -2,7 +2,9 @@
 #include "Quark/Ecs/EntityRegistry.h"
 #include "Quark/Core/UUID.h"
 #include "Quark/Core/TimeStep.h"
-#include "Quark/Asset/Asset.h"
+#include "Quark/Core/Math/Frustum.h"
+#include "Quark/Render/RenderQueue.h"
+#include "Quark/Render/RenderComponents.h"
 
 #include <glm/glm.hpp>
 
@@ -29,6 +31,7 @@ public:
     // void RunTransformUpdateSystem();
     void RunAnimationUpdateSystem(TimeStep delta_time);
     void RunJointsUpdateSystem();
+    void RunRenderInfoUpdateSystem();
 
     // swap data for rendering
     void FillMeshSwapData();
@@ -41,14 +44,16 @@ public:
     Entity* GetEntityWithName(const std::string& name);
     Entity* GetParentEntity(Entity* entity);
     std::vector<Entity*> GetChildEntities(Entity* parent, bool recursive);
-
-    void DeleteEntity(Entity* entity);
-    void AddArmatureComponent(Entity* entity, Ref<SkeletonAsset> skeleton_asset); // now the root bone entity's parent is the parent of the parameter entity
-
     std::vector<Entity*>& GetEntities() { return m_entity_registry.GetEntities(); }
 
+    void DeleteEntity(Entity* entity);
     void AttachChild(Entity* child, Entity* parent);
     void DetachChild(Entity* child);
+    void AddArmatureComponent(Entity* entity, Ref<SkeletonAsset> skeleton_asset);
+    void AddStaticMeshComponent(Entity* entity, Ref<MeshAsset> mesh_asset);
+
+    void GatherVisibleOpaqueRenderables(const math::Frustum& frustum, VisibilityList& list);
+    void GatherVisibleTransparentRenderables(const math::Frustum& frustum, VisibilityList& list);
 
     template<typename... Ts>
     ComponentGroupVector<Ts...>& GetComponents() 
@@ -79,6 +84,8 @@ private:
     Entity* m_main_camera_entity;
     std::unordered_map<uint64_t, Entity*> m_id_to_entity_map;
     std::unordered_map<std::string, Entity*> m_name_to_entity_map;
+
+    ComponentGroupVector<RenderableCmpt, RenderInfoCmpt, OpaqueCmpt>& m_opaques; 
 };
 
 }

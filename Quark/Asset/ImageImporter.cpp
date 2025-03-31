@@ -1,7 +1,7 @@
 #include "Quark/qkpch.h"
 #include "Quark/Asset/ImageImporter.h"
 #include "Quark/Core/FileSystem.h"
-#include "Quark/Core/Application.h"
+#include "Quark/Render/RenderSystem.h"
 
 #include <ktx.h>
 #include <basisu_transcoder.h>
@@ -150,7 +150,7 @@ namespace quark
         new_image_asset->format = rhi::DataFormat::R8G8B8A8_UNORM;
         basist::transcoder_texture_format targetFormat = basist::transcoder_texture_format::cTFRGBA32;
 
-        auto graphicDevice = Application::Get().GetGraphicDevice();
+        auto graphicDevice = RenderSystem::Get().GetDevice();
         if (graphicDevice->GetDeviceFeatures().textureCompressionBC) 
         {
             // BC7 is the preferred block compression if available
@@ -241,9 +241,10 @@ namespace quark
         new_image_asset->type = rhi::ImageType::TYPE_2D;
         new_image_asset->data.resize(width * height * 4);
         memcpy(new_image_asset->data.data(), data, width * height * 4);
+        stbi_image_free(data);
 
         rhi::ImageInitData init_data;
-        init_data.data = data;
+        init_data.data = new_image_asset->data.data();
         init_data.rowPitch = width * 4;
         init_data.slicePitch = init_data.rowPitch * height;
         new_image_asset->slices.push_back(init_data);

@@ -1,6 +1,5 @@
 #include "Quark/qkpch.h"
-#include "Quark/Render/ShaderLibrary.h"
-#include "Quark/Core/Application.h"
+#include "Quark/Render/RenderSystem.h"
 #include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Asset/MeshAsset.h"
@@ -25,6 +24,11 @@ ShaderProgram::ShaderProgram(ShaderTemplate* vert, ShaderTemplate* frag)
 {
 	m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)] = vert;
 	m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)] = frag;
+
+	util::Hasher h;
+	h.string(vert->GetPath());
+	h.string(frag->GetPath());
+	m_hash = h.get();
 }
 
 ShaderProgramVariant* ShaderProgram::GetOrCreateVariant(const ShaderVariantKey& key)
@@ -91,26 +95,28 @@ bool ShaderProgram::IsStatic() const
 
 ShaderLibrary::ShaderLibrary()
 {
+	program_test = RequestGraphicsProgram("BuiltInResources/Shaders/new_mesh.vert",
+		"BuiltInResources/Shaders/new_mesh.frag");
 
-	program_staticMesh = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
+	program_staticMesh = RequestGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
 		"BuiltInResources/Shaders/static_mesh.frag");
 
-	program_staticMeshEditor = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/editor_scene.vert",
+	program_staticMeshEditor = RequestGraphicsProgram("BuiltInResources/Shaders/editor_scene.vert",
 		"BuiltInResources/Shaders/editor_scene.frag");
 
-	staticProgram_skybox = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/Spirv/skybox.vert.spv",
+	staticProgram_skybox = RequestGraphicsProgram("BuiltInResources/Shaders/Spirv/skybox.vert.spv",
 		"BuiltInResources/Shaders/Spirv/skybox.frag.spv");
 
-	staticProgram_infiniteGrid = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/Spirv/infinite_grid.vert.spv",
+	staticProgram_infiniteGrid = RequestGraphicsProgram("BuiltInResources/Shaders/Spirv/infinite_grid.vert.spv",
 		"BuiltInResources/Shaders/Spirv/infinite_grid.frag.spv");
 	
-	staticProgram_entityID = GetOrCreateGraphicsProgram("BuiltInResources/Shaders/Spirv/entityID.vert.spv",
+	staticProgram_entityID = RequestGraphicsProgram("BuiltInResources/Shaders/Spirv/entityID.vert.spv",
 		"BuiltInResources/Shaders/Spirv/entityID.frag.spv");
 
 	QK_CORE_LOGI_TAG("Renderer", "ShaderLibrary Initialized");
 }
 
-ShaderProgram* ShaderLibrary::GetOrCreateGraphicsProgram(const std::string& vert_path, const std::string& frag_path)
+ShaderProgram* ShaderLibrary::RequestGraphicsProgram(const std::string& vert_path, const std::string& frag_path)
 {
 	util::Hasher h;
 	h.string(vert_path);
@@ -124,8 +130,8 @@ ShaderProgram* ShaderLibrary::GetOrCreateGraphicsProgram(const std::string& vert
 	}
 	else // Create ShaderProgram
 	{
-		ShaderTemplate* vertTemp = GetOrCreateShaderTemplate(vert_path, rhi::ShaderStage::STAGE_VERTEX);
-		ShaderTemplate* fragTemp = GetOrCreateShaderTemplate(frag_path, rhi::ShaderStage::STAGE_FRAGEMNT);
+		ShaderTemplate* vertTemp = RequestShaderTemplate(vert_path, rhi::ShaderStage::STAGE_VERTEX);
+		ShaderTemplate* fragTemp = RequestShaderTemplate(frag_path, rhi::ShaderStage::STAGE_FRAGEMNT);
 
 		Scope<ShaderProgram> newProgram = CreateScope<ShaderProgram>(vertTemp, fragTemp);
 
@@ -136,12 +142,12 @@ ShaderProgram* ShaderLibrary::GetOrCreateGraphicsProgram(const std::string& vert
 
 }
 
-ShaderProgram* ShaderLibrary::GetOrCreateComputeProgram(const std::string& comp_path)
+ShaderProgram* ShaderLibrary::RequestComputeProgram(const std::string& comp_path)
 {
 	return nullptr;
 }
 
-ShaderTemplate* ShaderLibrary::GetOrCreateShaderTemplate(const std::string& path, rhi::ShaderStage stage)
+ShaderTemplate* ShaderLibrary::RequestShaderTemplate(const std::string& path, rhi::ShaderStage stage)
 {
 	util::Hasher h;
 	h.string(path);
@@ -216,7 +222,7 @@ ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const ShaderVariantKey
 			return nullptr;
 		}
 
-		Ref<rhi::Shader> newShader = Application::Get().GetGraphicDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size() * sizeof(uint32_t));
+		Ref<rhi::Shader> newShader = RenderSystem::Get().GetDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size() * sizeof(uint32_t));
 
 		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
 		newVariant->gpuShaderHandle = newShader;
@@ -245,7 +251,7 @@ ShaderTemplateVariant* ShaderTemplate::GetPrecompiledVariant()
 		if (!FileSystem::ReadFileBytes(m_path, spirv))
 			return nullptr;
 
-		Ref<rhi::Shader> newShader = Application::Get().GetGraphicDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size());
+		Ref<rhi::Shader> newShader = RenderSystem::Get().GetDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size());
 		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
 		newVariant->gpuShaderHandle = newShader;
 		newVariant->signatureKey = ShaderVariantKey();

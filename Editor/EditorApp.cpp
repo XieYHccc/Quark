@@ -3,7 +3,6 @@
 #include <Quark/Quark.h>
 #include <Quark/EntryPoint.h>
 #include <Quark/Asset/ImageImporter.h>
-#include <Quark/Asset/GLTFImporter.h>
 
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -32,7 +31,7 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
 {
     CreateGraphicResources();
 
-    GLTFImporter importer(m_graphicDevice);
+    GLTFImporter importer(RenderSystem::Get().GetDevice());
     importer.Import("BuiltInResources/Gltf/CesiumMan/glTF/CesiumMan.gltf", GLTFImporter::ImportAll);
     Ref<SkeletonAsset> skeleton = importer.GetSkeletons()[0];
     Ref<AnimationAsset> animation = importer.GetAnimations()[0];
@@ -56,6 +55,13 @@ EditorApp::EditorApp(const ApplicationSpecification& specs)
     auto* anim_cmpt = cesium_entity->AddComponent<AnimationCmpt>();
     anim_cmpt->animation_asset_id = animation->GetAssetID();
 
+    m_gltfImporter.Import("BuiltInResources/Gltf/CesiumMan/glTF/CesiumMan.gltf", GLTFImporter::ImportAll);
+    m_gltfImporter.AddAllAssetsAsMemoryOnly();
+
+    m_scene = m_gltfImporter.GetScene();
+    m_heirarchyPanel.SetScene(m_scene);
+    m_inspectorPanel.SetScene(m_scene);
+    m_hoverdEntity = nullptr;
 
     // register event callbacks
     EventManager::Get().Subscribe<KeyPressedEvent>([&](const KeyPressedEvent& e) { OnKeyPressed(e); });
@@ -327,16 +333,17 @@ bool EditorApp::OpenProject()
 void EditorApp::OnRender(TimeStep ts)
 {
     auto& render_system = RenderSystem::Get();
+    Ref<rhi::Device> rhi_device = render_system.GetDevice();
     auto render_scene = render_system.GetRenderScene(); //TODO: remove this
     render_system.ProcessSwapData();
-
+    
     // Rendering commands
-    if (m_graphicDevice->BeiginFrame(ts)) 
+    if (rhi_device->BeiginFrame(ts)) 
     {
         // render_system.UpdateGpuResources(m_drawContext, m_visibility);
 
-        auto* graphic_cmd = m_graphicDevice->BeginCommandList();
-        auto* swap_chain_image = m_graphicDevice->GetPresentImage();
+        auto* graphic_cmd = rhi_device->BeginCommandList();
+        auto* swap_chain_image = rhi_device->GetPresentImage();
 
         // Viewport and scissor
         rhi::Viewport viewport;
@@ -437,14 +444,14 @@ void EditorApp::OnRender(TimeStep ts)
             graphic_cmd->PipeLineBarriers(nullptr, 0, &present_barrier, 1, nullptr, 0);
 
             // Submit graphic command list
-            m_graphicDevice->SubmitCommandList(graphic_cmd);
+            rhi_device->SubmitCommandList(graphic_cmd);
         }
 
          // color picking
          if (m_viewportHovered)
          {
              // color ID pass
-             rhi::CommandList* cmd = m_graphicDevice->BeginCommandList();
+             rhi::CommandList* cmd = rhi_device->BeginCommandList();
 
              rhi::PipelineImageBarrier image_barrier;
              image_barrier.image = m_entityID_color_attachment.get();
@@ -497,10 +504,10 @@ void EditorApp::OnRender(TimeStep ts)
              cmd->CopyImageToBuffer(*m_stage_buffer, *m_entityID_color_attachment, 0, { x, y, 0 },
                  { 1, 1, 1 }, 0, 0, { rhi::ImageAspect::COLOR, 0, 0, 1 });
 
-             m_graphicDevice->SubmitCommandList(cmd, nullptr, 0, false);
+             rhi_device->SubmitCommandList(cmd, nullptr, 0, false);
          }
 
-        m_graphicDevice->EndFrame(ts);
+        rhi_device->EndFrame(ts);
     }
 }
 
@@ -556,7 +563,7 @@ void EditorApp::OnMouseButtonPressed(const MouseButtonPressedEvent& e)
 void EditorApp::CreateGraphicResources()
 {
     using namespace quark::rhi;
-
+    auto rhi_device = RenderSystem::Get().GetDevice();
     // Create depth image
     ImageDesc image_desc;
     image_desc.type = ImageType::TYPE_2D;
@@ -569,26 +576,26 @@ void EditorApp::CreateGraphicResources()
     image_desc.mipLevels = 1;
     image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     image_desc.usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    m_depth_attachment = m_graphicDevice->CreateImage(image_desc);
-    m_entityID_depth_attachment = m_graphicDevice->CreateImage(image_desc);
+    m_depth_attachment = rhi_device->CreateImage(image_desc);
+    m_entityID_depth_attachment = rhi_device->CreateImage(image_desc);
 
     // Create color image
     image_desc.format = RenderSystem::Get().GetRenderResourceManager().format_colorAttachment_main;
     image_desc.initialLayout = ImageLayout::UNDEFINED;
     image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | rhi::IMAGE_USAGE_SAMPLING_BIT;
-    m_color_attachment = m_graphicDevice->CreateImage(image_desc);
+    m_color_attachment = rhi_device->CreateImage(image_desc);
 
     // Create entityID image
     image_desc.format = DataFormat::R32G32_UINT;
     image_desc.usageBits = IMAGE_USAGE_COLOR_ATTACHMENT_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
-    m_entityID_color_attachment = m_graphicDevice->CreateImage(image_desc);
+    m_entityID_color_attachment = rhi_device->CreateImage(image_desc);
 
     // Create stage buffer
     BufferDesc buffer_desc;
     buffer_desc.domain = BufferMemoryDomain::CPU;
     buffer_desc.usageBits = BUFFER_USAGE_TRANSFER_TO_BIT;
     buffer_desc.size = image_desc.width * image_desc.height * sizeof(uint64_t);
-    m_stage_buffer = m_graphicDevice->CreateBuffer(buffer_desc);
+    m_stage_buffer = rhi_device->CreateBuffer(buffer_desc);
 }
 
 }

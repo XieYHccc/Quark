@@ -13,7 +13,7 @@ public:
     Frustum(const glm::mat4& inv_view_proj_mat);
 
     void Build(const glm::mat4& inv_view_proj_mat);
-    bool CheckSphere(const Aabb& aabb);
+    bool CheckSphere(const Aabb& aabb) const;
 private:
     glm::mat4 inv_view_proj_matrix_;
     std::array<glm::vec4, 6> planes;

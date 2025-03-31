@@ -5,10 +5,10 @@ namespace quark::rhi {
 
 void TextureFormatLayout::SetUp2D(DataFormat format, uint32_t width, uint32_t height, uint32_t array_size, uint32_t mip_levels)
 {
-    format_ = format;
-    image_type_ = ImageType::TYPE_2D;
-    array_size_ = array_size;
-    mip_levels_ = mip_levels;
+    m_format = format;
+    m_image_type = ImageType::TYPE_2D;
+    m_array_size = array_size;
+    m_mip_levels = mip_levels;
     
     FillMipInfos(width, height, 1);
     
@@ -27,33 +27,33 @@ uint32_t TextureFormatLayout::GeneratedMipCount(uint32_t width, uint32_t height,
 
 void TextureFormatLayout::FillMipInfos(uint32_t width, uint32_t height, uint32_t depth)
 {
-	block_stride_ = GetFormatStride(format_);
-	GetFormatBlockDim(format_, block_dim_x_, block_dim_y_);
+	m_block_stride = GetFormatStride(m_format);
+	GetFormatBlockDim(m_format, m_block_dim_x, m_block_dim_y);
 
     // generate mipmaps
-	if (mip_levels_ == 0)
-        mip_levels_ = GeneratedMipCount(width, height, depth);
+	if (m_mip_levels == 0)
+        m_mip_levels = GeneratedMipCount(width, height, depth);
 
 	size_t offset = 0;
-	for (uint32_t mip = 0; mip < mip_levels_; mip++)
+	for (uint32_t mip = 0; mip < m_mip_levels; mip++)
 	{
 		offset = (offset + 15) & ~15;
 
-		uint32_t blocks_x = (width + block_dim_x_ - 1) / block_dim_x_;
-		uint32_t blocks_y = (height + block_dim_y_ - 1) / block_dim_y_;
+		uint32_t blocks_x = (width + m_block_dim_x - 1) / m_block_dim_x;
+		uint32_t blocks_y = (height + m_block_dim_y - 1) / m_block_dim_y;
 
-		mips_[mip].offset = offset;
-		mips_[mip].num_block_x = blocks_x;
-		mips_[mip].num_block_y = blocks_y;
-		mips_[mip].row_length = blocks_x * block_dim_x_;
-		mips_[mip].image_height = blocks_y * block_dim_y_;
-		mips_[mip].width = width;
-		mips_[mip].height = height;
-		mips_[mip].depth = depth;
-		mips_[mip].row_pitch = blocks_x * block_stride_;
-		mips_[mip].slice_pitch = blocks_x * blocks_y * block_stride_;
+		m_mips[mip].offset = offset;
+		m_mips[mip].num_block_x = blocks_x;
+		m_mips[mip].num_block_y = blocks_y;
+		m_mips[mip].row_length = blocks_x * m_block_dim_x;
+		m_mips[mip].image_height = blocks_y * m_block_dim_y;
+		m_mips[mip].width = width;
+		m_mips[mip].height = height;
+		m_mips[mip].depth = depth;
+		m_mips[mip].row_pitch = blocks_x * m_block_stride;
+		m_mips[mip].slice_pitch = blocks_x * blocks_y * m_block_stride;
 
-		size_t mip_size = mips_[mip].slice_pitch * array_size_ * depth;
+		size_t mip_size = m_mips[mip].slice_pitch * m_array_size * depth;
 
 		offset += mip_size;
 		width = std::max((width >> 1u), 1u);
@@ -61,7 +61,7 @@ void TextureFormatLayout::FillMipInfos(uint32_t width, uint32_t height, uint32_t
 		depth = std::max((depth >> 1u), 1u);
 	}
 
-	required_size_ = offset;
+	m_required_size = offset;
 }
 
 }

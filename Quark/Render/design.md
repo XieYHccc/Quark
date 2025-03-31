@@ -1,0 +1,4 @@
+- IRenderable
+  - 渲染管线的最小粒度单位，参与排序，culling等批处理
+  - 多态， 支持向RenderQueue提交draw call task, 支持统一做frustum culling
+  - 每个IRenderable都有不同的BlendState, 方便做不同的合批处理，如果一个IRenderable里有多个submesh是无法做到这一点的。

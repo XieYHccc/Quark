@@ -236,6 +236,214 @@ namespace quark
         }
     }
 
+    std::vector<Ref<IRenderable>> RenderResourceManager::RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset)
+    {
+        auto find = m_static_meshes.find(mesh_asset->GetAssetID());
+        if (find != m_static_meshes.end())
+			return find->second;
+
+        Ref<rhi::Buffer> vbo_position;
+        Ref<rhi::Buffer> vbo_varying_enable_blending;
+        Ref<rhi::Buffer> vbo_varying;
+        Ref<rhi::Buffer> vbo_joint_binding;
+        Ref<rhi::Buffer> ibo;
+
+        // upload index buffer
+        uint32_t index_buffer_size = sizeof(uint32_t) * mesh_asset->indices.size();
+        uint32_t* index_buffer_data = mesh_asset->indices.data();
+
+        rhi::BufferDesc index_buffer_desc;
+        index_buffer_desc.size = index_buffer_size;
+        index_buffer_desc.usageBits = rhi::BUFFER_USAGE_INDEX_BUFFER_BIT | rhi::BUFFER_USAGE_TRANSFER_TO_BIT;
+        index_buffer_desc.domain = rhi::BufferMemoryDomain::GPU;
+        ibo = m_device->CreateBuffer(index_buffer_desc, index_buffer_data);
+
+        // prepare staging buffer
+        uint64_t vertex_position_buffer_size = sizeof(glm::vec3) * mesh_asset->vertex_positions.size();
+        uint64_t vertex_varying_enable_blending_buffer_size = 0;
+        uint64_t vertex_varying_buffer_size = 0;
+        uint64_t vertex_joint_binding_buffer_size = 0;
+
+        if (!mesh_asset->vertex_normals.empty())
+            vertex_varying_enable_blending_buffer_size += sizeof(glm::vec3) * mesh_asset->vertex_normals.size();
+        if (!mesh_asset->vertex_tangents.empty())
+            vertex_varying_enable_blending_buffer_size += sizeof(glm::vec3) * mesh_asset->vertex_tangents.size();
+        if (!mesh_asset->vertex_uvs.empty())
+            vertex_varying_buffer_size += sizeof(glm::vec2) * mesh_asset->vertex_uvs.size();
+        if (!mesh_asset->vertex_bone_indices.empty())
+            vertex_joint_binding_buffer_size += sizeof(glm::uvec4) * mesh_asset->vertex_bone_indices.size();
+        if (!mesh_asset->vertex_bone_weights.empty())
+            vertex_joint_binding_buffer_size += sizeof(glm::vec4) * mesh_asset->vertex_bone_weights.size();
+
+        rhi::BufferDesc stage_buffer_desc;
+        stage_buffer_desc.size = vertex_position_buffer_size + vertex_varying_enable_blending_buffer_size +
+            vertex_varying_buffer_size + vertex_joint_binding_buffer_size;
+        stage_buffer_desc.usageBits = rhi::BUFFER_USAGE_TRANSFER_FROM_BIT;
+        stage_buffer_desc.domain = rhi::BufferMemoryDomain::CPU;
+        Ref<rhi::Buffer> stage_buffer = m_device->CreateBuffer(stage_buffer_desc, nullptr);
+        void* stage_buffer_data = stage_buffer->GetMappedDataPtr();
+        QK_CORE_VERIFY(stage_buffer_data, "Failed to map stage buffer");
+
+        // upload vertex data to staging buffer
+        uint64_t vertex_position_buffer_offset = 0;
+        uint64_t vertex_varying_enable_blending_buffer_offset = vertex_position_buffer_offset + vertex_position_buffer_size;
+        uint64_t vertex_varying_buffer_offset = vertex_varying_enable_blending_buffer_offset + vertex_varying_enable_blending_buffer_size;
+        uint64_t vertex_joint_binding_buffer_offset = vertex_varying_buffer_offset + vertex_varying_buffer_size;
+
+        glm::vec3* vertex_positions_buffer_data = reinterpret_cast<glm::vec3*>(reinterpret_cast<uintptr_t>(stage_buffer_data) + vertex_position_buffer_offset);
+        uint8_t* vertex_varying_enable_blending_buffer_data = reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(stage_buffer_data) + vertex_varying_enable_blending_buffer_offset);
+        uint8_t* vertex_varying_buffer_data = reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(stage_buffer_data) + vertex_varying_buffer_offset);
+        uint8_t* vertex_joint_binding_buffer_data = reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(stage_buffer_data) + vertex_joint_binding_buffer_offset);
+
+        size_t offset_in_vertex_varying_enable_blending_buffer = 0;
+        size_t offset_in_vertex_varying_buffer = 0;
+        size_t offset_in_vertex_joint_binding_buffer = 0;
+        for (uint32_t i = 0; i < mesh_asset->GetVertexCount(); ++i)
+        {
+            vertex_positions_buffer_data[i] = mesh_asset->vertex_positions[i];
+
+            if (!mesh_asset->vertex_normals.empty())
+            {
+                memcpy(vertex_varying_enable_blending_buffer_data + offset_in_vertex_varying_enable_blending_buffer,
+                    &mesh_asset->vertex_normals[i], sizeof(glm::vec3));
+                offset_in_vertex_varying_enable_blending_buffer += sizeof(glm::vec3);
+            }
+
+            if (!mesh_asset->vertex_tangents.empty())
+            {
+                memcpy(vertex_varying_enable_blending_buffer_data + offset_in_vertex_varying_enable_blending_buffer,
+                    &mesh_asset->vertex_tangents[i], sizeof(glm::vec3));
+                offset_in_vertex_varying_enable_blending_buffer += sizeof(glm::vec3);
+            }
+
+            if (!mesh_asset->vertex_uvs.empty())
+            {
+                memcpy(vertex_varying_buffer_data + offset_in_vertex_varying_buffer,
+                    &mesh_asset->vertex_uvs[i], sizeof(glm::vec2));
+                offset_in_vertex_varying_buffer += sizeof(glm::vec2);
+            }
+
+            if (!mesh_asset->vertex_bone_indices.empty())
+            {
+                memcpy(vertex_joint_binding_buffer_data + offset_in_vertex_joint_binding_buffer,
+                    &mesh_asset->vertex_bone_indices[i], sizeof(glm::uvec4));
+                offset_in_vertex_joint_binding_buffer += sizeof(glm::uvec4);
+            }
+
+            if (!mesh_asset->vertex_bone_weights.empty())
+            {
+                memcpy(vertex_joint_binding_buffer_data + offset_in_vertex_joint_binding_buffer,
+                    &mesh_asset->vertex_bone_weights[i], sizeof(glm::vec4));
+                offset_in_vertex_joint_binding_buffer += sizeof(glm::vec4);
+            }
+
+        }
+
+        // copy staging buffer to gpu buffer
+        rhi::BufferDesc buffer_desc;
+        buffer_desc.domain = rhi::BufferMemoryDomain::GPU;
+        buffer_desc.usageBits = rhi::BUFFER_USAGE_VERTEX_BUFFER_BIT | rhi::BUFFER_USAGE_TRANSFER_TO_BIT;
+
+        buffer_desc.size = vertex_position_buffer_size;
+        vbo_position = m_device->CreateBuffer(buffer_desc, nullptr);
+        m_device->CopyBuffer(*vbo_position, *stage_buffer, vertex_position_buffer_size, 0, vertex_position_buffer_offset);
+
+        if (vertex_varying_enable_blending_buffer_size > 0)
+        {
+            buffer_desc.size = vertex_varying_enable_blending_buffer_size;
+            vbo_varying_enable_blending = m_device->CreateBuffer(buffer_desc, nullptr);
+            m_device->CopyBuffer(*vbo_varying_enable_blending, *stage_buffer, vertex_varying_enable_blending_buffer_size, 0, vertex_varying_enable_blending_buffer_offset);
+        }
+
+        if (vertex_varying_buffer_size > 0)
+        {
+            buffer_desc.size = vertex_varying_buffer_size;
+            vbo_varying = m_device->CreateBuffer(buffer_desc, nullptr);
+            m_device->CopyBuffer(*vbo_varying, *stage_buffer, vertex_varying_buffer_size, 0, vertex_varying_buffer_offset);
+        }
+
+        if (vertex_joint_binding_buffer_size > 0)
+        {
+            buffer_desc.size = vertex_joint_binding_buffer_size;
+            vbo_joint_binding = m_device->CreateBuffer(buffer_desc, nullptr);
+            m_device->CopyBuffer(*vbo_joint_binding, *stage_buffer, vertex_joint_binding_buffer_size, 0, vertex_joint_binding_buffer_offset);
+        }
+
+        std::vector<Ref<IRenderable>> renderables;
+		for (auto& submesh : mesh_asset->subMeshes)
+		{
+			Ref<StaticMesh> renderable = CreateRef<StaticMesh>();
+            renderable->vertex_count = submesh.count;
+            renderable->vertex_offset = 0;
+            renderable->ibo_offset = submesh.startIndex;
+			renderable->material = RequestMateral(AssetManager::Get().GetAsset<MaterialAsset>(submesh.materialID));
+            renderable->vbo_position = vbo_position;
+            renderable->vbo_varying_enable_blending = vbo_varying_enable_blending;
+            renderable->vbo_varying = vbo_varying;
+            renderable->vbo_joint_binding = vbo_joint_binding;
+            renderable->ibo = ibo;
+            renderable->mesh_attribute_mask = mesh_asset->GetMeshAttributeMask();
+            renderable->static_aabb = submesh.aabb;
+
+            util::Hasher h;
+            h.u64(mesh_asset->GetAssetID());
+            h.u32(renderable->ibo_offset);
+            h.u32(renderable->vertex_offset);
+            h.u32(renderable->vertex_count);
+            h.u32(submesh.materialID);
+            renderable->hash = h.get();
+            renderables.push_back(renderable);
+
+            m_renderables[h.get()] = renderable;
+		}
+        
+        m_static_meshes[mesh_asset->GetAssetID()] = renderables;
+
+		return renderables;
+    }
+
+    Ref<RenderPBRMaterial> RenderResourceManager::RequestMateral(Ref<MaterialAsset> mat_asset)
+    {
+        auto find = m_materials.find(mat_asset->GetAssetID());
+        if (find != m_materials.end())
+			return find->second;
+
+        Ref<RenderPBRMaterial> new_material = CreateRef<RenderPBRMaterial>();
+        if (mat_asset->baseColorImage == 0)
+        {
+            new_material->base_color_texture_image = image_white;
+        }
+        else
+        {
+            if (!IsImageAssetRegisterd(mat_asset->baseColorImage))
+                CreateImageRenderResource(mat_asset->baseColorImage);
+            new_material->base_color_texture_image = GetImage(mat_asset->baseColorImage);
+        }
+        if (mat_asset->metallicRoughnessImage == 0)
+        {
+            new_material->metallic_roughness_texture_image = image_white;
+        }
+        else
+        {
+            if (!IsImageAssetRegisterd(mat_asset->metallicRoughnessImage))
+                CreateImageRenderResource(mat_asset->metallicRoughnessImage);
+            new_material->metallic_roughness_texture_image = GetImage(mat_asset->metallicRoughnessImage);
+        }
+
+        new_material->colorFactors = mat_asset->baseColorFactor;
+        new_material->metallicFactor = mat_asset->metalicFactor;
+        new_material->roughnessFactor = mat_asset->roughNessFactor;
+        new_material->alphaMode = mat_asset->alphaMode;
+        if (mat_asset->vertexShaderPath == "" || mat_asset->fragmentShaderPath == "")
+            new_material->shaderProgram = m_shader_library->program_staticMesh;
+        else
+            new_material->shaderProgram = m_shader_library->RequestGraphicsProgram(mat_asset->vertexShaderPath, mat_asset->fragmentShaderPath);
+
+        m_materials[mat_asset->GetAssetID()] = new_material;
+
+        return new_material;
+    }
+
     void RenderResourceManager::CreateMeshRenderResouce(AssetID mesh_asset_id)
     {
         auto mesh_asset = AssetManager::Get().GetAsset<MeshAsset>(mesh_asset_id);
@@ -401,8 +609,11 @@ namespace quark
         new_render_material.metallicFactor = material_asset->metalicFactor;
         new_render_material.roughnessFactor = material_asset->roughNessFactor;
         new_render_material.alphaMode = material_asset->alphaMode;
-
-        new_render_material.shaderProgram = m_shader_library->GetOrCreateGraphicsProgram(material_asset->vertexShaderPath, material_asset->fragmentShaderPath);
+        if (material_asset->vertexShaderPath == "" || material_asset->fragmentShaderPath == "")
+            new_render_material.shaderProgram = m_shader_library->program_staticMesh;
+        else
+            new_render_material.shaderProgram = m_shader_library->RequestGraphicsProgram(material_asset->vertexShaderPath, material_asset->fragmentShaderPath);
+        
         m_render_materials[material_asset_id] = new_render_material;
     }
 
@@ -463,10 +674,10 @@ namespace quark
         return it->second;
     }
 
-    Ref<rhi::PipeLine> RenderResourceManager::GetOrCreateGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, uint32_t mesh_attrib_mask, bool enableDepth, AlphaMode mode)
+    Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, uint32_t mesh_attrib_mask, bool enableDepth, AlphaMode mode)
     {
 
-        auto& vertex_layout = GetOrCreateMeshVertexLayout(mesh_attrib_mask);
+        auto& vertex_layout = RequestMeshVertexLayout(mesh_attrib_mask);
         ShaderVariantKey key;
         key.meshAttributeMask = mesh_attrib_mask;
         ShaderProgramVariant* programVariant = program.IsStatic()? program.GetPrecompiledVariant() : program.GetOrCreateVariant(key);
@@ -548,7 +759,7 @@ namespace quark
         }
     }
 
-    rhi::VertexInputLayout& RenderResourceManager::GetOrCreateMeshVertexLayout(uint32_t meshAttributesMask)
+    rhi::VertexInputLayout& RenderResourceManager::RequestMeshVertexLayout(uint32_t meshAttributesMask)
     {
         util::Hasher h;
         h.u32(meshAttributesMask);

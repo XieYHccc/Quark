@@ -5,8 +5,8 @@
 #include "Quark/Core/Window.h"
 #include "Quark/Core/JobSystem.h"
 #include "Quark/Events/ApplicationEvent.h"
-#include "Quark/RHI/Device.h"
 #include "Quark/UI/UI.h"
+#include "Quark/Render/RenderSystem.h"
 
 namespace quark {
 
@@ -18,6 +18,7 @@ struct ApplicationSpecification
     std::string workingDirectory;
     bool isFullScreen = false;
     UiSpecification uiSpecs = {};
+    RenderSystemConfig render_system_config = {};
 };  
 
 class Application {
@@ -42,9 +43,6 @@ public:
     void OnWindowClose(const WindowCloseEvent& event);
     void OnWindowResize(const WindowResizeEvent& event);
 
-
-    Ref<rhi::Device> GetGraphicDevice() { return m_graphicDevice; }
-
     Ref<JobSystem> GetJobSystem() { return m_jobSystem; }
 
     Window* GetWindow() { return m_window.get(); }
@@ -60,7 +58,6 @@ protected:
 
     Timer m_timer;
 
-    Ref<rhi::Device> m_graphicDevice;
     Ref<JobSystem> m_jobSystem;
     Scope<Window> m_window;
 

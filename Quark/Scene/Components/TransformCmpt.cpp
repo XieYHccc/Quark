@@ -220,9 +220,9 @@ void TransformCmpt::SetParentDirty(bool b)
 
 void TransformCmpt::PropagateDirtyFlagToChilds()
 {
-    auto* mesh_renderer_cmpt = GetEntity()->GetComponent<MeshRendererCmpt>();
-    if (mesh_renderer_cmpt)
-        mesh_renderer_cmpt->SetDirty(true);
+    //auto* mesh_renderer_cmpt = GetEntity()->GetComponent<MeshRendererCmpt>();
+    //if (mesh_renderer_cmpt)
+    //    mesh_renderer_cmpt->SetDirty(true);
 
     auto* relationshipCmpt = GetEntity()->GetComponent<RelationshipCmpt>();
 	for (auto* child : relationshipCmpt->GetChildEntities())

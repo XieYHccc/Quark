@@ -8,8 +8,8 @@ DescriptorSetAllocator::DescriptorSetAllocator(Device_Vulkan* device, const Desc
 {
 	QK_CORE_ASSERT(device != nullptr && !layout.bindings.empty())
 
-		this->m_Device = device;
-
+	this->m_Device = device;
+	this->m_layout = layout;
 	// get pool size ratios
 	for (auto& binding : layout.bindings) {
 		auto& size_ratio = m_PoolSizeRatios.emplace_back();
@@ -22,13 +22,14 @@ DescriptorSetAllocator::DescriptorSetAllocator(Device_Vulkan* device, const Desc
 	set_m_Layoutcreate_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	set_m_Layoutcreate_info.pBindings = layout.bindings.data();
 	set_m_Layoutcreate_info.bindingCount = (uint32_t)layout.bindings.size();
-	VK_CHECK(vkCreateDescriptorSetLayout(device->vkDevice, &set_m_Layoutcreate_info, nullptr, &m_Layout))
+	VK_CHECK(vkCreateDescriptorSetLayout(device->vkDevice, &set_m_Layoutcreate_info, nullptr, &m_layout_handle))
 }
 
 void DescriptorSetAllocator::BeginFrame()
 {
 	m_SetNodes.BeginFrame();
 }
+
 DescriptorSetAllocator::~DescriptorSetAllocator()
 {
 
@@ -41,7 +42,7 @@ DescriptorSetAllocator::~DescriptorSetAllocator()
 	// clear allocated nodes
 	m_SetNodes.clear();
 
-	vkDestroyDescriptorSetLayout(m_Device->vkDevice, m_Layout, nullptr);
+	vkDestroyDescriptorSetLayout(m_Device->vkDevice, m_layout_handle, nullptr);
 
 	QK_CORE_LOGT_TAG("RHI", "Desctipor set allocator destroyed");
 }
@@ -86,7 +87,7 @@ std::pair<VkDescriptorSet, bool> DescriptorSetAllocator::Find(size_t hash)
 
 	VkDescriptorSet sets[SET_BINDINGS_MAX_NUM];
 	VkDescriptorSetLayout layouts[SET_BINDINGS_MAX_NUM];
-	std::fill(std::begin(layouts), std::end(layouts), m_Layout);
+	std::fill(std::begin(layouts), std::end(layouts), m_layout_handle);
 
 	VkDescriptorSetAllocateInfo alloc = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
 	alloc.descriptorPool = pool;

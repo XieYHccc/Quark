@@ -84,30 +84,30 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 		out << YAML::EndMap;
 	}
 		
-	if (entity->HasComponent<MeshRendererCmpt>())
-	{
-		auto* meshRendererCmpt = entity->GetComponent<MeshRendererCmpt>();
-		auto* meshCmpt = entity->GetComponent<MeshCmpt>();
-		QK_CORE_ASSERT(meshCmpt)
-		Ref<MeshAsset> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
+	//if (entity->HasComponent<MeshRendererCmpt>())
+	//{
+	//	auto* meshRendererCmpt = entity->GetComponent<MeshRendererCmpt>();
+	//	auto* meshCmpt = entity->GetComponent<MeshCmpt>();
+	//	QK_CORE_ASSERT(meshCmpt)
+	//	Ref<MeshAsset> mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh : meshCmpt->sharedMesh;
 
-		out << YAML::Key << "MeshRendererComponent";
-		out << YAML::BeginMap; // MeshRendererComponent
+	//	out << YAML::Key << "MeshRendererComponent";
+	//	out << YAML::BeginMap; // MeshRendererComponent
 
-		out << YAML::Key << "Materials";
-		out << YAML::BeginSeq;
+	//	out << YAML::Key << "Materials";
+	//	out << YAML::BeginSeq;
 
-		for (size_t i = 0; i < mesh->subMeshes.size(); i++)
-		{
-			out << YAML::BeginMap;
-			QK_SERIALIZE_PROPERTY(AssetID, meshRendererCmpt->GetMaterialID((uint32_t)i), out);
-			out << YAML::EndMap;
-		}
+	//	for (size_t i = 0; i < mesh->subMeshes.size(); i++)
+	//	{
+	//		out << YAML::BeginMap;
+	//		QK_SERIALIZE_PROPERTY(AssetID, meshRendererCmpt->GetMaterialID((uint32_t)i), out);
+	//		out << YAML::EndMap;
+	//	}
 
-		out << YAML::EndSeq;
-		out << YAML::EndMap; // MeshRendererComponent
-	}
-	out << YAML::EndMap; // Entity
+	//	out << YAML::EndSeq;
+	//	out << YAML::EndMap; // MeshRendererComponent
+	//}
+	//out << YAML::EndMap; // Entity
 }
 
 SceneSerializer::SceneSerializer(Ref<Scene>& scene)
@@ -212,26 +212,26 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 				mc->uniqueMesh = nullptr;
 			}
 
-			auto meshRendererCmpt = entity["MeshRendererComponent"];
-			if (meshRendererCmpt)
-			{
-				auto* mrc = deserializedEntity->AddComponent<MeshRendererCmpt>();
-				auto* mc = deserializedEntity->GetComponent<MeshCmpt>();
-				QK_CORE_ASSERT(mc)
+			//auto meshRendererCmpt = entity["MeshRendererComponent"];
+			//if (meshRendererCmpt)
+			//{
+			//	auto* mrc = deserializedEntity->AddComponent<MeshRendererCmpt>();
+			//	auto* mc = deserializedEntity->GetComponent<MeshCmpt>();
+			//	QK_CORE_ASSERT(mc)
 
-				Ref<MeshAsset> mesh = mc->uniqueMesh ? mc->uniqueMesh : mc->sharedMesh;
-				mrc->SetMesh(mesh);
+			//	Ref<MeshAsset> mesh = mc->uniqueMesh ? mc->uniqueMesh : mc->sharedMesh;
+			//	mrc->SetMesh(mesh);
 
-				auto materials = meshRendererCmpt["Materials"];
-				uint32_t i = 0;
-				for (auto mat : materials)
-				{
-					AssetID assetId = mat["AssetID"].as<AssetID>();
-					mrc->SetMaterial(i, assetId);
-					i++;
-				}
-				QK_CORE_ASSERT(i == mesh->subMeshes.size())
-			}
+			//	auto materials = meshRendererCmpt["Materials"];
+			//	uint32_t i = 0;
+			//	for (auto mat : materials)
+			//	{
+			//		AssetID assetId = mat["AssetID"].as<AssetID>();
+			//		mrc->SetMaterial(i, assetId);
+			//		i++;
+			//	}
+			//	QK_CORE_ASSERT(i == mesh->subMeshes.size())
+			//}
 		}
 
 		// Loop agein to establish parent-child relationship

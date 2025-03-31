@@ -13,11 +13,11 @@
 
 namespace quark {
 
-void UI_Vulkan::Init(rhi::Device* device, const UiSpecification& specs)
+void UI_Vulkan::Init(Ref<rhi::Device> device, const UiSpecification& specs)
 {
     QK_CORE_ASSERT(device)
 
-    m_device = static_cast<rhi::Device_Vulkan*>(device);
+    m_device = std::static_pointer_cast<rhi::Device_Vulkan>(device);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

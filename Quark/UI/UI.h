@@ -23,7 +23,7 @@ public:
     UI() = default;
     virtual ~UI() = default;
 
-    virtual void Init(rhi::Device* device, const UiSpecification& sepcs) = 0;
+    virtual void Init(Ref<rhi::Device> device, const UiSpecification& sepcs) = 0;
     virtual void Finalize() = 0;
 
     virtual void BeginFrame() = 0;
