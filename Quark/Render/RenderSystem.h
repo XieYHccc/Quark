@@ -1,7 +1,5 @@
 #pragma once
-#include "Quark/Render/RenderTypes.h"
 #include "Quark/Render/RenderResourceManger.h"
-#include "Quark/Render/RenderSwapContext.h"
 #include "Quark/RHI/Device.h"
 #include "Quark/Core/Util/Singleton.h"
 #include "Quark/Core/Math/Frustum.h"
@@ -24,11 +22,7 @@ public:
     ~RenderSystem();
 
     RenderResourceManager& GetRenderResourceManager() { return *m_renderResourceManager; }
-    RenderSwapContext& GetSwapContext() { return m_swapContext; }
-    Ref<RenderScene> GetRenderScene() { return m_renderScene; }
     Ref<rhi::Device> GetDevice() { return m_device; }
-
-    void ProcessSwapData();
 
     void BindCameraParameters(rhi::CommandList& cmd, const RenderContext& cxt);
     void BindLightingParameters(rhi::CommandList& cmd, const RenderContext& cxt);
@@ -37,14 +31,14 @@ public:
     // update per frame buffer first then draw
     void DrawSkybox(uint64_t env_map_id, rhi::CommandList* cmd);
     void DrawGrid(rhi::CommandList* cmd);
-    void DrawScene(const RenderScene& scene, const Visibility& vis, rhi::CommandList* cmd);
-    void DrawEntityID(const RenderScene& scene, const Visibility& vis, rhi::CommandList* cmd);
+    //void DrawScene(const RenderScene& scene, const Visibility& vis, rhi::CommandList* cmd);
+    //void DrawEntityID(const RenderScene& scene, const Visibility& vis, rhi::CommandList* cmd);
    
 private:
     Ref<rhi::Device> m_device;
+    Ref<rhi::Buffer> m_scene_ubo[10];
+    uint32_t m_currentFrame = 0;
     Scope<RenderResourceManager> m_renderResourceManager;
-    RenderSwapContext m_swapContext;
-    Ref<RenderScene> m_renderScene;
 
 };
 }

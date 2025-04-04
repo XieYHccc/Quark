@@ -8,6 +8,8 @@
 
 namespace quark::rhi {
 
+constexpr uint32_t VULKAN_MAX_UBO_SIZE = 64 * 1024;
+
 #define VK_CHECK(x)                                                                        \
     do {                                                                                   \
         VkResult err = x;                                                                  \

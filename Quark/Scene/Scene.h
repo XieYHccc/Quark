@@ -32,10 +32,6 @@ public:
     void RunAnimationUpdateSystem(TimeStep delta_time);
     void RunJointsUpdateSystem();
     void RunRenderInfoUpdateSystem();
-
-    // swap data for rendering
-    void FillMeshSwapData();
-    void FillCameraSwapData();
     
     // entity
     Entity* CreateEntity(const std::string& name = "", Entity* parent = nullptr);
@@ -51,6 +47,7 @@ public:
     void DetachChild(Entity* child);
     void AddArmatureComponent(Entity* entity, Ref<SkeletonAsset> skeleton_asset);
     void AddStaticMeshComponent(Entity* entity, Ref<MeshAsset> mesh_asset);
+    void AddRenderableComponent(Entity* entity, Ref<IRenderable> renderable);
 
     void GatherVisibleOpaqueRenderables(const math::Frustum& frustum, VisibilityList& list);
     void GatherVisibleTransparentRenderables(const math::Frustum& frustum, VisibilityList& list);
@@ -86,6 +83,7 @@ private:
     std::unordered_map<std::string, Entity*> m_name_to_entity_map;
 
     ComponentGroupVector<RenderableCmpt, RenderInfoCmpt, OpaqueCmpt>& m_opaques; 
+    ComponentGroupVector<RenderableCmpt, RenderInfoCmpt, TransparentCmpt>& m_transparents;
 };
 
 }

@@ -29,12 +29,12 @@ public:
     };
     enum class Level : uint8_t
     {
-        TRACE = 0, INFO, WARN, ERROR, FATAL
+        Trace = 0, Info, Warn, Error, Fatal
     };
     struct TagDetails
     {
         bool enabled = true;
-        Level levelFilter = Level::TRACE;
+        Level levelFilter = Level::Trace;
     };
 
     static void Init();
@@ -94,18 +94,18 @@ private:
 //////////////////////////////////////////////////////////////////////////////////////
 // 
 // Core logging
-#define QK_CORE_LOGT_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::TRACE, tag, __VA_ARGS__)
-#define QK_CORE_LOGI_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::INFO, tag, __VA_ARGS__)
-#define QK_CORE_LOGW_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::WARN, tag, __VA_ARGS__)
-#define QK_CORE_LOGE_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::ERROR, tag, __VA_ARGS__)
-#define QK_CORE_LOGF_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::FATAL, tag, __VA_ARGS__)
+#define QK_CORE_LOGT_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::Trace, tag, __VA_ARGS__)
+#define QK_CORE_LOGI_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::Info, tag, __VA_ARGS__)
+#define QK_CORE_LOGW_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::Warn, tag, __VA_ARGS__)
+#define QK_CORE_LOGE_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::Error, tag, __VA_ARGS__)
+#define QK_CORE_LOGF_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CORE, ::quark::Logger::Level::Fatal, tag, __VA_ARGS__)
 
 // Client logging
-#define QK_APP_LOGT_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::TRACE, tag, __VA_ARGS__)
-#define QK_APP_LOGI_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::INFO, tag, __VA_ARGS__)
-#define QK_APP_LOGW_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::WARN, tag, __VA_ARGS__)
-#define QK_APP_LOGE_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::ERROR, tag, __VA_ARGS__)
-#define QK_APP_LOGF_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::FATAL, tag, __VA_ARGS__)
+#define QK_APP_LOGT_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::Trace, tag, __VA_ARGS__)
+#define QK_APP_LOGI_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::Info, tag, __VA_ARGS__)
+#define QK_APP_LOGW_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::Warn, tag, __VA_ARGS__)
+#define QK_APP_LOGE_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::Error, tag, __VA_ARGS__)
+#define QK_APP_LOGF_TAG(tag, ...) ::quark::Logger::PrintMessageTag(::quark::Logger::Type::CLIENT, ::quark::Logger::Level::Fatal, tag, __VA_ARGS__)
 
 namespace quark
 {
@@ -119,19 +119,19 @@ void Logger::PrintMessageTag(Logger::Type type, Logger::Level level, std::string
         std::string formatted = std::format(format, std::forward<Args>(args)...);
         switch (level)
         {
-        case Level::TRACE:
+        case Level::Trace:
             logger->trace("[{0}] {1}", tag, formatted);
             break;
-        case Level::INFO:
+        case Level::Info:
             logger->info("[{0}] {1}", tag, formatted);
             break;
-        case Level::WARN:
+        case Level::Warn:
             logger->warn("[{0}] {1}", tag, formatted);
             break;
-        case Level::ERROR:
+        case Level::Error:
             logger->error("[{0}] {1}", tag, formatted);
             break;
-        case Level::FATAL:
+        case Level::Fatal:
             logger->critical("[{0}] {1}", tag, formatted);
             break;
         }
@@ -146,19 +146,19 @@ inline void Logger::PrintMessageTag(Logger::Type type, Logger::Level level, std:
         auto logger = (type == Type::CORE) ? GetCoreLogger() : GetClientLogger();
         switch (level)
         {
-        case Level::TRACE:
+        case Level::Trace:
             logger->trace("[{0}] {1}", tag, message);
             break;
-        case Level::INFO:
+        case Level::Info:
             logger->info("[{0}] {1}", tag, message);
             break;
-        case Level::WARN:
+        case Level::Warn:
             logger->warn("[{0}] {1}", tag, message);
             break;
-        case Level::ERROR:
+        case Level::Error:
             logger->error("[{0}] {1}", tag, message);
             break;
-        case Level::FATAL:
+        case Level::Fatal:
             logger->critical("[{0}] {1}", tag, message);
             break;
         }

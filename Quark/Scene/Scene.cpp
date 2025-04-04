@@ -7,6 +7,7 @@
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/ArmatureComponent.h"
+#include "Quark/Scene/Components/MoveControlCmpt.h"
 #include "Quark/Render/RenderSystem.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Animation/SkeletonAsset.h"
@@ -35,7 +36,9 @@ void Scene::BuildBoneEntities(Entity* bone_entity, uint32_t bone_index, Armature
 
 Scene::Scene(const std::string& name)
     : sceneName(name), m_main_camera_entity(nullptr),
-      m_opaques(m_entity_registry.GetEntityGroup<RenderableCmpt, RenderInfoCmpt, OpaqueCmpt>()->GetComponentGroup())
+      m_opaques(m_entity_registry.GetEntityGroup<RenderableCmpt, RenderInfoCmpt, OpaqueCmpt>()->GetComponentGroup()),
+      m_transparents(m_entity_registry.GetEntityGroup<RenderableCmpt, RenderInfoCmpt, TransparentCmpt>()->GetComponentGroup())
+
 {
 }
 
@@ -202,15 +205,21 @@ void Scene::AddStaticMeshComponent(Entity* entity, Ref<MeshAsset> mesh_asset)
     for (size_t i = 0; i < mesh_asset->subMeshes.size(); i++)
     {
         Entity* e = CreateEntity("", entity);
-        auto* renderableCmpt = e->AddComponent<RenderableCmpt>();
-        auto* renderInfoCmpt = e->AddComponent<RenderInfoCmpt>();
-        renderableCmpt->renderable = renderables[i];
-        if (renderables[i]->GetMeshDrawPipeline() == DrawPipeline::Opaque)
-			e->AddComponent<OpaqueCmpt>();
-		else
-			e->AddComponent<TransparentCmpt>();
+        AddRenderableComponent(e, renderables[i]);
+        auto* renderableCmpt = e->GetComponent<RenderableCmpt>();
         staticmesh_cmpt->submesh_renderables.push_back(renderableCmpt);
     }
+}
+
+void Scene::AddRenderableComponent(Entity* entity, Ref<IRenderable> renderable)
+{
+    auto* renderableCmpt = entity->AddComponent<RenderableCmpt>();
+    auto* renderInfoCmpt = entity->AddComponent<RenderInfoCmpt>();
+    renderableCmpt->renderable = renderable;
+    if (renderable->GetMeshDrawPipeline() == DrawPipeline::Opaque)
+        entity->AddComponent<OpaqueCmpt>();
+    else
+        entity->AddComponent<TransparentCmpt>();
 }
 
 void Scene::GatherVisibleOpaqueRenderables(const math::Frustum& frustum, VisibilityList& list)
@@ -231,6 +240,14 @@ void Scene::GatherVisibleOpaqueRenderables(const math::Frustum& frustum, Visibil
 
 void Scene::OnUpdate(TimeStep delta_time)
 {
+    // update main camera movement
+    if (m_main_camera_entity)
+	{
+		auto* movCmpt = m_main_camera_entity->GetComponent<MoveControlCmpt>();
+        if (movCmpt)
+			movCmpt->Update(delta_time);
+	}
+
     RunAnimationUpdateSystem(delta_time);
     // RunTransformUpdateSystem();
     RunJointsUpdateSystem();
@@ -374,86 +391,6 @@ void Scene::RunRenderInfoUpdateSystem()
 		renderInfoCmpt->world_transform = transformCmpt->GetWorldMatrix();
 	}
 
-}
-
-void Scene::FillMeshSwapData()
-{
-    auto& swapData = RenderSystem::Get().GetSwapContext().GetLogicSwapData();
-
-    // static mesh render proxies
-    const auto& cmpts = GetComponents<IdCmpt, MeshCmpt, TransformCmpt>();
-    for (const auto [id_cmpt, mesh_cmpt, transform_cmpt] : cmpts)
-    {
-        auto* mesh = mesh_cmpt->uniqueMesh ? mesh_cmpt->uniqueMesh.get() : mesh_cmpt->sharedMesh.get();
-        if (!mesh) 
-            continue;
-        
-        StaticMeshRenderProxy newRenderProxy;
-        newRenderProxy.entity_id = id_cmpt->id;
-        newRenderProxy.mesh_asset_id = mesh->GetAssetID();
-        newRenderProxy.transform = transform_cmpt->GetWorldMatrix();
-
-        for (uint32_t i = 0; i < mesh->subMeshes.size(); ++i) {
-            const auto& submesh = mesh->subMeshes[i];
-            MeshSectionDesc newSectionDesc;
-            
-            newSectionDesc.aabb = submesh.aabb;
-            newSectionDesc.index_count = submesh.count;
-            newSectionDesc.index_offset = submesh.startIndex;
-            newSectionDesc.material_asset_id = submesh.materialID;
-            newRenderProxy.mesh_sections.push_back(newSectionDesc);
-        }
-
-        swapData.dirty_static_mesh_render_proxies.push_back(newRenderProxy);
-    }
-
-    // skin mesh render proxies
-    const auto& skinCmpts = GetComponents<NameCmpt, IdCmpt, MeshCmpt, TransformCmpt, ArmatureCmpt>();
-    for (auto group : skinCmpts)
-    {
-        auto* nameCmpt = GetComponent<NameCmpt>(group);
-        auto* idCmpt = GetComponent<IdCmpt>(group);
-		auto* meshCmpt = GetComponent<MeshCmpt>(group);
-		auto* transformCmpt = GetComponent<TransformCmpt>(group);
-		auto* armatureCmpt = GetComponent<ArmatureCmpt>(group);
-
-		auto* mesh = meshCmpt->uniqueMesh ? meshCmpt->uniqueMesh.get() : meshCmpt->sharedMesh.get();
-		if (!mesh)
-			continue;
-
-		StaticMeshRenderProxy newRenderProxy;
-		newRenderProxy.entity_id = idCmpt->id;
-		newRenderProxy.mesh_asset_id = mesh->GetAssetID();
-		newRenderProxy.transform = transformCmpt->GetWorldMatrix();
-        newRenderProxy.joint_matrices = armatureCmpt->joint_matrices;
-		for (uint32_t i = 0; i < mesh->subMeshes.size(); ++i) {
-			const auto& submesh = mesh->subMeshes[i];
-			MeshSectionDesc newSectionDesc;
-
-			newSectionDesc.aabb = submesh.aabb;
-			newSectionDesc.index_count = submesh.count;
-			newSectionDesc.index_offset = submesh.startIndex;
-            newSectionDesc.material_asset_id = submesh.materialID;
-			newRenderProxy.mesh_sections.push_back(newSectionDesc);
-		}
-
-		swapData.dirty_static_mesh_render_proxies.push_back(newRenderProxy);
-	
-    }
-}
-
-void Scene::FillCameraSwapData()
-{
-    auto& swapData = RenderSystem::Get().GetSwapContext().GetLogicSwapData();
-
-    auto* mainCameraEntity = GetMainCameraEntity();
-    QK_CORE_VERIFY(mainCameraEntity)
-    auto* cameraCmpt = mainCameraEntity->GetComponent<CameraCmpt>();
-
-    CameraSwapData cameraSwapData;
-    cameraSwapData.view = cameraCmpt->GetViewMatrix();
-    cameraSwapData.proj = cameraCmpt->GetProjectionMatrix();
-    swapData.camera_swap_data = cameraSwapData;
 }
 
 }

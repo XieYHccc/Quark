@@ -8,7 +8,29 @@
 #include "Quark/Events/EventManager.h"
 #include "Quark/RHI/Vulkan/Shader_Vulkan.h"
 
+#define LOCK() std::lock_guard<std::mutex> _holder_##__COUNTER__{m_lock.lock}
+
 namespace quark::rhi {
+
+static void request_block(Device& device, BufferBlock& block, VkDeviceSize size,
+    BufferPool& pool, std::vector<BufferBlock>& recycle)
+{
+    if (block.GetOffset() == 0)
+    {
+        if (block.GetSize() == pool.GetBlockSize())
+            pool.RecycleBlock(block);
+    }
+    else
+    {
+        if (block.GetSize() == pool.GetBlockSize())
+            recycle.push_back(block);
+    }
+
+    if (size)
+        block = pool.RequestBlock(size);
+    else
+        block = {};
+}
 
 void Device_Vulkan::CommandQueue::init(Device_Vulkan *device, QueueType type)
 {
@@ -62,7 +84,7 @@ void Device_Vulkan::CommandQueue::submit(VkFence fence)
     submissions.clear();
 }
 
-void Device_Vulkan::PerFrameData::init(Device_Vulkan *device)
+void PerFrameData::init(Device_Vulkan *device)
 {
     QK_CORE_ASSERT(device->vkDevice != VK_NULL_HANDLE)
     this->device = device;
@@ -83,7 +105,7 @@ void Device_Vulkan::PerFrameData::init(Device_Vulkan *device)
     vkCreateSemaphore(device->vkDevice, &semaphore_create_info, nullptr, &imageReleaseSemaphore);
 }
 
-void Device_Vulkan::PerFrameData::clear()
+void PerFrameData::clear()
 {
     VkDevice vk_device = device->vkDevice;
 
@@ -109,7 +131,7 @@ void Device_Vulkan::PerFrameData::clear()
     garbageShaderModules.clear();
 }
 
-void Device_Vulkan::PerFrameData::reset()
+void PerFrameData::begin()
 {
     if (!waitedFences.empty()) 
     {
@@ -122,14 +144,20 @@ void Device_Vulkan::PerFrameData::reset()
 
     imageAvailableSemaphoreConsumed = false;
 
+    for (auto& b : ubo_blocks)
+        device->m_ubo_pool.RecycleBlock(b);
+    ubo_blocks.clear();
+
     // destroy deferred-destroyed resources
     clear();
 }
 
-void Device_Vulkan::PerFrameData::destroy()
+void PerFrameData::destroy()
 {
-    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++) {
-        for (size_t j = 0; j < cmdLists[i].size(); j++) {
+    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++) 
+    {
+        for (size_t j = 0; j < cmdLists[i].size(); j++) 
+        {
             delete cmdLists[i][j];
             cmdLists[i][j] = nullptr;
         }
@@ -141,51 +169,51 @@ void Device_Vulkan::PerFrameData::destroy()
     vkDestroySemaphore(device->vkDevice, imageAvailableSemaphore, nullptr);
     vkDestroySemaphore(device->vkDevice, imageReleaseSemaphore, nullptr);
 
-    clear();
+    ubo_blocks.clear();
 }
 
 
-void Device_Vulkan::CopyCmdAllocator::init(Device_Vulkan *device)
+void CopyCmdAllocator::init(Device_Vulkan *device)
 {
-    m_Device = device;
+    m_device = device;
 }
 
-void Device_Vulkan::CopyCmdAllocator::destroy()
+void CopyCmdAllocator::destroy()
 {   
     // Make sure all allocated cmd are in free list
-    vkQueueWaitIdle(m_Device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].queue);
-    for (auto& x : m_FreeList)
+    vkQueueWaitIdle(m_device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].queue);
+    for (auto& x : m_freeList)
     {
-        vkDestroyCommandPool(m_Device->vkDevice, x.transferCmdPool, nullptr);
-        vkDestroyCommandPool(m_Device->vkDevice, x.transitionCmdPool, nullptr);
-        vkDestroyFence(m_Device->vkDevice, x.fence, nullptr);
-        vkDestroySemaphore(m_Device->vkDevice, x.semaphores[0], nullptr);
-        vkDestroySemaphore(m_Device->vkDevice, x.semaphores[1], nullptr);
+        vkDestroyCommandPool(m_device->vkDevice, x.transferCmdPool, nullptr);
+        vkDestroyCommandPool(m_device->vkDevice, x.transitionCmdPool, nullptr);
+        vkDestroyFence(m_device->vkDevice, x.fence, nullptr);
+        vkDestroySemaphore(m_device->vkDevice, x.semaphores[0], nullptr);
+        vkDestroySemaphore(m_device->vkDevice, x.semaphores[1], nullptr);
     }
 
-    m_FreeList.clear();
+    m_freeList.clear();
 }
 
-Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::allocate(VkDeviceSize required_buffer_size)
+CopyCmdAllocator::CopyCmd CopyCmdAllocator::allocate(VkDeviceSize required_buffer_size)
 {
     CopyCmd cmd;
 
     // Try to find a suitable staging buffer in free list
-    m_Locker.lock();
-    for (size_t i = 0; i < m_FreeList.size(); ++i) 
+    m_locker.lock();
+    for (size_t i = 0; i < m_freeList.size(); ++i) 
     {
-        if (m_FreeList[i].stageBuffer->GetDesc().size >= required_buffer_size) 
+        if (m_freeList[i].stageBuffer->GetDesc().size >= required_buffer_size) 
         {
-            if (vkGetFenceStatus(m_Device->vkDevice, m_FreeList[i].fence) == VK_SUCCESS)
+            if (vkGetFenceStatus(m_device->vkDevice, m_freeList[i].fence) == VK_SUCCESS)
             {
-                cmd = std::move(m_FreeList[i]);
-                std::swap(m_FreeList[i], m_FreeList.back());
-                m_FreeList.pop_back();
+                cmd = std::move(m_freeList[i]);
+                std::swap(m_freeList[i], m_freeList.back());
+                m_freeList.pop_back();
                 break;
             }
         }
     }
-    m_Locker.unlock();
+    m_locker.unlock();
 
     if (!cmd.isValid()) // No suitable staging buffer founded
     { 
@@ -193,11 +221,11 @@ Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::alloca
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        poolInfo.queueFamilyIndex = m_Device->vkContext->transferQueueIndex;
-        VK_CHECK(vkCreateCommandPool(m_Device->vkDevice, &poolInfo, nullptr, &cmd.transferCmdPool))
+        poolInfo.queueFamilyIndex = m_device->vkContext->transferQueueIndex;
+        VK_CHECK(vkCreateCommandPool(m_device->vkDevice, &poolInfo, nullptr, &cmd.transferCmdPool))
 
-        poolInfo.queueFamilyIndex = m_Device->vkContext->graphicQueueIndex;
-        VK_CHECK(vkCreateCommandPool(m_Device->vkDevice, &poolInfo, nullptr, &cmd.transitionCmdPool))
+        poolInfo.queueFamilyIndex = m_device->vkContext->graphicQueueIndex;
+        VK_CHECK(vkCreateCommandPool(m_device->vkDevice, &poolInfo, nullptr, &cmd.transitionCmdPool))
 
         // Allocate command buffer
         VkCommandBufferAllocateInfo commandBufferInfo = {};
@@ -205,21 +233,21 @@ Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::alloca
         commandBufferInfo.commandBufferCount = 1;
         commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         commandBufferInfo.commandPool = cmd.transferCmdPool;
-        VK_CHECK(vkAllocateCommandBuffers(m_Device->vkDevice, &commandBufferInfo, &cmd.transferCmdBuffer))
+        VK_CHECK(vkAllocateCommandBuffers(m_device->vkDevice, &commandBufferInfo, &cmd.transferCmdBuffer))
 
         commandBufferInfo.commandPool = cmd.transitionCmdPool;
-        VK_CHECK(vkAllocateCommandBuffers(m_Device->vkDevice, &commandBufferInfo, &cmd.transitionCmdBuffer))
+        VK_CHECK(vkAllocateCommandBuffers(m_device->vkDevice, &commandBufferInfo, &cmd.transitionCmdBuffer))
 
         // Create fence
         VkFenceCreateInfo fenceInfo = {};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        VK_CHECK(vkCreateFence(m_Device->vkDevice, &fenceInfo, nullptr, &cmd.fence))
+        VK_CHECK(vkCreateFence(m_device->vkDevice, &fenceInfo, nullptr, &cmd.fence))
 
         // Create Semaphores
         VkSemaphoreCreateInfo semaphoreInfo = {};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        VK_CHECK(vkCreateSemaphore(m_Device->vkDevice, &semaphoreInfo, nullptr, &cmd.semaphores[0]));
-        VK_CHECK(vkCreateSemaphore(m_Device->vkDevice, &semaphoreInfo, nullptr, &cmd.semaphores[1]));
+        VK_CHECK(vkCreateSemaphore(m_device->vkDevice, &semaphoreInfo, nullptr, &cmd.semaphores[0]));
+        VK_CHECK(vkCreateSemaphore(m_device->vkDevice, &semaphoreInfo, nullptr, &cmd.semaphores[1]));
 
         // Create staging buffer
         BufferDesc bufferDesc;
@@ -227,14 +255,14 @@ Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::alloca
         bufferDesc.size = math::GetNextPowerOfTwo(required_buffer_size);
         bufferDesc.size = std::max(bufferDesc.size, uint64_t(65536));
         bufferDesc.usageBits = BUFFER_USAGE_TRANSFER_FROM_BIT;
-        cmd.stageBuffer = m_Device->CreateBuffer(bufferDesc);
+        cmd.stageBuffer = m_device->CreateBuffer(bufferDesc);
 
-        m_Device->SetDebugName(cmd.stageBuffer, "CopyCmdAllocator staging buffer");
+        m_device->SetDebugName(cmd.stageBuffer, "CopyCmdAllocator staging buffer");
     }
 
     // Begin command buffer in valid state:
-	VK_CHECK(vkResetCommandPool(m_Device->vkDevice, cmd.transferCmdPool, 0))
-    VK_CHECK(vkResetCommandPool(m_Device->vkDevice, cmd.transitionCmdPool, 0))
+	VK_CHECK(vkResetCommandPool(m_device->vkDevice, cmd.transferCmdPool, 0))
+    VK_CHECK(vkResetCommandPool(m_device->vkDevice, cmd.transitionCmdPool, 0))
 
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -244,11 +272,11 @@ Device_Vulkan::CopyCmdAllocator::CopyCmd Device_Vulkan::CopyCmdAllocator::alloca
     VK_CHECK(vkBeginCommandBuffer(cmd.transitionCmdBuffer, &beginInfo))
 
     // Reset fence
-    VK_CHECK(vkResetFences(m_Device->vkDevice, 1, &cmd.fence))
+    VK_CHECK(vkResetFences(m_device->vkDevice, 1, &cmd.fence))
     return cmd;
 }
 
-void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
+void CopyCmdAllocator::submit(CopyCmd cmd)
 {
     VK_CHECK(vkEndCommandBuffer(cmd.transferCmdBuffer))
     VK_CHECK(vkEndCommandBuffer(cmd.transitionCmdBuffer))
@@ -277,9 +305,9 @@ void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
         submitInfo.signalSemaphoreInfoCount = 1;
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
-        std::scoped_lock lock(m_Device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].locker);
-        m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
-            m_Device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].queue, 1, &submitInfo, VK_NULL_HANDLE);
+        std::scoped_lock lock(m_device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].locker);
+        m_device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+            m_device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
     // Submit to graphics queue
@@ -298,9 +326,9 @@ void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
         submitInfo.signalSemaphoreInfoCount = 1;
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
-        std::scoped_lock lock(m_Device->m_queues[QUEUE_TYPE_GRAPHICS].locker);
-        m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
-			m_Device->m_queues[QUEUE_TYPE_GRAPHICS].queue, 1, &submitInfo, VK_NULL_HANDLE);
+        std::scoped_lock lock(m_device->m_queues[QUEUE_TYPE_GRAPHICS].locker);
+        m_device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+			m_device->m_queues[QUEUE_TYPE_GRAPHICS].queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
     // insert semaphore to compute queue to make sure the copy and transition is done
@@ -316,13 +344,13 @@ void Device_Vulkan::CopyCmdAllocator::submit(CopyCmd cmd)
 		submitInfo.signalSemaphoreInfoCount = 0;
 		submitInfo.pSignalSemaphoreInfos = nullptr;
 
-		std::scoped_lock lock(m_Device->m_queues[QUEUE_TYPE_ASYNC_COMPUTE].locker);
-		m_Device->vkContext->extendFunction.pVkQueueSubmit2KHR(
-			m_Device->m_queues[QUEUE_TYPE_ASYNC_COMPUTE].queue, 1, &submitInfo, cmd.fence);
+		std::scoped_lock lock(m_device->m_queues[QUEUE_TYPE_ASYNC_COMPUTE].locker);
+		m_device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+			m_device->m_queues[QUEUE_TYPE_ASYNC_COMPUTE].queue, 1, &submitInfo, cmd.fence);
 	}
 
-    std::scoped_lock lock(m_Locker);
-    m_FreeList.push_back(cmd);
+    std::scoped_lock lock(m_locker);
+    m_freeList.push_back(cmd);
 }
 
 void Device_Vulkan::OnWindowResize(const WindowResizeEvent &event)
@@ -369,6 +397,12 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     // init copy cmds allocator
     copyAllocator.init(this);
 
+    // init buffer pools
+    m_ubo_pool.Init(this, 256 * 1024, std::max<VkDeviceSize>(16u, GetDeviceProperties().limits.minUniformBufferOffsetAlignment)
+        , VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    m_ubo_pool.SetSpillRegionSize(VULKAN_MAX_UBO_SIZE);
+    m_ubo_pool.SetMaxRetainedBlocks(64);
+
     // register callback functions
     EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event); });
     
@@ -383,17 +417,19 @@ Device_Vulkan::~Device_Vulkan()
 
     // destroy cached pipeline layout
     cached_pipelineLayouts.clear();
-
     // destory cached descriptor allocator
     cached_descriptorSetAllocator.clear();
-
     // destroy copy allocator
     copyAllocator.destroy();
 
-    // destroy frames data
+    m_ubo_pool.Reset();
+
+    // destroy command buffers, pools, semaphore, and fences
     for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
         m_frames[i].destroy();
-
+    // destroy the buffers, images...
+    for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
+        m_frames[i].clear();
     // destroy vulkan context
     vkContext.reset();
 }
@@ -402,6 +438,7 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
 {
     // move to next frame
     m_elapsedFrame++;
+    auto& frame = GetCurrentFrame();
 
     // resize swapchain if needed. 
     if (m_recreateSwapchain) 
@@ -409,19 +446,17 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
         ResizeSwapchain();
         m_recreateSwapchain = false;
     }
-
-    auto& frame = GetCurrentFrame();
     
     // wait for in-flight fences
     if (!frame.waitedFences.empty())
-        vkWaitForFences(vkDevice, (uint32_t)frame.waitedFences.size(), frame.waitedFences.data(), true, 1000000000);
+        vkWaitForFences(vkDevice, (uint32_t)frame.waitedFences.size(), frame.waitedFences.data(), true, UINT64_MAX);
     
     // reset per frame data
-    frame.reset();
+    frame.begin();
 
     // put unused (more than 8 frames) descriptor set back to vacant pool
-    for (auto& [k, value] : cached_descriptorSetAllocator)
-        value.BeginFrame();   
+     for (auto& [k, value] : cached_descriptorSetAllocator)
+         value.BeginFrame();   
 
     // Acquire a swapchain image 
     VkResult result = vkAcquireNextImageKHR(
@@ -590,7 +625,7 @@ CommandList* Device_Vulkan::BeginCommandList(QueueType type)
 
     CommandList_Vulkan* internal_cmdList = cmdLists[cmd_count];
     internal_cmdList->ResetAndBeginCmdBuffer();
-    
+   
     return static_cast<CommandList*>(internal_cmdList);
 }
 
@@ -664,6 +699,45 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     }
 }
 
+uint32_t Device_Vulkan::AllocateCookie()
+{
+    // reserve lower bits for "special purposes".
+    return m_cookie.fetch_add(16, std::memory_order_relaxed) + 16;
+}
+
+void Device_Vulkan::DestroyBufferNoLock(VkBuffer buffer, VmaAllocation alloc)
+{
+    GetCurrentFrame().garbageBuffers.push_back({ buffer, alloc });
+}
+
+void Device_Vulkan::DestroyBuffer(VkBuffer buffer, VmaAllocation alloc)
+{
+    LOCK();
+    DestroyBufferNoLock(buffer, alloc);
+}
+
+void Device_Vulkan::DestroyImageNoLock(VkImage image, VmaAllocation alloc)
+{
+    GetCurrentFrame().garbageImages.push_back({ image, alloc});
+}
+
+void Device_Vulkan::DestroyImage(VkImage image, VmaAllocation alloc)
+{
+    LOCK();
+	DestroyImageNoLock(image, alloc);
+}
+
+void Device_Vulkan::DestroyImageViewNoLock(VkImageView view)
+{
+    GetCurrentFrame().grabageViews.push_back(view);
+}
+
+void Device_Vulkan::DestroyImageView(VkImageView view)
+{
+    LOCK();
+	DestroyImageViewNoLock(view);
+}
+
 void Device_Vulkan::ResizeSwapchain()
 {
     QK_CORE_LOGI_TAG("RHI", "Resizing swapchain...");
@@ -680,12 +754,12 @@ void Device_Vulkan::ResizeSwapchain()
         desc.depth = 1;
         desc.format = GetPresentImageFormat();
 
-        Ref<Image> newImage = CreateRef<Image_Vulkan>(desc);
+        Ref<Image> newImage = CreateRef<Image_Vulkan>(this, desc);
         auto& internal_image = ToInternal(newImage.get());
-        internal_image.m_Device = this;
-        internal_image.m_Handle = vkContext->swapChianImages[i];
-        internal_image.m_View = vkContext->swapChainImageViews[i];
-        internal_image.m_IsSwapChainImage = true;
+
+        internal_image.m_handle = vkContext->swapChianImages[i];
+        internal_image.m_view = vkContext->swapChainImageViews[i];
+        internal_image.m_isSwapChainImage = true;
         m_swapChainImages.push_back(newImage);
     }
 
@@ -708,7 +782,7 @@ DataFormat Device_Vulkan::GetPresentImageFormat()
     }
 }
 
-PipeLineLayout* Device_Vulkan::Request_PipeLineLayout(const ShaderResourceLayout& combinedLayout)
+PipeLineLayout* Device_Vulkan::RequestPipeLineLayout(const ShaderResourceLayout& combinedLayout)
 {
     // Compute pipeline layout hash
     size_t hash = 0;
@@ -738,6 +812,22 @@ PipeLineLayout* Device_Vulkan::Request_PipeLineLayout(const ShaderResourceLayout
     }
 }
 
+void Device_Vulkan::RequestUniformBlock(BufferBlock& block, VkDeviceSize size)
+{
+    LOCK();
+    RequestUniformBlockNoLock(block, size);
+}
+
+void Device_Vulkan::RequestUniformBlockNoLock(BufferBlock& block, VkDeviceSize size)
+{
+    request_block(*this, block, size, m_ubo_pool, GetCurrentFrame().ubo_blocks);
+}
+
+PerFrameData& Device_Vulkan::GetCurrentFrame()
+{
+    return m_frames[m_elapsedFrame % MAX_FRAME_NUM_IN_FLIGHT];
+}
+
 bool Device_Vulkan::isFormatSupported(DataFormat format)
 {
     VkFormatProperties props;
@@ -745,7 +835,7 @@ bool Device_Vulkan::isFormatSupported(DataFormat format)
     return ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) && (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT));
 }
 
-DescriptorSetAllocator* Device_Vulkan::Request_DescriptorSetAllocator(const DescriptorSetLayout& layout)
+DescriptorSetAllocator* Device_Vulkan::RequestDescriptorSetAllocator(const DescriptorSetLayout& layout)
 {
     size_t hash = 0;
     util::hash_combine(hash, layout.uniform_buffer_mask);

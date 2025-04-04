@@ -101,31 +101,32 @@ void VulkanContext::CreateInstance()
     QK_CORE_LOGT_TAG("RHI", "All required vulkan instance extensions are supported.");
 
     // Enable validation layers?
-#ifdef QK_DEBUG_BUILD
-    QK_CORE_LOGT_TAG("RHI", "Validation layers enabled. Checking...");
-    
-    // TODO: if this is not supported, try other layers
-    required_layers.push_back("VK_LAYER_KHRONOS_validation");
-    QK_CORE_LOGT_TAG("RHI", "Required vulkan instance layers:");
-    for(const auto& s : required_layers)
-        QK_CORE_LOGT_TAG("RHI","  {}", s);
+    if (enableDebugUtils)
+    {
+        QK_CORE_LOGT_TAG("RHI", "Validation layers enabled. Checking...");
 
-    // checking
-    for (auto layerName : required_layers) {
-        bool layerFound = false;
-        for (const auto& layerProperties : availableLayers) {
-            if (strcmp(layerName, layerProperties.layerName) == 0) {
-                layerFound = true;
-                break;
+        // TODO: if this is not supported, try other layers
+        required_layers.push_back("VK_LAYER_KHRONOS_validation");
+        QK_CORE_LOGT_TAG("RHI", "Required vulkan instance layers:");
+        for (const auto& s : required_layers)
+            QK_CORE_LOGT_TAG("RHI", "  {}", s);
+
+        // checking
+        for (auto layerName : required_layers) {
+            bool layerFound = false;
+            for (const auto& layerProperties : availableLayers) {
+                if (strcmp(layerName, layerProperties.layerName) == 0) {
+                    layerFound = true;
+                    break;
+                }
             }
-        }
-        if (!layerFound)
-            QK_CORE_VERIFY(0, "Required extension not found: {}", layerName);
-            
-    }
+            if (!layerFound)
+                QK_CORE_VERIFY(0, "Required extension not found: {}", layerName);
 
-    QK_CORE_LOGT_TAG("RHI", "All required vulkan validation layers are supported.");
-#endif
+        }
+
+        QK_CORE_LOGT_TAG("RHI", "All required vulkan validation layers are supported.");
+    }
 
     // Finally, create instance
     VkInstanceCreateInfo createInfo{};
@@ -364,8 +365,8 @@ void VulkanContext::SelectPhysicalDevice()
 
 void VulkanContext::CreateSwapChain()
 {
-    u32 window_width = Application::Get().GetWindow()->GetFrambufferWidth();
-    u32 window_height = Application::Get().GetWindow()->GetFrambufferWidth();
+    uint32_t window_width = Application::Get().GetWindow()->GetFrambufferWidth();
+    uint32_t window_height = Application::Get().GetWindow()->GetFrambufferWidth();
 
     SwapChainSupportDetail swapchain_support = GetSwapchainSupportDetails();
 
@@ -408,7 +409,7 @@ void VulkanContext::CreateSwapChain()
         swapChainExtent.height = std::clamp(swapChainExtent.height, min.height, max.height);
     }
 
-    u32 image_count = swapchain_support.capabilities.minImageCount + 1;
+    uint32_t image_count = swapchain_support.capabilities.minImageCount + 1;
     if (swapchain_support.capabilities.maxImageCount > 0 && image_count > swapchain_support.capabilities.maxImageCount) {
         image_count = swapchain_support.capabilities.maxImageCount;
     }

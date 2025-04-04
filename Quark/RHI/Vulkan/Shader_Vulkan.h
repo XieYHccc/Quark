@@ -9,6 +9,7 @@ struct ShaderResourceLayout {
     DescriptorSetLayout descriptorSetLayouts[DESCRIPTOR_SET_MAX_NUM] = {};
     VkPushConstantRange pushConstant = {};
     uint32_t descriptorSetLayoutMask = 0;
+    uint32_t push_constant_hash = 0;
 };
 
 class Shader_Vulkan : public Shader {

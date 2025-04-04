@@ -1,6 +1,6 @@
 #pragma once
-#include "Quark/Render/RenderTypes.h"
 #include "Quark/Render/IRenderable.h"
+#include "Quark/Render/Material.h"
 #include "Quark/Asset/MeshAsset.h"
 #include "Quark/RHI/Common.h"
 
@@ -43,7 +43,7 @@ struct StaticMeshPerDrawcallData
 	uint32_t vertex_count = 0;
 	uint32_t mesh_attribute_mask = 0;
 	StaticMeshFragment fragment;
-	AlphaMode alpha_mode;
+	DrawPipeline draw_pipeline;
 
 	//bool two_sided;
 	//bool alpha_test;
@@ -69,8 +69,7 @@ struct StaticMesh : public IRenderable
 	uint32_t vertex_count = 0;
 	uint32_t mesh_attribute_mask = 0;
 	uint32_t hash = 0;
-	Ref<RenderPBRMaterial> material;
-
+	Ref<PBRMaterial> material;
 	math::Aabb static_aabb;
 
 	void GetRenderData(const RenderContext& context, const RenderInfoCmpt* transform,
@@ -80,7 +79,7 @@ struct StaticMesh : public IRenderable
 
 	const math::Aabb* GetStaticAabb() const override { return &static_aabb; }
 
-	DrawPipeline GetMeshDrawPipeline() const { return material->drawPipeline; }
+	DrawPipeline GetMeshDrawPipeline() const { return material->draw_pipeline; }
 
 private:
 	void FillPerDrawcallData(StaticMeshPerDrawcallData& data) const;

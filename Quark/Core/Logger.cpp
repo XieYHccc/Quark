@@ -9,17 +9,17 @@ std::shared_ptr<spdlog::logger> Logger::s_CoreLogger;
 std::shared_ptr<spdlog::logger> Logger::s_ClientLogger;
 
 std::map<std::string, Logger::TagDetails> Logger::s_DefaultTagDetails = {
-	{ "AssetManager",      TagDetails{  true, Level::WARN  } },
-	{ "Core",              TagDetails{  true, Level::TRACE } },
-    { "EventManager",      TagDetails{  true, Level::INFO } },
-	{ "GLFW",              TagDetails{  true, Level::ERROR } },
-    { "Graphic",           TagDetails{  true, Level::TRACE  } },
-	{ "Mesh",              TagDetails{  true, Level::WARN  } },
-	{ "Physics",           TagDetails{  true, Level::WARN  } },
-	{ "Project",           TagDetails{  true, Level::WARN  } },
-	{ "Renderer",          TagDetails{  true, Level::INFO  } },
-	{ "Scene",             TagDetails{  true, Level::INFO  } },
-    { "UI",                TagDetails{  true, Level::INFO  } },
+	{ "AssetManager",      TagDetails{  true, Level::Warn  } },
+	{ "Core",              TagDetails{  true, Level::Trace } },
+    { "EventManager",      TagDetails{  true, Level::Info  } },
+	{ "GLFW",              TagDetails{  true, Level::Error } },
+    { "Graphic",           TagDetails{  true, Level::Trace } },
+	{ "Mesh",              TagDetails{  true, Level::Warn  } },
+	{ "Physics",           TagDetails{  true, Level::Warn  } },
+	{ "Project",           TagDetails{  true, Level::Warn  } },
+	{ "Renderer",          TagDetails{  true, Level::Info  } },
+	{ "Scene",             TagDetails{  true, Level::Info  } },
+    { "UI",                TagDetails{  true, Level::Info  } },
 };
 
 void Logger::Init()

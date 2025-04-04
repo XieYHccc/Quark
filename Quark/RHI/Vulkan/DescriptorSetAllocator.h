@@ -4,14 +4,6 @@
 
 namespace quark::rhi {
 
-struct DescriptorBinding {
-    union {
-        VkDescriptorBufferInfo buffer;
-        VkDescriptorImageInfo image;
-    };
-    uint32_t dynamicOffset = 0;
-};
-
 struct DescriptorSetLayout {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     VkDescriptorSetLayoutBinding vk_bindings[SET_BINDINGS_MAX_NUM];
@@ -37,35 +29,27 @@ struct DescriptorSetLayout {
 //  We end up with hash -> get VkDescriptorSet -> vkCmdBindDescriptorSets.
 class DescriptorSetAllocator {
 public:
-    static constexpr u32 DESCRIPTOR_SET_RING_SIZE = 8;
-    static constexpr u32 DEFAULT_SETS_NUM_PER_POOL = 16;
-    struct PoolSizeRatio {
-        VkDescriptorType type;
-        float ratio;
-    };
-
+    static constexpr uint32_t s_ring_size = 8;
+    static constexpr uint32_t s_num_sets_per_pool = 64;
     DescriptorSetAllocator(Device_Vulkan* device, const DescriptorSetLayout& layout);
     ~DescriptorSetAllocator();
 
     void BeginFrame();
     VkDescriptorSetLayout GetLayout() const { return m_layout_handle; }
-    std::pair<VkDescriptorSet, bool> Find(size_t hash);
+    std::pair<VkDescriptorSet, bool> RequestDescriptorSet(uint64_t hash);
 
 private:
-    Device_Vulkan* m_Device;
-
+    Device_Vulkan* m_device;
     VkDescriptorSetLayout m_layout_handle = VK_NULL_HANDLE;
     DescriptorSetLayout m_layout;
-    std::vector<PoolSizeRatio> m_PoolSizeRatios;
-    std::vector<VkDescriptorPool> m_Pools;
-
-    uint32_t setsPerPool = DEFAULT_SETS_NUM_PER_POOL; // default value
+    std::vector<VkDescriptorPoolSize> m_pool_sizes;
+    std::vector<VkDescriptorPool> m_pools;
 
     struct DescriptorSetNode : util::TemporaryHashmapEnabled<DescriptorSetNode>, util::IntrusiveListEnabled<DescriptorSetNode>
     {
         explicit DescriptorSetNode(VkDescriptorSet set_) : set(set_) {}
         VkDescriptorSet set;
     };
-    util::TemporaryHashmap<DescriptorSetNode, DESCRIPTOR_SET_RING_SIZE, true> m_SetNodes;
+    util::TemporaryHashmap<DescriptorSetNode, s_ring_size, true> m_setNodes;
 };
 }

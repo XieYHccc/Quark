@@ -124,7 +124,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
         if ((combinedLayout.descriptorSetLayoutMask & 1u << set) == 0)
 			continue;
 
-        setAllocators[set] = this->device->Request_DescriptorSetAllocator(combinedLayout.descriptorSetLayouts[set]);
+        setAllocators[set] = this->device->RequestDescriptorSetAllocator(combinedLayout.descriptorSetLayouts[set]);
         vk_descriptorset_layouts.push_back(setAllocators[set]->GetLayout());
     }
 
@@ -306,7 +306,7 @@ PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDes
         insert_shader(desc.fragShader);
 
         // Create Pipeline Layout
-        m_layout = m_device->Request_PipeLineLayout(combinedLayout);
+        m_layout = m_device->RequestPipeLineLayout(combinedLayout);
     }
 
     // Shaderstage Info

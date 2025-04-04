@@ -192,9 +192,8 @@ void CommandList_Vulkan::ResetBindingState()
     for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++)
         m_currentSets[i] = VK_NULL_HANDLE;
 
-    m_dirtySetMask = 0;
-    m_dirtyVertexBufferMask = 0;
-    m_dirtySetRebindMask = 0;
+    m_dirtySetMask = ~0u;
+    m_dirtyVertexBufferMask = 0u;
 }
 
 void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo)
@@ -416,6 +415,21 @@ void CommandList_Vulkan::EndRenderPass()
     m_device->vkContext->extendFunction.pVkCmdEndRenderingKHR(m_cmdBuffer);
 }
 
+void* CommandList_Vulkan::AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size)
+{
+    QK_CORE_ASSERT(size < VULKAN_MAX_UBO_SIZE);
+    BufferBlockAllocation data = m_ubo_block.Allocate(size);
+    if (!data.host)
+    {
+        m_device->RequestUniformBlock(m_ubo_block, size);
+        data = m_ubo_block.Allocate(size);
+    }
+
+    // use padded size to optimize dynamic uniform buffer binding
+    BindUniformBuffer(set, binding, *data.buffer, data.offset, data.padded_size);
+    return data.host;
+}
+
 const RenderPassInfo2& CommandList_Vulkan::GetCurrentRenderPassInfo() const
 {
     return m_currentRenderPassInfo;
@@ -426,155 +440,70 @@ const PipeLine* CommandList_Vulkan::GetCurrentGraphicsPipeline() const
     return m_currentPipeline;
 }
 
-
 void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_t size)
 {
     QK_CORE_ASSERT(offset + size < PUSH_CONSTANT_DATA_SIZE)
-
-// #ifdef QK_DEBUG_BUILD
-//     if (m_currentPipeline == nullptr) 
-//     {
-//         
-// , "You can not bind a push constant before binding a pipeline.");
-//         return;
-//     }
-//     if (m_currentPipeline->GetLayout()->combinedLayout.pushConstant.size == 0) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "Current pipeline's layout do not have a push constant");
-//         return;
-//     }
-// #endif
-
-    // auto& layout = *m_currentPipeline->GetLayout();
-    // vkCmdPushConstants(m_cmdBuffer,
-    //     layout.handle,
-    //     layout.combinedLayout.pushConstant.stageFlags,
-    //     offset,
-    //     size,
-    //     data);
-
     memcpy(m_bindingState.pushConstantData + offset, data, size);
-	_SetDirtyFlags(COMMAND_LIST_DIRTY_PUSH_CONSTANTS_BIT);
+	SetDirty(COMMAND_LIST_DIRTY_PUSH_CONSTANTS_BIT);
 }
 
 void CommandList_Vulkan::BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer &buffer, uint64_t offset, uint64_t size)
 {
-    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
-    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
-
-// #ifdef QK_DEBUG_BUILD
-//     if (m_currentPipeline == nullptr) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "You must bind a pipeline before binding a uniform buffer.");
-//         return;
-//     }
-//     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT) == 0) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "CommandList_Vulkan::BindUniformBuffer : The bounded buffer doesn't has BUFFER_USAGE_UNIFORM_BUFFER_BIT");
-//         return;
-//     }
-//     if ((m_currentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0 ||
-//         (m_currentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].uniform_buffer_mask & (1u << binding))== 0) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "CommandList_Vulkan::BindUniformBuffer : Set: {}, binding: {} is not a uniforom buffer.", set, binding);
-//         return;
-//     }
-// #endif
-
+    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM);
+    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM);
+    QK_CORE_ASSERT(buffer.GetDesc().usageBits & BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     auto& internal_buffer = ToInternal(&buffer);
     auto& b = m_bindingState.descriptorBindings[set][binding];
 
-    if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size)
+    if (internal_buffer.GetCookie() == m_bindingState.cookies[set][binding] && b.buffer.range == size)
     {
-        // if (b.dynamicOffset != offset) 
-        // {
-        //     m_dirtySetRebindMask|= 1u << set;
-        //     b.dynamicOffset = (uint32_t)offset;
-        // }
-
-        m_dirtySetRebindMask |= 1u << set;
-        b.dynamicOffset = (uint32_t)offset;
+        if (b.dynamicOffset != offset)
+		{
+			m_dirtySetRebindMask |= 1u << set;
+			b.dynamicOffset = (uint32_t)offset;
+		}
     }
-    else 
+    else
     {
-        b.buffer = {internal_buffer.GetHandle(), 0, size};
-        b.dynamicOffset = (uint32_t)offset;
-        m_dirtySetMask |= 1u << set;
+        b.buffer = { internal_buffer.GetHandle(), 0, size };
+		b.dynamicOffset = (uint32_t)offset;
+        m_bindingState.cookies[set][binding] = internal_buffer.GetCookie();
+		m_dirtySetMask |= 1u << set;
     }
 
 }
 
-void CommandList_Vulkan::BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer &buffer, u64 offset, u64 size)
+void CommandList_Vulkan::BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer &buffer, uint64_t offset, uint64_t size)
 {
-    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
-    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
-
-// #ifdef QK_DEBUG_BUILD
-//     if (m_currentPipeline == nullptr)
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "You must bind a pipeline before binding a storage buffer.");
-//         return;
-//     }
-//     if ((buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT) == 0)
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "CommandList_Vulkan::BindStorageBuffer : The bounded buffer doesn't has BUFFER_USAGE_STORAGE_BUFFER_BIT");
-//         return;
-//     }
-
-//     if ((m_currentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0 ||
-//         (m_currentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set].storage_buffer_mask & (1u << binding)) == 0) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "CommandList_Vulkan::BindStorageBuffer : Set: {}, binding: {} is not a storage buffer.", set, binding);
-//         return;
-//     }
-// #endif
-
+    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM);
+    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM);
+    QK_CORE_ASSERT(buffer.GetDesc().usageBits & BUFFER_USAGE_STORAGE_BUFFER_BIT);
     auto& internal_buffer = ToInternal(&buffer);
     auto& b = m_bindingState.descriptorBindings[set][binding];
 
-    // if (b.buffer.buffer == internal_buffer.GetHandle() && b.buffer.range == size) 
-    //     return;
+     if (internal_buffer.GetCookie() == m_bindingState.cookies[set][binding] && b.buffer.range == size)
+         return;
 
     b.buffer = { internal_buffer.GetHandle(), offset, size };
     b.dynamicOffset = 0;
+    m_bindingState.cookies[set][binding] = internal_buffer.GetCookie();
     m_dirtySetMask |= 1u << set;
 }
 
 void CommandList_Vulkan::BindImage(uint32_t set, uint32_t binding, const Image &image, ImageLayout layout)
 {
-    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
-    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
-
-// #ifdef QK_DEBUG_BUILD
-//     if (m_currentPipeline == nullptr) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "You must bind a pipeline before binding a image.");
-//         return;
-//     }
-//     if (!(image.GetDesc().usageBits & IMAGE_USAGE_SAMPLING_BIT) &&
-//         !(image.GetDesc().usageBits & IMAGE_USAGE_STORAGE_BIT)) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "Binded Image must with usage bits: IMAGE_USAGE_SAMPLING_BIT and IMAGE_USAGE_STORAGE_BIT");
-//         return;
-//     }
-//     if (layout != ImageLayout::SHADER_READ_ONLY_OPTIMAL && layout != ImageLayout::GENERAL) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "Bind image's layout can only be SHADER_READ_ONLY_OPTIMAL and GENERAL");
-//         return;
-//     }
-// #endif
-
+    QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM);
+    QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM);
     auto& internal_image = ToInternal(&image);
     auto& b = m_bindingState.descriptorBindings[set][binding];
+    VkImageLayout image_layout = ConvertImageLayout(layout);
 
-    if (b.image.imageView == internal_image.GetView() && b.image.imageLayout == ConvertImageLayout(layout))
-    {
-        m_dirtySetRebindMask |= 1u << set;
+    if (internal_image.GetCookie() == m_bindingState.cookies[set][binding] && b.image.imageLayout == image_layout)
         return;
-    }
 
     b.image.imageView = internal_image.GetView();
-    b.image.imageLayout = ConvertImageLayout(layout);
+    b.image.imageLayout = image_layout;
+    m_bindingState.cookies[set][binding] = internal_image.GetCookie();
     m_dirtySetMask |= 1u << set;
     
 }
@@ -584,48 +513,12 @@ void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
     auto& internal_pipeline = ToInternal(&pipeline);
     QK_CORE_ASSERT(internal_pipeline.GetHandle() != VK_NULL_HANDLE)
 
-// #ifdef QK_DEBUG_BUILD
-//     if (!m_currentRenderPassInfo.IsValid()) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "BindPipeLine()::You must call BeginRenderPass() before binding a pipeline.");
-//         return;
-//     }
-
-//     const auto& render_pass_info = internal_pipeline.GetGraphicPipelineDesc().renderPassInfo;
-//     if (render_pass_info.numColorAttachments != m_currentRenderPassInfo.numColorAttachments) 
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "BindPipeLine()::The pipeline's color attachment number is not equal to the current render pass.");
-//         return;
-//     }
-
-//     if (render_pass_info.depthAttachmentFormat != m_currentRenderPassInfo.depthAttachmentFormat)
-//     {
-//         QK_CORE_LOGE_TAG("RHI", "BindPipeLine()::The pipeline's depth attachment is not equal to the current render pass.");
-//         return;
-//     }
-// #endif
-
     if (m_currentPipeline == &internal_pipeline)
         return;
     
-    if (internal_pipeline.GetBindingPoint() == PipeLineBindingPoint::GRAPHIC)
-        vkCmdBindPipeline(m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, internal_pipeline.GetHandle());
-    else
-        vkCmdBindPipeline(m_cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, internal_pipeline.GetHandle());
-
-    // reset binding state if layout changed
-    // if (!m_currentPipeline || m_currentPipeline->GetLayout() != internal_pipeline.GetLayout())
-    // {
-    //     m_dirtySetMask = 0;
-    //     m_dirtySetRebindMask = 0;
-
-    //     memset(m_bindingState.descriptorBindings, 0, sizeof(m_bindingState.descriptorBindings));
-
-    //     for (int i = 0; i < DESCRIPTOR_SET_MAX_NUM; i++)
-    //         m_currentSets[i] = VK_NULL_HANDLE;
-    // }
-
+    SetPipelineLayout(internal_pipeline.GetLayout());
     m_currentPipeline = &internal_pipeline;
+    SetDirty(COMMAND_LIST_DIRTY_PIPELINE_BIT);
 }
 
 void CommandList_Vulkan::BindSampler(uint32_t set, uint32_t binding, const Sampler& sampler)
@@ -675,15 +568,18 @@ void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const
     auto& internal_buffer = ToInternal(&buffer);
     QK_CORE_ASSERT(internal_buffer.GetHandle() != VK_NULL_HANDLE)
     QK_CORE_ASSERT((buffer.GetDesc().usageBits & BUFFER_USAGE_INDEX_BUFFER_BIT) != 0)
-    
     auto& index_buffer_binding_state = m_bindingState.indexBufferBindingState;
-    // if (internal_buffer.GetHandle() == index_buffer_binding_state.buffer && offset == index_buffer_binding_state.offset && format == index_buffer_binding_state.format)
-    //     return;
+
+    if (internal_buffer.GetHandle() == index_buffer_binding_state.buffer &&
+        offset == index_buffer_binding_state.offset &&
+        format == index_buffer_binding_state.format)
+    {
+        return;
+    }
 
     index_buffer_binding_state.buffer = internal_buffer.GetHandle();
     index_buffer_binding_state.offset = offset;
     index_buffer_binding_state.format = format;
-
     vkCmdBindIndexBuffer(m_cmdBuffer, internal_buffer.GetHandle(), offset, (format == IndexBufferFormat::UINT16? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32));
 }
 
@@ -696,8 +592,8 @@ void CommandList_Vulkan::BindVertexBuffer(uint32_t binding, const Buffer &buffer
 
     auto& vertex_buffer_binding_state = m_bindingState.vertexBufferBindingState;
 
-    // if (vertex_buffer_binding_state.buffers[binding] == internal_buffer.GetHandle() && vertex_buffer_binding_state.offsets[binding] == offset)
-    //     return;
+    if (vertex_buffer_binding_state.buffers[binding] == internal_buffer.GetHandle() && vertex_buffer_binding_state.offsets[binding] == offset)
+        return;
 
     vertex_buffer_binding_state.buffers[binding] = internal_buffer.GetHandle();
     vertex_buffer_binding_state.offsets[binding] = offset;
@@ -724,12 +620,49 @@ void CommandList_Vulkan::SetViewPort(const Viewport &viewport)
 	vkCmdSetViewport(m_cmdBuffer, 0, 1, &m_viewport);
 }
 
+void CommandList_Vulkan::SetPipelineLayout(const PipeLineLayout* layout)
+{
+    QK_CORE_ASSERT(layout);
+    if (!m_currentPipeline)
+    {
+        m_dirtySetMask = ~0u;
+        SetDirty(COMMAND_LIST_DIRTY_PUSH_CONSTANTS_BIT);
+    }
+    else if (m_currentPipeline->GetLayout() != layout)
+    {
+        const auto& old_layout = m_currentPipeline->GetLayout()->combinedLayout;
+        const auto& new_layout = layout->combinedLayout;
+
+        // If the push constant layout changes, all descriptor sets
+        // are invalidated.
+        if (old_layout.push_constant_hash != new_layout.push_constant_hash)
+        {
+            m_dirtySetMask = ~0u;
+            SetDirty(COMMAND_LIST_DIRTY_PUSH_CONSTANTS_BIT);
+        }
+        else
+        {
+            const auto& old_pipe_layout = m_currentPipeline->GetLayout();
+            // find the first set whose descriptor set layout differs.
+            for (unsigned set = 0; set < DESCRIPTOR_SET_MAX_NUM; set++)
+            {
+                if (layout->setAllocators[set] != old_pipe_layout->setAllocators[set])
+                {
+                    m_dirtySetMask |= ~((1u << set) - 1);
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void CommandList_Vulkan::FlushDescriptorSet(uint32_t set)
 {
     QK_CORE_ASSERT((m_currentPipeline->GetLayout()->combinedLayout.descriptorSetLayoutMask & (1u << set)) != 0)
 
     auto& set_layout = m_currentPipeline->GetLayout()->combinedLayout.descriptorSetLayouts[set];
     auto& bindings = m_bindingState.descriptorBindings[set];
+    auto& cookies = m_bindingState.cookies[set];
 
 	uint32_t num_dynamic_offsets = 0;
 	uint32_t dynamic_offsets[SET_BINDINGS_MAX_NUM];
@@ -740,14 +673,10 @@ void CommandList_Vulkan::FlushDescriptorSet(uint32_t set)
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
         {
             for (size_t i = 0; i < b.descriptorCount; ++i) {
-                h.pointer(bindings[b.binding + i].buffer.buffer);
+                h.u64(cookies[b.binding + i]);
                 h.u64(bindings[b.binding + i].buffer.range);
-#ifdef QK_DEBUG_BUILD
-                if (bindings[b.binding + i].buffer.buffer == VK_NULL_HANDLE)
-                    QK_CORE_LOGW_TAG("RHI", "Buffer at Set: {}, Binding {} is not bounded. Performance waring!", set, b.binding);
-#endif
+                QK_CORE_ASSERT(bindings[b.binding + i].buffer.buffer != VK_NULL_HANDLE)
                 QK_CORE_ASSERT(num_dynamic_offsets < SET_BINDINGS_MAX_NUM)
-                h.u32(bindings[b.binding + i].dynamicOffset);
                 dynamic_offsets[num_dynamic_offsets++] = bindings[b.binding + i].dynamicOffset;
             }
             break;
@@ -805,13 +734,22 @@ void CommandList_Vulkan::FlushDescriptorSet(uint32_t set)
         }
     }
     util::Hash hash = h.get();
-    auto allocated = m_currentPipeline->GetLayout()->setAllocators[set]->Find(hash);
+    auto allocated = m_currentPipeline->GetLayout()->setAllocators[set]->RequestDescriptorSet(hash);
 
     // The descriptor set was not successfully cached, rebuild
     if (!allocated.second) {
         auto updata_template = m_currentPipeline->GetLayout()->updateTemplate[set];
         QK_CORE_ASSERT(updata_template)
         vkUpdateDescriptorSetWithTemplate(m_device->vkDevice, allocated.first, updata_template, bindings);
+        //QK_CORE_LOGT_TAG("cmd", "Update DescriptorSet : set = {}, hash = {}", set, hash);
+        //if (set == 0)
+        //    QK_CORE_LOGT_TAG("cmd", "Update DescriptorSet : vkbuffer = {}", (uint64_t)bindings[0].buffer.buffer);
+    }
+    else
+    {
+        //QK_CORE_LOGT_TAG("cmd", "Reuse DescriptorSet : set = {}, hash = {}", set, hash);
+        //if (set == 0)
+        //    QK_CORE_LOGT_TAG("cmd", "Reuse DescriptorSet : vkbuffer = {}", (uint64_t)bindings[0].buffer.buffer);
     }
 
     vkCmdBindDescriptorSets(m_cmdBuffer, (m_currentPipeline->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
@@ -850,7 +788,6 @@ void CommandList_Vulkan::DrawIndexed(uint32_t index_count, uint32_t instance_cou
 
     // Flush render state : update descriptor sets and bind vertex buffers 
     FlushRenderState();
-    
     vkCmdDrawIndexed(m_cmdBuffer, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
@@ -858,7 +795,6 @@ void CommandList_Vulkan::Draw(uint32_t vertex_count, uint32_t instance_count, ui
 {
     // Flush render state : update descriptor sets and bind vertex buffers 
     FlushRenderState();
-
     vkCmdDraw(m_cmdBuffer, vertex_count, instance_count, first_vertex, first_instance);
 }
 
@@ -867,7 +803,9 @@ void CommandList_Vulkan::FlushRenderState()
     QK_CORE_ASSERT(m_currentPipeline)
     
     const PipeLineLayout* pipeline_layout = m_currentPipeline->GetLayout();
-
+    if (GetAndClearDirtyFlags(COMMAND_LIST_DIRTY_PIPELINE_BIT))
+        vkCmdBindPipeline(m_cmdBuffer, (m_currentPipeline->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE), m_currentPipeline->GetHandle());
+       
     // 1. flush dirty descriptor set
     uint32_t sets_need_update = pipeline_layout->combinedLayout.descriptorSetLayoutMask & m_dirtySetMask;
     util::for_each_bit(sets_need_update, [&](uint32_t set) { FlushDescriptorSet(set); });
@@ -883,7 +821,7 @@ void CommandList_Vulkan::FlushRenderState()
     m_dirtySetRebindMask&= ~dynamic_sets_need_update;
 
     // 2. flush push constant
-    if (_GetAndClearDirtyFlags(COMMAND_LIST_DIRTY_PUSH_CONSTANTS_BIT))
+    if (GetAndClearDirtyFlags(COMMAND_LIST_DIRTY_PUSH_CONSTANTS_BIT))
 	{
 		const VkPushConstantRange& range = pipeline_layout->combinedLayout.pushConstant;
 		if (range.stageFlags != 0)
@@ -907,7 +845,7 @@ void CommandList_Vulkan::FlushRenderState()
 
 }
 
-CommandListDirtyFlagBits CommandList_Vulkan::_GetAndClearDirtyFlags(CommandListDirtyFlagBits flags)
+CommandListDirtyFlagBits CommandList_Vulkan::GetAndClearDirtyFlags(CommandListDirtyFlagBits flags)
 {
     CommandListDirtyFlagBits ret = static_cast<CommandListDirtyFlagBits>(m_dirtyMask & flags);
     m_dirtyMask &= ~flags;

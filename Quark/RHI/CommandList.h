@@ -81,6 +81,7 @@ public:
     CommandList(QueueType type) : m_queueType(type) {};
     virtual ~CommandList() = default;
 
+    // graphics api
     virtual void PushConstant(const void* data, uint32_t offset, uint32_t size) = 0;
     virtual void BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) = 0;   
     virtual void BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) = 0;
@@ -89,23 +90,20 @@ public:
     virtual void BindVertexBuffer(uint32_t binding, const Buffer& buffer, uint64_t offset) = 0;
     virtual void BindIndexBuffer(const Buffer& buffer, uint64_t offset, const IndexBufferFormat format) = 0;
     virtual void BindSampler(uint32_t set, uint32_t binding, const Sampler& sampler) = 0;
-    
-    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) = 0;
-
     virtual void DrawIndexed(uint32_t index_count, uint32_t instance_count, uint32_t first_index, uint32_t vertex_offset, uint32_t first_instance) = 0;
     virtual void Draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) = 0;
-    
     virtual void SetViewPort(const Viewport& viewport) = 0;
     virtual void SetScissor(const Scissor& scissor) = 0;
-
     virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, uint32_t bufferBarriersCount) = 0;
-    
     virtual void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) = 0;
-    // virtual void BeginRenderPass(const RenderPassInfo& info) = 0;
     virtual void EndRenderPass() = 0;
-    
+    // buffer allocation, immplementation with buffer pool
+    virtual void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) = 0;
+
     virtual const RenderPassInfo2& GetCurrentRenderPassInfo() const = 0;
     virtual const PipeLine* GetCurrentGraphicsPipeline() const = 0;
+
+    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) = 0;
 
     QueueType GetQueueType() const { return m_queueType; }
     GpuResourceType GetGpuResourceType() const override { return GpuResourceType::COMMAND_LIST; }

@@ -1,6 +1,7 @@
 #include "Quark/qkpch.h"
-#include "Quark/RHI/Vulkan/Device_Vulkan.h"
 #include "Quark/RHI/Vulkan/Shader_Vulkan.h"
+#include "Quark/RHI/Vulkan/Device_Vulkan.h"
+#include "Quark/Core/Util/Hash.h"
 
 #include <spirv_reflect.h>
 
@@ -75,6 +76,11 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
         m_ResourceLayout.pushConstant.offset = std::min(m_ResourceLayout.pushConstant.offset, x->offset);
         m_ResourceLayout.pushConstant.size = std::max(m_ResourceLayout.pushConstant.size, x->size);
     }
+    util::Hasher h;
+    h.u32(m_ResourceLayout.pushConstant.stageFlags);
+    h.u32(m_ResourceLayout.pushConstant.offset);
+    h.u32(m_ResourceLayout.pushConstant.size);
+    m_ResourceLayout.push_constant_hash = h.get();
 
     for (auto& b : bindings) {
         QK_CORE_ASSERT(b->set < DESCRIPTOR_SET_MAX_NUM) // only support shaders with 4 sets or less

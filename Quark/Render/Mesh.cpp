@@ -2,12 +2,11 @@
 #include "Quark/Render/Mesh.h"
 #include "Quark/Render/RenderQueue.h"
 #include "Quark/Render/RenderSystem.h"
-
 namespace quark
 {
-static Queue Material2Queue(const RenderPBRMaterial& mat)
+static Queue Material2Queue(const PBRMaterial& mat)
 {
-	if (mat.drawPipeline == DrawPipeline::AlphaBlend)
+	if (mat.draw_pipeline == DrawPipeline::AlphaBlend)
 		return Queue::Transparent;
 	else
 		return Queue::Opaque;
@@ -19,8 +18,8 @@ void StaticMesh::GetRenderData(const RenderContext& context, const RenderInfoCmp
 
 	util::Hasher h;
 	h.u32(mesh_attribute_mask);
-	h.u32(util::ecast(material->drawPipeline));
-	h.u64(material->shaderProgram->GetHash());
+	h.u32(util::ecast(material->draw_pipeline));
+	h.u64(material->shader_program->GetHash());
 	util::Hash pipeline_hash = h.get();
 
 	h.u64(material->hash);
@@ -44,32 +43,6 @@ void StaticMesh::GetRenderData(const RenderContext& context, const RenderInfoCmp
 	}
 }
 
-//uint64_t StaticMesh::Bake()
-//{
-//	util::Hasher h;
-//	h.pointer(vbo_position.get());
-//	if (vbo_varying)
-//		h.pointer(vbo_varying.get());
-//	if (vbo_varying_enable_blending)
-//		h.pointer(vbo_varying_enable_blending.get());
-//	if (vbo_joint_binding)
-//		h.pointer(vbo_joint_binding.get());
-//	if (ibo)
-//	{
-//		h.pointer(ibo.get());
-//		h.u32(ibo_offset);
-//	}
-//
-//	h.u32(vertex_offset);
-//	h.u32(vertex_count);
-//	h.u32(mesh_attribute_mask);
-//	h.u64(material->hash);
-//
-//	return h.get();
-//
-//}
-
-
 void StaticMesh::FillPerDrawcallData(StaticMeshPerDrawcallData& data) const
 {
 	data.vbo_position = vbo_position.get();
@@ -80,16 +53,16 @@ void StaticMesh::FillPerDrawcallData(StaticMeshPerDrawcallData& data) const
 	data.ibo_offset = ibo_offset;
 	data.vertex_offset = vertex_offset;
 	data.vertex_count = vertex_count;
-	data.fragment.base_color = material->colorFactors;
-	data.fragment.metallic = material->metallicFactor;
-	data.fragment.roughness = material->roughnessFactor;
+	data.fragment.base_color = material->base_color;
+	data.fragment.metallic = material->metallic_factor;
+	data.fragment.roughness = material->roughness_factor;
 	data.mesh_attribute_mask = mesh_attribute_mask;
-	data.textures[util::ecast(TextureKind::Albedo)] = material->base_color_texture_image.get();
-	data.textures[util::ecast(TextureKind::Normal)] = material->normal_texture_image.get();
-	data.textures[util::ecast(TextureKind::MetallicRoughness)] = material->metallic_roughness_texture_image.get();
-	data.textures[util::ecast(TextureKind::Emissive)] = material->emissive_texture_image.get();
+	data.textures[util::ecast(TextureKind::Albedo)] = material->textures[util::ecast(TextureKind::Albedo)].get();
+	data.textures[util::ecast(TextureKind::Normal)] = material->textures[util::ecast(TextureKind::Normal)].get();
+	data.textures[util::ecast(TextureKind::MetallicRoughness)] = material->textures[util::ecast(TextureKind::MetallicRoughness)].get();
+	data.textures[util::ecast(TextureKind::Emissive)] = material->textures[util::ecast(TextureKind::Emissive)].get();
 
-	data.alpha_mode = material->alphaMode;
+	data.draw_pipeline = material->draw_pipeline;
 
 }
 
@@ -99,7 +72,7 @@ void BindMeshState(rhi::CommandList& cmd, const StaticMeshPerDrawcallData& data)
 	auto& render_resource_manager = RenderSystem::Get().GetRenderResourceManager();
 	Ref<rhi::PipeLine> pipeline = RenderSystem::Get().GetRenderResourceManager().RequestGraphicsPSO(
 		*(data.shader_program), cmd.GetCurrentRenderPassInfo(), data.mesh_attribute_mask,
-		true, data.alpha_mode
+		true, data.draw_pipeline
 	);
 
 	cmd.BindPipeLine(*pipeline.get());
@@ -131,15 +104,16 @@ void StaticMeshRender(rhi::CommandList& cmd, const RenderQueueTask* task, unsign
 	{
 		to_render = std::min<unsigned>(StaticMeshVertex::max_instances, instance_count - i);
 
-		rhi::BufferDesc desc;
-		desc.domain = rhi::BufferMemoryDomain::CPU;
-		desc.size = sizeof(glm::mat4) * to_render;
-		desc.usageBits = rhi::BufferUsageBits::BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-		Ref<rhi::Buffer> instance_buffer = RenderSystem::Get().GetDevice()->CreateBuffer(desc);
-		glm::mat4* instance_data = static_cast<glm::mat4*>(instance_buffer->GetMappedDataPtr());
+		//rhi::BufferDesc desc;
+		//desc.domain = rhi::BufferMemoryDomain::CPU;
+		//desc.size = sizeof(glm::mat4) * to_render;
+		//desc.usageBits = rhi::BufferUsageBits::BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		//Ref<rhi::Buffer> instance_buffer = RenderSystem::Get().GetDevice()->CreateBuffer(desc);
+		//glm::mat4* instance_data = static_cast<glm::mat4*>(instance_buffer->GetMappedDataPtr());
+		glm::mat4* ptr = static_cast<glm::mat4*>(cmd.AllocateConstantData(2, 0, sizeof(glm::mat4) * to_render));
 		for (unsigned j = 0; j < to_render; j++)
-			instance_data[j] = static_cast<const StaticMeshPerInstanceData*>(task[i + j].instance_data)->vertex.model;
-		cmd.BindUniformBuffer(2, 0, *instance_buffer.get(), 0, desc.size);
+			ptr[j] = static_cast<const StaticMeshPerInstanceData*>(task[i + j].instance_data)->vertex.model;
+		// cmd.BindUniformBuffer(2, 0, *instance_buffer.get(), 0, desc.size);
 
 		if (perdrawcall_data->ibo)
 			cmd.DrawIndexed(perdrawcall_data->vertex_count, to_render, perdrawcall_data->ibo_offset, perdrawcall_data->vertex_offset, 0);

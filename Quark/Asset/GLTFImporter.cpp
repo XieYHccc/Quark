@@ -105,7 +105,7 @@ namespace quark {
         std::string warn;
         tinygltf::TinyGLTF gltf_loader;
 
-        bool binary = false; //TODO: Support glb loading
+        bool binary = false;
         size_t extpos = filename.rfind('.', filename.length());
         if (extpos != std::string::npos)
             binary = (filename.substr(extpos + 1, filename.length() - extpos) == "glb");
@@ -122,9 +122,9 @@ namespace quark {
         bool importResult = binary ? gltf_loader.LoadBinaryFromFile(&m_gltf_model, &err, &warn, filename.c_str()) : gltf_loader.LoadASCIIFromFile(&m_gltf_model, &err, &warn, filename.c_str());
 
         if (!err.empty())
-            // QK_CORE_LOGE_TAG("AssetManager", "Error loading gltf model: {}.", err);
+            QK_CORE_LOGE_TAG("GLTFImporter", "{}", err);
         if (!warn.empty())
-            QK_CORE_LOGI_TAG("AssetManager", "{}", warn);
+            QK_CORE_LOGI_TAG("GLTFImporter", "{}", warn);
         if (!importResult)
             return;
 
@@ -175,7 +175,7 @@ namespace quark {
         // Load materials
         if (flags & ImportingFlags::ImportMaterials)
         {
-            m_materials.reserve(m_gltf_model.materials.size()); // one more default material
+            m_materials.reserve(m_gltf_model.materials.size());
             for (size_t material_index = 0; material_index < m_gltf_model.materials.size(); material_index++)
                 m_materials.push_back(ParseMaterial(m_gltf_model.materials[material_index]));
         }
@@ -558,13 +558,19 @@ namespace quark {
         
  
         find = mat.values.find("metallicRoughnessTexture");
-        if (find != mat.values.end()) {
-            newMaterial->metallicRoughnessImage = m_images[find->second.TextureIndex()]->GetAssetID();
+        if (find != mat.values.end()) 
+        {
+            int textureIndex = find->second.TextureIndex();
+            Ref<ImageAsset> img = m_images[m_gltf_model.textures[textureIndex].source];
+            newMaterial->metallicRoughnessImage = img->GetAssetID();
         }
     
         find = mat.values.find("baseColorTexture");
-        if (find != mat.values.end()) {
-            newMaterial->baseColorImage = m_images[find->second.TextureIndex()]->GetAssetID();
+        if (find != mat.values.end()) 
+        {
+            int textureIndex = find->second.TextureIndex();
+            Ref<ImageAsset> img = m_images[m_gltf_model.textures[textureIndex].source];
+            newMaterial->baseColorImage = img->GetAssetID();
         }
     
         return newMaterial;
@@ -617,20 +623,20 @@ namespace quark {
                 u32 numColorComponents;
 
                 // Position attribute is required
-                QK_CORE_ASSERT(p.attributes.find("POSITION") != p.attributes.end(), "Position attribute is required")
-                    const tinygltf::Accessor& posAccessor = m_gltf_model.accessors[p.attributes.find("POSITION")->second];
+                QK_CORE_ASSERT(p.attributes.find("POSITION") != p.attributes.end(), "Position attribute is required");
+                const tinygltf::Accessor& posAccessor = m_gltf_model.accessors[p.attributes.find("POSITION")->second];
                 const tinygltf::BufferView& posView = m_gltf_model.bufferViews[posAccessor.bufferView];
                 buffer_pos = reinterpret_cast<const float*>(&(m_gltf_model.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
                 min_pos = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
                 max_pos = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
-                QK_CORE_ASSERT(min_pos != max_pos)
+                QK_CORE_ASSERT(min_pos != max_pos);
 
-                    if (p.attributes.find("NORMAL") != p.attributes.end())
-                    {
-                        const tinygltf::Accessor& normAccessor = m_gltf_model.accessors[p.attributes.find("NORMAL")->second];
-                        const tinygltf::BufferView& normView = m_gltf_model.bufferViews[normAccessor.bufferView];
-                        buffer_normals = reinterpret_cast<const float*>(&(m_gltf_model.buffers[normView.buffer].data[normAccessor.byteOffset + normView.byteOffset]));
-                    }
+                if (p.attributes.find("NORMAL") != p.attributes.end())
+                {
+                    const tinygltf::Accessor& normAccessor = m_gltf_model.accessors[p.attributes.find("NORMAL")->second];
+                    const tinygltf::BufferView& normView = m_gltf_model.bufferViews[normAccessor.bufferView];
+                    buffer_normals = reinterpret_cast<const float*>(&(m_gltf_model.buffers[normView.buffer].data[normAccessor.byteOffset + normView.byteOffset]));
+                }
 
                 if (p.attributes.find("TEXCOORD_0") != p.attributes.end())
                 {

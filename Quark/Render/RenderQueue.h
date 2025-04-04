@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+#include <unordered_map>
+
 namespace quark 
 {
 namespace rhi{ class CommandList; }

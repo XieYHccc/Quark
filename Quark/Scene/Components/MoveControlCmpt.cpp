@@ -15,7 +15,7 @@ MoveControlCmpt::MoveControlCmpt(float moveSpeed, float mouseSensitivity)
     m_LastPosition = {0, 0};
 }
 
-void MoveControlCmpt::Update(float deltaTime)
+void MoveControlCmpt::Update(TimeStep deltaTime)
 {
     MousePosition pos = Input::Get()->GetMousePosition();
     if (m_IsFirstMouse) 
@@ -46,11 +46,9 @@ void MoveControlCmpt::ProcessMouseMove(float xoffset, float yoffset)
     transform->SetLocalRotate(glm::vec3(m_Pitch, m_Yaw, 0));
 }
 
-void MoveControlCmpt::ProcessKeyInput(float deltaTime)
+void MoveControlCmpt::ProcessKeyInput(TimeStep deltaTime)
 {   
     auto* transform = GetEntity()->GetComponent<TransformCmpt>();
-    // Convert deltaTime from ms to s
-    deltaTime = deltaTime / 1000;
 
     glm::vec3 move {0.f};
     if (Input::Get()->IsKeyPressed(Key::W, true))
@@ -61,7 +59,7 @@ void MoveControlCmpt::ProcessKeyInput(float deltaTime)
         move.x = -1;
     if (Input::Get()->IsKeyPressed(Key::D, true))
         move.x = 1;
-    move = move * m_MoveSpeed * deltaTime;
+    move = move * m_MoveSpeed * deltaTime.GetSeconds();
     move = glm::rotate(transform->GetLocalRotate(), move);
     transform->Translate(move);
     // transform->SetLocalPosition(transform->GetPosition() + glm::rotate(transform->GetQuat(), move));

@@ -2,6 +2,7 @@
 #include "Quark/RHI/Vulkan/Common_Vulkan.h"
 #include "Quark/RHI/Image.h"
 #include "Quark/RHI/TextureFormatLayout.h"
+#include "Quark/RHI/Vulkan/Cookie.h"
 namespace quark::rhi {
 
 constexpr VkImageLayout ConvertImageLayout(ImageLayout layout)
@@ -41,26 +42,26 @@ constexpr VkImageType ConvertImageType(ImageType type)
     }
 }
 
-class Image_Vulkan : public Image {
+class Image_Vulkan : public Image, public Cookie, public InternalSyncEnabled {
 public:
-    Image_Vulkan(const ImageDesc& desc); // only used for fill swapchain image infomation
+    Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc); // only used for fill swapchain image infomation
     Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data);
     virtual ~Image_Vulkan();
     
-    const VkImage GetHandle() const { return m_Handle; }
-    const VkImageView GetView() const { return m_View; }
+    const VkImage GetHandle() const { return m_handle; }
+    const VkImageView GetView() const { return m_view; }
     
-    bool IsSwapChainImage() const { return m_IsSwapChainImage; }
+    bool IsSwapChainImage() const { return m_isSwapChainImage; }
     
 private:
     void PrepareCopy(const ImageDesc& desc, const TextureFormatLayout& layout, const ImageInitData* init_data, Ref<Buffer> stage_buffer, std::vector<VkBufferImageCopy>& copys);
     void GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd);
 
-    Device_Vulkan* m_Device;
-    VkImage m_Handle;
-    VmaAllocation m_Allocation;
-    VkImageView m_View;
-    bool m_IsSwapChainImage;
+    Device_Vulkan* m_device;
+    VkImage m_handle;
+    VmaAllocation m_allocation;
+    VkImageView m_view;
+    bool m_isSwapChainImage;
 
     friend class Device_Vulkan;
 };
@@ -71,10 +72,10 @@ class Sampler_Vulkan : public Sampler {
 public:
     Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc);
     ~Sampler_Vulkan();
-    VkSampler GetHandle() const { return m_Handle; }
+    VkSampler GetHandle() const { return m_handle; }
 private:
-    Device_Vulkan* m_Device;
-    VkSampler m_Handle;
+    Device_Vulkan* m_device;
+    VkSampler m_handle;
 };
 
 CONVERT_TO_VULKAN_INTERNAL_FUNC(Sampler)

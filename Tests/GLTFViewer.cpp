@@ -3,6 +3,7 @@
 #include <Quark/Asset/ImageImporter.h>
 #include <Quark/Render/RenderContext.h>
 #include <Quark/Render/RenderQueue.h>
+#include <Quark/Scene/Components/MoveControlCmpt.h>
 #include <Quark/EntryPoint.h>
 
 using namespace std;
@@ -16,17 +17,17 @@ public:
 	{
 		using namespace rhi;
 
-		m_gltf_importer.Import("BuiltInResources/Gltf/FlightHelmet/glTF/FlightHelmet.gltf", GLTFImporter::ImportAll);
-
+		m_gltf_importer.Import("BuiltInResources/Gltf/structure.glb", GLTFImporter::ImportAll);
+		// m_gltf_importer.Import("BuiltInResources/Gltf/FlightHelmet/glTF/FlightHelmet.gltf", GLTFImporter::ImportAll);
 		// load cube map
 		ImageImporter imageLoader;
 		Ref<ImageAsset> cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
 		m_cubeMapId = cubeMap->GetAssetID();
 		AssetManager::Get().AddMemoryOnlyAsset(cubeMap);
 
+		// Create depth image
 		uint32_t width = m_window->GetFrambufferWidth();
 		uint32_t height = m_window->GetFrambufferHeight();
-		// Create depth image
 		ImageDesc image_desc;
 		image_desc.type = ImageType::TYPE_2D;
 		auto ratio = Application::Get().GetWindow()->GetRatio();
@@ -39,6 +40,17 @@ public:
 		image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 		image_desc.usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 		m_depth_attachment = RenderSystem::Get().GetDevice()->CreateImage(image_desc);
+
+		// add a camera component to the scene
+		Entity* camera_entity = m_gltf_importer.GetScene()->CreateEntity("Camera");
+		auto* camcmpt = camera_entity->AddComponent<CameraCmpt>();
+		camcmpt->aspect = 2500.f / 1600;
+		camcmpt->fov = 60.f;
+		camcmpt->zNear = 0.1f;
+		camcmpt->zFar = 1000.f;
+		camera_entity->GetComponent<TransformCmpt>()->SetLocalPosition(glm::vec3(0.f, 0.f, 120.f));
+		camera_entity->AddComponent<MoveControlCmpt>();
+		m_gltf_importer.GetScene()->SetMainCameraEntity(camera_entity);
 	}
 
 	void OnUpdate(TimeStep ts) override final
@@ -46,7 +58,6 @@ public:
 
 		auto scene = m_gltf_importer.GetScene();
 		scene->OnUpdate(ts);
-
 	}
 
 	void OnRender(TimeStep ts) override final
@@ -59,8 +70,12 @@ public:
 		m_lighting_params.directional.color = glm::vec3(1.0f, 0.9f, 0.8f);
 		m_lighting_params.directional.direction = glm::normalize(glm::vec3(1.f, 1.f, 1.f));
 		m_render_context.SetLightingParameters(&m_lighting_params);
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), 2500.f / 1600, 0.1f, 1000.0f);
+
+		auto* cam = scene->GetMainCameraEntity()->GetComponent<CameraCmpt>();
+		//glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		//glm::mat4 proj = glm::perspective(glm::radians(45.0f), 2500.f / 1600, 0.1f, 1000.0f);
+		glm::mat4 view = cam->GetViewMatrix();
+		glm::mat4 proj = cam->GetProjectionMatrix();
 		proj[1][1] *= -1;
 		m_render_context.SetCamera(view, proj);
 

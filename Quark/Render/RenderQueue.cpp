@@ -70,6 +70,7 @@ void RenderQueue::Sort()
 		for (size_t i = 0; i < q.raw_input.size(); i++)
 		{
 			q.sorted_output[i] = q.raw_input[q.util_indices[i]];
+			//q.sorted_output[i] = q.raw_input[i];
 		}
 	}
 }
@@ -91,7 +92,6 @@ void RenderQueue::Dispatch(Queue que, rhi::CommandList& cmd) const
 			QK_CORE_ASSERT(tasks[i].render == tasks[begin].render);
 			instances++;
 		}
-
 		tasks[begin].render(cmd, &tasks[begin], instances);
 		begin += instances;
 	}
