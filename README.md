@@ -12,12 +12,10 @@
 
 
 # Quark Game Engine
-
 Quark is my personal learning project.
 
 
 ## Environment
-
 - Windows, MacOS
 - C++20( have been tested on MSVC and Clang)
 - CMake 3.10+
@@ -33,10 +31,8 @@ Quark is my personal learning project.
 5. ```cd build```
 6. ```cmake ..```
 7. ```make``` or open .sln
-8. On windows you need to copy "Assets" and "BuildInResources" directories to the folder where Editor.exe exist.(Kinda ugly, will be imporved in the future)
 
 ## Feature
-
 - Render Hardware Interface
 - Vulkan Backend
 - 3D Scene Renderer (Forward Renderer)
@@ -50,12 +46,12 @@ Quark is my personal learning project.
 
 ## Todo
 - [x] Shader System
-- [ ] Mouse Picking in Scene Editor
-- [ ] Quark Customized Asset Format
+- [x] Mouse Picking in Scene Editor
+- [ ] Quark Customized Asset Serialization
   - [ ] Mesh
   - [ ] Texture
   - [ ] Material
-- [ ] Skeleton Animation
+- [x] Skeleton Animation
 - [ ] Render Graph System
 - [ ] D3D12 Rendering Backend
 - [ ] PBR Rendering
