@@ -192,10 +192,10 @@ Application* CreateApplication(int argc, char** argv)
 	ApplicationSpecification specs;
 	specs.uiSpecs.flags = 0;
 	specs.title = "GLTFViewer";
-	specs.width = 2500;
-	specs.height = 1600;
+	specs.width = 1440;
+	specs.height = 960;
 	specs.isFullScreen = false;
-	specs.workingDirectory = "D:/Dev/Quark/bin";
+	specs.workingDirectory = "E:/Quark/bin";
 
 	return new GLTFViewer(specs);
 }

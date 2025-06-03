@@ -14,23 +14,19 @@ namespace quark::rhi {
 
 struct PerFrameData
 {
-    Device_Vulkan* device;
-    VmaAllocator vmaAllocator;
+    Device_Vulkan* device = nullptr;
+    VmaAllocator vmaAllocator = nullptr;
     std::vector<CommandList_Vulkan*> cmdLists[QUEUE_TYPE_MAX_ENUM];
     uint32_t cmdListCount[QUEUE_TYPE_MAX_ENUM] = {}; //  the count of cmd used in this frame. Cleared when a new frame begin
     VkFence queueFences[QUEUE_TYPE_MAX_ENUM];   // per queue fence. Signled when all command list submitted from this frame completed.
     std::vector<VkFence> waitedFences;
 
-    VkSemaphore imageAvailableSemaphore;
-    VkSemaphore imageReleaseSemaphore;
-    bool imageAvailableSemaphoreConsumed = false;
-
-    std::vector<std::pair<VkBuffer, VmaAllocation>> garbageBuffers;
-    std::vector<std::pair<VkImage, VmaAllocation>> garbageImages;
-    std::vector<VkPipeline> garbagePipelines;
-    std::vector<VkImageView> grabageViews;
-    std::vector<VkShaderModule> garbageShaderModules;
-    std::vector<VkSampler> garbageSamplers;
+    std::vector<std::pair<VkBuffer, VmaAllocation>> garbage_buffers;
+    std::vector<std::pair<VkImage, VmaAllocation>> garbage_images;
+    std::vector<VkPipeline> garbage_pipelines;
+    std::vector<VkImageView> grabage_views;
+    std::vector<VkShaderModule> garbage_shaderModules;
+    std::vector<VkSampler> garbage_samplers;
     std::vector<BufferBlock> ubo_blocks;
 
     void init(Device_Vulkan* device);
@@ -100,24 +96,27 @@ public:
     Ref<Shader>         CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) override final;
     Ref<PipeLine>       CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) override final;
     Ref<Sampler>        CreateSampler(const SamplerDesc& desc) override final;
-    
+    void                SetDebugName(const Ref<GpuResource>& resouce, const char* name) override final;
+
     /*** COMMAND LIST ***/
     CommandList*        BeginCommandList(QueueType type = QueueType::QUEUE_TYPE_GRAPHICS) override final;
     void                SubmitCommandList(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false) override final;
-
-    Image*              GetPresentImage() override final { return m_swapChainImages[m_currentSwapChainImageIdx].get(); }
+    
+    /*** SWAPCHAIN ***/
+    Image*              GetPresentImage() override final { return m_wsi.swapchain_images[m_wsi.swapchain_image_index].get(); }
     DataFormat          GetPresentImageFormat() override final;
 
-    bool isFormatSupported(DataFormat format) override final;
-    void SetDebugName(const Ref<GpuResource>& resouce, const char* name) override final;
+    /*** PROPERTIES ***/
+    bool                isFormatSupported(DataFormat format) override final;
+
 
     ///////////////////// Vulkan specific ////////////////////////
     //////////////////////////////////////////////////////////////
-public:
     DescriptorSetAllocator*     RequestDescriptorSetAllocator(const DescriptorSetLayout& layout);
     PipeLineLayout*             RequestPipeLineLayout(const ShaderResourceLayout& combinedLayout);
     PerFrameData&               GetCurrentFrame();
     uint32_t 				    AllocateCookie(); 
+
     void DestroyBufferNoLock(VkBuffer buffer, VmaAllocation alloc);
     void DestroyBuffer(VkBuffer buffer, VmaAllocation alloc);
     void DestroyImageNoLock(VkImage image, VmaAllocation alloc);
@@ -126,11 +125,12 @@ public:
     void DestroyImageView(VkImageView view);
     void RequestUniformBlock(BufferBlock& block, VkDeviceSize size);
     void RequestUniformBlockNoLock(BufferBlock& block, VkDeviceSize size);
+
 private:
     void ResizeSwapchain();
 
-    // Represent a physical queue
-    // Responsible for queuing commad buffers and submit them in batch
+    // represent a physical queue
+    // responsible for queuing commad buffers and submit them in batch
     struct CommandQueue 
     {
         // represent a VkSubmitInfo2
@@ -149,7 +149,23 @@ private:
 
         void init(Device_Vulkan* device, QueueType type);
         void submit(VkFence fence = nullptr);
-    };
+    } m_queues[QUEUE_TYPE_MAX_ENUM];
+
+
+    struct WindowSystemIntergration
+    {
+        Device_Vulkan* device = nullptr;
+        std::vector<VkSemaphore> acquire_semaphores;
+		std::vector<VkSemaphore> release_semaphores;
+        std::vector<Ref<Image>> swapchain_images;
+        uint8_t semaphore_index = 0;
+        uint32_t swapchain_image_index;
+        bool consumed = false;
+        bool recreate_swapchain = false;
+
+        void init(Device_Vulkan* device);
+		void destroy();
+    } m_wsi;
 
     struct
     {
@@ -157,18 +173,13 @@ private:
         std::mutex lock;
     } m_lock;
 
-    // buffer pool
-    BufferPool m_ubo_pool;
-
-    // swapchain
-    std::vector<Ref<Image>> m_swapChainImages; // Owned by Context' swapchain, no lifetime management here
-    uint32_t m_currentSwapChainImageIdx;
-
-    PerFrameData m_frames[MAX_FRAME_NUM_IN_FLIGHT];
-    CommandQueue m_queues[QUEUE_TYPE_MAX_ENUM];
+    std::vector<PerFrameData> m_frames;
+    unsigned m_frame_index = 0;
 
     std::atomic_uint64_t m_cookie;
-    bool m_recreateSwapchain;
+
+    // buffer pool
+    BufferPool m_ubo_pool;
 
 };
 }

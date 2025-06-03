@@ -29,6 +29,17 @@ add_subdirectory(Quark)
 # add_subdirectory(./TestBed)
 # add_subdirectory(./Examples)
 add_subdirectory(Editor)
+
+function(add_quark_application TARGET_NAME)
+	add_executable(${TARGET_NAME} ${ARGN})
+    target_link_libraries(${TARGET_NAME} quark)
+endfunction()
+
+function(add_quark_test TARGET_NAME)
+	add_quark_application(${TARGET_NAME} ${ARGN})
+    set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Tests")
+endfunction()
+
 add_subdirectory(Tests)
 
 

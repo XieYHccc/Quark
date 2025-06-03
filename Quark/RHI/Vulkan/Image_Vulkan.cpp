@@ -466,7 +466,7 @@ Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
 Sampler_Vulkan::~Sampler_Vulkan()
 {
     if (m_handle) {
-        m_device->GetCurrentFrame().garbageSamplers.push_back(m_handle);
+        m_device->GetCurrentFrame().garbage_samplers.push_back(m_handle);
     }
     QK_CORE_LOGT_TAG("RHI", "Vulkan sampler destroyed");
 }

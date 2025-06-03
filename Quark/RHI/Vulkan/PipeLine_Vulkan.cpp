@@ -515,7 +515,7 @@ PipeLine_Vulkan::~PipeLine_Vulkan()
     if (m_handle != VK_NULL_HANDLE) 
     {
         auto& frame = m_device->GetCurrentFrame();
-        frame.garbagePipelines.push_back(m_handle);
+        frame.garbage_pipelines.push_back(m_handle);
     }
 
     QK_CORE_LOGT_TAG("RHI", "Vulkan pipeline destroyed");

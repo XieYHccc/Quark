@@ -14,7 +14,7 @@ namespace quark::rhi {
 
     struct DeviceConfig 
     {
-        uint32_t framesInFlight = 2;
+        uint8_t framesInFlight = 2;
     };
 
     struct DeviceProperties

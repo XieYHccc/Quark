@@ -32,6 +32,33 @@ static void request_block(Device& device, BufferBlock& block, VkDeviceSize size,
         block = {};
 }
 
+void Device_Vulkan::WindowSystemIntergration::init(Device_Vulkan* _device)
+{
+    device = _device;
+    swapchain_images.resize(device->vkContext->swapChianImages.size());
+
+    // create semaphores
+    VkSemaphoreCreateInfo semaphore_create_info = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+    semaphore_create_info.pNext = nullptr;
+    uint8_t swapchain_image_count = (uint8_t)device->vkContext->swapChianImages.size();
+    acquire_semaphores.resize(swapchain_image_count);
+    release_semaphores.resize(swapchain_image_count);
+    for (uint8_t i = 0; i < swapchain_image_count; i++)
+    {
+        vkCreateSemaphore(device->vkDevice, &semaphore_create_info, nullptr, &acquire_semaphores[i]);
+        vkCreateSemaphore(device->vkDevice, &semaphore_create_info, nullptr, &release_semaphores[i]);
+    }
+}
+
+void Device_Vulkan::WindowSystemIntergration::destroy()
+{
+    // destroy semaphores
+    for (uint8_t i = 0; i < (uint8_t)device->vkContext->swapChianImages.size(); i++)
+	{
+		vkDestroySemaphore(device->vkDevice, acquire_semaphores[i], nullptr);
+		vkDestroySemaphore(device->vkDevice, release_semaphores[i], nullptr);
+	}
+}
 void Device_Vulkan::CommandQueue::init(Device_Vulkan *device, QueueType type)
 {
     this->device = device;
@@ -97,12 +124,7 @@ void PerFrameData::init(Device_Vulkan *device)
         fence_create_info.pNext = nullptr;
         vkCreateFence(device->vkDevice, &fence_create_info, nullptr, &queueFences[i]);
     }
-    
-    // Create semaphore
-    VkSemaphoreCreateInfo semaphore_create_info = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    semaphore_create_info.pNext = nullptr;
-    vkCreateSemaphore(device->vkDevice, &semaphore_create_info, nullptr, &imageAvailableSemaphore);
-    vkCreateSemaphore(device->vkDevice, &semaphore_create_info, nullptr, &imageReleaseSemaphore);
+   
 }
 
 void PerFrameData::clear()
@@ -110,25 +132,25 @@ void PerFrameData::clear()
     VkDevice vk_device = device->vkDevice;
 
     // Destroy deferred destroyed resources
-    for (auto& sampler : garbageSamplers) 
+    for (auto& sampler : garbage_samplers) 
         vkDestroySampler(vk_device, sampler, nullptr);
-    for (auto& view : grabageViews) 
+    for (auto& view : grabage_views) 
         vkDestroyImageView(vk_device, view, nullptr);
-    for (auto& buffer : garbageBuffers) 
+    for (auto& buffer : garbage_buffers) 
         vmaDestroyBuffer(vmaAllocator, buffer.first, buffer.second);
-    for (auto& image : garbageImages) 
+    for (auto& image : garbage_images) 
         vmaDestroyImage(vmaAllocator, image.first, image.second);
-    for (auto& pipeline : garbagePipelines) 
+    for (auto& pipeline : garbage_pipelines) 
         vkDestroyPipeline(vk_device, pipeline, nullptr);
-    for (auto& shaderModule_ : garbageShaderModules)
+    for (auto& shaderModule_ : garbage_shaderModules)
         vkDestroyShaderModule(vk_device, shaderModule_, nullptr);
 
-    garbageSamplers.clear();
-    garbageBuffers.clear();
-    grabageViews.clear();
-    garbageImages.clear();
-    garbagePipelines.clear();
-    garbageShaderModules.clear();
+    garbage_samplers.clear();
+    garbage_buffers.clear();
+    grabage_views.clear();
+    garbage_images.clear();
+    garbage_pipelines.clear();
+    garbage_shaderModules.clear();
 }
 
 void PerFrameData::begin()
@@ -141,8 +163,6 @@ void PerFrameData::begin()
 
     for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++)
         cmdListCount[i] = 0;
-
-    imageAvailableSemaphoreConsumed = false;
 
     for (auto& b : ubo_blocks)
         device->m_ubo_pool.RecycleBlock(b);
@@ -165,9 +185,6 @@ void PerFrameData::destroy()
 
         vkDestroyFence(device->vkDevice, queueFences[i], nullptr);
     }
-
-    vkDestroySemaphore(device->vkDevice, imageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(device->vkDevice, imageReleaseSemaphore, nullptr);
 
     ubo_blocks.clear();
 }
@@ -357,7 +374,7 @@ void Device_Vulkan::OnWindowResize(const WindowResizeEvent &event)
 {
     m_frameBufferWidth = event.width;
     m_frameBufferHeight = event.height;
-    m_recreateSwapchain = true;
+    m_wsi.recreate_swapchain = true;
     QK_CORE_LOGT_TAG("RHI", "Device_Vulkan hook window resize event. Width: {} Height: {}", m_frameBufferWidth, m_frameBufferHeight);
 }
 
@@ -368,7 +385,7 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     // setup default values
     QK_CORE_ASSERT(config.framesInFlight <= MAX_FRAME_NUM_IN_FLIGHT);
     m_config = config;
-    m_recreateSwapchain = false;
+    m_wsi.recreate_swapchain = false;
     m_elapsedFrame = 0;
     m_frameBufferWidth = Application::Get().GetWindow()->GetFrambufferWidth();
     m_frameBufferHeight = Application::Get().GetWindow()->GetFrambufferHeight();
@@ -382,8 +399,9 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     m_features.textureCompressionASTC_LDR = vkContext->features2.features.textureCompressionASTC_LDR;;
     m_features.textureCompressionETC2 = vkContext->features2.features.textureCompressionETC2;
 
-    // create frame data
-    for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
+    // create per-frame data
+    m_frames.resize(config.framesInFlight);
+    for (uint8_t i = 0; i < config.framesInFlight; i++)
         m_frames[i].init(this);
 
     // setup command queues
@@ -391,8 +409,10 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     m_queues[QUEUE_TYPE_ASYNC_COMPUTE].init(this, QUEUE_TYPE_ASYNC_COMPUTE);
     m_queues[QUEUE_TYPE_ASYNC_TRANSFER].init(this, QUEUE_TYPE_ASYNC_TRANSFER);
 
-    // create Swapchain
+    // init wsi and swapchain
+    m_wsi.init(this);
     ResizeSwapchain();
+    QK_CORE_LOGT_TAG("RHI", "Wsi initialized");
 
     // init copy cmds allocator
     copyAllocator.init(this);
@@ -425,11 +445,15 @@ Device_Vulkan::~Device_Vulkan()
     m_ubo_pool.Reset();
 
     // destroy command buffers, pools, semaphore, and fences
-    for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
+    for (size_t i = 0; i < m_config.framesInFlight; i++)
         m_frames[i].destroy();
     // destroy the buffers, images...
-    for (size_t i = 0; i < MAX_FRAME_NUM_IN_FLIGHT; i++)
+    for (size_t i = 0; i < m_config.framesInFlight; i++)
         m_frames[i].clear();
+
+    // destroy wsi data
+    m_wsi.destroy();
+
     // destroy vulkan context
     vkContext.reset();
 }
@@ -438,21 +462,31 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
 {
     // move to next frame
     m_elapsedFrame++;
+    m_frame_index++;
+    if (m_frame_index >= m_config.framesInFlight)
+		m_frame_index = 0;
+
     auto& frame = GetCurrentFrame();
 
     // resize swapchain if needed. 
-    if (m_recreateSwapchain) 
+    if (m_wsi.recreate_swapchain) 
     {
         ResizeSwapchain();
-        m_recreateSwapchain = false;
+        m_wsi.recreate_swapchain = false;
     }
     
     // wait for in-flight fences
     if (!frame.waitedFences.empty())
         vkWaitForFences(vkDevice, (uint32_t)frame.waitedFences.size(), frame.waitedFences.data(), true, UINT64_MAX);
     
-    // reset per frame data
+    // reset per-frame data
     frame.begin();
+    
+    // reset wsi
+    m_wsi.consumed = false;
+    m_wsi.semaphore_index++;
+    if (m_wsi.semaphore_index >= m_wsi.acquire_semaphores.size())
+		m_wsi.semaphore_index = 0;
 
     // put unused (more than 8 frames) descriptor set back to vacant pool
      for (auto& [k, value] : cached_descriptorSetAllocator)
@@ -463,9 +497,9 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
         vkDevice,
         vkContext->swapChain,
         100000000,
-        frame.imageAvailableSemaphore,
+        m_wsi.acquire_semaphores[m_wsi.semaphore_index],
         nullptr,
-        &m_currentSwapChainImageIdx);
+        &m_wsi.swapchain_image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) 
     {
@@ -503,9 +537,9 @@ bool Device_Vulkan::EndFrame(TimeStep ts)
 	presentInfo.pNext = nullptr;
 	presentInfo.pSwapchains = &swapchain;
 	presentInfo.swapchainCount = 1;
-	presentInfo.pWaitSemaphores = &frame.imageReleaseSemaphore;
+	presentInfo.pWaitSemaphores = &m_wsi.release_semaphores[m_wsi.semaphore_index];
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pImageIndices = &m_currentSwapChainImageIdx;
+	presentInfo.pImageIndices = &m_wsi.swapchain_image_index;
 	VkResult presentResult = vkQueuePresentKHR(vkContext->graphicQueue, &presentInfo);
 
     if (presentResult != VK_SUCCESS && presentResult != VK_ERROR_OUT_OF_DATE_KHR && presentResult != VK_SUBOPTIMAL_KHR)
@@ -670,20 +704,20 @@ void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds,
     }
 
     auto& frame = GetCurrentFrame();
-    if (internal_cmdList.IsWaitingForSwapChainImage() && !frame.imageAvailableSemaphoreConsumed) 
+    if (internal_cmdList.IsWaitingForSwapChainImage() && !m_wsi.consumed) 
     {
         auto& wait_semaphore_info = submission.waitSemaphoreInfos.emplace_back();
         wait_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-        wait_semaphore_info.semaphore = frame.imageAvailableSemaphore;
+        wait_semaphore_info.semaphore = m_wsi.acquire_semaphores[m_wsi.semaphore_index];
         wait_semaphore_info.value = 0;
         wait_semaphore_info.stageMask = internal_cmdList.GetSwapChainWaitStages();
 
         // TODO: This indicates there is only one command buffer in a frame can manipulate swapchain images. Not flexible enough
         auto& submit_semaphore_info = submission.signalSemaphoreInfos.emplace_back();
         submit_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-        submit_semaphore_info.semaphore = frame.imageReleaseSemaphore;
+        submit_semaphore_info.semaphore = m_wsi.release_semaphores[m_wsi.semaphore_index];
 
-        frame.imageAvailableSemaphoreConsumed = true;
+        m_wsi.consumed = true;
     }
 
     // Submit right now to make sure the correct order of submissions
@@ -707,7 +741,7 @@ uint32_t Device_Vulkan::AllocateCookie()
 
 void Device_Vulkan::DestroyBufferNoLock(VkBuffer buffer, VmaAllocation alloc)
 {
-    GetCurrentFrame().garbageBuffers.push_back({ buffer, alloc });
+    GetCurrentFrame().garbage_buffers.push_back({ buffer, alloc });
 }
 
 void Device_Vulkan::DestroyBuffer(VkBuffer buffer, VmaAllocation alloc)
@@ -718,7 +752,7 @@ void Device_Vulkan::DestroyBuffer(VkBuffer buffer, VmaAllocation alloc)
 
 void Device_Vulkan::DestroyImageNoLock(VkImage image, VmaAllocation alloc)
 {
-    GetCurrentFrame().garbageImages.push_back({ image, alloc});
+    GetCurrentFrame().garbage_images.push_back({ image, alloc});
 }
 
 void Device_Vulkan::DestroyImage(VkImage image, VmaAllocation alloc)
@@ -729,7 +763,7 @@ void Device_Vulkan::DestroyImage(VkImage image, VmaAllocation alloc)
 
 void Device_Vulkan::DestroyImageViewNoLock(VkImageView view)
 {
-    GetCurrentFrame().grabageViews.push_back(view);
+    GetCurrentFrame().grabage_views.push_back(view);
 }
 
 void Device_Vulkan::DestroyImageView(VkImageView view)
@@ -745,7 +779,8 @@ void Device_Vulkan::ResizeSwapchain()
     vkContext->DestroySwapChain();
     vkContext->CreateSwapChain();
 
-    m_swapChainImages.clear();
+    QK_CORE_ASSERT(m_wsi.swapchain_images.size() > 0);
+    m_wsi.swapchain_images.clear();
     for (size_t i = 0; i < vkContext->swapChianImages.size(); i++) {
         ImageDesc desc;
         desc.type = ImageType::TYPE_2D;
@@ -760,7 +795,8 @@ void Device_Vulkan::ResizeSwapchain()
         internal_image.m_handle = vkContext->swapChianImages[i];
         internal_image.m_view = vkContext->swapChainImageViews[i];
         internal_image.m_isSwapChainImage = true;
-        m_swapChainImages.push_back(newImage);
+        // m_swapChainImages.push_back(newImage);
+        m_wsi.swapchain_images.push_back(newImage);
     }
 
 }
@@ -825,7 +861,7 @@ void Device_Vulkan::RequestUniformBlockNoLock(BufferBlock& block, VkDeviceSize s
 
 PerFrameData& Device_Vulkan::GetCurrentFrame()
 {
-    return m_frames[m_elapsedFrame % MAX_FRAME_NUM_IN_FLIGHT];
+    return m_frames[m_frame_index];
 }
 
 bool Device_Vulkan::isFormatSupported(DataFormat format)

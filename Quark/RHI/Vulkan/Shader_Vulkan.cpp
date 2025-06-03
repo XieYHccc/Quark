@@ -143,7 +143,7 @@ Shader_Vulkan::~Shader_Vulkan()
     auto& frame = m_Device->GetCurrentFrame();
     
     if (m_ShaderModule != VK_NULL_HANDLE) {
-        frame.garbageShaderModules.push_back(m_ShaderModule);
+        frame.garbage_shaderModules.push_back(m_ShaderModule);
     }
 }
 

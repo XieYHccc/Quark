@@ -1,12 +1,9 @@
 # job system test
 add_executable(JobSystem_Test ./JobSystem_Test.cpp)
 target_link_libraries(JobSystem_Test quark)
-target_include_directories(JobSystem_Test PUBLIC ${CMAKE_SOURCE_DIR})
-
+#  target_include_directories(JobSystem_Test PUBLIC ${CMAKE_SOURCE_DIR})
 set_target_properties(JobSystem_Test PROPERTIES FOLDER "Tests")
 
 # gltf viewer
-add_executable(GLTFViewer ./GLTFViewer.cpp)
-target_link_libraries(GLTFViewer quark)
-target_include_directories(GLTFViewer PUBLIC ${CMAKE_SOURCE_DIR})
-set_target_properties(GLTFViewer PROPERTIES FOLDER "Tests")
+add_quark_test(GLTFViewer ./GLTFViewer.cpp)
+
