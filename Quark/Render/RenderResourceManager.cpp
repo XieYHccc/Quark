@@ -231,6 +231,7 @@ RenderResourceManager::RenderResourceManager(Ref<rhi::Device> device)
         default_material->roughness_factor = 1.f;
         default_material->draw_pipeline = DrawPipeline::Opaque;
         default_material->shader_program = GetShaderLibrary().program_staticMesh;
+        default_material->hash = 1; // TODO: any better way?
     }
 }
 
@@ -445,6 +446,7 @@ Ref<PBRMaterial> RenderResourceManager::RequestMateral(Ref<MaterialAsset> mat_as
     new_material->metallic_factor = mat_asset->metalicFactor;
     new_material->roughness_factor = mat_asset->roughNessFactor;
     new_material->draw_pipeline = mat_asset->alphaMode == AlphaMode::MODE_OPAQUE ? DrawPipeline::Opaque : DrawPipeline::AlphaBlend;
+    new_material->hash = mat_asset->GetAssetID();
 
     if (mat_asset->vertexShaderPath == "" || mat_asset->fragmentShaderPath == "")
         new_material->shader_program = m_shader_library->program_staticMesh;

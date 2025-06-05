@@ -73,14 +73,14 @@ public:
     void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier* imageBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, uint32_t bufferBarriersCount) override final;
     void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) override final;
     void EndRenderPass() override final;
+    void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) override final;
+    
     // buffer pool allocation
     void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) override final;
 
+    // state tracking
     const RenderPassInfo2& GetCurrentRenderPassInfo() const override final;
     const PipeLine* GetCurrentGraphicsPipeline() const override final;
-
-    // copy api
-    void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) override final;
     
     ///////////////////////// Vulkan specific /////////////////////////
     void ResetAndBeginCmdBuffer();
@@ -94,7 +94,7 @@ private:
     void SetPipelineLayout(const PipeLineLayout* layout);
     void FlushDescriptorSet(uint32_t set);
     void FlushRenderState();
-    void RebindDescriptorSet(uint32_t set);  // Rebind if only the buffer offset changed
+    void RebindDescriptorSet(uint32_t set);  // rebind if only the buffer offset changed
     void ResetBindingState();
     void SetDirty(CommandListDirtyFlagBits flags) { m_dirtyMask |= flags; }
 

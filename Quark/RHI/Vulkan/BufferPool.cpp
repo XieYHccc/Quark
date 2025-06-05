@@ -40,7 +40,7 @@ BufferBlock BufferPool::AllocateBlock(VkDeviceSize size)
 	block.m_buffer = m_device->CreateBuffer(desc, nullptr);
 	auto& internal = ToInternal(block.m_buffer.get());
 	internal.SetInternalSynced();
-	m_device->SetDebugName(block.m_buffer, "chain-allocated-block");
+	m_device->SetName(block.m_buffer, "chain-allocated-block");
 	// host visible buffer can be mapped
 	block.m_mapped = static_cast<uint8_t*>(block.m_buffer->GetMappedDataPtr());
 	block.m_offset = 0;

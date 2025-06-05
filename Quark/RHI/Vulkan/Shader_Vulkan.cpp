@@ -15,7 +15,7 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
     QK_CORE_ASSERT(m_Device != nullptr)
 
     VkDevice vk_device = m_Device->vkDevice;
-    auto& vk_context = m_Device->vkContext;
+    auto& vk_context = m_Device->GetVulkanContext();
 
     // Create shader module
     VkShaderModuleCreateInfo moduleInfo = {};

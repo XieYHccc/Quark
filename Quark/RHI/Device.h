@@ -57,7 +57,7 @@ namespace quark::rhi {
         virtual Ref<Shader> CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) = 0;
         virtual Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) = 0;
         virtual Ref<Sampler> CreateSampler(const SamplerDesc& desc) = 0;
-        virtual void SetDebugName(const Ref<GpuResource>& resouce, const char* name) = 0;
+        virtual void SetName(const Ref<GpuResource>& resouce, const char* name) = 0;
 
         // helper functions to upload data to GPU
         // only use in the initialization stage

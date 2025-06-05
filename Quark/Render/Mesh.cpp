@@ -22,13 +22,15 @@ void StaticMesh::GetRenderData(const RenderContext& context, const RenderInfoCmp
 	h.u64(material->shader_program->GetHash());
 	util::Hash pipeline_hash = h.get();
 
+	QK_CORE_ASSERT(material->hash != 0);
 	h.u64(material->hash);
+	util::Hash material_hash = h.get(); // hash for a material
 	h.pointer(vbo_position.get());
 	util::Hash draw_hash = h.get(); // hash for a drawcall
 
 	QK_CORE_ASSERT(hash != 0);
 	uint64_t instance_key = hash;
-	uint64_t sort_key = RenderInfo::GetSortKey(context, queue_type, pipeline_hash, draw_hash, static_aabb.Transform(transform->world_transform).GetCenter());
+	uint64_t sort_key = RenderInfo::GetSortKey(context, queue_type, pipeline_hash, material_hash, draw_hash, static_aabb.Transform(transform->world_transform).GetCenter());
 
 	auto* instance_data = queue.AllocateOne<StaticMeshPerInstanceData>();
 	instance_data->vertex.model = transform->world_transform;

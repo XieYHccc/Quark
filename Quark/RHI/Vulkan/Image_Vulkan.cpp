@@ -85,7 +85,8 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
     // Generate mipmap layout
     TextureFormatLayout layout;
     layout.SetUp2D(desc.format, desc.width, desc.height, desc.arraySize, 0);
-
+    
+    auto& vulkan_ctx = m_device->GetVulkanContext();
     // Transit the base mip level to transfer src layout
     {
         VkImageMemoryBarrier2 barrier{};
@@ -110,7 +111,7 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
-        m_device->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+        vulkan_ctx.extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
     }
 
     // Generate mipmaps
@@ -154,7 +155,7 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
 
-        m_device->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+        vulkan_ctx.extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
 
         // Blit image
         vkCmdBlitImage(cmd, m_handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
@@ -166,7 +167,7 @@ void Image_Vulkan::GenerateMipMap(const ImageDesc& desc, VkCommandBuffer cmd)
         barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
         barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
         barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
-        m_device->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
+        vulkan_ctx.extendFunction.pVkCmdPipelineBarrier2KHR(cmd, &dependencyInfo);
     }
 }
 
@@ -174,7 +175,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
     : Image(desc), m_device(device), Cookie(device)
 {
     QK_CORE_ASSERT(device != nullptr)
-    auto& vk_context = m_device->vkContext;
+    auto& vk_context = m_device->GetVulkanContext();
     auto vk_device = m_device->vkDevice;
 
     // Default values
@@ -212,10 +213,10 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
     }
     }
 
-    if (vk_context->uniqueQueueFamilies.size() > 1) {
+    if (vk_context.uniqueQueueFamilies.size() > 1) {
         create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        create_info.queueFamilyIndexCount = (uint32_t)vk_context->uniqueQueueFamilies.size();
-        create_info.pQueueFamilyIndices = vk_context->uniqueQueueFamilies.data();
+        create_info.queueFamilyIndexCount = (uint32_t)vk_context.uniqueQueueFamilies.size();
+        create_info.pQueueFamilyIndices = vk_context.uniqueQueueFamilies.data();
     }
     if (desc.usageBits & IMAGE_USAGE_SAMPLING_BIT) {
         create_info.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -318,7 +319,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
-        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.transferCmdBuffer, &dependencyInfo);
+        vk_context.extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.transferCmdBuffer, &dependencyInfo);
 
         // Copy to image
         vkCmdCopyBufferToImage(copyCmd.transferCmdBuffer, ToInternal(copyCmd.stageBuffer.get()).GetHandle(), m_handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, (uint32_t)copys.size(), copys.data());
@@ -338,7 +339,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
             barrier.oldLayout = desc.generateMipMaps ? VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             barrier.newLayout = ConvertImageLayout(desc.initialLayout);
 
-            vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.transitionCmdBuffer, &dependencyInfo);
+            vk_context.extendFunction.pVkCmdPipelineBarrier2KHR(copyCmd.transitionCmdBuffer, &dependencyInfo);
         }
 
         // submit and block cpu
@@ -371,7 +372,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
         dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         dependencyInfo.imageMemoryBarrierCount = 1;
         dependencyInfo.pImageMemoryBarriers = &barrier;
-        vk_context->extendFunction.pVkCmdPipelineBarrier2KHR(transitCmd.transitionCmdBuffer, &dependencyInfo);
+        vk_context.extendFunction.pVkCmdPipelineBarrier2KHR(transitCmd.transitionCmdBuffer, &dependencyInfo);
 
         m_device->copyAllocator.submit(transitCmd);
     }
@@ -453,7 +454,7 @@ Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
 
     if (desc.enableAnisotropy) {
         info.anisotropyEnable = VK_TRUE;
-        info.maxAnisotropy = m_device->vkContext->properties2.properties.limits.maxSamplerAnisotropy;
+        info.maxAnisotropy = m_device->GetVulkanContext().properties2.properties.limits.maxSamplerAnisotropy;
     }
     else {
         info.anisotropyEnable = VK_FALSE;

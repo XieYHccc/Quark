@@ -43,13 +43,24 @@ enum class StaticLayer : uint8_t
 
 struct RenderInfo
 {
+    // deprecated!!!
     static uint64_t GetSortKey(const RenderContext& context, Queue queue_type,
                                util::Hash pipeline_hash, util::Hash draw_hash,
                                const glm::vec3& center,
                                StaticLayer layer = StaticLayer::Default);
+    static uint64_t GetSortKey(const RenderContext& context, Queue queue_type,
+                               util::Hash pipeline_hash, util::Hash material_hash,
+                               util::Hash draw_hash, const glm::vec3& center,
+                               StaticLayer layer = StaticLayer::Default);
+
+    // deprecated!!
     static uint64_t GetSpriteSortKey(Queue queue_type,
                                      util::Hash pipeline_hash, util::Hash draw_hash,
                                      float depth, StaticLayer layer = StaticLayer::Default);
+    static uint64_t GetSpriteSortKey(Queue queue_type,
+                                     util::Hash pipeline_hash, util::Hash material_hash,
+                                     util::Hash vbo_hash, float depth, 
+                                     StaticLayer layer = StaticLayer::Default);
 };
 
 struct RenderQueueTask;

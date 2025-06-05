@@ -35,12 +35,12 @@ static void request_block(Device& device, BufferBlock& block, VkDeviceSize size,
 void Device_Vulkan::WindowSystemIntergration::init(Device_Vulkan* _device)
 {
     device = _device;
-    swapchain_images.resize(device->vkContext->swapChianImages.size());
+    swapchain_images.resize(device->GetVulkanContext().swapChianImages.size());
 
     // create semaphores
     VkSemaphoreCreateInfo semaphore_create_info = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
     semaphore_create_info.pNext = nullptr;
-    uint8_t swapchain_image_count = (uint8_t)device->vkContext->swapChianImages.size();
+    uint8_t swapchain_image_count = (uint8_t)device->GetVulkanContext().swapChianImages.size();
     acquire_semaphores.resize(swapchain_image_count);
     release_semaphores.resize(swapchain_image_count);
     for (uint8_t i = 0; i < swapchain_image_count; i++)
@@ -53,7 +53,7 @@ void Device_Vulkan::WindowSystemIntergration::init(Device_Vulkan* _device)
 void Device_Vulkan::WindowSystemIntergration::destroy()
 {
     // destroy semaphores
-    for (uint8_t i = 0; i < (uint8_t)device->vkContext->swapChianImages.size(); i++)
+    for (uint8_t i = 0; i < (uint8_t)device->GetVulkanContext().swapChianImages.size(); i++)
 	{
 		vkDestroySemaphore(device->vkDevice, acquire_semaphores[i], nullptr);
 		vkDestroySemaphore(device->vkDevice, release_semaphores[i], nullptr);
@@ -66,13 +66,13 @@ void Device_Vulkan::CommandQueue::init(Device_Vulkan *device, QueueType type)
 
     switch (type) {
     case QUEUE_TYPE_GRAPHICS:
-        queue = device->vkContext->graphicQueue;
+        queue = device->GetVulkanContext().graphicQueue;
         break;
     case QUEUE_TYPE_ASYNC_COMPUTE:
-        queue = device->vkContext->computeQueue;
+        queue = device->GetVulkanContext().computeQueue;
         break;
     case QUEUE_TYPE_ASYNC_TRANSFER:
-        queue = device->vkContext->transferQueue;
+        queue = device->GetVulkanContext().transferQueue;
         break;
     default:
         QK_CORE_ASSERT(0)
@@ -98,7 +98,7 @@ void Device_Vulkan::CommandQueue::submit(VkFence fence)
         info.pWaitSemaphoreInfos = submission.waitSemaphoreInfos.data();
     }
 
-    device->vkContext->extendFunction.pVkQueueSubmit2KHR(queue, (uint32_t)submit_infos.size(), submit_infos.data(), fence);
+    device->GetVulkanContext().extendFunction.pVkQueueSubmit2KHR(queue, (uint32_t)submit_infos.size(), submit_infos.data(), fence);
     
     // Clear submissions
     for(auto& submission : submissions)
@@ -111,7 +111,7 @@ void Device_Vulkan::CommandQueue::submit(VkFence fence)
     submissions.clear();
 }
 
-void PerFrameData::init(Device_Vulkan *device)
+void PerFrameContext::init(Device_Vulkan *device)
 {
     QK_CORE_ASSERT(device->vkDevice != VK_NULL_HANDLE)
     this->device = device;
@@ -127,7 +127,7 @@ void PerFrameData::init(Device_Vulkan *device)
    
 }
 
-void PerFrameData::clear()
+void PerFrameContext::clear()
 {
     VkDevice vk_device = device->vkDevice;
 
@@ -153,7 +153,7 @@ void PerFrameData::clear()
     garbage_shaderModules.clear();
 }
 
-void PerFrameData::begin()
+void PerFrameContext::begin()
 {
     if (!waitedFences.empty()) 
     {
@@ -172,7 +172,7 @@ void PerFrameData::begin()
     clear();
 }
 
-void PerFrameData::destroy()
+void PerFrameContext::destroy()
 {
     for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++) 
     {
@@ -188,7 +188,6 @@ void PerFrameData::destroy()
 
     ubo_blocks.clear();
 }
-
 
 void CopyCmdAllocator::init(Device_Vulkan *device)
 {
@@ -238,10 +237,10 @@ CopyCmdAllocator::CopyCmd CopyCmdAllocator::allocate(VkDeviceSize required_buffe
         VkCommandPoolCreateInfo poolInfo = {};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        poolInfo.queueFamilyIndex = m_device->vkContext->transferQueueIndex;
+        poolInfo.queueFamilyIndex = m_device->GetVulkanContext().transferQueueIndex;
         VK_CHECK(vkCreateCommandPool(m_device->vkDevice, &poolInfo, nullptr, &cmd.transferCmdPool))
 
-        poolInfo.queueFamilyIndex = m_device->vkContext->graphicQueueIndex;
+        poolInfo.queueFamilyIndex = m_device->GetVulkanContext().graphicQueueIndex;
         VK_CHECK(vkCreateCommandPool(m_device->vkDevice, &poolInfo, nullptr, &cmd.transitionCmdPool))
 
         // Allocate command buffer
@@ -274,7 +273,7 @@ CopyCmdAllocator::CopyCmd CopyCmdAllocator::allocate(VkDeviceSize required_buffe
         bufferDesc.usageBits = BUFFER_USAGE_TRANSFER_FROM_BIT;
         cmd.stageBuffer = m_device->CreateBuffer(bufferDesc);
 
-        m_device->SetDebugName(cmd.stageBuffer, "CopyCmdAllocator staging buffer");
+        m_device->SetName(cmd.stageBuffer, "CopyCmdAllocator staging buffer");
     }
 
     // Begin command buffer in valid state:
@@ -323,7 +322,7 @@ void CopyCmdAllocator::submit(CopyCmd cmd)
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
         std::scoped_lock lock(m_device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].locker);
-        m_device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+        m_device->GetVulkanContext().extendFunction.pVkQueueSubmit2KHR(
             m_device->m_queues[QUEUE_TYPE_ASYNC_TRANSFER].queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
@@ -344,7 +343,7 @@ void CopyCmdAllocator::submit(CopyCmd cmd)
         submitInfo.pSignalSemaphoreInfos = &signalSemaphoreInfo;
 
         std::scoped_lock lock(m_device->m_queues[QUEUE_TYPE_GRAPHICS].locker);
-        m_device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+        m_device->GetVulkanContext().extendFunction.pVkQueueSubmit2KHR(
 			m_device->m_queues[QUEUE_TYPE_GRAPHICS].queue, 1, &submitInfo, VK_NULL_HANDLE);
     }
 
@@ -362,7 +361,7 @@ void CopyCmdAllocator::submit(CopyCmd cmd)
 		submitInfo.pSignalSemaphoreInfos = nullptr;
 
 		std::scoped_lock lock(m_device->m_queues[QUEUE_TYPE_ASYNC_COMPUTE].locker);
-		m_device->vkContext->extendFunction.pVkQueueSubmit2KHR(
+		m_device->GetVulkanContext().extendFunction.pVkQueueSubmit2KHR(
 			m_device->m_queues[QUEUE_TYPE_ASYNC_COMPUTE].queue, 1, &submitInfo, cmd.fence);
 	}
 
@@ -389,15 +388,15 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     m_elapsedFrame = 0;
     m_frameBufferWidth = Application::Get().GetWindow()->GetFrambufferWidth();
     m_frameBufferHeight = Application::Get().GetWindow()->GetFrambufferHeight();
-    vkContext = CreateScope<VulkanContext>(); // TODO: Make configurable
-    vkDevice = vkContext->logicalDevice; // Borrow from context
-    vmaAllocator = vkContext->vmaAllocator;
+    m_vulkan_context = CreateScope<VulkanContext>(); // TODO: Make configurable
+    vkDevice = m_vulkan_context->logicalDevice; // Borrow from context
+    vmaAllocator = m_vulkan_context->vmaAllocator;
 
     // store device properties in public interface
-    m_properties.limits.minUniformBufferOffsetAlignment = vkContext->properties2.properties.limits.minUniformBufferOffsetAlignment;
-    m_features.textureCompressionBC = vkContext->features2.features.textureCompressionBC;
-    m_features.textureCompressionASTC_LDR = vkContext->features2.features.textureCompressionASTC_LDR;;
-    m_features.textureCompressionETC2 = vkContext->features2.features.textureCompressionETC2;
+    m_properties.limits.minUniformBufferOffsetAlignment = m_vulkan_context->properties2.properties.limits.minUniformBufferOffsetAlignment;
+    m_features.textureCompressionBC = m_vulkan_context->features2.features.textureCompressionBC;
+    m_features.textureCompressionASTC_LDR = m_vulkan_context->features2.features.textureCompressionASTC_LDR;;
+    m_features.textureCompressionETC2 = m_vulkan_context->features2.features.textureCompressionETC2;
 
     // create per-frame data
     m_frames.resize(config.framesInFlight);
@@ -455,7 +454,7 @@ Device_Vulkan::~Device_Vulkan()
     m_wsi.destroy();
 
     // destroy vulkan context
-    vkContext.reset();
+    m_vulkan_context.reset();
 }
 
 bool Device_Vulkan::BeiginFrame(TimeStep ts)
@@ -495,7 +494,7 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
     // Acquire a swapchain image 
     VkResult result = vkAcquireNextImageKHR(
         vkDevice,
-        vkContext->swapChain,
+        m_vulkan_context->swapChain,
         100000000,
         m_wsi.acquire_semaphores[m_wsi.semaphore_index],
         nullptr,
@@ -531,7 +530,7 @@ bool Device_Vulkan::EndFrame(TimeStep ts)
     }
 
     // Prepare present
-    VkSwapchainKHR swapchain = vkContext->swapChain;
+    VkSwapchainKHR swapchain = m_vulkan_context->swapChain;
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.pNext = nullptr;
@@ -540,7 +539,7 @@ bool Device_Vulkan::EndFrame(TimeStep ts)
 	presentInfo.pWaitSemaphores = &m_wsi.release_semaphores[m_wsi.semaphore_index];
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pImageIndices = &m_wsi.swapchain_image_index;
-	VkResult presentResult = vkQueuePresentKHR(vkContext->graphicQueue, &presentInfo);
+	VkResult presentResult = vkQueuePresentKHR(m_vulkan_context->graphicQueue, &presentInfo);
 
     if (presentResult != VK_SUCCESS && presentResult != VK_ERROR_OUT_OF_DATE_KHR && presentResult != VK_SUBOPTIMAL_KHR)
         QK_CORE_ASSERT(0)
@@ -614,9 +613,9 @@ void Device_Vulkan::CopyBuffer(Buffer& dst, Buffer& src, uint64_t size, uint64_t
     copyAllocator.submit(copyCmd);
 }
 
-void Device_Vulkan::SetDebugName(const Ref<GpuResource>& resouce, const char* name)
+void Device_Vulkan::SetName(const Ref<GpuResource>& resouce, const char* name)
 {
-    if (!vkContext->enableDebugUtils || !resouce)
+    if (!m_vulkan_context->enableDebugUtils || !resouce)
         return;
 
 
@@ -641,7 +640,7 @@ void Device_Vulkan::SetDebugName(const Ref<GpuResource>& resouce, const char* na
         return;
 
     PFN_vkSetDebugUtilsObjectNameEXT pfnVkSetDebugUtilsObjectNameEXT =
-        (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(vkContext->instance, "vkSetDebugUtilsObjectNameEXT");
+        (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(m_vulkan_context->instance, "vkSetDebugUtilsObjectNameEXT");
 
     VK_CHECK(pfnVkSetDebugUtilsObjectNameEXT(vkDevice, &info))
 }
@@ -776,24 +775,24 @@ void Device_Vulkan::ResizeSwapchain()
 {
     QK_CORE_LOGI_TAG("RHI", "Resizing swapchain...");
     
-    vkContext->DestroySwapChain();
-    vkContext->CreateSwapChain();
+    m_vulkan_context->DestroySwapChain();
+    m_vulkan_context->CreateSwapChain();
 
     QK_CORE_ASSERT(m_wsi.swapchain_images.size() > 0);
     m_wsi.swapchain_images.clear();
-    for (size_t i = 0; i < vkContext->swapChianImages.size(); i++) {
+    for (size_t i = 0; i < m_vulkan_context->swapChianImages.size(); i++) {
         ImageDesc desc;
         desc.type = ImageType::TYPE_2D;
-        desc.height = vkContext->swapChainExtent.height;
-        desc.width = vkContext->swapChainExtent.width;
+        desc.height = m_vulkan_context->swapChainExtent.height;
+        desc.width = m_vulkan_context->swapChainExtent.width;
         desc.depth = 1;
         desc.format = GetPresentImageFormat();
 
         Ref<Image> newImage = CreateRef<Image_Vulkan>(this, desc);
         auto& internal_image = ToInternal(newImage.get());
 
-        internal_image.m_handle = vkContext->swapChianImages[i];
-        internal_image.m_view = vkContext->swapChainImageViews[i];
+        internal_image.m_handle = m_vulkan_context->swapChianImages[i];
+        internal_image.m_view = m_vulkan_context->swapChainImageViews[i];
         internal_image.m_isSwapChainImage = true;
         // m_swapChainImages.push_back(newImage);
         m_wsi.swapchain_images.push_back(newImage);
@@ -803,7 +802,7 @@ void Device_Vulkan::ResizeSwapchain()
 
 DataFormat Device_Vulkan::GetPresentImageFormat()
 {
-    VkFormat format = vkContext->surfaceFormat.format;
+    VkFormat format = m_vulkan_context->surfaceFormat.format;
 
     switch (format) {
     case VK_FORMAT_R8G8B8A8_UNORM:
@@ -859,7 +858,7 @@ void Device_Vulkan::RequestUniformBlockNoLock(BufferBlock& block, VkDeviceSize s
     request_block(*this, block, size, m_ubo_pool, GetCurrentFrame().ubo_blocks);
 }
 
-PerFrameData& Device_Vulkan::GetCurrentFrame()
+PerFrameContext& Device_Vulkan::GetCurrentFrame()
 {
     return m_frames[m_frame_index];
 }
@@ -867,7 +866,7 @@ PerFrameData& Device_Vulkan::GetCurrentFrame()
 bool Device_Vulkan::isFormatSupported(DataFormat format)
 {
     VkFormatProperties props;
-    vkGetPhysicalDeviceFormatProperties(vkContext->physicalDevice, ConvertDataFormat(format), &props);
+    vkGetPhysicalDeviceFormatProperties(m_vulkan_context->physicalDevice, ConvertDataFormat(format), &props);
     return ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) && (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT));
 }
 

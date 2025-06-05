@@ -12,7 +12,7 @@
 
 namespace quark::rhi {
 
-struct PerFrameData
+struct PerFrameContext
 {
     Device_Vulkan* device = nullptr;
     VmaAllocator vmaAllocator = nullptr;
@@ -68,12 +68,12 @@ private:
 };
 
 class Device_Vulkan final: public Device {
-    friend class PerFrameData;
+    friend class PerFrameContext;
     friend class CopyCmdAllocator;
+
 public:
     VkDevice vkDevice; // norrowed from context, no lifetime management here
     VmaAllocator vmaAllocator; // borrowed from context, no lifetime management here
-    Scope<VulkanContext> vkContext;
     CopyCmdAllocator copyAllocator;
 
     // Cached objects
@@ -96,7 +96,7 @@ public:
     Ref<Shader>         CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) override final;
     Ref<PipeLine>       CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) override final;
     Ref<Sampler>        CreateSampler(const SamplerDesc& desc) override final;
-    void                SetDebugName(const Ref<GpuResource>& resouce, const char* name) override final;
+    void                SetName(const Ref<GpuResource>& resouce, const char* name) override final;
 
     /*** COMMAND LIST ***/
     CommandList*        BeginCommandList(QueueType type = QueueType::QUEUE_TYPE_GRAPHICS) override final;
@@ -114,8 +114,9 @@ public:
     //////////////////////////////////////////////////////////////
     DescriptorSetAllocator*     RequestDescriptorSetAllocator(const DescriptorSetLayout& layout);
     PipeLineLayout*             RequestPipeLineLayout(const ShaderResourceLayout& combinedLayout);
-    PerFrameData&               GetCurrentFrame();
+    PerFrameContext&               GetCurrentFrame();
     uint32_t 				    AllocateCookie(); 
+    const VulkanContext&        GetVulkanContext() { return *m_vulkan_context.get(); }
 
     void DestroyBufferNoLock(VkBuffer buffer, VmaAllocation alloc);
     void DestroyBuffer(VkBuffer buffer, VmaAllocation alloc);
@@ -173,8 +174,9 @@ private:
         std::mutex lock;
     } m_lock;
 
-    std::vector<PerFrameData> m_frames;
-    unsigned m_frame_index = 0;
+    Scope<VulkanContext> m_vulkan_context;
+    std::vector<PerFrameContext> m_frames;
+    uint8_t m_frame_index = 0;
 
     std::atomic_uint64_t m_cookie;
 

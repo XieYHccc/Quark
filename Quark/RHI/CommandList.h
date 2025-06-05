@@ -97,13 +97,14 @@ public:
     virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, uint32_t bufferBarriersCount) = 0;
     virtual void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) = 0;
     virtual void EndRenderPass() = 0;
+    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) = 0;
+    
     // buffer allocation, immplementation with buffer pool
     virtual void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) = 0;
 
+    // state tracking
     virtual const RenderPassInfo2& GetCurrentRenderPassInfo() const = 0;
     virtual const PipeLine* GetCurrentGraphicsPipeline() const = 0;
-
-    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) = 0;
 
     QueueType GetQueueType() const { return m_queueType; }
     GpuResourceType GetGpuResourceType() const override { return GpuResourceType::COMMAND_LIST; }

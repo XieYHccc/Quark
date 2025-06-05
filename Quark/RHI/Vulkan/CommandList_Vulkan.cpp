@@ -30,7 +30,7 @@ CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
     : CommandList(type), m_device(device)
 {
     QK_CORE_ASSERT(m_device != nullptr)
-    auto& vulkan_context = m_device->vkContext;
+    auto& vulkan_context = m_device->GetVulkanContext();
     VkDevice vk_device = m_device->vkDevice;
 
     // Create command pool
@@ -39,13 +39,13 @@ CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
     // TODO: Support other queue types
     switch (m_queueType) {
     case QUEUE_TYPE_GRAPHICS:
-        poolInfo.queueFamilyIndex = vulkan_context->graphicQueueIndex;
+        poolInfo.queueFamilyIndex = vulkan_context.graphicQueueIndex;
         break;
     case QUEUE_TYPE_ASYNC_COMPUTE:
-        poolInfo.queueFamilyIndex = vulkan_context->computeQueueIndex;
+        poolInfo.queueFamilyIndex = vulkan_context.computeQueueIndex;
         break;
     case QUEUE_TYPE_ASYNC_TRANSFER:
-        poolInfo.queueFamilyIndex = vulkan_context->transferQueueIndex;
+        poolInfo.queueFamilyIndex = vulkan_context.transferQueueIndex;
         break;
     default:
         QK_CORE_VERIFY(0, "Queue Type not handled."); // queue type not handled
@@ -177,7 +177,7 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
         dependency_info.imageMemoryBarrierCount = static_cast<uint32_t>(m_imageBarriers.size());
         dependency_info.pImageMemoryBarriers = m_imageBarriers.data();
 
-        m_device->vkContext->extendFunction.pVkCmdPipelineBarrier2KHR(m_cmdBuffer, &dependency_info);
+        m_device->GetVulkanContext().extendFunction.pVkCmdPipelineBarrier2KHR(m_cmdBuffer, &dependency_info);
 
         m_memoryBarriers.clear();
         m_imageBarriers.clear();
@@ -296,7 +296,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, 
     rendering_info.pStencilAttachment = nullptr;
     rendering_info.pNext = nullptr;
 
-    m_device->vkContext->extendFunction.pVkCmdBeginRenderingKHR(m_cmdBuffer, &rendering_info);
+    m_device->GetVulkanContext().extendFunction.pVkCmdBeginRenderingKHR(m_cmdBuffer, &rendering_info);
 }
 
 //void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo &info)
@@ -412,7 +412,7 @@ void CommandList_Vulkan::EndRenderPass()
 #endif
     // Set state back to in recording
     state = CommandListState::IN_RECORDING;
-    m_device->vkContext->extendFunction.pVkCmdEndRenderingKHR(m_cmdBuffer);
+    m_device->GetVulkanContext().extendFunction.pVkCmdEndRenderingKHR(m_cmdBuffer);
 }
 
 void* CommandList_Vulkan::AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size)
@@ -526,19 +526,11 @@ void CommandList_Vulkan::BindSampler(uint32_t set, uint32_t binding, const Sampl
     QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM)
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM)
 
-// #ifdef QK_DEBUG_BUILD
-//     if (m_currentPipeline == nullptr)
-//         QK_CORE_LOGE_TAG("RHI", "You must bind a pipeline before binding a sampler.");
-// #endif
-
     auto& internal_sampler = ToInternal(&sampler);
     auto& b = m_bindingState.descriptorBindings[set][binding];
 
     if (b.image.sampler == internal_sampler.GetHandle())
-    {
-        m_dirtySetRebindMask |= 1u << set;
         return;
-    }
 
     b.image.sampler = internal_sampler.GetHandle();
     m_dirtySetMask |= 1u << set;
@@ -811,7 +803,7 @@ void CommandList_Vulkan::FlushRenderState()
     util::for_each_bit(sets_need_update, [&](uint32_t set) { FlushDescriptorSet(set); });
     m_dirtySetMask &= ~sets_need_update;
 
-    // ff we update a set, we also bind dynamically
+    // if we update a set, we don't have to rebind descriptor set again
     m_dirtySetRebindMask&= ~sets_need_update;
 
     // if only rebound dynamic uniform buffers with different offset,

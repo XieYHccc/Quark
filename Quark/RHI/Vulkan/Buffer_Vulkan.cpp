@@ -22,7 +22,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     QK_CORE_ASSERT(m_device != nullptr)
     QK_CORE_ASSERT(desc.size != 0)
 
-    const auto& vulkan_context = m_device->vkContext;
+    const auto& vulkan_context = m_device->GetVulkanContext();
 
     // Buffer create info
     VkBufferCreateInfo buffer_create_info = {};
@@ -32,13 +32,13 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     buffer_create_info.pNext = nullptr;
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vulkan_context->features12.bufferDeviceAddress)
+    if (vulkan_context.features12.bufferDeviceAddress)
         buffer_create_info.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    if (m_device->vkContext->uniqueQueueFamilies.size() > 1) {
+    if (vulkan_context.uniqueQueueFamilies.size() > 1) {
         buffer_create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        buffer_create_info.queueFamilyIndexCount = (uint32_t)vulkan_context->uniqueQueueFamilies.size();
-        buffer_create_info.pQueueFamilyIndices = vulkan_context->uniqueQueueFamilies.data();
+        buffer_create_info.queueFamilyIndexCount = (uint32_t)vulkan_context.uniqueQueueFamilies.size();
+        buffer_create_info.pQueueFamilyIndices = vulkan_context.uniqueQueueFamilies.data();
     }
 
     // Memory allocation info
@@ -71,7 +71,7 @@ Buffer_Vulkan::Buffer_Vulkan(Device_Vulkan* device, const BufferDesc& desc, cons
     if (desc.domain == BufferMemoryDomain::CPU)
         m_pMappedData = m_allocInfo.pMappedData;
 
-    if (vulkan_context->features12.bufferDeviceAddress) {
+    if (vulkan_context.features12.bufferDeviceAddress) {
         VkBufferDeviceAddressInfo bda_info = { VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
         bda_info.buffer = m_handle;
         m_gpuAddress = vkGetBufferDeviceAddress(m_device->vkDevice, &bda_info); 
