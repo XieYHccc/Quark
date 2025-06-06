@@ -10,13 +10,13 @@ VulkanContext::VulkanContext()
 {
 
 #ifdef QK_DEBUG_BUILD
-    enableDebugUtils = true;
+    enableValidationLayer = true;
 #else
-    enableDebugUtils = false;
+    enableValidationLayer = false;
 #endif
 
     CreateInstance();
-    if (enableDebugUtils)
+    if (enableValidationLayer && supportDebugUtils)
         CreateDebugMessenger();
     CreateSurface();
     SelectPhysicalDevice();
@@ -38,7 +38,7 @@ VulkanContext::~VulkanContext()
     QK_CORE_LOGT_TAG("RHI", "Destroying vulkan surface...");
     vkDestroySurfaceKHR(instance, surface, nullptr);
 
-    if (enableDebugUtils)
+    if (enableValidationLayer)
     {
         QK_CORE_LOGT_TAG("RHI", "Destroying debug messenger...");
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -65,56 +65,60 @@ void VulkanContext::CreateInstance()
     // Get supported extensions and layers
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
+    std::vector<VkExtensionProperties> available_extensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, available_extensions.data());
     uint32_t layerCount = 0;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+    std::vector<VkLayerProperties> available_layers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, available_layers.data());
 
-    // Get required extensions and layers
-    const std::vector<const char*> required_extensions = GetRequiredExtensions();
-    std::vector<const char*> required_layers;
+    // get required extensions and layers
+    std::vector<const char*> instance_extensions = GetRequiredExtensions();
+    std::vector<const char*> instance_layers;
 
-    if (enableDebugUtils)
+    const auto has_extension = [&](const char* name) -> bool {
+        auto itr = std::find_if(std::begin(available_extensions), std::end(available_extensions), [name](const VkExtensionProperties& e) -> bool {
+            return strcmp(e.extensionName, name) == 0;
+            });
+        return itr != std::end(available_extensions);
+    };
+
+    // check required extensions
+    QK_CORE_LOGT_TAG("RHI", "Checking vulkan instance extensions support...");
+    for (size_t i = 0; i < instance_extensions.size(); i++)
     {
-        QK_CORE_LOGT_TAG("RHI", "Required vulkan instance extensions:");
-        for (const auto& s : required_extensions)
+        if (!has_extension(instance_extensions[i]))
+            QK_CORE_VERIFY(0, "Required extension not found: {}", instance_extensions[i]);
+    }
+
+    if (has_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
+    {
+        instance_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        supportDebugUtils = true;
+    }
+
+    if (enableValidationLayer)
+    {
+        QK_CORE_LOGT_TAG("RHI", "Enabled vulkan instance extensions:");
+        for (const auto& s : instance_extensions)
             QK_CORE_LOGT_TAG("RHI","  {}", s);
     }
 
-    // Check extensions and layers support infomation
-    QK_CORE_LOGT_TAG("RHI", "Checking vulkan instance extensions support...");
-    for (u32 i = 0; i < required_extensions.size(); ++i) {
-        bool found = false;
-        for (u32 j = 0; j < availableExtensions.size(); ++j) {
-            if (strcmp(required_extensions[i], availableExtensions[j].extensionName)==0) {
-                found = true;
-                break;
-            }
-        }
-
-        if (!found)
-            QK_CORE_VERIFY(0, "Required extension not found: {}", required_extensions[i]);
-    }
-
-    QK_CORE_LOGT_TAG("RHI", "All required vulkan instance extensions are supported.");
-
     // Enable validation layers?
-    if (enableDebugUtils)
+    if (enableValidationLayer)
     {
         QK_CORE_LOGT_TAG("RHI", "Validation layers enabled. Checking...");
 
         // TODO: if this is not supported, try other layers
-        required_layers.push_back("VK_LAYER_KHRONOS_validation");
+        instance_layers.push_back("VK_LAYER_KHRONOS_validation");
         QK_CORE_LOGT_TAG("RHI", "Required vulkan instance layers:");
-        for (const auto& s : required_layers)
+        for (const auto& s : instance_layers)
             QK_CORE_LOGT_TAG("RHI", "  {}", s);
 
         // checking
-        for (auto layerName : required_layers) {
+        for (auto layerName : instance_layers) {
             bool layerFound = false;
-            for (const auto& layerProperties : availableLayers) {
+            for (const auto& layerProperties : available_layers) {
                 if (strcmp(layerName, layerProperties.layerName) == 0) {
                     layerFound = true;
                     break;
@@ -124,18 +128,16 @@ void VulkanContext::CreateInstance()
                 QK_CORE_VERIFY(0, "Required extension not found: {}", layerName);
 
         }
-
-        QK_CORE_LOGT_TAG("RHI", "All required vulkan validation layers are supported.");
     }
 
     // Finally, create instance
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
-    createInfo.ppEnabledExtensionNames = required_extensions.data();
-    createInfo.enabledLayerCount = static_cast<uint32_t>(required_layers.size());
-    createInfo.ppEnabledLayerNames = required_layers.data();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size());
+    createInfo.ppEnabledExtensionNames = instance_extensions.data();
+    createInfo.enabledLayerCount = static_cast<uint32_t>(instance_layers.size());
+    createInfo.ppEnabledLayerNames = instance_layers.data();
     // Add flag for drivers that support portability subset
 #ifdef __APPLE__
     createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
@@ -640,13 +642,12 @@ std::vector<const char*> VulkanContext::GetRequiredExtensions() const
     for (unsigned int i = 0; i < glfwExtensionCount; i++)
         extensions.push_back(glfwExtensions[i]);
 
+    extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
 #ifdef QK_PLATFORM_MACOS
     extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    extensions.push_back("VK_KHR_get_physical_device_properties2");
 #endif
 
-    if (enableDebugUtils)
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     return extensions; 
 }
 
@@ -662,6 +663,12 @@ void VulkanContext::InitExtendFunctions()
         logicalDevice, "vkCmdBeginRenderingKHR");
     extendFunction.pVkCmdEndRenderingKHR = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(
         logicalDevice, "vkCmdEndRenderingKHR");
+    extendFunction.pVkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(
+        instance, "vkSetDebugUtilsObjectNameEXT");
+    extendFunction.pVkCmdBeginDebugUtilsLabelEXT = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetDeviceProcAddr(
+        logicalDevice, "vkCmdBeginDebugUtilsLabelEXT");
+    extendFunction.pVkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetDeviceProcAddr(
+        logicalDevice, "vkCmdEndDebugUtilsLabelEXT");
 
     QK_CORE_LOGT_TAG("RHI", "Vulkan Extend functions Found");
 }

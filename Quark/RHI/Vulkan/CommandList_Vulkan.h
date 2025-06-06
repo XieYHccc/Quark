@@ -82,6 +82,10 @@ public:
     const RenderPassInfo2& GetCurrentRenderPassInfo() const override final;
     const PipeLine* GetCurrentGraphicsPipeline() const override final;
     
+    // debug utils
+    void BeginRegion(const char* name, const float* color = nullptr) override final;
+    void EndRegion() override final;
+
     ///////////////////////// Vulkan specific /////////////////////////
     void ResetAndBeginCmdBuffer();
     bool IsWaitingForSwapChainImage() const { return m_waitForSwapchainImage; }

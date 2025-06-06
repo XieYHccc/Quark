@@ -440,6 +440,33 @@ const PipeLine* CommandList_Vulkan::GetCurrentGraphicsPipeline() const
     return m_currentPipeline;
 }
 
+void CommandList_Vulkan::BeginRegion(const char* name, const float* color)
+{
+    if (!m_device->GetVulkanContext().supportDebugUtils)
+        return;
+
+    VkDebugUtilsLabelEXT info = { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
+    if (color)
+    {
+        for (unsigned i = 0; i < 4; i++)
+            info.color[i] = color[i];
+    }
+    else
+    {
+        for (unsigned i = 0; i < 4; i++)
+            info.color[i] = 1.0f;
+    }
+
+    info.pLabelName = name;
+    m_device->GetVulkanContext().extendFunction.pVkCmdBeginDebugUtilsLabelEXT(m_cmdBuffer, &info);
+}
+
+void CommandList_Vulkan::EndRegion()
+{
+    if (m_device->GetVulkanContext().supportDebugUtils)
+        m_device->GetVulkanContext().extendFunction.pVkCmdEndDebugUtilsLabelEXT(m_cmdBuffer);
+}
+
 void CommandList_Vulkan::PushConstant(const void *data, uint32_t offset, uint32_t size)
 {
     QK_CORE_ASSERT(offset + size < PUSH_CONSTANT_DATA_SIZE)

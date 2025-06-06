@@ -27,7 +27,8 @@ struct physicalDeviceRequirement
 */
 class VulkanContext {
 public:
-    bool enableDebugUtils = false;
+    bool enableValidationLayer = false;
+    bool supportDebugUtils = false;
     VkInstance instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger;
     VmaAllocator vmaAllocator = VK_NULL_HANDLE;
@@ -66,6 +67,9 @@ public:
         PFN_vkCmdPipelineBarrier2KHR pVkCmdPipelineBarrier2KHR;
         PFN_vkCmdBeginRenderingKHR pVkCmdBeginRenderingKHR;
         PFN_vkCmdEndRenderingKHR pVkCmdEndRenderingKHR;
+        PFN_vkSetDebugUtilsObjectNameEXT pVkSetDebugUtilsObjectNameEXT;
+        PFN_vkCmdBeginDebugUtilsLabelEXT pVkCmdBeginDebugUtilsLabelEXT;
+        PFN_vkCmdEndDebugUtilsLabelEXT pVkCmdEndDebugUtilsLabelEXT;
     } extendFunction;
 
     VulkanContext();

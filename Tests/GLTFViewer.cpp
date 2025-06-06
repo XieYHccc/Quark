@@ -131,11 +131,13 @@ public:
 			rhi::RenderPassInfo2 render_pass_info = render_system.GetRenderResourceManager().renderPassInfo_swapchainPass;
 			render_pass_info.depthAttachmentFormat = m_depth_attachment->GetDesc().format;
 
+			cmd->BeginRegion("Main pass");
 			cmd->BeginRenderPass(render_pass_info, fb_info);
 			cmd->SetViewPort(viewport);
 			cmd->SetScissor(scissor);
 			render_system.Flush(*cmd, m_render_queue, m_render_context);
 			cmd->EndRenderPass();
+			cmd->EndRegion();
 
 			// ui pass
 			fb_info.colorAttatchemtsLoadOp[0] = rhi::FrameBufferInfo::AttachmentLoadOp::LOAD;

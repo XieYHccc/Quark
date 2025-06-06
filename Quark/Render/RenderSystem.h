@@ -22,7 +22,7 @@ public:
     ~RenderSystem();
 
     RenderResourceManager& GetRenderResourceManager() { return *m_renderResourceManager; }
-    Ref<rhi::Device> GetDevice() { return m_device; }
+    Ref<rhi::Device> GetDevice() { return m_device; } // TODO: return reference
 
     void BindCameraParameters(rhi::CommandList& cmd, const RenderContext& cxt);
     void BindLightingParameters(rhi::CommandList& cmd, const RenderContext& cxt);
@@ -36,8 +36,6 @@ public:
    
 private:
     Ref<rhi::Device> m_device;
-    Ref<rhi::Buffer> m_scene_ubo[10];
-    uint32_t m_currentFrame = 0;
     Scope<RenderResourceManager> m_renderResourceManager;
 
 };

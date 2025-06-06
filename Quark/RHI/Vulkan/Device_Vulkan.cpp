@@ -615,7 +615,7 @@ void Device_Vulkan::CopyBuffer(Buffer& dst, Buffer& src, uint64_t size, uint64_t
 
 void Device_Vulkan::SetName(const Ref<GpuResource>& resouce, const char* name)
 {
-    if (!m_vulkan_context->enableDebugUtils || !resouce)
+    if (!m_vulkan_context->supportDebugUtils || !resouce)
         return;
 
 
@@ -639,10 +639,7 @@ void Device_Vulkan::SetName(const Ref<GpuResource>& resouce, const char* name)
     if (info.objectHandle == (uint64_t)VK_NULL_HANDLE)
         return;
 
-    PFN_vkSetDebugUtilsObjectNameEXT pfnVkSetDebugUtilsObjectNameEXT =
-        (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(m_vulkan_context->instance, "vkSetDebugUtilsObjectNameEXT");
-
-    VK_CHECK(pfnVkSetDebugUtilsObjectNameEXT(vkDevice, &info))
+    VK_CHECK(m_vulkan_context->extendFunction.pVkSetDebugUtilsObjectNameEXT(vkDevice, &info))
 }
 
 CommandList* Device_Vulkan::BeginCommandList(QueueType type)

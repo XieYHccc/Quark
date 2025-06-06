@@ -106,6 +106,10 @@ public:
     virtual const RenderPassInfo2& GetCurrentRenderPassInfo() const = 0;
     virtual const PipeLine* GetCurrentGraphicsPipeline() const = 0;
 
+    // debug utils
+    virtual void BeginRegion(const char* name, const float* color = nullptr) = 0;
+    virtual void EndRegion() = 0;
+
     QueueType GetQueueType() const { return m_queueType; }
     GpuResourceType GetGpuResourceType() const override { return GpuResourceType::COMMAND_LIST; }
 
