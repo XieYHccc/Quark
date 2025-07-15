@@ -6,7 +6,6 @@
 #include "Quark/Asset/MeshAsset.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
-#include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
 #include "Quark/Core/Util/Hash.h"

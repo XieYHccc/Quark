@@ -7,7 +7,6 @@
 #include "Quark/Core/Application.h"
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
-#include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
 #include "Quark/Scene/Components/ArmatureComponent.h"
@@ -266,8 +265,9 @@ namespace quark {
         // mesh
         if (gltf_node.mesh > -1)
         {
-            MeshCmpt* mesh_cmpt = newObj->AddComponent<MeshCmpt>();
-            mesh_cmpt->sharedMesh = m_meshes[gltf_node.mesh];
+            // MeshCmpt* mesh_cmpt = newObj->AddComponent<MeshCmpt>();
+            // TODO
+            // mesh_cmpt->sharedMesh = m_meshes[gltf_node.mesh];
             m_scene->AddStaticMeshComponent(newObj, m_meshes[gltf_node.mesh]);
         }
         

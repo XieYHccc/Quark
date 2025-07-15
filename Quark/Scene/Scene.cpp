@@ -197,7 +197,7 @@ void Scene::AddArmatureComponent(Entity* entity, Ref<SkeletonAsset> skeleton_ass
 
 void Scene::AddStaticMeshComponent(Entity* entity, Ref<MeshAsset> mesh_asset)
 {
-    auto* staticmesh_cmpt = entity->AddComponent<StaticMeshCmpt>();
+    auto* staticmesh_cmpt = entity->AddComponent<MeshCmpt>();
     staticmesh_cmpt->mesh_asset = mesh_asset;
     auto renderables = RenderSystem::Get().GetRenderResourceManager().RequestStaticMeshRenderables(mesh_asset);
 
@@ -383,7 +383,6 @@ void Scene::RunRenderInfoUpdateSystem()
 {
     // update static meshes
     auto& static_meshes = GetComponents<RenderInfoCmpt, TransformCmpt>();
-
     for (auto& group : static_meshes)
 	{
 		auto* renderInfoCmpt = GetComponent<RenderInfoCmpt>(group);
@@ -391,6 +390,15 @@ void Scene::RunRenderInfoUpdateSystem()
 		renderInfoCmpt->world_transform = transformCmpt->GetWorldMatrix();
 	}
 
+    // update skinned meshes
+    //auto& skinned_meshes = GetComponents<RenderInfoCmpt, TransformCmpt, ArmatureCmpt>();
+    //for (auto& group : skinned_meshes)
+    //{
+    //    auto* renderInfoCmpt = GetComponent<RenderInfoCmpt>(group);
+    //    auto* transformCmpt = GetComponent<TransformCmpt>(group);
+    //    auto* armatureCmpt = GetComponent<ArmatureCmpt>(group);
+    //    
+    //}
 }
 
 }

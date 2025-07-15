@@ -54,7 +54,6 @@ public:
 
     math::Aabb aabb = {};
 
-public:
     MeshAsset() = default;
 
     uint32_t GetMeshAttributeMask() const;

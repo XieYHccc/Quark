@@ -6,7 +6,6 @@
 
 #include "Quark/Render/RenderSystem.h"
 #include "Quark/Asset/GLTFImporter.h"
-#include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Scene.h"
 
 namespace quark {

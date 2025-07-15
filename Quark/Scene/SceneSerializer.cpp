@@ -8,7 +8,6 @@
 #include "Quark/Scene/Components/TransformCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
-#include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
 
 namespace quark {
@@ -80,7 +79,8 @@ static void SerializeEntity(YAML::Emitter& out, Entity* entity)
 		out << YAML::Key << "MeshComponent";
 
 		out << YAML::BeginMap; 
-		out << YAML::Key << "AssetID" << YAML::Value << meshCmpt->sharedMesh->GetAssetID();
+		// TODO
+		// out << YAML::Key << "AssetID" << YAML::Value << meshCmpt->sharedMesh->GetAssetID();
 		out << YAML::EndMap;
 	}
 		
@@ -208,8 +208,9 @@ bool SceneSerializer::Deserialize(const std::filesystem::path& filepath)
 				uint64_t assetId = meshCmpt["AssetID"].as<uint64_t>();
 				auto mesh = AssetManager::Get().GetAsset<MeshAsset>(assetId);
 				
-				mc->sharedMesh = mesh;
-				mc->uniqueMesh = nullptr;
+				// TODO
+				//mc->sharedMesh = mesh;
+				//mc->uniqueMesh = nullptr;
 			}
 
 			//auto meshRendererCmpt = entity["MeshRendererComponent"];

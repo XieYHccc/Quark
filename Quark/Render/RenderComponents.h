@@ -12,7 +12,9 @@ struct RenderInfoCmpt : public Component
 	glm::mat4 world_transform;
 
 	bool has_skin = false;
+	uint32_t num_bones = 0;
 	std::vector<glm::mat4> joint_matrices;
+
 };
 
 struct RenderableCmpt : public Component
@@ -21,9 +23,9 @@ struct RenderableCmpt : public Component
 	Ref<IRenderable> renderable;
 };
 
-struct StaticMeshCmpt : public Component
+struct MeshCmpt : public Component
 {
-	QK_COMPONENT_TYPE_DECL(StaticMeshCmpt)
+	QK_COMPONENT_TYPE_DECL(MeshCmpt)
 	Ref<MeshAsset> mesh_asset;
 	std::vector<RenderableCmpt*> submesh_renderables;
 };

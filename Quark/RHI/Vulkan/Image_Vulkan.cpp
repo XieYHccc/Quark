@@ -246,7 +246,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
     allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
     VK_CHECK(vmaCreateImage(m_device->vmaAllocator, &create_info, &allocCreateInfo, &m_handle, &m_allocation, nullptr))
 
-        // Image view create info
+    // Image view create info
     VkImageViewCreateInfo image_m_Viewcreate_info = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
     image_m_Viewcreate_info.image = m_handle;
     image_m_Viewcreate_info.format = ConvertDataFormat(desc.format);

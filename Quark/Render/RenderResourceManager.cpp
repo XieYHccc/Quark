@@ -5,6 +5,7 @@
 
 namespace quark
 {
+
 RenderResourceManager::RenderResourceManager(Ref<rhi::Device> device)
     : m_device(device)
 {
@@ -244,11 +245,47 @@ std::vector<Ref<IRenderable>> RenderResourceManager::RequestStaticMeshRenderable
     if (find != m_static_meshes.end())
 		return find->second;
 
-    Ref<rhi::Buffer> vbo_position;
-    Ref<rhi::Buffer> vbo_varying_enable_blending;
-    Ref<rhi::Buffer> vbo_varying;
-    Ref<rhi::Buffer> vbo_joint_binding;
-    Ref<rhi::Buffer> ibo;
+    Ref<MeshBuffers> mesh_buffers = RequestMeshBuffers(mesh_asset);
+    QK_CORE_ASSERT(mesh_buffers);
+
+    std::vector<Ref<IRenderable>> renderables;
+	for (auto& submesh : mesh_asset->subMeshes)
+	{
+		Ref<StaticMesh> renderable = CreateRef<StaticMesh>();
+        renderable->vertex_count = submesh.count;
+        renderable->vertex_offset = 0;
+        renderable->ibo_offset = submesh.startIndex;
+        renderable->mesh_buffers = mesh_buffers;
+        renderable->mesh_attribute_mask = mesh_asset->GetMeshAttributeMask();
+        renderable->static_aabb = submesh.aabb;
+        Ref<PBRMaterial> mat = RequestMateral(AssetManager::Get().GetAsset<MaterialAsset>(submesh.materialID));
+        renderable->material = mat ? mat : default_material;
+        util::Hasher h;
+        h.u64(mesh_asset->GetAssetID());
+        h.u32(renderable->ibo_offset);
+        h.u32(renderable->vertex_offset);
+        h.u32(renderable->vertex_count);
+
+        renderable->hash = h.get();
+        renderables.push_back(renderable);
+
+        m_renderables[h.get()] = renderable;
+	}
+        
+    m_static_meshes[mesh_asset->GetAssetID()] = renderables;
+
+	return renderables;
+}
+
+Ref<MeshBuffers> RenderResourceManager::RequestMeshBuffers(Ref<MeshAsset> mesh_asset)
+{
+    QK_CORE_ASSERT(mesh_asset);
+
+    auto find = m_mesh_buffers.find(mesh_asset->GetAssetID());
+    if (find != m_mesh_buffers.end())
+        return find->second;
+
+    Ref<MeshBuffers> new_mesh_buffers = CreateRef<MeshBuffers>();
 
     // upload index buffer
     uint32_t index_buffer_size = sizeof(uint32_t) * mesh_asset->indices.size();
@@ -258,7 +295,7 @@ std::vector<Ref<IRenderable>> RenderResourceManager::RequestStaticMeshRenderable
     index_buffer_desc.size = index_buffer_size;
     index_buffer_desc.usageBits = rhi::BUFFER_USAGE_INDEX_BUFFER_BIT | rhi::BUFFER_USAGE_TRANSFER_TO_BIT;
     index_buffer_desc.domain = rhi::BufferMemoryDomain::GPU;
-    ibo = m_device->CreateBuffer(index_buffer_desc, index_buffer_data);
+    new_mesh_buffers->ibo = m_device->CreateBuffer(index_buffer_desc, index_buffer_data);
 
     // prepare staging buffer
     uint64_t vertex_position_buffer_size = sizeof(glm::vec3) * mesh_asset->vertex_positions.size();
@@ -326,7 +363,7 @@ std::vector<Ref<IRenderable>> RenderResourceManager::RequestStaticMeshRenderable
                 &mesh_asset->vertex_uvs[i], sizeof(glm::vec2));
             offset_in_vertex_varying_buffer += sizeof(glm::vec2);
         }
-        
+
         if (!mesh_asset->vertex_colors.empty())
         {
             memcpy(vertex_varying_buffer_data + offset_in_vertex_varying_buffer,
@@ -356,61 +393,32 @@ std::vector<Ref<IRenderable>> RenderResourceManager::RequestStaticMeshRenderable
     buffer_desc.usageBits = rhi::BUFFER_USAGE_VERTEX_BUFFER_BIT | rhi::BUFFER_USAGE_TRANSFER_TO_BIT;
 
     buffer_desc.size = vertex_position_buffer_size;
-    vbo_position = m_device->CreateBuffer(buffer_desc, nullptr);
-    m_device->CopyBuffer(*vbo_position, *stage_buffer, vertex_position_buffer_size, 0, vertex_position_buffer_offset);
+    new_mesh_buffers->vbo_position = m_device->CreateBuffer(buffer_desc, nullptr);
+    m_device->CopyBuffer(*new_mesh_buffers->vbo_position, *stage_buffer, vertex_position_buffer_size, 0, vertex_position_buffer_offset);
 
     if (vertex_varying_enable_blending_buffer_size > 0)
     {
         buffer_desc.size = vertex_varying_enable_blending_buffer_size;
-        vbo_varying_enable_blending = m_device->CreateBuffer(buffer_desc, nullptr);
-        m_device->CopyBuffer(*vbo_varying_enable_blending, *stage_buffer, vertex_varying_enable_blending_buffer_size, 0, vertex_varying_enable_blending_buffer_offset);
+        new_mesh_buffers->vbo_varying_enable_blending = m_device->CreateBuffer(buffer_desc, nullptr);
+        m_device->CopyBuffer(*new_mesh_buffers->vbo_varying_enable_blending, *stage_buffer, vertex_varying_enable_blending_buffer_size, 0, vertex_varying_enable_blending_buffer_offset);
     }
 
     if (vertex_varying_buffer_size > 0)
     {
         buffer_desc.size = vertex_varying_buffer_size;
-        vbo_varying = m_device->CreateBuffer(buffer_desc, nullptr);
-        m_device->CopyBuffer(*vbo_varying, *stage_buffer, vertex_varying_buffer_size, 0, vertex_varying_buffer_offset);
+        new_mesh_buffers->vbo_varying = m_device->CreateBuffer(buffer_desc, nullptr);
+        m_device->CopyBuffer(*new_mesh_buffers->vbo_varying, *stage_buffer, vertex_varying_buffer_size, 0, vertex_varying_buffer_offset);
     }
 
     if (vertex_joint_binding_buffer_size > 0)
     {
         buffer_desc.size = vertex_joint_binding_buffer_size;
-        vbo_joint_binding = m_device->CreateBuffer(buffer_desc, nullptr);
-        m_device->CopyBuffer(*vbo_joint_binding, *stage_buffer, vertex_joint_binding_buffer_size, 0, vertex_joint_binding_buffer_offset);
+        new_mesh_buffers->vbo_joint_binding = m_device->CreateBuffer(buffer_desc, nullptr);
+        m_device->CopyBuffer(*new_mesh_buffers->vbo_joint_binding, *stage_buffer, vertex_joint_binding_buffer_size, 0, vertex_joint_binding_buffer_offset);
     }
 
-    std::vector<Ref<IRenderable>> renderables;
-	for (auto& submesh : mesh_asset->subMeshes)
-	{
-		Ref<StaticMesh> renderable = CreateRef<StaticMesh>();
-        renderable->vertex_count = submesh.count;
-        renderable->vertex_offset = 0;
-        renderable->ibo_offset = submesh.startIndex;
-        renderable->vbo_position = vbo_position;
-        renderable->vbo_varying_enable_blending = vbo_varying_enable_blending;
-        renderable->vbo_varying = vbo_varying;
-        renderable->vbo_joint_binding = vbo_joint_binding;
-        renderable->ibo = ibo;
-        renderable->mesh_attribute_mask = mesh_asset->GetMeshAttributeMask();
-        renderable->static_aabb = submesh.aabb;
-        Ref<PBRMaterial> mat = RequestMateral(AssetManager::Get().GetAsset<MaterialAsset>(submesh.materialID));
-        renderable->material = mat ? mat : default_material;
-        util::Hasher h;
-        h.u64(mesh_asset->GetAssetID());
-        h.u32(renderable->ibo_offset);
-        h.u32(renderable->vertex_offset);
-        h.u32(renderable->vertex_count);
-
-        renderable->hash = h.get();
-        renderables.push_back(renderable);
-
-        m_renderables[h.get()] = renderable;
-	}
-        
-    m_static_meshes[mesh_asset->GetAssetID()] = renderables;
-
-	return renderables;
+    m_mesh_buffers[mesh_asset->GetAssetID()] = new_mesh_buffers;
+    return new_mesh_buffers;
 }
 
 Ref<PBRMaterial> RenderResourceManager::RequestMateral(Ref<MaterialAsset> mat_asset)

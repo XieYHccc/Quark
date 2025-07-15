@@ -33,7 +33,6 @@ struct StaticMeshPerDrawcallData
 	const rhi::Buffer* vbo_position;
 	const rhi::Buffer* vbo_varying_enable_blending;
 	const rhi::Buffer* vbo_varying;
-	const rhi::Buffer* vbo_joint_binding;
 	const rhi::Buffer* ibo;
 	const rhi::Image* textures[util::ecast(TextureKind::Count)];
 	ShaderProgram* shader_program;	// TODO: use ShaderProgramVariant
@@ -49,21 +48,40 @@ struct StaticMeshPerDrawcallData
 	//bool alpha_test;
 };
 
+struct SkinnedMeshPerDrawCallData
+{
+	StaticMeshPerDrawcallData static_mesh_perdrawcall_data;
+	const rhi::Buffer* vbo_joint_binding;
+};
+
 struct StaticMeshPerInstanceData
 {
 	StaticMeshVertex vertex;
 };
 
-void StaticMeshRender(rhi::CommandList& cmd, const RenderQueueTask*, unsigned instance_count);
+struct SkinnedMeshPerInstanceData
+{
+	glm::mat4* world_transforms = nullptr;
+	glm::mat4* prev_world_transforms = nullptr;
+	uint32_t num_bones;
+};
 
-struct StaticMesh : public IRenderable
+void StaticMeshRender(rhi::CommandList& cmd, const RenderQueueTask*, unsigned instance_count);
+void SkinnedMeshRender(rhi::CommandList& cmd, const RenderQueueTask*, unsigned instance_count);
+
+struct MeshBuffers
 {
 	Ref<rhi::Buffer> vbo_position;
 	Ref<rhi::Buffer> vbo_varying_enable_blending; // normal, tangent..
 	Ref<rhi::Buffer> vbo_varying; // uv, color...
 	Ref<rhi::Buffer> vbo_joint_binding; // for skinned mesh
 	Ref<rhi::Buffer> ibo;
+};
 
+struct StaticMesh : public IRenderable
+{
+	Ref<MeshBuffers> mesh_buffers;
+	
 	uint32_t ibo_offset = 0;
 	uint32_t vertex_offset = 0;
 	uint32_t vertex_count = 0;
@@ -79,12 +97,16 @@ struct StaticMesh : public IRenderable
 
 	const math::Aabb* GetStaticAabb() const override { return &static_aabb; }
 
-	DrawPipeline GetMeshDrawPipeline() const { return material->draw_pipeline; }
+	DrawPipeline GetMeshDrawPipeline() const override { return material->draw_pipeline; }
 
-private:
+protected:
 	void FillPerDrawcallData(StaticMeshPerDrawcallData& data) const;
+};
 
-	uint64_t m_cached_hash = 0;
+struct SkinnedMesh : public StaticMesh
+{
+	void GetRenderData(const RenderContext& context, const RenderInfoCmpt* transform,
+		RenderQueue& queue) const override;
 };
 
 

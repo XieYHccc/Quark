@@ -25,7 +25,7 @@ void StaticMesh::GetRenderData(const RenderContext& context, const RenderInfoCmp
 	QK_CORE_ASSERT(material->hash != 0);
 	h.u64(material->hash);
 	util::Hash material_hash = h.get(); // hash for a material
-	h.pointer(vbo_position.get());
+	h.pointer(mesh_buffers->vbo_position.get());
 	util::Hash draw_hash = h.get(); // hash for a drawcall
 
 	QK_CORE_ASSERT(hash != 0);
@@ -47,11 +47,11 @@ void StaticMesh::GetRenderData(const RenderContext& context, const RenderInfoCmp
 
 void StaticMesh::FillPerDrawcallData(StaticMeshPerDrawcallData& data) const
 {
-	data.vbo_position = vbo_position.get();
-	data.vbo_varying = vbo_varying.get();
-	data.vbo_varying_enable_blending = vbo_varying_enable_blending.get();
-	data.vbo_joint_binding = vbo_joint_binding.get();
-	data.ibo = ibo.get();
+	data.vbo_position = mesh_buffers->vbo_position.get();
+	data.vbo_varying = mesh_buffers->vbo_varying.get();
+	data.vbo_varying_enable_blending = mesh_buffers->vbo_varying_enable_blending.get();
+	// data.vbo_joint_binding = mesh_buffers->vbo_joint_binding.get();
+	data.ibo = mesh_buffers->ibo.get();
 	data.ibo_offset = ibo_offset;
 	data.vertex_offset = vertex_offset;
 	data.vertex_count = vertex_count;
@@ -65,6 +65,35 @@ void StaticMesh::FillPerDrawcallData(StaticMeshPerDrawcallData& data) const
 	data.textures[util::ecast(TextureKind::Emissive)] = material->textures[util::ecast(TextureKind::Emissive)].get();
 
 	data.draw_pipeline = material->draw_pipeline;
+
+}
+
+void SkinnedMesh::GetRenderData(const RenderContext& context, const RenderInfoCmpt* transform, RenderQueue& queue) const
+{
+	Queue queue_type = Material2Queue(*material);
+
+	util::Hasher h;
+	h.u32(mesh_attribute_mask);
+	h.u32(util::ecast(material->draw_pipeline));
+	h.u64(material->shader_program->GetHash());
+	util::Hash pipeline_hash = h.get();
+
+	QK_CORE_ASSERT(material->hash != 0);
+	h.u64(material->hash);
+	util::Hash material_hash = h.get(); // hash for a material
+	h.pointer(mesh_buffers->vbo_position.get());
+	util::Hash draw_hash = h.get(); // hash for a drawcall
+
+	QK_CORE_ASSERT(hash != 0);
+	uint64_t instance_key = hash;
+	uint64_t sort_key = RenderInfo::GetSortKey(context, queue_type, pipeline_hash, material_hash, draw_hash, static_aabb.Transform(transform->world_transform).GetCenter());
+
+	QK_CORE_ASSERT(transform->has_skin);
+	auto* instance_data = queue.AllocateOne<SkinnedMeshPerInstanceData>();
+	
+	instance_data->num_bones = transform->num_bones;
+	instance_data->world_transforms = queue.AllocateMany<glm::mat4>(transform->num_bones);
+
 
 }
 
@@ -90,8 +119,8 @@ void BindMeshState(rhi::CommandList& cmd, const StaticMeshPerDrawcallData& data)
 	cmd.BindVertexBuffer(1, *data.vbo_varying_enable_blending, 0);
 	if (data.vbo_varying)
 		cmd.BindVertexBuffer(2, *data.vbo_varying, 0);
-	if (data.vbo_joint_binding)
-		cmd.BindVertexBuffer(3, *data.vbo_joint_binding, 0);
+	//if (data.vbo_joint_binding)
+	//	cmd.BindVertexBuffer(3, *data.vbo_joint_binding, 0);
 	cmd.BindIndexBuffer(*data.ibo, 0, IndexBufferFormat::UINT32);
 }
 

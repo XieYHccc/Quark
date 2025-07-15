@@ -64,6 +64,7 @@ public:
 	ShaderLibrary& GetShaderLibrary() { return *m_shader_library; }
 
 	std::vector<Ref<IRenderable>>   RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset);
+	Ref<MeshBuffers>				RequestMeshBuffers(Ref<MeshAsset> mesh_asset);
 	Ref<PBRMaterial>				RequestMateral(Ref<MaterialAsset> mat_asset);
 	Ref<rhi::PipeLine>				RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, const uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline);
 	Ref<rhi::Image>					RequestImage(Ref<ImageAsset> image_asset);
@@ -80,7 +81,7 @@ private:
 	std::unordered_map<uint64_t, Ref<IRenderable>> m_renderables;
 	std::unordered_map<uint64_t, Ref<PBRMaterial>> m_materials;
 	std::unordered_map<uint64_t, std::vector<Ref<IRenderable>>> m_static_meshes;
-
+	std::unordered_map<uint64_t, Ref<MeshBuffers>> m_mesh_buffers;
 };
 
 }
