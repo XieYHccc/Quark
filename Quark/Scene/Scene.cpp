@@ -2,7 +2,6 @@
 #include "Quark/Scene/Scene.h"
 #include "Quark/Scene/Components/CommonCmpts.h"
 #include "Quark/Scene/Components/TransformCmpt.h"
-#include "Quark/Scene/Components/MeshCmpt.h"
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
 #include "Quark/Scene/Components/RelationshipCmpt.h"
 #include "Quark/Scene/Components/CameraCmpt.h"

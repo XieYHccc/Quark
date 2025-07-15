@@ -18,7 +18,7 @@ public:
 		using namespace rhi;
 
 		m_gltf_importer.Import("BuiltInResources/Gltf/structure.glb", GLTFImporter::ImportAll);
-		// m_gltf_importer.Import("BuiltInResources/Gltf/FlightHelmet/glTF/FlightHelmet.gltf", GLTFImporter::ImportAll);
+		//m_gltf_importer.Import("BuiltInResources/Gltf/CesiumMan/glTF/CesiumMan.gltf", GLTFImporter::ImportAll);
 		// load cube map
 		ImageImporter imageLoader;
 		Ref<ImageAsset> cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
@@ -48,7 +48,7 @@ public:
 		camcmpt->fov = 60.f;
 		camcmpt->zNear = 0.1f;
 		camcmpt->zFar = 1000.f;
-		camera_entity->GetComponent<TransformCmpt>()->SetLocalPosition(glm::vec3(0.f, 0.f, 120.f));
+		camera_entity->GetComponent<TransformCmpt>()->SetLocalPosition(glm::vec3(0.f, 0.f, 5.f));
 		camera_entity->AddComponent<MoveControlCmpt>();
 		m_gltf_importer.GetScene()->SetMainCameraEntity(camera_entity);
 	}
