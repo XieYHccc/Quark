@@ -760,15 +760,6 @@ void CommandList_Vulkan::FlushDescriptorSet(uint32_t set)
         auto updata_template = m_currentPipeline->GetLayout()->updateTemplate[set];
         QK_CORE_ASSERT(updata_template)
         vkUpdateDescriptorSetWithTemplate(m_device->vkDevice, allocated.first, updata_template, bindings);
-        //QK_CORE_LOGT_TAG("cmd", "Update DescriptorSet : set = {}, hash = {}", set, hash);
-        //if (set == 0)
-        //    QK_CORE_LOGT_TAG("cmd", "Update DescriptorSet : vkbuffer = {}", (uint64_t)bindings[0].buffer.buffer);
-    }
-    else
-    {
-        //QK_CORE_LOGT_TAG("cmd", "Reuse DescriptorSet : set = {}, hash = {}", set, hash);
-        //if (set == 0)
-        //    QK_CORE_LOGT_TAG("cmd", "Reuse DescriptorSet : vkbuffer = {}", (uint64_t)bindings[0].buffer.buffer);
     }
 
     vkCmdBindDescriptorSets(m_cmdBuffer, (m_currentPipeline->GetBindingPoint() == PipeLineBindingPoint::GRAPHIC ? VK_PIPELINE_BIND_POINT_GRAPHICS : VK_PIPELINE_BIND_POINT_COMPUTE),
@@ -854,7 +845,7 @@ void CommandList_Vulkan::FlushRenderState()
     auto& vertex_buffer_bindings = m_bindingState.vertexBufferBindingState;
     util::for_each_bit_range(m_dirtyVertexBufferMask, [&](uint32_t first_binding, uint32_t count) {
 #ifdef QK_DEBUG_BUILD
-        for (size_t binding = first_binding; binding < count; ++binding)
+        for (size_t binding = first_binding; binding < first_binding + count; ++binding)
             QK_CORE_ASSERT(vertex_buffer_bindings.buffers[binding] != VK_NULL_HANDLE)
 #endif
         vkCmdBindVertexBuffers(m_cmdBuffer, first_binding, count, vertex_buffer_bindings.buffers + first_binding, vertex_buffer_bindings.offsets + first_binding);

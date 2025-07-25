@@ -1,8 +1,7 @@
 #version 450
 
 #extension GL_GOOGLE_include_directive : require
-
-#include "include/input_structures.glsl"
+#include "include/camera_parameters.glslh"
 
 layout(location = 0) in vec3 inPosition;
 
@@ -30,36 +29,31 @@ layout(location = 6) in vec4 inJointWeights;
 #endif
 
 #if defined(HAVE_BONE_INDEX) && defined(HAVE_BONE_WEIGHT)
-layout(std430, set = 2, binding = 0) readonly buffer JointMatrices {
-	mat4 jointMatrices[];
+layout(std140, set = 3, binding = 1) uniform BonesWorld
+{
+    mat4 u_currentBoneWorldTransforms[256];
+};
+#else
+struct StaticMeshInfo
+{
+    mat4 model;
+};
+
+layout(set = 2, binding = 0, std140) uniform PerVertexData
+{
+    StaticMeshInfo u_currentInfos[256];
 };
 #endif
-
-//push constants block
-layout(push_constant, std430) uniform PushConstants
-{
-	mat4 modelMatrix;
-} modelData;
 
 void main() 
 {
 	vec4 position = vec4(inPosition, 1.0f);
 
-#if defined(HAVE_BONE_INDEX) && defined(HAVE_BONE_WEIGHT)
-	// Calculate skinned matrix from weights and joint indices of the current vertex
-	mat4 skinMat = 
-		inJointWeights.x * jointMatrices[int(inJointIndices.x)] +
-		inJointWeights.y * jointMatrices[int(inJointIndices.y)] +
-		inJointWeights.z * jointMatrices[int(inJointIndices.z)] +
-		inJointWeights.w * jointMatrices[int(inJointIndices.w)];
-
-	gl_Position =  sceneData.viewproj * modelData.modelMatrix * skinMat * position;
-#else
-	gl_Position =  sceneData.viewproj * modelData.modelMatrix * position;
-#endif
+	mat4 world_transform = u_currentInfos[gl_InstanceIndex].model;
+	gl_Position = u_camera_parameters.view_projection * world_transform * position;
 
 #ifdef HAVE_NORMAL
-	mat3 normalTransform = mat3(modelData.modelMatrix[0].xyz, modelData.modelMatrix[1].xyz, modelData.modelMatrix[2].xyz);
+	mat3 normalTransform = mat3(world_transform[0].xyz, world_transform[1].xyz, world_transform[2].xyz);
 	vNormal = normalize(normalTransform * inNormal);
 #endif
 

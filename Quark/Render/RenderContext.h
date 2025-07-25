@@ -16,13 +16,13 @@ public:
     void SetLightingParameters(const LightingParameters* lighting);
     
     const CameraParameters& GetCameraParameters() const;
-    const LightingParameters& GetLightingParameters() const;
+    const LightingParameters* GetLightingParameters() const;
     const math::Frustum& GetVisibilityFrustum() const;
     
 private:
     const Scene* m_scene;
-    const LightingParameters* m_lighting_parameters;
-    CameraParameters m_camera_parameters;
+    const LightingParameters* m_lighting_params;
+    CameraParameters m_camera_params;
     math::Frustum m_frustum;
 
 };

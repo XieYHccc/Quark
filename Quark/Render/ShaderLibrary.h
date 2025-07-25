@@ -90,7 +90,7 @@ private:
 class ShaderLibrary
 {
 public:
-	ShaderProgram* program_test;
+	// TODO: make this as Enums
 	ShaderProgram* program_staticMesh;
 	ShaderProgram* program_staticMeshEditor;
 	ShaderProgram* staticProgram_skybox;

@@ -41,7 +41,7 @@ void StaticMesh::GetRenderData(const RenderContext& context, const RenderInfoCmp
 	{
 		FillPerDrawcallData(*perdrawcall_data);
 		// TODO :Remvoe hard code
-		perdrawcall_data->shader_program = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_test;
+		perdrawcall_data->shader_program = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh;
 	}
 }
 

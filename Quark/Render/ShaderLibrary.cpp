@@ -95,9 +95,6 @@ bool ShaderProgram::IsStatic() const
 
 ShaderLibrary::ShaderLibrary()
 {
-	program_test = RequestGraphicsProgram("BuiltInResources/Shaders/new_mesh.vert",
-		"BuiltInResources/Shaders/new_mesh.frag");
-
 	program_staticMesh = RequestGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
 		"BuiltInResources/Shaders/static_mesh.frag");
 

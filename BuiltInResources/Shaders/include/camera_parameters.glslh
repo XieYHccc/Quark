@@ -1,7 +1,9 @@
-#ifndef RENDER_PARAMETERS_H
-#define RENDER_PARAMETERS_H
+#ifndef CAMERA_PARAMETERS_H
+#define CAMERA_PARAMETERS_H
 
-layout(set = 0, binding = 0, std140) uniform CameraParameters
+#include "include/global_bindings.glslh"
+
+layout(set = 0, binding = BINDING_GLOBAL_TRANSFORM_PARAMETERS, std140) uniform CameraParameters
 {
 	mat4 projection;
 	mat4 view;

@@ -1,0 +1,17 @@
+#ifndef LIGHTING_PARAMETERS_H
+#define LIGHTING_PARAMETERS_H
+
+#include "include/global_bindings.glslh"
+
+struct DirectionalParameters
+{
+	vec3 color;
+	vec3 direction;
+};
+
+layout(set = 0, binding = BINDING_GLOBAL_RENDER_PARAMETERS, std140) uniform LightingParameters
+{
+	DirectionalParameters directional;
+} u_lighting_parameters;
+
+#endif

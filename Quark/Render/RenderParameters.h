@@ -35,9 +35,13 @@ struct DirectionalParameters
 	alignas(16) glm::vec3 direction;
 };
 
+struct CombinedRenderParameters
+{
+	alignas(16) DirectionalParameters directional;
+};
 struct LightingParameters
 {
-    DirectionalParameters directional;
+	DirectionalParameters directional;
 };
 
 }

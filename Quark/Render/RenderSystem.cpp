@@ -10,6 +10,12 @@
 #include "Quark/Scene/Components/MeshRendererCmpt.h"
 #include "Quark/Core/Util/Hash.h"
 
+enum GlobalDescriptorSetBindings
+{
+    BINDING_GLOBAL_CAMERA_PARAMETERS = 0,
+    BINDING_GLOBAL_RENDER_PARAMETERS = 1,
+};
+
 namespace quark {
 
 using namespace rhi;
@@ -46,13 +52,25 @@ void RenderSystem::BindCameraParameters(rhi::CommandList& cmd, const RenderConte
     //*camera_ubo_mapped_data = cxt.GetCameraParameters();
     //cmd.BindUniformBuffer(0, 0, *camera_ubo, 0, desc.size);
 
-    CameraParameters* mapped = (CameraParameters*)cmd.AllocateConstantData(0, 0, sizeof(CameraParameters));
+    CameraParameters* mapped = (CameraParameters*)cmd.AllocateConstantData(0, BINDING_GLOBAL_CAMERA_PARAMETERS, sizeof(CameraParameters));
     *mapped = cxt.GetCameraParameters();
+}
+
+void RenderSystem::BindLightingParameters(rhi::CommandList& cmd, const RenderContext& cxt)
+{
+    auto* light_params = cxt.GetLightingParameters();
+    if (!light_params)
+        return;
+    CombinedRenderParameters* mapped = (CombinedRenderParameters*)cmd.AllocateConstantData(0, BINDING_GLOBAL_RENDER_PARAMETERS, sizeof(CombinedRenderParameters));
+    mapped->directional = light_params->directional;
+
 }
 
 void RenderSystem::Flush(rhi::CommandList& cmd, const RenderQueue& queue, const RenderContext& ctx)
 {
     BindCameraParameters(cmd, ctx);
+    BindLightingParameters(cmd, ctx);
+
     queue.Dispatch(Queue::Opaque, cmd);
 }
 
