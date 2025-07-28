@@ -814,13 +814,13 @@ DataFormat Device_Vulkan::GetPresentImageFormat()
     }
 }
 
-PipeLineLayout* Device_Vulkan::RequestPipeLineLayout(const ShaderResourceLayout& combinedLayout)
+PipeLineLayout* Device_Vulkan::RequestPipeLineLayout(const CombinedResourceLayout& combinedLayout)
 {
     // Compute pipeline layout hash
     size_t hash = 0;
     for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i) {
         for (size_t j = 0; j < SET_BINDINGS_MAX_NUM; ++j) {
-            auto& binding = combinedLayout.descriptorSetLayouts[i].vk_bindings[j];
+            auto& binding = combinedLayout.descriptor_set_layouts[i].vk_bindings[j];
             util::hash_combine(hash, binding.binding);
             util::hash_combine(hash, binding.descriptorCount);
             util::hash_combine(hash, binding.descriptorType);
@@ -828,10 +828,10 @@ PipeLineLayout* Device_Vulkan::RequestPipeLineLayout(const ShaderResourceLayout&
             // util::hash_combine(hash, pipeline_layout.imageViewTypes[i][j]);
         }
     }
-    util::hash_combine(hash, combinedLayout.pushConstant.offset);
-    util::hash_combine(hash, combinedLayout.pushConstant.size);
-    util::hash_combine(hash, combinedLayout.pushConstant.stageFlags);
-    util::hash_combine(hash, combinedLayout.descriptorSetLayoutMask);
+    util::hash_combine(hash, combinedLayout.push_constant_range.offset);
+    util::hash_combine(hash, combinedLayout.push_constant_range.size);
+    util::hash_combine(hash, combinedLayout.push_constant_range.stageFlags);
+    util::hash_combine(hash, combinedLayout.descriptor_set_mask);
 
     auto find = cached_pipelineLayouts.find(hash);
     if (find == cached_pipelineLayouts.end()) {

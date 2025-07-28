@@ -9,14 +9,14 @@ struct DescriptorSetLayout {
     VkDescriptorSetLayoutBinding vk_bindings[SET_BINDINGS_MAX_NUM];
 
     // These masks here are mostly for debug purpose
-    u32 sampled_image_mask = 0;
-    u32 storage_image_mask = 0;
-    u32 uniform_buffer_mask = 0;
-    u32 storage_buffer_mask = 0;
-    u32 sampler_mask = 0;
-    u32 separate_image_mask = 0;
-    u32 input_attachment_mask = 0;
-    u32 set_stage_mask = 0;
+    uint32_t sampled_image_mask = 0;
+    uint32_t storage_image_mask = 0;
+    uint32_t uniform_buffer_mask = 0;
+    uint32_t storage_buffer_mask = 0;
+    uint32_t sampler_mask = 0;
+    uint32_t separate_image_mask = 0;
+    uint32_t input_attachment_mask = 0;
+    // uint32_t set_stage_mask = 0;
 };
 
 // This class is Cached in Device_Vulkan

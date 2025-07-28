@@ -10,44 +10,44 @@
 namespace quark::rhi {
    
 Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const void* shaderCode, size_t codeSize)
-    : Shader(stage), m_Device(device)
+    : Shader(stage), m_device(device)
 {
-    QK_CORE_ASSERT(m_Device != nullptr)
+    QK_CORE_ASSERT(m_device != nullptr)
 
-    VkDevice vk_device = m_Device->vkDevice;
-    auto& vk_context = m_Device->GetVulkanContext();
+    VkDevice vk_device = m_device->vkDevice;
+    auto& vk_context = m_device->GetVulkanContext();
 
     // Create shader module
     VkShaderModuleCreateInfo moduleInfo = {};
     moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleInfo.codeSize = codeSize;
     moduleInfo.pCode = (const uint32_t*)shaderCode;
-    if (vkCreateShaderModule(vk_device, &moduleInfo, nullptr, &m_ShaderModule) != VK_SUCCESS)
+    if (vkCreateShaderModule(vk_device, &moduleInfo, nullptr, &m_shaderModule) != VK_SUCCESS)
         QK_CORE_LOGE_TAG("RHI", "Failed to create vulkan shader module.");
 
 
     // Fill shader stage info
-    m_StageInfo = {};
-    m_StageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    m_StageInfo.module = m_ShaderModule;
-    m_StageInfo.pName = "main";
-    m_StageInfo.pNext = nullptr;
-    m_StageInfo.flags = 0;
+    m_stageInfo = {};
+    m_stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    m_stageInfo.module = m_shaderModule;
+    m_stageInfo.pName = "main";
+    m_stageInfo.pNext = nullptr;
+    m_stageInfo.flags = 0;
     switch (stage) 
     {
     case ShaderStage::STAGE_COMPUTE:
-        m_StageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        m_stageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         break;
     case ShaderStage::STAGE_VERTEX:
-        m_StageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        m_stageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
         break;
     case ShaderStage::STAGE_FRAGEMNT:
-        m_StageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        m_stageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         break;
     default:
     {
         QK_CORE_ASSERT("ShaderStage not handled!")
-        m_StageInfo.stage = VK_SHADER_STAGE_ALL;
+        m_stageInfo.stage = VK_SHADER_STAGE_ALL;
         break;
     }
     }
@@ -59,28 +59,51 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
         QK_CORE_LOGE_TAG("RHI", "Failed to reflect spv shader moudule");
 
     uint32_t binding_count = 0;
-    SPV_REFLECT_CHECK(spvReflectEnumerateDescriptorBindings(&spv_reflcet_module, &binding_count, nullptr))
+    SPV_REFLECT_CHECK(spvReflectEnumerateDescriptorBindings(&spv_reflcet_module, &binding_count, nullptr));
     std::vector<SpvReflectDescriptorBinding*> bindings(binding_count);
-    SPV_REFLECT_CHECK(spvReflectEnumerateDescriptorBindings(&spv_reflcet_module, &binding_count, bindings.data()))
+    SPV_REFLECT_CHECK(spvReflectEnumerateDescriptorBindings(&spv_reflcet_module, &binding_count, bindings.data()));
 
     uint32_t push_constant_count = 0;
-    SPV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&spv_reflcet_module, &push_constant_count, nullptr))
+    SPV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&spv_reflcet_module, &push_constant_count, nullptr));
     std::vector<SpvReflectBlockVariable*> push_constants(push_constant_count);
-    SPV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&spv_reflcet_module, &push_constant_count, push_constants.data()))
+    SPV_REFLECT_CHECK(spvReflectEnumeratePushConstantBlocks(&spv_reflcet_module, &push_constant_count, push_constants.data()));
+
+    uint32_t input_count = 0;
+    SPV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&spv_reflcet_module, &input_count, nullptr));
+    std::vector<SpvReflectInterfaceVariable*> inputs(input_count);
+    SPV_REFLECT_CHECK(spvReflectEnumerateInputVariables(&spv_reflcet_module, &input_count, inputs.data()));
+
+    uint32_t output_count = 0;
+    SPV_REFLECT_CHECK(spvReflectEnumerateOutputVariables(&spv_reflcet_module, &output_count, nullptr));
+    std::vector<SpvReflectInterfaceVariable*> outputs(output_count);
+    SPV_REFLECT_CHECK(spvReflectEnumerateOutputVariables(&spv_reflcet_module, &output_count, outputs.data()));
+
+    // Inputs
+    for (uint32_t i = 0; i < input_count; ++i) {
+        SpvReflectInterfaceVariable* var = inputs[i];
+        if (var->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN)
+            continue; // skip built-in variables like gl_Position
+        if (var->location < 32) // only support first 32 inputs
+            m_resourceLayout.input_mask |= (1u << var->location);
+    }
+
+    // Outputs
+    for (uint32_t i = 0; i < output_count; ++i) {
+        SpvReflectInterfaceVariable* var = outputs[i];
+        if (var->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN)
+            continue; // skip built-in variables like gl_FragDepth
+        if (var->location < 32) // only support first 32 outputs
+            m_resourceLayout.output_mask |= (1u << var->location);
+    }
 
     // Push constants
     for (auto& x : push_constants)
     {
         QK_CORE_ASSERT(x->size < PUSH_CONSTANT_DATA_SIZE)
-        m_ResourceLayout.pushConstant.stageFlags = m_StageInfo.stage;
-        m_ResourceLayout.pushConstant.offset = std::min(m_ResourceLayout.pushConstant.offset, x->offset);
-        m_ResourceLayout.pushConstant.size = std::max(m_ResourceLayout.pushConstant.size, x->size);
+        m_resourceLayout.push_constant_range.stageFlags = m_stageInfo.stage;
+        m_resourceLayout.push_constant_range.offset = std::min(m_resourceLayout.push_constant_range.offset, x->offset);
+        m_resourceLayout.push_constant_range.size = std::max(m_resourceLayout.push_constant_range.size, x->size);
     }
-    util::Hasher h;
-    h.u32(m_ResourceLayout.pushConstant.stageFlags);
-    h.u32(m_ResourceLayout.pushConstant.offset);
-    h.u32(m_ResourceLayout.pushConstant.size);
-    m_ResourceLayout.push_constant_hash = h.get();
 
     for (auto& b : bindings) {
         QK_CORE_ASSERT(b->set < DESCRIPTOR_SET_MAX_NUM) // only support shaders with 4 sets or less
@@ -88,11 +111,12 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
         uint32_t bind_slot = b->binding;
         uint32_t set = b->set; 
 
-        m_ResourceLayout.descriptorSetLayoutMask |= 1 << set;
+        m_resourceLayout.descriptor_set_mask |= 1 << set;
+        // m_resourceLayout.descriptor_set_layouts[set].set_stage_mask |= m_stageInfo.stage;
 
-        VkDescriptorSetLayoutBinding& layout_binding = m_ResourceLayout.descriptorSetLayouts[set].bindings.emplace_back();
+        VkDescriptorSetLayoutBinding& layout_binding = m_resourceLayout.descriptor_set_layouts[set].bindings.emplace_back();
         layout_binding.binding = bind_slot;
-        layout_binding.stageFlags = m_StageInfo.stage;
+        layout_binding.stageFlags = m_stageInfo.stage;
         layout_binding.descriptorCount = b->count;
         layout_binding.descriptorType = (VkDescriptorType)b->descriptor_type;
 
@@ -103,36 +127,34 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
             // But maybe the dynamic uniform buffer is not always best because it occupies more registers (like DX12 root descriptor)?
             layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
         }
+
+        DescriptorSetLayout& set_layout = m_resourceLayout.descriptor_set_layouts[set];
+        switch (layout_binding.descriptorType) {
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+            set_layout.uniform_buffer_mask |= 1u << bind_slot;
+            break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            set_layout.storage_buffer_mask |= 1u << bind_slot;
+            break;
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+            set_layout.sampled_image_mask |= 1u << bind_slot;
+            break;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            set_layout.separate_image_mask |= 1u << bind_slot;
+            break;
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            set_layout.sampler_mask |= 1u << bind_slot;
+            break;
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+			set_layout.input_attachment_mask |= 1u << bind_slot;
+			break;
+        default:
+            QK_CORE_VERIFY("Descriptor type not handled!");
+            break;
+        }
         
-        // VkImageViewType& view_type = bindingViews_[set].emplace_back();
-        // view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
-        // switch (binding->descriptor_type) {
-        // default:
-        //     break;
-        // case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-        // case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-        //     switch (binding->image.dim) {
-        //     default:
-        //         QK_CORE_ASSERT("only support 2D, 3D and cube image!")
-        //         break;
-        //     case SpvDim2D:
-        //         if (binding->image.arrayed == 0)
-        //             view_type = VK_IMAGE_VIEW_TYPE_2D;
-        //         else
-        //             view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        //         break;
-        //     case SpvDim3D:
-        //         view_type = VK_IMAGE_VIEW_TYPE_3D;
-        //         break;
-        //     case SpvDimCube:
-        //         if (binding->image.arrayed == 0)
-        //             view_type = VK_IMAGE_VIEW_TYPE_CUBE;
-        //         else
-        //             view_type = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-        //         break;
-        //     }
-        //     break;
-        // }
+        
     }
     spvReflectDestroyShaderModule(&spv_reflcet_module);
 
@@ -140,10 +162,10 @@ Shader_Vulkan::Shader_Vulkan(Device_Vulkan* device, ShaderStage stage, const voi
 
 Shader_Vulkan::~Shader_Vulkan()
 {
-    auto& frame = m_Device->GetCurrentFrame();
+    auto& frame = m_device->GetCurrentFrame();
     
-    if (m_ShaderModule != VK_NULL_HANDLE) {
-        frame.garbage_shaderModules.push_back(m_ShaderModule);
+    if (m_shaderModule != VK_NULL_HANDLE) {
+        frame.garbage_shaderModules.push_back(m_shaderModule);
     }
 }
 

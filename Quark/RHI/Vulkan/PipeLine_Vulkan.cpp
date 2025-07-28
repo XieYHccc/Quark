@@ -112,7 +112,7 @@ constexpr VkBlendOp _ConvertBlendOp(BlendOperation value)
     }
 }
 
-PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayout _combinedLayout)
+PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const CombinedResourceLayout& _combinedLayout)
     : device(_device), combinedLayout(_combinedLayout)
 {
     QK_CORE_VERIFY(this->device != nullptr)
@@ -121,10 +121,10 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
     std::vector<VkDescriptorSetLayout> vk_descriptorset_layouts;
     for (uint32_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; set++) 
     {
-        if ((combinedLayout.descriptorSetLayoutMask & 1u << set) == 0)
+        if ((combinedLayout.descriptor_set_mask & 1u << set) == 0)
 			continue;
 
-        setAllocators[set] = this->device->RequestDescriptorSetAllocator(combinedLayout.descriptorSetLayouts[set]);
+        setAllocators[set] = this->device->RequestDescriptorSetAllocator(combinedLayout.descriptor_set_layouts[set]);
         vk_descriptorset_layouts.push_back(setAllocators[set]->GetLayout());
     }
 
@@ -133,10 +133,10 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_create_info.pSetLayouts = vk_descriptorset_layouts.data();
     pipeline_layout_create_info.setLayoutCount = (uint32_t)vk_descriptorset_layouts.size();
-    if (combinedLayout.pushConstant.size > 0) 
+    if (combinedLayout.push_constant_range.size > 0) 
     {
         pipeline_layout_create_info.pushConstantRangeCount = 1;
-        pipeline_layout_create_info.pPushConstantRanges = &combinedLayout.pushConstant;
+        pipeline_layout_create_info.pPushConstantRanges = &combinedLayout.push_constant_range;
     }
     else 
     {
@@ -149,13 +149,13 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
     // Create descriptor set update template
     for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; ++set) 
     {
-        if ((combinedLayout.descriptorSetLayoutMask & (1u << set)) == 0)
+        if ((combinedLayout.descriptor_set_mask & (1u << set)) == 0)
             continue;
 
         VkDescriptorUpdateTemplateEntry update_entries[SET_BINDINGS_MAX_NUM];
         uint32_t update_count = 0;
 
-        auto& set_layout = combinedLayout.descriptorSetLayouts[set];
+        auto& set_layout = combinedLayout.descriptor_set_layouts[set];
         for (auto& binding : set_layout.bindings) {
             QK_CORE_ASSERT(binding.binding < SET_BINDINGS_MAX_NUM)
 
@@ -189,7 +189,7 @@ PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const ShaderResourceLayou
         info.set = (uint32_t)set;
         info.descriptorUpdateEntryCount = update_count;
         info.pDescriptorUpdateEntries = update_entries;
-        info.pipelineBindPoint = (set_layout.set_stage_mask & VK_SHADER_STAGE_COMPUTE_BIT)? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
+        info.pipelineBindPoint = (combinedLayout.stages_for_sets[set] & VK_SHADER_STAGE_COMPUTE_BIT) ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS;
 
         if (vkCreateDescriptorUpdateTemplate(device->vkDevice, &info, nullptr, &updateTemplate[set]) != VK_SUCCESS)
             QK_CORE_VERIFY(0, "Failed to create descriptor update template")
@@ -201,7 +201,7 @@ PipeLineLayout::~PipeLineLayout()
 {
     for (size_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; ++set) 
     {
-        if (combinedLayout.descriptorSetLayoutMask & (1u << set)) 
+        if (combinedLayout.descriptor_set_mask & (1u << set)) 
             vkDestroyDescriptorUpdateTemplate(device->vkDevice, updateTemplate[set], nullptr);
     }
 
@@ -210,100 +210,92 @@ PipeLineLayout::~PipeLineLayout()
     QK_CORE_LOGT_TAG("RHI", "Pipeline layout destroyed");
 }
 
+static void MergeResourceLayout(CombinedResourceLayout& dst, const Shader_Vulkan& shader)
+{
+    if (shader.GetStageInfo().stage == VK_SHADER_STAGE_VERTEX_BIT)
+        dst.attribute_mask |= shader.GetResourceLayout().input_mask;
+    if (shader.GetStageInfo().stage == VK_SHADER_STAGE_FRAGMENT_BIT)
+        dst.render_target_mask |= shader.GetResourceLayout().output_mask;
+
+    const ShaderResourceLayout& shaderResourceLayout = shader.GetResourceLayout();
+
+    // loop each set of bindings
+    for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i)
+    {
+        if ((shaderResourceLayout.descriptor_set_mask & 1u << i) == 0)
+            continue;
+
+        dst.descriptor_set_mask |= 1u << i;
+        dst.stages_for_sets[i] |= shader.GetStageInfo().stage;
+
+        const DescriptorSetLayout& srcSetLayout = shaderResourceLayout.descriptor_set_layouts[i];
+        DescriptorSetLayout& dstSetLayout = dst.descriptor_set_layouts[i];
+        // dstSetLayout.set_stage_mask |= srcSetLayout.set_stage_mask;                 // TODO: Remove
+        dstSetLayout.sampled_image_mask |= srcSetLayout.sampled_image_mask;
+        dstSetLayout.storage_image_mask |= srcSetLayout.storage_image_mask;
+        dstSetLayout.uniform_buffer_mask |= srcSetLayout.uniform_buffer_mask;
+        dstSetLayout.storage_buffer_mask |= srcSetLayout.storage_buffer_mask;
+		dstSetLayout.sampler_mask |= srcSetLayout.sampler_mask;
+		dstSetLayout.separate_image_mask |= srcSetLayout.separate_image_mask;
+        dstSetLayout.input_attachment_mask |= srcSetLayout.input_attachment_mask;
+
+        for (size_t j = 0; j < srcSetLayout.bindings.size(); ++j)
+        {
+            const VkDescriptorSetLayoutBinding& x = shaderResourceLayout.descriptor_set_layouts[i].bindings[j];
+            VkDescriptorSetLayoutBinding& y = dst.descriptor_set_layouts[i].vk_bindings[j];
+
+            y.binding = x.binding;
+            y.descriptorCount = x.descriptorCount;
+            y.descriptorType = x.descriptorType;
+            y.stageFlags |= x.stageFlags;
+
+            bool found = false;
+            for (auto& z : dst.descriptor_set_layouts[i].bindings)
+            {
+                if (x.binding == z.binding)
+                {
+                    // If the asserts fire, it means there are overlapping bindings between shader stages
+                    // This is not supported now for performance reasons (less binding management)!
+                    // (Overlaps between s/b/t bind points are not a problem because those are shifted by the compiler)
+                    QK_CORE_VERIFY(x.descriptorCount == z.descriptorCount);
+                    QK_CORE_VERIFY(x.descriptorType == z.descriptorType);
+                    found = true;
+                    z.stageFlags |= x.stageFlags;
+                    break;
+                }
+            }
+
+            if (!found)
+                dstSetLayout.bindings.push_back(x);
+        }
+    }
+
+    // push constant
+    const VkPushConstantRange& shaderPushConstant = shaderResourceLayout.push_constant_range;
+    VkPushConstantRange& combinedPushConstant = dst.push_constant_range;
+    if (shaderPushConstant.size > 0)
+    {
+        combinedPushConstant.offset = std::min(shaderPushConstant.offset, combinedPushConstant.offset);
+        combinedPushConstant.size = std::max(shaderPushConstant.size, combinedPushConstant.size);
+        combinedPushConstant.stageFlags |= shaderPushConstant.stageFlags;
+    }
+
+    util::Hasher h;
+    h.u32(combinedPushConstant.offset);
+    h.u32(combinedPushConstant.size);
+    h.u32(combinedPushConstant.stageFlags);
+    dst.push_constant_hash = h.get();
+}
+
 PipeLine_Vulkan::PipeLine_Vulkan(Device_Vulkan* device, const GraphicPipeLineDesc& desc)
     :PipeLine(PipeLineBindingPoint::GRAPHIC), m_device(device), m_graphicDesc(desc)
 {
     // Combine shader's resource bindings and create pipeline layout
     {
-        ShaderResourceLayout combinedLayout;
-        auto insert_shader = [&](Ref<Shader> shader)
-        {
-            Shader_Vulkan& internal_shader = ToInternal(shader.get());
-            const ShaderResourceLayout& shaderResourceLayout = internal_shader.GetResourceLayout();
+        CombinedResourceLayout combinedLayout;
 
-            // loop each set of bindings
-            for (size_t i = 0; i < DESCRIPTOR_SET_MAX_NUM; ++i) 
-            {
-                if ((shaderResourceLayout.descriptorSetLayoutMask & 1u << i) == 0) 
-                    continue;
-
-                combinedLayout.descriptorSetLayoutMask |= 1u << i;
-                const DescriptorSetLayout& srcSetLayout = shaderResourceLayout.descriptorSetLayouts[i];
-                DescriptorSetLayout& dstSetLayout = combinedLayout.descriptorSetLayouts[i];
-               
-                for (size_t j = 0; j < srcSetLayout.bindings.size(); ++j) 
-                {
-                    const VkDescriptorSetLayoutBinding& x = shaderResourceLayout.descriptorSetLayouts[i].bindings[j];
-                    VkDescriptorSetLayoutBinding& y = combinedLayout.descriptorSetLayouts[i].vk_bindings[j];
-
-                    y.binding = x.binding;
-                    y.descriptorCount = x.descriptorCount;
-                    y.descriptorType = x.descriptorType;
-                    y.stageFlags |= x.stageFlags;
-
-                    dstSetLayout.set_stage_mask |= x.stageFlags;
-
-                    //TODO: This shouldn't belong here, move to shader reflection code.
-                    switch (x.descriptorType) {
-                    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-                    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-                        dstSetLayout.uniform_buffer_mask |= 1u << x.binding;
-                        break;
-                    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                        dstSetLayout.storage_buffer_mask |= 1u << x.binding;
-                        break;
-                    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                        dstSetLayout.sampled_image_mask |= 1u << x.binding;
-                        break;
-                    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                        dstSetLayout.separate_image_mask |= 1u << x.binding;
-                        break;
-                    case VK_DESCRIPTOR_TYPE_SAMPLER:
-                        dstSetLayout.sampler_mask |= 1u << x.binding;
-                        break;
-                    default:
-                        QK_CORE_VERIFY("Descriptor type not handled!")
-                        break;
-                    }
-                    
-                    bool found = false;
-                    for (auto& z : combinedLayout.descriptorSetLayouts[i].bindings)
-                    {
-                        if (x.binding == z.binding) 
-                        {
-							// If the asserts fire, it means there are overlapping bindings between shader stages
-							// This is not supported now for performance reasons (less binding management)!
-							// (Overlaps between s/b/t bind points are not a problem because those are shifted by the compiler)
-                            QK_CORE_VERIFY(x.descriptorCount == z.descriptorCount)
-                            QK_CORE_VERIFY(x.descriptorType == z.descriptorType)
-                            found = true;
-                            z.stageFlags |= x.stageFlags;
-                            break;
-                        }
-                    }
-
-                    if (!found) 
-                    {
-                        dstSetLayout.bindings.push_back(x);
-                        // tmp_layout.imageViewTypes[i].push_back(internal_shader.bindingViews_[i][j]);
-                    }
-                }
-            }
-
-            // push constant
-            const VkPushConstantRange& shaderPushConstant = shaderResourceLayout.pushConstant;
-            VkPushConstantRange& combinedPushConstant = combinedLayout.pushConstant;
-            if (shaderPushConstant.size > 0) 
-            {
-                combinedPushConstant.offset = std::min(shaderPushConstant.offset, combinedPushConstant.offset);
-                combinedPushConstant.size = std::max(shaderPushConstant.size, combinedPushConstant.size);
-                combinedPushConstant.stageFlags |= shaderPushConstant.stageFlags;
-            }
-
-        };
-
-        insert_shader(desc.vertShader);
-        insert_shader(desc.fragShader);
+        MergeResourceLayout(combinedLayout, ToInternal(desc.vertShader.get()));
+        MergeResourceLayout(combinedLayout, ToInternal(desc.fragShader.get()));
 
         // Create Pipeline Layout
         m_layout = m_device->RequestPipeLineLayout(combinedLayout);

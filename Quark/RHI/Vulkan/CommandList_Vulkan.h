@@ -124,6 +124,7 @@ private:
     VkViewport m_viewport = {};
     VkRect2D m_scissor = {};
     BindingState m_bindingState = {};
+    uint32_t m_active_vbos = 0;
 
     uint32_t m_dirtySetMask = 0;
     uint32_t m_dirtySetRebindMask = 0;

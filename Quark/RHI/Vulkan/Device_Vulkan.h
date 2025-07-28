@@ -113,7 +113,7 @@ public:
     ///////////////////// Vulkan specific ////////////////////////
     //////////////////////////////////////////////////////////////
     DescriptorSetAllocator*     RequestDescriptorSetAllocator(const DescriptorSetLayout& layout);
-    PipeLineLayout*             RequestPipeLineLayout(const ShaderResourceLayout& combinedLayout);
+    PipeLineLayout*             RequestPipeLineLayout(const CombinedResourceLayout& combinedLayout);
     PerFrameContext&               GetCurrentFrame();
     uint32_t 				    AllocateCookie(); 
     const VulkanContext&        GetVulkanContext() { return *m_vulkan_context.get(); }

@@ -16,10 +16,10 @@ struct PipeLineLayout {
 
     DescriptorSetAllocator* setAllocators[DESCRIPTOR_SET_MAX_NUM] = {};
     VkDescriptorUpdateTemplate updateTemplate[DESCRIPTOR_SET_MAX_NUM] = {};
-    ShaderResourceLayout combinedLayout = {};
+    CombinedResourceLayout combinedLayout = {};
 
     // shaders(vert shader, frag shader...) => combined resource layout => pipeline layout
-    PipeLineLayout(Device_Vulkan* device, const ShaderResourceLayout combinedLayout);
+    PipeLineLayout(Device_Vulkan* device, const CombinedResourceLayout& combinedLayout);
     ~PipeLineLayout();
 };
 

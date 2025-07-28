@@ -93,6 +93,7 @@ struct PerDrawcallDataWrapped : public PerDrawcallDataWrappedErased
     T data;
 };
 
+// Collect render tasks(draw calls) and sort them.
 class RenderQueue 
 {
 public:
@@ -173,7 +174,9 @@ public:
 	}
 
     const RenderQueueTaskVector GetQueueTasks(Queue queue_type) const;
+    const std::string& GetPassName() const { return m_pass_name; }
 
+    void SetPassName(const std::string& name) { m_pass_name = name; }   // For renderables selecting shader program
     void PushRenderables(const RenderContext& context, const RenderableInfo* renderables, size_t count);
     void Reset();
     void Sort();
@@ -223,6 +226,8 @@ private:
 
     RenderQueueTaskVector m_queues[util::ecast(Queue::Count)];
     std::unordered_map<uint64_t, PerDrawcallDataWrappedErased*> m_perdrawcall_data;
+
+    std::string m_pass_name = "ForwardBase";
     
 };
 }

@@ -47,6 +47,8 @@ struct PBRMaterial
 	ShaderProgram* shader_program = nullptr;
 	uint64_t hash = 0;
 
+	std::unordered_map<std::string, ShaderProgram*> shader_programs;
+
 	uint32_t GetTextureMask() const
 	{
 		uint32_t mask = 0;
@@ -57,5 +59,7 @@ struct PBRMaterial
 		}
 		return mask;
 	}
+
+
 };
 }
