@@ -183,7 +183,7 @@ namespace quark {
         for (const auto& gltf_mesh : m_gltf_model.meshes)
             m_meshes.push_back(ParseMesh(gltf_mesh));
 
-        AddAllAssetsAsMemoryOnly(); // TODO:remove
+        // AddAllAssetsAsMemoryOnly(); // TODO:remove
 
         // create scene and load nodes
         if (flags & ImportingFlags::ImportNodes)

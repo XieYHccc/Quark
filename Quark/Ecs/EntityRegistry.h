@@ -131,7 +131,7 @@ private:
     util::IntrusiveHashMap<GroupKeySet> m_ComponentToGroups;
     util::ObjectPool<util::IntrusivePODWrapper<Component*>> m_componentNodePool;
     std::vector<Entity*> m_Entities;
-    u64 m_Cookie = 0;
+    uint64_t m_Cookie = 0;
 
 	template <typename... Us>
 	struct GroupRegisters;

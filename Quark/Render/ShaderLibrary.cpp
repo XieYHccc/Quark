@@ -101,8 +101,8 @@ ShaderLibrary::ShaderLibrary()
 	program_staticMeshEditor = RequestGraphicsProgram("BuiltInResources/Shaders/editor_scene.vert",
 		"BuiltInResources/Shaders/editor_scene.frag");
 
-	staticProgram_skybox = RequestGraphicsProgram("BuiltInResources/Shaders/Spirv/skybox.vert.spv",
-		"BuiltInResources/Shaders/Spirv/skybox.frag.spv");
+	program_skybox = RequestGraphicsProgram("BuiltInResources/Shaders/skybox.vert",
+		"BuiltInResources/Shaders/skybox.frag");
 
 	staticProgram_infiniteGrid = RequestGraphicsProgram("BuiltInResources/Shaders/Spirv/infinite_grid.vert.spv",
 		"BuiltInResources/Shaders/Spirv/infinite_grid.frag.spv");

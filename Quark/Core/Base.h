@@ -88,6 +88,12 @@ constexpr Scope<T> CreateScope(Args&& ... args)
     return std::make_unique<T>(std::forward<Args>(args)...);
 }
 
+template<typename To, typename From>
+Scope<To> ScopePointerCast(Scope<From>&& from)
+{
+    return std::unique_ptr<To>(static_cast<To*>(from.release()));
+}
+
 template<typename T>
 using Ref = std::shared_ptr<T>;
 template<typename T, typename ... Args>
@@ -96,6 +102,11 @@ constexpr Ref<T> CreateRef(Args&& ... args)
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
+template<typename To, typename From>
+Ref<To> RefPointerCast(const Ref<From>& from)
+{
+    return std::static_pointer_cast<To>(from);
+}
 }
 
 #include "Quark/Core/Logger.h"

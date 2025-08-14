@@ -236,7 +236,7 @@ RenderResourceManager::RenderResourceManager(Ref<rhi::Device> device)
     }
 }
 
-std::vector<Ref<IRenderable>> RenderResourceManager::RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset)
+std::vector<Ref<StaticMesh>> RenderResourceManager::RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset)
 {
     if (!mesh_asset)
 		return {};
@@ -248,7 +248,7 @@ std::vector<Ref<IRenderable>> RenderResourceManager::RequestStaticMeshRenderable
     Ref<MeshBuffers> mesh_buffers = RequestMeshBuffers(mesh_asset);
     QK_CORE_ASSERT(mesh_buffers);
 
-    std::vector<Ref<IRenderable>> renderables;
+    std::vector<Ref<StaticMesh>> renderables;
 	for (auto& submesh : mesh_asset->subMeshes)
 	{
 		Ref<StaticMesh> renderable = CreateRef<StaticMesh>();

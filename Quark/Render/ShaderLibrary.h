@@ -93,7 +93,7 @@ public:
 	// TODO: make this as Enums
 	ShaderProgram* program_staticMesh;
 	ShaderProgram* program_staticMeshEditor;
-	ShaderProgram* staticProgram_skybox;
+	ShaderProgram* program_skybox;
 	ShaderProgram* staticProgram_infiniteGrid;
 	ShaderProgram* staticProgram_entityID;
 

@@ -30,7 +30,7 @@ void StaticMesh::GetRenderData(const RenderContext& context, const RenderInfoCmp
 
 	QK_CORE_ASSERT(hash != 0);
 	uint64_t instance_key = hash;
-	uint64_t sort_key = RenderInfo::GetSortKey(context, queue_type, pipeline_hash, material_hash, draw_hash, static_aabb.Transform(transform->world_transform).GetCenter());
+	uint64_t sort_key = BuiltInSortKey::GetSortKey(context, queue_type, pipeline_hash, material_hash, draw_hash, static_aabb.Transform(transform->world_transform).GetCenter());
 
 	auto* instance_data = queue.AllocateOne<StaticMeshPerInstanceData>();
 	instance_data->vertex.model = transform->world_transform;
@@ -90,7 +90,7 @@ void SkinnedMesh::GetRenderData(const RenderContext& context, const RenderInfoCm
 
 	QK_CORE_ASSERT(hash != 0);
 	uint64_t instance_key = hash;
-	uint64_t sort_key = RenderInfo::GetSortKey(context, queue_type, pipeline_hash, material_hash, draw_hash, static_aabb.Transform(transform->world_transform).GetCenter());
+	uint64_t sort_key = BuiltInSortKey::GetSortKey(context, queue_type, pipeline_hash, material_hash, draw_hash, static_aabb.Transform(transform->world_transform).GetCenter());
 
 	QK_CORE_ASSERT(transform->has_skin);
 	auto* instance_data = queue.AllocateOne<SkinnedMeshPerInstanceData>();

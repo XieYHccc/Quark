@@ -29,7 +29,7 @@ public:
     void Flush(rhi::CommandList& cmd, const RenderQueue& queue, const RenderContext& ctx);
 
     // update per frame buffer first then draw
-    void DrawSkybox(uint64_t env_map_id, rhi::CommandList* cmd);
+    void DrawSkybox(Ref<ImageAsset> cubemap, const RenderContext& ctx, rhi::CommandList& cmd);
     void DrawGrid(rhi::CommandList* cmd);
     //void DrawScene(const RenderScene& scene, const Visibility& vis, rhi::CommandList* cmd);
     //void DrawEntityID(const RenderScene& scene, const Visibility& vis, rhi::CommandList* cmd);

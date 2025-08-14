@@ -63,7 +63,7 @@ public:
 
 	ShaderLibrary& GetShaderLibrary() { return *m_shader_library; }
 
-	std::vector<Ref<IRenderable>>   RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset);
+	std::vector<Ref<StaticMesh>>   RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset); // Should we cache renderables? or let scene manage their lifelong
 	Ref<MeshBuffers>				RequestMeshBuffers(Ref<MeshAsset> mesh_asset);
 	Ref<PBRMaterial>				RequestMateral(Ref<MaterialAsset> mat_asset);
 	Ref<rhi::PipeLine>				RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, const uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline);
@@ -80,7 +80,7 @@ private:
 	std::unordered_map<uint64_t, Ref<rhi::PipeLine>> m_cached_psos;
 	std::unordered_map<uint64_t, Ref<IRenderable>> m_renderables;
 	std::unordered_map<uint64_t, Ref<PBRMaterial>> m_materials;
-	std::unordered_map<uint64_t, std::vector<Ref<IRenderable>>> m_static_meshes;
+	std::unordered_map<uint64_t, std::vector<Ref<StaticMesh>>> m_static_meshes; //TODO: any better way caching or not caching?
 	std::unordered_map<uint64_t, Ref<MeshBuffers>> m_mesh_buffers;
 };
 

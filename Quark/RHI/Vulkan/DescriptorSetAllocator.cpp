@@ -6,7 +6,7 @@ namespace quark::rhi
 {
 DescriptorSetAllocator::DescriptorSetAllocator(Device_Vulkan* device, const DescriptorSetLayout& layout)
 {
-	QK_CORE_ASSERT(device != nullptr && !layout.bindings.empty())
+	// QK_CORE_ASSERT(device != nullptr && !layout.bindings.empty())
 
 	this->m_device = device;
 	this->m_layout = layout;

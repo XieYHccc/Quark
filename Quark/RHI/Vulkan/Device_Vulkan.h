@@ -28,6 +28,7 @@ struct PerFrameContext
     std::vector<VkShaderModule> garbage_shaderModules;
     std::vector<VkSampler> garbage_samplers;
     std::vector<BufferBlock> ubo_blocks;
+    std::vector<BufferBlock> vbo_blocks;
 
     void init(Device_Vulkan* device);
     void begin();   // reset this frame
@@ -126,6 +127,8 @@ public:
     void DestroyImageView(VkImageView view);
     void RequestUniformBlock(BufferBlock& block, VkDeviceSize size);
     void RequestUniformBlockNoLock(BufferBlock& block, VkDeviceSize size);
+    void RequestVertexBlock(BufferBlock& block, VkDeviceSize size);
+    void RequestVertexBlockNoLock(BufferBlock& block, VkDeviceSize size);
 
 private:
     void ResizeSwapchain();
@@ -172,6 +175,7 @@ private:
     {
         std::mutex memory_lock;
         std::mutex lock;
+        std::mutex read_only_cache_lock;
     } m_lock;
 
     Scope<VulkanContext> m_vulkan_context;
@@ -182,6 +186,7 @@ private:
 
     // buffer pool
     BufferPool m_ubo_pool;
+    BufferPool m_vbo_pool;
 
 };
 }

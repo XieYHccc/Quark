@@ -101,6 +101,7 @@ public:
     
     // buffer allocation, immplementation with buffer pool
     virtual void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) = 0;
+    virtual void* AllocateVertexData(unsigned binding, uint64_t size, uint64_t stride, VertexInputLayout::VertexBindInfo::InputRate inputRate) = 0;
 
     // state tracking
     virtual const RenderPassInfo2& GetCurrentRenderPassInfo() const = 0;

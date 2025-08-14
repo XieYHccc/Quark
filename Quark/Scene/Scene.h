@@ -16,6 +16,7 @@ struct CameraCmpt;
 struct Texture;
 struct ArmatureCmpt;
 struct SkeletonAsset;
+struct ImageAsset;
 
 class Scene {
 public:
@@ -41,13 +42,15 @@ public:
     Entity* GetParentEntity(Entity* entity);
     std::vector<Entity*> GetChildEntities(Entity* parent, bool recursive);
     std::vector<Entity*>& GetEntities() { return m_entity_registry.GetEntities(); }
-
     void DeleteEntity(Entity* entity);
     void AttachChild(Entity* child, Entity* parent);
     void DetachChild(Entity* child);
+
+    // components
     void AddArmatureComponent(Entity* entity, Ref<SkeletonAsset> skeleton_asset);
-    void AddStaticMeshComponent(Entity* entity, Ref<MeshAsset> mesh_asset);
     void AddRenderableComponent(Entity* entity, Ref<IRenderable> renderable);
+    void AddStaticMeshComponent(Entity* entity, Ref<MeshAsset> mesh_asset);
+    void AddBackGroundComponent(Entity* entity, Ref<ImageAsset> cubemap, const glm::vec3& color);
 
     void GatherVisibleOpaqueRenderables(const math::Frustum& frustum, VisibilityList& list);
     void GatherVisibleTransparentRenderables(const math::Frustum& frustum, VisibilityList& list);
@@ -70,7 +73,7 @@ public:
         return m_entity_registry.GetEntityGroup<Ts...>()->GetEntities();
     }
 
-    // Cameras
+    // utils
     void SetMainCameraEntity(Entity* cam) { m_main_camera_entity = cam; }
     Entity* GetMainCameraEntity();
 

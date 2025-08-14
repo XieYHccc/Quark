@@ -9,7 +9,7 @@
 #include "Quark/RHI/Vulkan/Shader_Vulkan.h"
 
 #define LOCK() std::lock_guard<std::mutex> _holder_##__COUNTER__{m_lock.lock}
-
+#define LOCK_CACHE() std::lock_guard<std::mutex> _holder_##__COUNTER__{m_lock.read_only_cache_lock} //TODO: make this a read - write lock
 namespace quark::rhi {
 
 static void request_block(Device& device, BufferBlock& block, VkDeviceSize size,
@@ -417,10 +417,12 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     copyAllocator.init(this);
 
     // init buffer pools
+    m_vbo_pool.Init(this, 4 * 1024, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_ubo_pool.Init(this, 256 * 1024, std::max<VkDeviceSize>(16u, GetDeviceProperties().limits.minUniformBufferOffsetAlignment)
         , VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     m_ubo_pool.SetSpillRegionSize(VULKAN_MAX_UBO_SIZE);
     m_ubo_pool.SetMaxRetainedBlocks(64);
+    m_vbo_pool.SetMaxRetainedBlocks(256);
 
     // register callback functions
     EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event); });
@@ -855,6 +857,17 @@ void Device_Vulkan::RequestUniformBlockNoLock(BufferBlock& block, VkDeviceSize s
     request_block(*this, block, size, m_ubo_pool, GetCurrentFrame().ubo_blocks);
 }
 
+void Device_Vulkan::RequestVertexBlock(BufferBlock& block, VkDeviceSize size)
+{
+    LOCK();
+    RequestVertexBlockNoLock(block, size);
+}
+
+void Device_Vulkan::RequestVertexBlockNoLock(BufferBlock& block, VkDeviceSize size)
+{
+    request_block(*this, block, size, m_vbo_pool, GetCurrentFrame().vbo_blocks);
+}
+
 PerFrameContext& Device_Vulkan::GetCurrentFrame()
 {
     return m_frames[m_frame_index];
@@ -878,6 +891,7 @@ DescriptorSetAllocator* Device_Vulkan::RequestDescriptorSetAllocator(const Descr
     util::hash_combine(hash, layout.sampler_mask);
     util::hash_combine(hash, layout.input_attachment_mask);
 
+    LOCK_CACHE();
     auto find = cached_descriptorSetAllocator.find(hash);
     if (find == cached_descriptorSetAllocator.end()) {
         // need to create a new descriptor set allocator

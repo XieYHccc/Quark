@@ -1,11 +1,14 @@
 #pragma once
 #include "Quark/Ecs/Component.h"
 
+#include <glm/glm.hpp>
+
 namespace quark 
 {
 class MeshAsset;
 class IRenderable;
- 
+class Skybox;
+
 struct RenderInfoCmpt : public Component
 {
 	QK_COMPONENT_TYPE_DECL(RenderInfoCmpt)
@@ -27,7 +30,7 @@ struct MeshCmpt : public Component
 {
 	QK_COMPONENT_TYPE_DECL(MeshCmpt)
 	Ref<MeshAsset> mesh_asset;
-	std::vector<RenderableCmpt*> submesh_renderables;
+	std::vector<RenderableCmpt*> submeshes;
 };
 
 struct OpaqueCmpt : public Component
@@ -40,4 +43,8 @@ struct TransparentCmpt : public Component
 	QK_COMPONENT_TYPE_DECL(TransparentCmpt)
 };
 
+struct BackGroundCmpt : public Component
+{
+	QK_COMPONENT_TYPE_DECL(BackGroundCmpt)
+};
 }

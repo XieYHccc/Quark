@@ -423,10 +423,25 @@ void* CommandList_Vulkan::AllocateConstantData(uint32_t set, uint32_t binding, u
     {
         m_device->RequestUniformBlock(m_ubo_block, size);
         data = m_ubo_block.Allocate(size);
+        QK_CORE_ASSERT(data.host);
     }
 
     // use padded size to optimize dynamic uniform buffer binding
     BindUniformBuffer(set, binding, *data.buffer, data.offset, data.padded_size);
+    return data.host;
+}
+
+void* CommandList_Vulkan::AllocateVertexData(unsigned binding, uint64_t size, uint64_t stride, VertexInputLayout::VertexBindInfo::InputRate inputRate)
+{
+    auto data = m_vbo_block.Allocate(size);
+    if (!data.host)
+    {
+        m_device->RequestVertexBlock(m_vbo_block, size);
+        data = m_ubo_block.Allocate(size);
+        QK_CORE_ASSERT(data.host);
+    }
+
+    BindVertexBuffer(binding, *data.buffer, data.offset);
     return data.host;
 }
 

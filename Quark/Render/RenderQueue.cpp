@@ -136,44 +136,7 @@ void RenderQueue::RecycleBlocks()
 	m_cur_block = nullptr;
 }
 
-
-uint64_t RenderInfo::GetSortKey(const RenderContext& context, Queue queue_type, util::Hash pipeline_hash, util::Hash draw_hash, const glm::vec3& center, StaticLayer layer)
-{
-	const CameraParameters& camera = context.GetCameraParameters();
-	float z = glm::dot(center - camera.camera_position, camera.camera_front);
-	return GetSpriteSortKey(queue_type, pipeline_hash, draw_hash, z, layer);
-}
-
-uint64_t RenderInfo::GetSpriteSortKey(Queue queue_type, util::Hash pipeline_hash, util::Hash draw_hash, float depth, StaticLayer layer)
-{
-	// Monotonically increasing floating point will be monotonic in uint32_t as well when z is non - negative.
-	depth = std::max(0.f, depth);
-	uint32_t depth_key = math::FloatBitsToUint32(depth);
-
-	pipeline_hash &= 0xffff0000u;
-	pipeline_hash |= draw_hash & 0xffffu;
-
-	if (queue_type == Queue::Transparent)
-	{
-		depth_key ^= 0xffffffffu; // Back-to-front instead.
-		// Prioritize correct back-to-front rendering over pipeline.
-		return (uint64_t(depth_key) << 32) | pipeline_hash;
-	}
-	else
-	{
-#if 1
-		// Prioritize state changes over depth.
-		depth_key >>= 2;
-		return (uint64_t(util::ecast(layer)) << 62) | (uint64_t(pipeline_hash) << 30) | depth_key;
-#else
-		// Prioritize front-back sorting over state changes.
-		pipeline_hash >>= 2;
-		return (uint64_t(ecast(layer)) << 62) | (uint64_t(depth_key) << 30) | pipeline_hash;
-#endif
-	}
-}
-
-uint64_t RenderInfo::GetSortKey(const RenderContext& context, Queue queue_type,
+uint64_t BuiltInSortKey::GetSortKey(const RenderContext& context, Queue queue_type,
 	util::Hash pipeline_hash, util::Hash material_hash,
 	util::Hash draw_hash, const glm::vec3& center,
 	StaticLayer layer)
@@ -183,37 +146,7 @@ uint64_t RenderInfo::GetSortKey(const RenderContext& context, Queue queue_type,
 	return GetSpriteSortKey(queue_type, pipeline_hash, material_hash, draw_hash, z, layer);
 }
 
-//uint64_t RenderInfo::GetSpriteSortKey(
-//	Queue queue_type,
-//	util::Hash pipeline_hash,
-//	util::Hash material_hash,
-//	util::Hash vbo_hash,
-//	float depth,
-//	StaticLayer layer)
-//{
-//	// Monotonically increasing floating point will be monotonic in uint32_t as well when z is non - negative.
-//	depth = std::max(0.f, depth);
-//	uint32_t depth_key = math::FloatBitsToUint32(depth) >> 18; 
-//
-//	if (queue_type == Queue::Transparent)
-//	{
-//		depth_key ^= 0x3fff;  // Back-to-front instead.
-//		// Prioritize correct back-to-front rendering over pipeline.
-//		return (uint64_t(depth_key) << 14) |
-//			((uint64_t(vbo_hash) & 0x3fff) << 0); // pipeline and material can be missed TODO: any better way?
-//	}
-//	else
-//	{
-//		// layer(2) > pipeline(16) > material(16) > vbo(16) > depth(14)
-//		return (uint64_t(util::ecast(layer)) << 62) |
-//			((uint64_t(pipeline_hash) & 0xffff) << 46) |
-//			((uint64_t(material_hash) & 0xffff) << 30) |
-//			((uint64_t(vbo_hash) & 0xffff) << 14) |
-//			depth_key;
-//	}
-//}
-
-uint64_t RenderInfo::GetSpriteSortKey(
+uint64_t BuiltInSortKey::GetSpriteSortKey(
 	Queue queue_type,
 	util::Hash pipeline_hash,
 	util::Hash material_hash,
@@ -251,6 +184,17 @@ uint64_t RenderInfo::GetSpriteSortKey(
 		return (uint64_t(util::ecast(layer)) << 62) | depth_key << 30 | draw_hash)
 #endif
 	}
+}
+
+uint64_t BuiltInSortKey::GetBackgroundSortKey(Queue queue_type, util::Hash pipeline_hash, util::Hash draw_hash)
+{
+	pipeline_hash &= 0xffff0000u;
+	pipeline_hash |= draw_hash & 0xffffu;
+
+	if (queue_type == Queue::Transparent)
+		return pipeline_hash & 0xffffffffu;
+	else
+		return (UINT64_MAX << 32) | (pipeline_hash & 0xffffffffu);
 }
 
 }

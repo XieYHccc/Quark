@@ -115,24 +115,28 @@ constexpr VkBlendOp _ConvertBlendOp(BlendOperation value)
 PipeLineLayout::PipeLineLayout(Device_Vulkan* _device, const CombinedResourceLayout& _combinedLayout)
     : device(_device), combinedLayout(_combinedLayout)
 {
-    QK_CORE_VERIFY(this->device != nullptr)
+    QK_CORE_VERIFY(this->device != nullptr);
 
     // Descriptor set layouts
+    uint32_t num_sets = 0;
+    VkDescriptorSetLayout layouts[DESCRIPTOR_SET_MAX_NUM] = {};
     std::vector<VkDescriptorSetLayout> vk_descriptorset_layouts;
     for (uint32_t set = 0; set < DESCRIPTOR_SET_MAX_NUM; set++) 
-    {
-        if ((combinedLayout.descriptor_set_mask & 1u << set) == 0)
-			continue;
-
+    {   
         setAllocators[set] = this->device->RequestDescriptorSetAllocator(combinedLayout.descriptor_set_layouts[set]);
-        vk_descriptorset_layouts.push_back(setAllocators[set]->GetLayout());
+        layouts[set] = setAllocators[set]->GetLayout();
+        if (combinedLayout.descriptor_set_mask & 1u << set)
+            num_sets = set + 1;
+
+        // vk_descriptorset_layouts.push_back(setAllocators[set]->GetLayout());
     }
 
     // Pipeline layout 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info = {};
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.pSetLayouts = vk_descriptorset_layouts.data();
-    pipeline_layout_create_info.setLayoutCount = (uint32_t)vk_descriptorset_layouts.size();
+    pipeline_layout_create_info.pSetLayouts = layouts;
+    pipeline_layout_create_info.setLayoutCount = num_sets;
+
     if (combinedLayout.push_constant_range.size > 0) 
     {
         pipeline_layout_create_info.pushConstantRangeCount = 1;

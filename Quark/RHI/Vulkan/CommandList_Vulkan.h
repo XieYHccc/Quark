@@ -77,6 +77,7 @@ public:
     
     // buffer pool allocation
     void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) override final;
+    void* AllocateVertexData(unsigned binding, uint64_t size, uint64_t stride, VertexInputLayout::VertexBindInfo::InputRate inputRate) override final;
 
     // state tracking
     const RenderPassInfo2& GetCurrentRenderPassInfo() const override final;
@@ -133,6 +134,7 @@ private:
     
     // buffer blocks
     BufferBlock m_ubo_block;
+    BufferBlock m_vbo_block;
 };
 
 CONVERT_TO_VULKAN_INTERNAL_FUNC(CommandList)

@@ -15,12 +15,14 @@ class IRenderable;
 class RenderContext;
 struct RenderInfoCmpt;
 
+// Render infromations submitted from logic thread for render thread
 struct RenderableInfo 
 {
     IRenderable* renderable;
     RenderInfoCmpt* render_info;
     util::Hash transform_hash;
 };
+
 using VisibilityList = std::vector<RenderableInfo>;
 
 enum class Queue : uint8_t
@@ -41,26 +43,19 @@ enum class StaticLayer : uint8_t
 	Count
 };
 
-struct RenderInfo
+struct BuiltInSortKey
 {
-    // deprecated!!!
-    static uint64_t GetSortKey(const RenderContext& context, Queue queue_type,
-                               util::Hash pipeline_hash, util::Hash draw_hash,
-                               const glm::vec3& center,
-                               StaticLayer layer = StaticLayer::Default);
     static uint64_t GetSortKey(const RenderContext& context, Queue queue_type,
                                util::Hash pipeline_hash, util::Hash material_hash,
                                util::Hash draw_hash, const glm::vec3& center,
                                StaticLayer layer = StaticLayer::Default);
 
-    // deprecated!!
-    static uint64_t GetSpriteSortKey(Queue queue_type,
-                                     util::Hash pipeline_hash, util::Hash draw_hash,
-                                     float depth, StaticLayer layer = StaticLayer::Default);
     static uint64_t GetSpriteSortKey(Queue queue_type,
                                      util::Hash pipeline_hash, util::Hash material_hash,
-                                     util::Hash vbo_hash, float depth, 
+                                     util::Hash draw_hash, float depth, 
                                      StaticLayer layer = StaticLayer::Default);
+
+    static uint64_t GetBackgroundSortKey(Queue queue_type, util::Hash pipeline_hash, util::Hash draw_hash);
 };
 
 struct RenderQueueTask;

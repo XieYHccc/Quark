@@ -7,3 +7,8 @@ set_target_properties(JobSystem_Test PROPERTIES FOLDER "Tests")
 # gltf viewer
 add_quark_test(GLTFViewer ./GLTFViewer.cpp)
 
+# skybox test
+add_executable(Skybox_Test ./Skybox_Test.cpp)
+target_link_libraries(Skybox_Test quark)
+set_target_properties(Skybox_Test PROPERTIES FOLDER "Tests")
+

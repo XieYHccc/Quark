@@ -8,6 +8,7 @@
 #include "Quark/Scene/Components/ArmatureComponent.h"
 #include "Quark/Scene/Components/MoveControlCmpt.h"
 #include "Quark/Render/RenderSystem.h"
+#include "Quark/Render/Skybox.h"
 #include "Quark/Asset/AssetManager.h"
 #include "Quark/Animation/SkeletonAsset.h"
 #include "Quark/Animation/AnimationAsset.h"
@@ -206,8 +207,23 @@ void Scene::AddStaticMeshComponent(Entity* entity, Ref<MeshAsset> mesh_asset)
         Entity* e = CreateEntity("", entity);
         AddRenderableComponent(e, renderables[i]);
         auto* renderableCmpt = e->GetComponent<RenderableCmpt>();
-        staticmesh_cmpt->submesh_renderables.push_back(renderableCmpt);
+        staticmesh_cmpt->submeshes.push_back(renderableCmpt);
     }
+}
+
+void Scene::AddBackGroundComponent(Entity* entity, Ref<ImageAsset> cubemap, const glm::vec3& color)
+{
+    QK_CORE_ASSERT(entity);
+
+    Ref<Skybox> skybox;
+    if (cubemap)
+        skybox = CreateRef<Skybox>();
+
+    skybox->SetCubemap(cubemap);
+    skybox->SetColor(color);
+
+    entity->AddComponent<BackGroundCmpt>();
+    AddRenderableComponent(entity, skybox);
 }
 
 void Scene::AddRenderableComponent(Entity* entity, Ref<IRenderable> renderable)
