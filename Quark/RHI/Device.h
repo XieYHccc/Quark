@@ -40,13 +40,13 @@ namespace quark::rhi {
 
         uint32_t GetResolutionWidth() { return m_frameBufferWidth; }
         uint32_t GetResolutionHeight() { return m_frameBufferHeight; }
-        uint32_t GetCurrentFrameIndex() { return m_elapsedFrame % m_config.framesInFlight; }
         uint32_t GetMaxFramesCount() { return m_config.framesInFlight; }
 
         const DeviceProperties& GetDeviceProperties() const { return m_properties; }
         const DeviceFeatures& GetDeviceFeatures() const { return m_features; }
 
-        virtual bool BeiginFrame(TimeStep ts) = 0;
+        virtual void NextFrameContext() = 0;
+        virtual bool BeiginFrame(TimeStep ts) = 0;  
         virtual bool EndFrame(TimeStep ts) = 0;
         virtual void OnWindowResize(const WindowResizeEvent& event) = 0;    // window resize callback
 
@@ -75,7 +75,6 @@ namespace quark::rhi {
         virtual bool isFormatSupported(DataFormat format) = 0;
 
     protected:
-        uint32_t m_elapsedFrame = 0;
         uint32_t m_frameBufferWidth = 0;
         uint32_t m_frameBufferHeight = 0;
         DeviceProperties m_properties;

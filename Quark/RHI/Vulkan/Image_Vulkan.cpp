@@ -190,7 +190,7 @@ Image_Vulkan::Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const I
     create_info.extent.width = desc.width;
     create_info.extent.height = desc.height;
     create_info.extent.depth = desc.depth;
-    create_info.mipLevels = desc.generateMipMaps? TextureFormatLayout::GeneratedMipCount(desc.width, desc.height, desc.depth) : desc.mipLevels;
+    create_info.mipLevels = desc.mipLevels? desc.mipLevels : TextureFormatLayout::GeneratedMipCount(desc.width, desc.height, desc.depth);
     create_info.arrayLayers = desc.arraySize;
     create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;

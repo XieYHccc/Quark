@@ -10,6 +10,12 @@
 
 #define LOCK() std::lock_guard<std::mutex> _holder_##__COUNTER__{m_lock.lock}
 #define LOCK_CACHE() std::lock_guard<std::mutex> _holder_##__COUNTER__{m_lock.read_only_cache_lock} //TODO: make this a read - write lock
+#define DRAIN_FRAME_LOCK() \
+	std::unique_lock<std::mutex> _holder{m_lock.lock}; \
+	m_lock.cond.wait(_holder, [&]() { \
+		return m_lock.counter == 0; \
+	})
+
 namespace quark::rhi {
 
 static void request_block(Device& device, BufferBlock& block, VkDeviceSize size,
@@ -155,6 +161,10 @@ void PerFrameContext::clear()
 
 void PerFrameContext::begin()
 {
+    // wait for in-flight fences
+    if (!waitedFences.empty())
+        vkWaitForFences(device->vkDevice, (uint32_t)waitedFences.size(), waitedFences.data(), true, UINT64_MAX);
+
     if (!waitedFences.empty()) 
     {
         vkResetFences(device->vkDevice, (uint32_t)waitedFences.size(), waitedFences.data());
@@ -385,7 +395,6 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     QK_CORE_ASSERT(config.framesInFlight <= MAX_FRAME_NUM_IN_FLIGHT);
     m_config = config;
     m_wsi.recreate_swapchain = false;
-    m_elapsedFrame = 0;
     m_frameBufferWidth = Application::Get().GetWindow()->GetFrambufferWidth();
     m_frameBufferHeight = Application::Get().GetWindow()->GetFrambufferHeight();
     m_vulkan_context = CreateScope<VulkanContext>(); // TODO: Make configurable
@@ -459,15 +468,30 @@ Device_Vulkan::~Device_Vulkan()
     m_vulkan_context.reset();
 }
 
+void Device_Vulkan::NextFrameContext()
+{
+    DRAIN_FRAME_LOCK();
+
+    // Flush the frame here as we might have pending staging command buffers from init stage.
+    EndFrameContextNoLock();
+
+    // put unused (more than 8 frames) descriptor set back to vacant pool
+    for (auto& [k, value] : cached_descriptorSetAllocator)
+        value.BeginFrame();
+
+    // move to next frame
+    m_frame_context_index++;
+    if (m_frame_context_index >= m_config.framesInFlight)
+        m_frame_context_index = 0;
+
+    GetCurrentFrame().begin();
+
+}
+
 bool Device_Vulkan::BeiginFrame(TimeStep ts)
 {
-    // move to next frame
-    m_elapsedFrame++;
-    m_frame_index++;
-    if (m_frame_index >= m_config.framesInFlight)
-		m_frame_index = 0;
 
-    auto& frame = GetCurrentFrame();
+    NextFrameContext();
 
     // resize swapchain if needed. 
     if (m_wsi.recreate_swapchain) 
@@ -476,12 +500,6 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
         m_wsi.recreate_swapchain = false;
     }
     
-    // wait for in-flight fences
-    if (!frame.waitedFences.empty())
-        vkWaitForFences(vkDevice, (uint32_t)frame.waitedFences.size(), frame.waitedFences.data(), true, UINT64_MAX);
-    
-    // reset per-frame data
-    frame.begin();
     
     // reset wsi
     m_wsi.consumed = false;
@@ -489,9 +507,6 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
     if (m_wsi.semaphore_index >= m_wsi.acquire_semaphores.size())
 		m_wsi.semaphore_index = 0;
 
-    // put unused (more than 8 frames) descriptor set back to vacant pool
-     for (auto& [k, value] : cached_descriptorSetAllocator)
-         value.BeginFrame();   
 
     // Acquire a swapchain image 
     VkResult result = vkAcquireNextImageKHR(
@@ -519,17 +534,8 @@ bool Device_Vulkan::BeiginFrame(TimeStep ts)
 
 bool Device_Vulkan::EndFrame(TimeStep ts)
 {
-    auto& frame = GetCurrentFrame();
 
-    // Submit queued command lists with fence which would block the next next frame
-    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; ++i) 
-    {
-        if (frame.cmdListCount[i] > 0) 
-        { // This queue is in use in this frame
-            m_queues[i].submit(frame.queueFences[i]);
-            frame.waitedFences.push_back(frame.queueFences[i]);
-        }
-    }
+    EndFrameContext();
 
     // Prepare present
     VkSwapchainKHR swapchain = m_vulkan_context->swapChain;
@@ -646,89 +652,14 @@ void Device_Vulkan::SetName(const Ref<GpuResource>& resouce, const char* name)
 
 CommandList* Device_Vulkan::BeginCommandList(QueueType type)
 {
-    auto& frame = GetCurrentFrame();
-    auto& cmdLists = frame.cmdLists[type];
-    u32 cmd_count = frame.cmdListCount[type]++;
-    if (cmd_count >= cmdLists.size()) 
-    {
-        // Create a new Command list is needed
-        cmdLists.emplace_back(new CommandList_Vulkan(this, type));
-    }
-
-    CommandList_Vulkan* internal_cmdList = cmdLists[cmd_count];
-    internal_cmdList->ResetAndBeginCmdBuffer();
-   
-    return static_cast<CommandList*>(internal_cmdList);
+    LOCK();
+    return RequestCommandListNoLock(type);
 }
 
 void Device_Vulkan::SubmitCommandList(CommandList* cmd, CommandList* waitedCmds, uint32_t waitedCmdCounts, bool signal)
 {
-    auto& internal_cmdList = ToInternal(cmd);
-    auto& queue = m_queues[internal_cmdList.GetQueueType()];
-
-    vkEndCommandBuffer(internal_cmdList.GetHandle());
-    internal_cmdList.state = CommandListState::READY_FOR_SUBMIT;
-    
-    if (queue.submissions.empty()) 
-    {
-        queue.submissions.emplace_back();
-    }
-
-    // The signalSemaphoreInfos should always be empty
-    if (!queue.submissions.back().signalSemaphoreInfos.empty() || !queue.submissions.back().waitSemaphoreInfos.empty()) 
-    {
-        // Need to create a new batch
-        queue.submissions.emplace_back();
-    }
-
-    auto& submission = queue.submissions.back();
-    VkCommandBufferSubmitInfo& cmd_submit_info = submission.cmdInfos.emplace_back();
-    cmd_submit_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-    cmd_submit_info.commandBuffer = internal_cmdList.GetHandle();
-    cmd_submit_info.pNext = nullptr;
-
-    if (waitedCmdCounts > 0) 
-    {
-        for (size_t i = 0; i < waitedCmdCounts; ++i) 
-        {
-            auto& internal = ToInternal(&waitedCmds[i]);
-            auto& semaphore_info = submission.waitSemaphoreInfos.emplace_back();
-            semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-            semaphore_info.semaphore = internal.GetCmdCompleteSemaphore();
-            semaphore_info.value = 0; // not a timeline semaphore
-            semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; // Perfomance trade off here for abstracting away semaphore
-
-        }
-    }
-
-    auto& frame = GetCurrentFrame();
-    if (internal_cmdList.IsWaitingForSwapChainImage() && !m_wsi.consumed) 
-    {
-        auto& wait_semaphore_info = submission.waitSemaphoreInfos.emplace_back();
-        wait_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-        wait_semaphore_info.semaphore = m_wsi.acquire_semaphores[m_wsi.semaphore_index];
-        wait_semaphore_info.value = 0;
-        wait_semaphore_info.stageMask = internal_cmdList.GetSwapChainWaitStages();
-
-        // TODO: This indicates there is only one command buffer in a frame can manipulate swapchain images. Not flexible enough
-        auto& submit_semaphore_info = submission.signalSemaphoreInfos.emplace_back();
-        submit_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-        submit_semaphore_info.semaphore = m_wsi.release_semaphores[m_wsi.semaphore_index];
-
-        m_wsi.consumed = true;
-    }
-
-    // Submit right now to make sure the correct order of submissions
-    if (signal) 
-    {
-        auto& semaphore_info = submission.signalSemaphoreInfos.emplace_back();
-        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-        semaphore_info.semaphore = internal_cmdList.GetCmdCompleteSemaphore();
-        semaphore_info.value = 0; // not a timeline semaphore
-        semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-
-        queue.submit();
-    }
+    LOCK();
+    SubmitCommandListNoLock(cmd, waitedCmds, waitedCmdCounts, signal);
 }
 
 uint32_t Device_Vulkan::AllocateCookie()
@@ -799,6 +730,128 @@ void Device_Vulkan::ResizeSwapchain()
 
 }
 
+void Device_Vulkan::AddFrameCounterNoLock()
+{
+    m_lock.counter++;
+}
+
+void Device_Vulkan::DecrementFrameCounterNoLock()
+{
+    QK_CORE_ASSERT(m_lock.counter > 0);
+    m_lock.counter--;
+    m_lock.cond.notify_all();
+}
+
+void Device_Vulkan::SubmitCommandListNoLock(CommandList* cmd, CommandList* waitedCmds, uint32_t waitedCmdCounts, bool signal)
+{
+    auto& internal_cmdList = ToInternal(cmd);
+    auto& queue = m_queues[internal_cmdList.GetQueueType()];
+
+    vkEndCommandBuffer(internal_cmdList.GetHandle());
+    internal_cmdList.state = CommandListState::READY_FOR_SUBMIT;
+
+    if (queue.submissions.empty())
+    {
+        queue.submissions.emplace_back();
+    }
+
+    // The signalSemaphoreInfos should always be empty
+    if (!queue.submissions.back().signalSemaphoreInfos.empty() || !queue.submissions.back().waitSemaphoreInfos.empty())
+    {
+        // Need to create a new batch
+        queue.submissions.emplace_back();
+    }
+
+    auto& submission = queue.submissions.back();
+    VkCommandBufferSubmitInfo& cmd_submit_info = submission.cmdInfos.emplace_back();
+    cmd_submit_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+    cmd_submit_info.commandBuffer = internal_cmdList.GetHandle();
+    cmd_submit_info.pNext = nullptr;
+
+    if (waitedCmdCounts > 0)
+    {
+        for (size_t i = 0; i < waitedCmdCounts; ++i)
+        {
+            auto& internal = ToInternal(&waitedCmds[i]);
+            auto& semaphore_info = submission.waitSemaphoreInfos.emplace_back();
+            semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+            semaphore_info.semaphore = internal.GetCmdCompleteSemaphore();
+            semaphore_info.value = 0; // not a timeline semaphore
+            semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; // Perfomance trade off here for abstracting away semaphore
+
+        }
+    }
+
+    auto& frame = GetCurrentFrame();
+    if (internal_cmdList.IsWaitingForSwapChainImage() && !m_wsi.consumed)
+    {
+        auto& wait_semaphore_info = submission.waitSemaphoreInfos.emplace_back();
+        wait_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+        wait_semaphore_info.semaphore = m_wsi.acquire_semaphores[m_wsi.semaphore_index];
+        wait_semaphore_info.value = 0;
+        wait_semaphore_info.stageMask = internal_cmdList.GetSwapChainWaitStages();
+
+        // TODO: This indicates there is only one command buffer in a frame can manipulate swapchain images. Not flexible enough
+        auto& submit_semaphore_info = submission.signalSemaphoreInfos.emplace_back();
+        submit_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+        submit_semaphore_info.semaphore = m_wsi.release_semaphores[m_wsi.semaphore_index];
+
+        m_wsi.consumed = true;
+    }
+
+    // Submit right now to make sure the correct order of submissions
+    if (signal)
+    {
+        auto& semaphore_info = submission.signalSemaphoreInfos.emplace_back();
+        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+        semaphore_info.semaphore = internal_cmdList.GetCmdCompleteSemaphore();
+        semaphore_info.value = 0; // not a timeline semaphore
+        semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+        queue.submit();
+    }
+
+    DecrementFrameCounterNoLock();
+}
+
+void Device_Vulkan::EndFrameContext()
+{
+    DRAIN_FRAME_LOCK();
+    EndFrameContextNoLock();
+}
+
+void Device_Vulkan::EndFrameContextNoLock()
+{
+    auto& frame = GetCurrentFrame();
+
+    // Submit queued command lists with fence which would block the next next frame
+    for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; ++i)
+    {
+        if (frame.cmdListCount[i] > 0 && !m_queues[i].submissions.empty())
+        { // This queue is in use in this frame
+            m_queues[i].submit(frame.queueFences[i]);
+            frame.waitedFences.push_back(frame.queueFences[i]);
+        }
+    }
+}
+
+CommandList* Device_Vulkan::RequestCommandListNoLock(QueueType type)
+{
+    auto& frame = GetCurrentFrame();
+    auto& cmdLists = frame.cmdLists[type];
+    uint32_t cmd_count = frame.cmdListCount[type]++;
+    if (cmd_count >= cmdLists.size())
+    {
+        // Create a new Command list is needed
+        cmdLists.emplace_back(new CommandList_Vulkan(this, type));
+    }
+
+    CommandList_Vulkan* internal_cmdList = cmdLists[cmd_count];
+    internal_cmdList->ResetAndBeginCmdBuffer();
+    AddFrameCounterNoLock();
+    return static_cast<CommandList*>(internal_cmdList);
+}
+
 DataFormat Device_Vulkan::GetPresentImageFormat()
 {
     VkFormat format = m_vulkan_context->surfaceFormat.format;
@@ -835,6 +888,7 @@ PipeLineLayout* Device_Vulkan::RequestPipeLineLayout(const CombinedResourceLayou
     util::hash_combine(hash, combinedLayout.push_constant_range.stageFlags);
     util::hash_combine(hash, combinedLayout.descriptor_set_mask);
 
+    // LOCK_CACHE();
     auto find = cached_pipelineLayouts.find(hash);
     if (find == cached_pipelineLayouts.end()) {
         // need to create a new pipeline layout
@@ -870,7 +924,7 @@ void Device_Vulkan::RequestVertexBlockNoLock(BufferBlock& block, VkDeviceSize si
 
 PerFrameContext& Device_Vulkan::GetCurrentFrame()
 {
-    return m_frames[m_frame_index];
+    return m_frames[m_frame_context_index];
 }
 
 bool Device_Vulkan::isFormatSupported(DataFormat format)

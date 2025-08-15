@@ -48,17 +48,17 @@ static std::string AssetTypeToString(AssetType type)
 
 AssetManager::AssetManager()
 {
-	CreateDefaultAssets();
-
-	QK_CORE_LOGI_TAG("AssetManager", "AssetManager Created");
 }
 
 void AssetManager::Init()
 {
 	m_loadedAssets.clear();
+	m_memoryOnlyAssets.clear();
 	m_assetMetadata.clear();
 
-	LoadAssetRegistry();
+	CreateDefaultAssets();
+
+	// LoadAssetRegistry();
 	QK_CORE_LOGI_TAG("AssetManager", "AssetManager Initialized");
 }
 

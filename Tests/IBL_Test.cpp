@@ -3,27 +3,26 @@
 #include <Quark/Asset/ImageImporter.h>
 #include <Quark/Render/RenderContext.h>
 #include <Quark/Render/RenderQueue.h>
+#include <Quark/Render/Skybox.h>
 #include <Quark/Scene/Components/MoveControlCmpt.h>
 #include <Quark/EntryPoint.h>
 
 using namespace std;
 using namespace quark;
 
-class GLTFViewer : public Application
+class SkyboxTest : public Application
 {
 public:
-	GLTFViewer(const ApplicationSpecification& specs)
+	SkyboxTest(const ApplicationSpecification& specs)
 		: Application(specs)
 	{
 		using namespace rhi;
 
-		m_gltf_importer.Import("BuiltInResources/Gltf/structure.glb", GLTFImporter::ImportAll);
-		//m_gltf_importer.Import("BuiltInResources/Gltf/CesiumMan/glTF/CesiumMan.gltf", GLTFImporter::ImportAll);
 		// load cube map
-		//ImageImporter imageLoader;
-		//Ref<ImageAsset> cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
-		//m_cubeMapId = cubeMap->GetAssetID();
-		//AssetManager::Get().AddMemoryOnlyAsset(cubeMap);
+		ImageImporter imageLoader;
+		m_cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
+		m_skybox = CreateRef<Skybox>();
+		m_skybox->SetCubemap(m_cubeMap);
 
 		// Create depth image
 		uint32_t width = m_window->GetFrambufferWidth();
@@ -42,7 +41,8 @@ public:
 		m_depth_attachment = RenderSystem::Get().GetDevice()->CreateImage(image_desc);
 
 		// add a camera component to the scene
-		Entity* camera_entity = m_gltf_importer.GetScene()->CreateEntity("Camera");
+		m_scene = CreateRef<Scene>("TestSkybox");
+		Entity* camera_entity = m_scene->CreateEntity("Camera");
 		auto* camcmpt = camera_entity->AddComponent<CameraCmpt>();
 		camcmpt->aspect = 2500.f / 1600;
 		camcmpt->fov = 60.f;
@@ -50,28 +50,20 @@ public:
 		camcmpt->zFar = 1000.f;
 		camera_entity->GetComponent<TransformCmpt>()->SetLocalPosition(glm::vec3(0.f, 0.f, 5.f));
 		camera_entity->AddComponent<MoveControlCmpt>();
-		m_gltf_importer.GetScene()->SetMainCameraEntity(camera_entity);
+		m_scene->SetMainCameraEntity(camera_entity);
 	}
 
 	void OnUpdate(TimeStep ts) override final
 	{
-
-		auto scene = m_gltf_importer.GetScene();
-		scene->OnUpdate(ts);
+		m_scene->OnUpdate(ts);
 	}
 
 	void OnRender(TimeStep ts) override final
 	{
 		auto& render_system = RenderSystem::Get();
 		Ref<rhi::Device> rhi_device = render_system.GetDevice();
-		Ref<Scene> scene = m_gltf_importer.GetScene();
 
-		// update the rendering context.
-		m_lighting_params.directional.color = glm::vec3(1.0f, 0.9f, 0.8f);
-		m_lighting_params.directional.direction = glm::normalize(glm::vec3(1.f, 1.f, 1.f));
-		m_render_context.SetLightingParameters(&m_lighting_params);
-
-		auto* cam = scene->GetMainCameraEntity()->GetComponent<CameraCmpt>();
+		auto* cam = m_scene->GetMainCameraEntity()->GetComponent<CameraCmpt>();
 		//glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		//glm::mat4 proj = glm::perspective(glm::radians(45.0f), 2500.f / 1600, 0.1f, 1000.0f);
 		glm::mat4 view = cam->GetViewMatrix();
@@ -79,11 +71,8 @@ public:
 		proj[1][1] *= -1;
 		m_render_context.SetCamera(view, proj);
 
-		// simple forward renderer, so we render opaque, transparent and background renderables in one go.
-		m_visibility_list.clear();
-		scene->GatherVisibleOpaqueRenderables(m_render_context.GetVisibilityFrustum(), m_visibility_list);
 		m_render_queue.Reset();
-		m_render_queue.PushRenderables(m_render_context, m_visibility_list.data(), m_visibility_list.size());
+		m_skybox->GetRenderData(m_render_context, nullptr, m_render_queue);
 		m_render_queue.Sort();
 
 		// Rendering commands
@@ -131,11 +120,15 @@ public:
 			rhi::RenderPassInfo2 render_pass_info = render_system.GetRenderResourceManager().renderPassInfo_swapchainPass;
 			render_pass_info.depthAttachmentFormat = m_depth_attachment->GetDesc().format;
 
-			cmd->BeginRegion("Main pass");
-			cmd->BeginRenderPass(render_pass_info, fb_info);
 			cmd->SetViewPort(viewport);
 			cmd->SetScissor(scissor);
-			render_system.Flush(*cmd, m_render_queue, m_render_context);
+
+			cmd->BeginRegion("Main pass");
+			cmd->BeginRenderPass(render_pass_info, fb_info);
+			// RenderSystem::Get().DrawSkybox(m_cubeMap, m_render_context, *cmd);
+			// render_system.Flush(*cmd, m_render_queue, m_render_context);
+			render_system.BindCameraParameters(*cmd, m_render_context);
+			m_render_queue.Dispatch(Queue::OpaqueEmissive, *cmd);
 			cmd->EndRenderPass();
 			cmd->EndRegion();
 
@@ -152,7 +145,7 @@ public:
 			cmd->BeginRenderPass(render_system.GetRenderResourceManager().renderPassInfo_swapchainPass, fb_info);
 			UI::Get()->OnRender(cmd);
 			cmd->EndRenderPass();
-
+			
 			// transit swapchain image to present layout for presenting
 			rhi::PipelineImageBarrier present_barrier;
 			present_barrier.image = swap_chain_image;
@@ -185,27 +178,26 @@ public:
 		UI::Get()->EndFrame();
 	}
 
-	GLTFImporter m_gltf_importer;
+	Ref<Scene> m_scene;
 	RenderContext m_render_context;
 	RenderQueue m_render_queue;
-	LightingParameters m_lighting_params;
-	VisibilityList m_visibility_list;
 	Ref<rhi::Image> m_depth_attachment;
-	AssetID m_cubeMapId;
+	Ref<ImageAsset> m_cubeMap;
+	Ref<Skybox> m_skybox;
 };
 
 namespace quark
 {
-Application* CreateApplication(int argc, char** argv)
-{
-	ApplicationSpecification specs;
-	specs.uiSpecs.flags = 0;
-	specs.title = "GLTFViewer";
-	specs.width = 1440;
-	specs.height = 960;
-	specs.isFullScreen = false;
-	specs.workingDirectory = "E:/Quark/bin";
+	Application* CreateApplication(int argc, char** argv)
+	{
+		ApplicationSpecification specs;
+		specs.uiSpecs.flags = 0;
+		specs.title = "Skybox_Test";
+		specs.width = 1440;
+		specs.height = 960;
+		specs.isFullScreen = false;
+		specs.workingDirectory = "E:/Quark/bin";
 
-	return new GLTFViewer(specs);
-}
+		return new SkyboxTest(specs);
+	}
 }

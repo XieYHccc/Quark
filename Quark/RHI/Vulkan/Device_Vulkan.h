@@ -85,6 +85,7 @@ public:
     Device_Vulkan(const DeviceConfig& config);
     virtual ~Device_Vulkan();
     
+    void NextFrameContext() override final;
     bool BeiginFrame(TimeStep ts) override final;
     bool EndFrame(TimeStep ts) override final;
     void OnWindowResize(const WindowResizeEvent& event) override final;
@@ -132,6 +133,12 @@ public:
 
 private:
     void ResizeSwapchain();
+    void AddFrameCounterNoLock();
+    void DecrementFrameCounterNoLock();
+    void SubmitCommandListNoLock(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false);
+    void EndFrameContext();
+    void EndFrameContextNoLock();
+    CommandList* RequestCommandListNoLock(QueueType type);
 
     // represent a physical queue
     // responsible for queuing commad buffers and submit them in batch
@@ -176,11 +183,13 @@ private:
         std::mutex memory_lock;
         std::mutex lock;
         std::mutex read_only_cache_lock;
+        std::condition_variable cond;
+        uint32_t counter = 0;
     } m_lock;
 
     Scope<VulkanContext> m_vulkan_context;
     std::vector<PerFrameContext> m_frames;
-    uint8_t m_frame_index = 0;
+    uint8_t m_frame_context_index = 0;
 
     std::atomic_uint64_t m_cookie;
 

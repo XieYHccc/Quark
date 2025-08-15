@@ -36,7 +36,7 @@ Application::Application(const ApplicationSpecification& specs)
 
     // Init Asset system
     AssetManager::CreateSingleton();
-
+    AssetManager::Get().Init();
     // Init Input System
     Input::CreateSingleton();
     Input::Get()->Init();

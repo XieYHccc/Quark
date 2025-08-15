@@ -70,12 +70,31 @@ struct ImageDesc
     uint32_t depth = 1;  // for 3d image
     uint32_t mipLevels = 1;
     uint32_t arraySize = 1;
+    uint32_t usageBits  = 0;
     ImageType type = ImageType::TYPE_2D;
     DataFormat format =  DataFormat::R8G8B8A8_UNORM;
     SampleCount samples = SampleCount::SAMPLES_1;
     ImageLayout initialLayout = ImageLayout::UNDEFINED;
-    uint32_t usageBits  = 0;
     bool generateMipMaps = false;
+
+    static ImageDesc RenderTarget(uint32_t width, uint32_t height, DataFormat format)
+    {
+        ImageDesc desc;
+        desc.width = width;
+        desc.height = height;
+        desc.depth = 1;
+        desc.mipLevels = 1;
+        desc.format = format;
+        desc.type = ImageType::TYPE_2D;
+        desc.arraySize = 1;
+        desc.usageBits = (IsFormatSupportDepthOrStencil(format) ? IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT :
+            IMAGE_USAGE_COLOR_ATTACHMENT_BIT) | IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
+        desc.samples = SampleCount::SAMPLES_1;
+        desc.initialLayout = IsFormatSupportDepthOrStencil(format) ? ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL :
+            ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+
+        return desc;
+    }
 };
 
 struct ImageInitData 

@@ -66,6 +66,7 @@ enum class DataFormat
     B8G8R8A8_UNORM,
     R16G16B16A16_SFLOAT,
     R32G32B32_SFLOAT,
+    R32G32B32A32_SFLOAT,
     D32_SFLOAT,
     D32_SFLOAT_S8_UINT,
     D24_UNORM_S8_UINT,
@@ -206,6 +207,22 @@ inline bool IsFormatSupportDepth (DataFormat format)
     default:
         return false;
     }
+}
+inline bool IsFormatSupportStencil(DataFormat format)
+{
+    switch (format)
+    {
+    case DataFormat::D24_UNORM_S8_UINT:
+    case DataFormat::D32_SFLOAT_S8_UINT:
+        return true;
+    default:
+        return false;
+    }
+}
+
+inline bool IsFormatSupportDepthOrStencil(DataFormat format)
+{
+    return IsFormatSupportDepth(format) || IsFormatSupportStencil(format);
 }
 
 inline void GetFormatBlockDim(DataFormat format, uint32_t& block_dim_x, uint32_t& block_dim_y)

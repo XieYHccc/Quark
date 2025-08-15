@@ -12,3 +12,7 @@ add_executable(Skybox_Test ./Skybox_Test.cpp)
 target_link_libraries(Skybox_Test quark)
 set_target_properties(Skybox_Test PROPERTIES FOLDER "Tests")
 
+# ibl test
+add_executable(IBL_Test ./IBL_Test.cpp)
+target_link_libraries(IBL_Test quark)
+set_target_properties(IBL_Test PROPERTIES FOLDER "Tests")
