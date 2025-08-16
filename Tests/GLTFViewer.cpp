@@ -121,14 +121,14 @@ public:
 			rhi::FrameBufferInfo fb_info;
 			fb_info.colorAttatchemtsLoadOp[0] = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
 			fb_info.colorAttatchemtsStoreOp[0] = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
-			fb_info.colorAttachments[0] = swap_chain_image;
+			fb_info.colorAttachments[0] = &swap_chain_image->GetDefaultView();
 			fb_info.clearColors[0] = { 0.2f, 0.2f, 0.2f, 1.f };
-			fb_info.depthAttachment = m_depth_attachment.get();
+			fb_info.depthAttachment = &m_depth_attachment->GetDefaultView();
 			fb_info.depthAttachmentLoadOp = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
 			fb_info.depthAttachmentStoreOp = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
 			fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
-			rhi::RenderPassInfo2 render_pass_info = render_system.GetRenderResourceManager().renderPassInfo_swapchainPass;
+			rhi::RenderPassInfo render_pass_info = render_system.GetRenderResourceManager().renderPassInfo_swapchainPass;
 			render_pass_info.depthAttachmentFormat = m_depth_attachment->GetDesc().format;
 
 			cmd->BeginRegion("Main pass");
