@@ -21,7 +21,7 @@ void SkyboxRender(rhi::CommandList& cmd, const RenderQueueTask* task, unsigned i
 		resource_manager.mesh_attrib_mask_skybox,
 		true, DrawPipeline::AlphaTest); // TODO: should be opaque here, change the Request PSO Interface in the future.
 
-	cmd.BindImage(2, 0, *data->cubemap, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+	cmd.BindImage(2, 0, data->cubemap->GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL);
 	cmd.BindSampler(2, 0, *resource_manager.sampler_cube);
 	cmd.BindVertexBuffer(0, *cubeRenderMesh->vbo_position, 0);
 	cmd.BindIndexBuffer(*cubeRenderMesh->ibo, 0, IndexBufferFormat::UINT32);

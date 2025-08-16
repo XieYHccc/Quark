@@ -85,7 +85,7 @@ public:
     virtual void PushConstant(const void* data, uint32_t offset, uint32_t size) = 0;
     virtual void BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) = 0;   
     virtual void BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) = 0;
-    virtual void BindImage(uint32_t set, uint32_t binding, const Image& image, ImageLayout layout) = 0;
+    virtual void BindImage(uint32_t set, uint32_t binding, const ImageView& image_view, ImageLayout layout) = 0;
     virtual void BindPipeLine(const PipeLine& pipeline) = 0;
     virtual void BindVertexBuffer(uint32_t binding, const Buffer& buffer, uint64_t offset) = 0;
     virtual void BindIndexBuffer(const Buffer& buffer, uint64_t offset, const IndexBufferFormat format) = 0;
@@ -95,16 +95,16 @@ public:
     virtual void SetViewPort(const Viewport& viewport) = 0;
     virtual void SetScissor(const Scissor& scissor) = 0;
     virtual void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier* iamgeBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, uint32_t bufferBarriersCount) = 0;
-    virtual void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) = 0;
+    virtual void BeginRenderPass(const RenderPassInfo& renderPassInfo, const FrameBufferInfo& frameBufferInfo) = 0;
     virtual void EndRenderPass() = 0;
-    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) = 0;
+    virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageCopySubresourceRange& subresouce) = 0;
     
     // buffer allocation, immplementation with buffer pool
     virtual void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) = 0;
     virtual void* AllocateVertexData(unsigned binding, uint64_t size, uint64_t stride, VertexInputLayout::VertexBindInfo::InputRate inputRate) = 0;
 
     // state tracking
-    virtual const RenderPassInfo2& GetCurrentRenderPassInfo() const = 0;
+    virtual const RenderPassInfo& GetCurrentRenderPassInfo() const = 0;
     virtual const PipeLine* GetCurrentGraphicsPipeline() const = 0;
 
     // debug utils

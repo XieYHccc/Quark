@@ -85,6 +85,8 @@ public:
     Device_Vulkan(const DeviceConfig& config);
     virtual ~Device_Vulkan();
     
+    const DeviceFeatures& GetDeviceFeatures() const override final;
+
     void NextFrameContext() override final;
     bool BeiginFrame(TimeStep ts) override final;
     bool EndFrame(TimeStep ts) override final;
@@ -94,6 +96,7 @@ public:
     /*** RESOURCES ***/
     Ref<Buffer>         CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr) override final;
     Ref<Image>          CreateImage(const ImageDesc& desc, const ImageInitData* init_data = nullptr) override final;
+    Ref<ImageView>      CreateImageView(const ImageViewDesc& desc) override final;
     Ref<Shader>         CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize) override final;
     Ref<Shader>         CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) override final;
     Ref<PipeLine>       CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) override final;
@@ -116,7 +119,7 @@ public:
     //////////////////////////////////////////////////////////////
     DescriptorSetAllocator*     RequestDescriptorSetAllocator(const DescriptorSetLayout& layout);
     PipeLineLayout*             RequestPipeLineLayout(const CombinedResourceLayout& combinedLayout);
-    PerFrameContext&               GetCurrentFrame();
+    PerFrameContext&            GetCurrentFrame();
     uint32_t 				    AllocateCookie(); 
     const VulkanContext&        GetVulkanContext() { return *m_vulkan_context.get(); }
 
@@ -130,7 +133,8 @@ public:
     void RequestUniformBlockNoLock(BufferBlock& block, VkDeviceSize size);
     void RequestVertexBlock(BufferBlock& block, VkDeviceSize size);
     void RequestVertexBlockNoLock(BufferBlock& block, VkDeviceSize size);
-
+    void GetFormatProperties(VkFormat format, VkFormatProperties3* properties3) const;
+    
 private:
     void ResizeSwapchain();
     void AddFrameCounterNoLock();

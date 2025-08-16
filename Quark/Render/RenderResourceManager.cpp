@@ -466,7 +466,7 @@ Ref<PBRMaterial> RenderResourceManager::RequestMateral(Ref<MaterialAsset> mat_as
     return new_material;
 }
 
-Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline)
+Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo& rp, uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline)
 {
 
     auto& vertex_layout = RequestMeshVertexLayout(mesh_attrib_mask);

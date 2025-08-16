@@ -402,10 +402,7 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     vmaAllocator = m_vulkan_context->vmaAllocator;
 
     // store device properties in public interface
-    m_properties.limits.minUniformBufferOffsetAlignment = m_vulkan_context->properties2.properties.limits.minUniformBufferOffsetAlignment;
-    m_features.textureCompressionBC = m_vulkan_context->features2.features.textureCompressionBC;
-    m_features.textureCompressionASTC_LDR = m_vulkan_context->features2.features.textureCompressionASTC_LDR;;
-    m_features.textureCompressionETC2 = m_vulkan_context->features2.features.textureCompressionETC2;
+    m_properties.limits.minUniformBufferOffsetAlignment = m_vulkan_context->gpu_properties2.properties.limits.minUniformBufferOffsetAlignment;
 
     // create per-frame data
     m_frames.resize(config.framesInFlight);
@@ -468,6 +465,11 @@ Device_Vulkan::~Device_Vulkan()
     m_vulkan_context.reset();
 }
 
+const DeviceFeatures& Device_Vulkan::GetDeviceFeatures() const
+{
+    return *static_cast<DeviceFeatures*>(&m_vulkan_context->deviceFeatures);
+}
+
 void Device_Vulkan::NextFrameContext()
 {
     DRAIN_FRAME_LOCK();
@@ -485,7 +487,6 @@ void Device_Vulkan::NextFrameContext()
         m_frame_context_index = 0;
 
     GetCurrentFrame().begin();
-
 }
 
 bool Device_Vulkan::BeiginFrame(TimeStep ts)
@@ -564,6 +565,11 @@ Ref<Image> Device_Vulkan::CreateImage(const ImageDesc &desc, const ImageInitData
 {
     QK_CORE_LOGT_TAG("RHI", "Vulkan image created");
     return CreateRef<Image_Vulkan>(this, desc, init_data);
+}
+
+Ref<ImageView> Device_Vulkan::CreateImageView(const ImageViewDesc& desc)
+{
+    return CreateRef<ImageView_Vulkan>(this, desc);
 }
 
 Ref<Shader> Device_Vulkan::CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize)
@@ -717,12 +723,22 @@ void Device_Vulkan::ResizeSwapchain()
         desc.width = m_vulkan_context->swapChainExtent.width;
         desc.depth = 1;
         desc.format = GetPresentImageFormat();
+        ImageViewDesc view_desc;
+        view_desc.viewType = ImageViewType::TYPE_2D;
+        view_desc.format = desc.format;
+        view_desc.baseLayer = 0;
+        view_desc.baseLevel = 0;
+        view_desc.levelCount = 1;
+        view_desc.layerCount = 1;
+        view_desc.aspect = IMAGE_ASPECT_COLOR_BIT;
 
         Ref<Image> newImage = CreateRef<Image_Vulkan>(this, desc);
-        auto& internal_image = ToInternal(newImage.get());
+        view_desc.image = newImage.get();
+        Ref<ImageView_Vulkan> newView = CreateRef<ImageView_Vulkan>(this, m_vulkan_context->swapChainImageViews[i], view_desc);
 
+        auto& internal_image = ToInternal(newImage.get());
         internal_image.m_handle = m_vulkan_context->swapChianImages[i];
-        internal_image.m_view = m_vulkan_context->swapChainImageViews[i];
+        internal_image.m_default_view = newView;
         internal_image.m_isSwapChainImage = true;
         // m_swapChainImages.push_back(newImage);
         m_wsi.swapchain_images.push_back(newImage);
@@ -920,6 +936,34 @@ void Device_Vulkan::RequestVertexBlock(BufferBlock& block, VkDeviceSize size)
 void Device_Vulkan::RequestVertexBlockNoLock(BufferBlock& block, VkDeviceSize size)
 {
     request_block(*this, block, size, m_vbo_pool, GetCurrentFrame().vbo_blocks);
+}
+
+void Device_Vulkan::GetFormatProperties(VkFormat format, VkFormatProperties3* properties3) const
+{
+    VkFormatProperties2 properties2 = { VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
+    QK_CORE_ASSERT(properties3->sType == VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3);
+
+    if (m_vulkan_context->deviceFeatures.supports_format_feature_flags2)
+    {
+        properties2.pNext = properties3;
+        vkGetPhysicalDeviceFormatProperties2(m_vulkan_context->physicalDevice, format, &properties2);
+    }
+    else
+    {
+        // Skip properties3 and synthesize the results instead.
+        properties2.pNext = properties3->pNext;
+        vkGetPhysicalDeviceFormatProperties2(m_vulkan_context->physicalDevice, format, &properties2);
+
+        properties3->optimalTilingFeatures = properties2.formatProperties.optimalTilingFeatures;
+        properties3->linearTilingFeatures = properties2.formatProperties.linearTilingFeatures;
+        properties3->bufferFeatures = properties2.formatProperties.bufferFeatures;
+
+        // Automatically promote for supported formats.
+        //properties3->optimalTilingFeatures =
+        //    promote_storage_usage(ext, format, properties3->optimalTilingFeatures);
+        //properties3->linearTilingFeatures =
+        //    promote_storage_usage(ext, format, properties3->linearTilingFeatures);
+    }
 }
 
 PerFrameContext& Device_Vulkan::GetCurrentFrame()

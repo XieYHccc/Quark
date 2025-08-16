@@ -13,6 +13,16 @@ enum ImageUsageBits
     IMAGE_USAGE_INPUT_ATTACHMENT_BIT = (1 << 6),
 };
 
+enum ImageAspectFlagBits
+{
+    IMAGE_ASPECT_NONE,
+    IMAGE_ASPECT_COLOR_BIT,
+    IMAGE_ASPECT_DEPTH_BIT,
+    IMAGE_ASPECT_STENCIL_BIT,
+    IMAGE_ASPECT_LUMINANCE_BIT,
+    IMAGE_ASPECT_CHROMINANCE_BIT,
+};
+
 enum class ImageType : uint8_t
 {
     TYPE_2D,
@@ -20,14 +30,6 @@ enum class ImageType : uint8_t
     TYPE_CUBE,
 };
 
-enum class ImageAspect : uint8_t
-{
-    COLOR,
-    DEPTH,
-    STENCIL,
-    LUMINANCE,
-    CHROMINANCE,
-};
 
 enum class ImageLayout : uint8_t
 {
@@ -55,12 +57,68 @@ enum class SamplerAddressMode : uint8_t
     CLAMPED_TO_EDGE = 3
 };
 
-struct ImageSubresourceRange
+struct ImageCopySubresourceRange
 {
-	ImageAspect aspect = ImageAspect::COLOR;
+    uint32_t aspect = IMAGE_ASPECT_NONE;
 	uint32_t mipLevel = 0;
 	uint32_t baseArrayLayer = 0;
 	uint32_t layerCount = 1;
+};
+
+enum class ImageViewType
+{
+    TYPE_1D = 0,
+    TYPE_2D = 1,
+    TYPE_3D = 2,
+    TYPE_CUBE = 3,
+    TYPE_1D_ARRAY = 4,
+    TYPE_2D_ARRAY = 5,
+    TYPE_CUBE_ARRAY = 6,
+    TYPE_MAX_ENUM = 0x7FFFFFFF
+};
+
+struct ImageViewDesc
+{
+    const Image* image = nullptr;
+    DataFormat format = DataFormat::UNDEFINED;
+    ImageViewType viewType = ImageViewType::TYPE_MAX_ENUM;
+    uint32_t aspect = IMAGE_ASPECT_NONE;
+    uint32_t baseLevel = 0;
+    uint32_t levelCount = 1;
+    uint32_t baseLayer = 0;
+    uint32_t layerCount = 1;
+};
+
+inline uint32_t FormatToImageAspect(DataFormat format)
+{
+    switch (format)
+    {
+    case DataFormat::UNDEFINED:
+        return IMAGE_ASPECT_NONE;
+
+    case DataFormat::D32_SFLOAT_S8_UINT:
+    case DataFormat::D24_UNORM_S8_UINT:
+        return IMAGE_ASPECT_DEPTH_BIT | IMAGE_ASPECT_STENCIL_BIT;
+    case DataFormat::D32_SFLOAT:
+        return IMAGE_ASPECT_DEPTH_BIT;
+    default:
+        return IMAGE_ASPECT_COLOR_BIT;
+    }
+}
+
+class ImageView : GpuResource
+{
+public:
+    virtual ~ImageView() = default;
+
+    const ImageViewDesc& GetDesc() const { return m_desc; }
+
+    GpuResourceType GetGpuResourceType() const override { return GpuResourceType::IMAGE; }
+
+protected:
+    ImageView(const ImageViewDesc& desc) : m_desc(desc) {};
+
+    ImageViewDesc m_desc;
 };
 
 struct ImageDesc 
@@ -106,9 +164,12 @@ struct ImageInitData
     std::uint32_t slicePitch = 0;
 };
 
-class Image : public GpuResource{
+class Image : public GpuResource
+{
 public:
     virtual ~Image() = default;
+    virtual const ImageView& GetDefaultView() const = 0;
+    virtual ImageView& GetDefaultView() = 0;
 
     const ImageDesc& GetDesc() const { return m_desc; }
 

@@ -36,10 +36,10 @@ public:
 	rhi::VertexInputLayout vertexInputLayout_skybox;
 
 	// renderPassInfo
-	rhi::RenderPassInfo2 renderPassInfo_swapchainPass;
-	rhi::RenderPassInfo2 renderPassInfo_simpleMainPass;
-	rhi::RenderPassInfo2 renderPassInfo_editorMainPass;
-	rhi::RenderPassInfo2 renderPassInfo_entityIdPass;
+	rhi::RenderPassInfo renderPassInfo_swapchainPass;
+	rhi::RenderPassInfo renderPassInfo_simpleMainPass;
+	rhi::RenderPassInfo renderPassInfo_editorMainPass;
+	rhi::RenderPassInfo renderPassInfo_entityIdPass;
 
 	// default images
 	Ref<rhi::Image> image_white;
@@ -66,7 +66,7 @@ public:
 	std::vector<Ref<StaticMesh>>   RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset); // Should we cache renderables? or let scene manage their lifelong
 	Ref<MeshBuffers>				RequestMeshBuffers(Ref<MeshAsset> mesh_asset);
 	Ref<PBRMaterial>				RequestMateral(Ref<MaterialAsset> mat_asset);
-	Ref<rhi::PipeLine>				RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo2& rp, const uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline);
+	Ref<rhi::PipeLine>				RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo& rp, const uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline);
 	Ref<rhi::Image>					RequestImage(Ref<ImageAsset> image_asset);
 	rhi::VertexInputLayout&			RequestMeshVertexLayout(uint32_t meshAttributesMask);
 

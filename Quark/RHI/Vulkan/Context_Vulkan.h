@@ -1,4 +1,5 @@
 #pragma once
+#include "Quark/RHI/Device.h"
 #include "Quark/RHI/Vulkan/Common_Vulkan.h"
 
 namespace quark::rhi {
@@ -15,6 +16,12 @@ struct physicalDeviceRequirement
     bool samplerAnisotropy  = true;
     bool ForceDescreteGpu = true;
     bool preferDescreteGPU = true;
+};
+
+struct DeviceFeatures_Vulkan : public DeviceFeatures
+{
+    uint32_t instance_api_core_version = VK_API_VERSION_1_1;
+    uint32_t device_api_core_version = VK_API_VERSION_1_1;
 };
 
 /* Responsibilities
@@ -51,7 +58,7 @@ public:
     std::vector<uint32_t> uniqueQueueFamilies;
 
     VkPhysicalDeviceMemoryProperties memoryPorps = {};
-    VkPhysicalDeviceProperties2 properties2 = {};
+    VkPhysicalDeviceProperties2 gpu_properties2 = {};
     VkPhysicalDeviceVulkan11Properties properties11 = {};
     VkPhysicalDeviceVulkan12Properties properties12 = {};
     VkPhysicalDeviceVulkan13Properties properties13 = {};
@@ -60,6 +67,7 @@ public:
     VkPhysicalDeviceVulkan12Features features12 = {};
     VkPhysicalDeviceVulkan13Features features13 = {};
     std::vector<const char*> enabledExtensions;
+    DeviceFeatures_Vulkan deviceFeatures;
 
     struct ExtendFunction {
         PFN_vkQueueSubmit2KHR pVkQueueSubmit2KHR;

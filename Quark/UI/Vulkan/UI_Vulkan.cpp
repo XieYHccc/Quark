@@ -186,9 +186,10 @@ ImTextureID UI_Vulkan::GetOrCreateTextureId(const Ref<rhi::Image>& image, const 
     else
     {
         VkSampler samp = rhi::ToInternal(sampler.get()).GetHandle();
-        VkImageView view = rhi::ToInternal(image.get()).GetView();
+        const rhi::ImageView& view = image->GetDefaultView();
+        auto& internal = rhi::ToInternal(&view);
 
-        ImTextureID newId = (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        ImTextureID newId = (ImTextureID)ImGui_ImplVulkan_AddTexture(samp, internal.GetView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         m_textureIdMap[hash] = newId;
 
         return newId;

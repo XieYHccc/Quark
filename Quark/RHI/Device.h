@@ -30,6 +30,8 @@ namespace quark::rhi {
         bool textureCompressionBC = false;
         bool textureCompressionASTC_LDR = false;
         bool textureCompressionETC2 = false;
+        bool supports_format_feature_flags2 = false;
+
     };
 
     class Device
@@ -43,7 +45,7 @@ namespace quark::rhi {
         uint32_t GetMaxFramesCount() { return m_config.framesInFlight; }
 
         const DeviceProperties& GetDeviceProperties() const { return m_properties; }
-        const DeviceFeatures& GetDeviceFeatures() const { return m_features; }
+        virtual const DeviceFeatures& GetDeviceFeatures() const = 0;
 
         virtual void NextFrameContext() = 0;
         virtual bool BeiginFrame(TimeStep ts) = 0;  
@@ -53,6 +55,7 @@ namespace quark::rhi {
         /*** RESOURCES ***/
         virtual Ref<Buffer> CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr) = 0;
         virtual Ref<Image> CreateImage(const ImageDesc& desc, const ImageInitData* initdata = nullptr) = 0;
+        virtual Ref<ImageView> CreateImageView(const ImageViewDesc& desc) = 0;
         virtual Ref<Shader> CreateShaderFromBytes(ShaderStage stage, const void* byteCode, size_t codeSize) = 0;
         virtual Ref<Shader> CreateShaderFromSpvFile(ShaderStage stage, const std::string& file_path) = 0;
         virtual Ref<PipeLine> CreateGraphicPipeLine(const GraphicPipeLineDesc& desc) = 0;
@@ -78,7 +81,7 @@ namespace quark::rhi {
         uint32_t m_frameBufferWidth = 0;
         uint32_t m_frameBufferHeight = 0;
         DeviceProperties m_properties;
-        DeviceFeatures m_features;
+        // DeviceFeatures m_features;
         DeviceConfig m_config;
     };
 

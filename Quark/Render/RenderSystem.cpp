@@ -88,7 +88,7 @@ void RenderSystem::Flush(rhi::CommandList& cmd, const RenderQueue& queue, const 
     
     BindCameraParameters(cmd, ctx);
 
-    cmd.BindImage(2, 0, *envMap, ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+    cmd.BindImage(2, 0, envMap->GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL);
     cmd.BindSampler(2, 0, *m_renderResourceManager->sampler_cube);
     cmd.BindVertexBuffer(0, *cubeRenderMesh->vbo_position, 0);
     cmd.BindIndexBuffer(*cubeRenderMesh->ibo, 0, IndexBufferFormat::UINT32);

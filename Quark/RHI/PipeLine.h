@@ -183,7 +183,7 @@ struct GraphicPipeLineDesc
     PipelineDepthStencilState depthStencilState = {};
     TopologyType topologyType = TopologyType::TRANGLE_LIST;
     VertexInputLayout vertexInputLayout;
-    RenderPassInfo2 renderPassInfo = {};
+    RenderPassInfo renderPassInfo = {};
 };
 
 enum class PipeLineBindingPoint 

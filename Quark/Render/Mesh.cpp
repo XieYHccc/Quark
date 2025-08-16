@@ -112,7 +112,7 @@ void BindMeshState(rhi::CommandList& cmd, const StaticMeshPerDrawcallData& data)
 
 	cmd.BindPipeLine(*pipeline.get());
 
-	cmd.BindImage(1, 0, *data.textures[util::ecast(TextureKind::Albedo)], ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+	cmd.BindImage(1, 0, data.textures[util::ecast(TextureKind::Albedo)]->GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL);
 	cmd.BindSampler(1, 0, *render_resource_manager.sampler_linear);
 	//cmd.BindImage(2, 2, *data.textures[util::ecast(TextureKind::MetallicRoughness)], ImageLayout::SHADER_READ_ONLY_OPTIMAL);
 	//cmd.BindSampler(2, 2, *render_resource_manager.sampler_linear);

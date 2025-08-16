@@ -11,6 +11,8 @@ namespace quark::rhi {
 #define VERTEX_BUFFER_MAX_NUM 8
 #define MAX_COLOR_ATTHACHEMNT_NUM 8
 #define MAX_FRAME_NUM_IN_FLIGHT 2
+#define REMAINING_MIP_LEVELS (~0U)
+#define REMAINING_ARRAY_LAYERS (~0U)
 
 // Forward declaraton
 class Device;
@@ -20,10 +22,12 @@ class Image;
 class Shader;
 class PipeLine;
 class Sampler;
+class ImageView;
 
 struct RenderPassInfo2;
 struct BufferDesc;
 struct ImageDesc;
+struct ImageViewDesc;
 struct ImageInitData;
 struct ComputePipeLineDesc;
 struct GraphicPipeLineDesc;
@@ -33,6 +37,7 @@ enum class GpuResourceType : uint8_t
 {
     BUFFER,
 	IMAGE,
+    IMAGE_VIEW,
 	SHADER,
 	PIPELINE,
 	SAMPLER,
@@ -245,5 +250,4 @@ inline void GetFormatBlockDim(DataFormat format, uint32_t& block_dim_x, uint32_t
         break;
     }
 }
-
 }

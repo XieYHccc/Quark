@@ -10,6 +10,7 @@ namespace quark::rhi {
 
 constexpr uint32_t VULKAN_MAX_UBO_SIZE = 64 * 1024;
 
+#define VULKAN_ERROR(err) QK_CORE_LOGF_TAG("RHI","Detected Vulkan error: {}", string_VkResult(err));
 #define VK_CHECK(x)                                                                        \
     do {                                                                                   \
         VkResult err = x;                                                                  \

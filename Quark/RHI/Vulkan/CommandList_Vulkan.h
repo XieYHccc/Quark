@@ -62,7 +62,7 @@ public:
     void BindPipeLine(const PipeLine& pipeline) override final;
     void BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) override final;
     void BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) override final;
-    void BindImage(uint32_t set, uint32_t binding, const Image& image, ImageLayout layout) override final;
+    void BindImage(uint32_t set, uint32_t binding, const ImageView& image_view, ImageLayout layout) override final;
     void BindVertexBuffer(uint32_t binding, const Buffer& buffer, u64 offset) override final;
     void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) override final;
     void BindSampler(uint32_t set, uint32_t binding, const Sampler& sampler) override final;
@@ -71,16 +71,16 @@ public:
     void SetViewPort(const Viewport& viewport) override final;
     void SetScissor(const Scissor& scissor) override final;
     void PipeLineBarriers(const PipelineMemoryBarrier* memoryBarriers, uint32_t memoryBarriersCount, const PipelineImageBarrier* imageBarriers, uint32_t iamgeBarriersCount, const PipelineBufferBarrier* bufferBarriers, uint32_t bufferBarriersCount) override final;
-    void BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo) override final;
+    void BeginRenderPass(const RenderPassInfo& renderPassInfo, const FrameBufferInfo& frameBufferInfo) override final;
     void EndRenderPass() override final;
-    void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce) override final;
+    void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageCopySubresourceRange& subresouce) override final;
     
     // buffer pool allocation
     void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) override final;
     void* AllocateVertexData(unsigned binding, uint64_t size, uint64_t stride, VertexInputLayout::VertexBindInfo::InputRate inputRate) override final;
 
     // state tracking
-    const RenderPassInfo2& GetCurrentRenderPassInfo() const override final;
+    const RenderPassInfo& GetCurrentRenderPassInfo() const override final;
     const PipeLine* GetCurrentGraphicsPipeline() const override final;
     
     // debug utils
@@ -120,7 +120,7 @@ private:
 
     // Rendering state 
     const PipeLine_Vulkan* m_currentPipeline = nullptr;
-    RenderPassInfo2 m_currentRenderPassInfo = {};
+    RenderPassInfo m_currentRenderPassInfo = {};
     VkDescriptorSet m_currentSets[DESCRIPTOR_SET_MAX_NUM] = {};
     VkViewport m_viewport = {};
     VkRect2D m_scissor = {};

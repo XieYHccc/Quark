@@ -62,6 +62,8 @@ void VulkanContext::CreateInstance()
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_3;
 
+    deviceFeatures.instance_api_core_version = VK_API_VERSION_1_3; //TODO: make configurable
+
     // Get supported extensions and layers
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -174,6 +176,27 @@ void VulkanContext::CreateSurface()
 
 void VulkanContext::CreateLogicalDevice()
 {
+
+    deviceFeatures.device_api_core_version = std::min(gpu_properties2.properties.apiVersion, deviceFeatures.instance_api_core_version);
+
+    // query device extensions
+    std::vector<VkExtensionProperties> queried_extensions;
+    uint32_t ext_count = 0;
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &ext_count, nullptr);
+    queried_extensions.resize(ext_count);
+    if (ext_count)
+        vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &ext_count, queried_extensions.data());
+
+    const auto has_extension = [&](const char* name) -> bool {
+        auto itr = find_if(begin(queried_extensions), end(queried_extensions), [name](const VkExtensionProperties& e) -> bool {
+            return strcmp(e.extensionName, name) == 0;
+            });
+        return itr != end(queried_extensions);
+    };
+
+    deviceFeatures.supports_format_feature_flags2 = deviceFeatures.device_api_core_version >= VK_API_VERSION_1_3 ||
+        has_extension(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::unordered_set<uint32_t> unique_queue_families = { graphicQueueIndex, computeQueueIndex, transferQueueIndex };
 
@@ -214,6 +237,9 @@ void VulkanContext::CreateLogicalDevice()
     vkGetDeviceQueue(logicalDevice, transferQueueIndex, 0, &transferQueue);
     vkGetDeviceQueue(logicalDevice, computeQueueIndex, 0, &computeQueue);
 
+    deviceFeatures.textureCompressionBC = features2.features.textureCompressionBC;
+    deviceFeatures.textureCompressionASTC_LDR = features2.features.textureCompressionASTC_LDR;;
+    deviceFeatures.textureCompressionETC2 = features2.features.textureCompressionETC2;
 }
 
 void VulkanContext::SelectPhysicalDevice()
@@ -248,7 +274,7 @@ void VulkanContext::SelectPhysicalDevice()
     for (const auto& device : devices) {
         if (IsPhysicalDeviceSuitable(device, requirements)) {
             if (requirements.preferDescreteGPU) {
-                if (properties2.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+                if (gpu_properties2.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
                     physicalDevice = device;
                     break;
                 }
@@ -260,7 +286,7 @@ void VulkanContext::SelectPhysicalDevice()
         }
     }
     QK_CORE_VERIFY(physicalDevice != VK_NULL_HANDLE, "Failed to find a suitable GPU")
-    QK_CORE_LOGI_TAG("RHI", "GPU \"{}\" is selected.", properties2.properties.deviceName);
+    QK_CORE_LOGI_TAG("RHI", "GPU \"{}\" is selected.", gpu_properties2.properties.deviceName);
 
     // Find queue families
     uint32_t queueFamilyCount = 0;
@@ -315,8 +341,8 @@ void VulkanContext::SelectPhysicalDevice()
     }
 
     QK_CORE_LOGI_TAG("RHI", "------------GPU Information------------");
-    QK_CORE_LOGI_TAG("RHI", "GPU name: {}", properties2.properties.deviceName);
-    switch (properties2.properties.deviceType) {
+    QK_CORE_LOGI_TAG("RHI", "GPU name: {}", gpu_properties2.properties.deviceName);
+    switch (gpu_properties2.properties.deviceType) {
         default:
         case VK_PHYSICAL_DEVICE_TYPE_OTHER:
             QK_CORE_LOGI_TAG("RHI","GPU type is Unknown.");
@@ -341,16 +367,16 @@ void VulkanContext::SelectPhysicalDevice()
 
     QK_CORE_LOGI_TAG("RHI",
         "GPU Driver version: {}.{}.{}",
-        VK_VERSION_MAJOR(properties2.properties.driverVersion),
-        VK_VERSION_MINOR(properties2.properties.driverVersion),
-        VK_VERSION_PATCH(properties2.properties.driverVersion));
+        VK_VERSION_MAJOR(gpu_properties2.properties.driverVersion),
+        VK_VERSION_MINOR(gpu_properties2.properties.driverVersion),
+        VK_VERSION_PATCH(gpu_properties2.properties.driverVersion));
 
     // Vulkan API version.
     QK_CORE_LOGI_TAG("RHI",
         "Vulkan API version: {}.{}.{}",
-        VK_VERSION_MAJOR(properties2.properties.apiVersion),
-        VK_VERSION_MINOR(properties2.properties.apiVersion),
-        VK_VERSION_PATCH(properties2.properties.apiVersion));
+        VK_VERSION_MAJOR(gpu_properties2.properties.apiVersion),
+        VK_VERSION_MINOR(gpu_properties2.properties.apiVersion),
+        VK_VERSION_PATCH(gpu_properties2.properties.apiVersion));
 
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryPorps);
     // Memory information
@@ -525,17 +551,17 @@ bool VulkanContext::IsPhysicalDeviceSuitable(VkPhysicalDevice device, physicalDe
     features11.pNext = &features12;
     features12.pNext = &features13;
 
-    properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    gpu_properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     properties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
     properties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
     properties13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
-    properties2.pNext = &properties11;
+    gpu_properties2.pNext = &properties11;
     properties11.pNext = &properties12;
     properties12.pNext = &properties13;
-    vkGetPhysicalDeviceProperties2(device, &properties2);
+    vkGetPhysicalDeviceProperties2(device, &gpu_properties2);
     vkGetPhysicalDeviceFeatures2(device, &features2);
 
-    QK_CORE_LOGT_TAG("RHI", "Checking GPU \"{}\"...", properties2.properties.deviceName);
+    QK_CORE_LOGT_TAG("RHI", "Checking GPU \"{}\"...", gpu_properties2.properties.deviceName);
 
     // Query supported device extensions
     uint32_t extensionCount = 0;
@@ -561,7 +587,7 @@ bool VulkanContext::IsPhysicalDeviceSuitable(VkPhysicalDevice device, physicalDe
 
     // Descrete GPU？
     if (requirements.ForceDescreteGpu) {
-        if (properties2.properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        if (gpu_properties2.properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
             QK_CORE_LOGT_TAG("RHI", "  Device is not a discrete GPU, and one is required. Skipping.");
             return false;
         }

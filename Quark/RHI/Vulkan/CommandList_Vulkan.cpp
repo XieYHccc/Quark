@@ -7,25 +7,6 @@
 #include "Quark/RHI/Vulkan/DescriptorSetAllocator.h"
 
 namespace quark::rhi {
-
-constexpr VkImageAspectFlags _ConvertImageAspect(ImageAspect value)
-{
-    switch (value)
-    {
-    default:
-    case rhi::ImageAspect::COLOR:
-        return VK_IMAGE_ASPECT_COLOR_BIT;
-    case rhi::ImageAspect::DEPTH:
-        return VK_IMAGE_ASPECT_DEPTH_BIT;
-    case rhi::ImageAspect::STENCIL:
-        return VK_IMAGE_ASPECT_STENCIL_BIT;
-    case rhi::ImageAspect::LUMINANCE:
-        return VK_IMAGE_ASPECT_PLANE_0_BIT;
-    case rhi::ImageAspect::CHROMINANCE:
-        return VK_IMAGE_ASPECT_PLANE_1_BIT;
-    }
-}
-
 CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
     : CommandList(type), m_device(device)
 {
@@ -196,7 +177,7 @@ void CommandList_Vulkan::ResetBindingState()
     m_dirtyVertexBufferMask = 0u;
 }
 
-void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, const FrameBufferInfo& frameBufferInfo)
+void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo& renderPassInfo, const FrameBufferInfo& frameBufferInfo)
 {
     QK_CORE_ASSERT(renderPassInfo.numColorAttachments < MAX_COLOR_ATTHACHEMNT_NUM)
         QK_CORE_ASSERT(frameBufferInfo.numResolveAttachments < renderPassInfo.numColorAttachments)
@@ -247,15 +228,16 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, 
 
     // Color Attachments
     for (size_t i = 0; i < renderPassInfo.numColorAttachments; ++i) {
-        const auto* image = frameBufferInfo.colorAttachments[i];
-        const ImageDesc& image_desc = image->GetDesc();
-        auto& internal_image = ToInternal(image);
+        const auto* image_view = frameBufferInfo.colorAttachments[i];
+        const ImageDesc& image_desc = image_view->GetDesc().image->GetDesc();
+        auto& internal_view = ToInternal(image_view);
+        auto& internal_iamge = ToInternal(image_view->GetDesc().image);
 
         rendering_info.renderArea.extent.width = std::max(rendering_info.renderArea.extent.width, image_desc.width);
         rendering_info.renderArea.extent.height = std::max(rendering_info.renderArea.extent.height, image_desc.height);
 
         color_attachments[i].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        color_attachments[i].imageView = internal_image.GetView();
+        color_attachments[i].imageView = internal_view.GetView();
         color_attachments[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_attachments[i].loadOp = convertLoadOp(frameBufferInfo.colorAttatchemtsLoadOp[i]);
         color_attachments[i].storeOp = convertStoreOp(frameBufferInfo.colorAttatchemtsStoreOp[i]);
@@ -265,7 +247,7 @@ void CommandList_Vulkan::BeginRenderPass(const RenderPassInfo2& renderPassInfo, 
         color_attachments[i].clearValue.color.float32[3] = frameBufferInfo.clearColors[i].color.float32[3];
 
         // internal swapchain image state tracking
-        if (internal_image.IsSwapChainImage())
+        if (internal_iamge.IsSwapChainImage())
         {
             m_waitForSwapchainImage = true;
             m_swapChainWaitStages |= VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -445,7 +427,7 @@ void* CommandList_Vulkan::AllocateVertexData(unsigned binding, uint64_t size, ui
     return data.host;
 }
 
-const RenderPassInfo2& CommandList_Vulkan::GetCurrentRenderPassInfo() const
+const RenderPassInfo& CommandList_Vulkan::GetCurrentRenderPassInfo() const
 {
     return m_currentRenderPassInfo;
 }
@@ -532,20 +514,20 @@ void CommandList_Vulkan::BindStorageBuffer(uint32_t set, uint32_t binding, const
     m_dirtySetMask |= 1u << set;
 }
 
-void CommandList_Vulkan::BindImage(uint32_t set, uint32_t binding, const Image &image, ImageLayout layout)
+void CommandList_Vulkan::BindImage(uint32_t set, uint32_t binding, const ImageView &image_view, ImageLayout layout)
 {
     QK_CORE_ASSERT(set < DESCRIPTOR_SET_MAX_NUM);
     QK_CORE_ASSERT(binding < SET_BINDINGS_MAX_NUM);
-    auto& internal_image = ToInternal(&image);
+    auto& internal = ToInternal(&image_view);
     auto& b = m_bindingState.descriptorBindings[set][binding];
     VkImageLayout image_layout = ConvertImageLayout(layout);
 
-    if (internal_image.GetCookie() == m_bindingState.cookies[set][binding] && b.image.imageLayout == image_layout)
+    if (internal.GetCookie() == m_bindingState.cookies[set][binding] && b.image.imageLayout == image_layout)
         return;
 
-    b.image.imageView = internal_image.GetView();
+    b.image.imageView = internal.GetView();
     b.image.imageLayout = image_layout;
-    m_bindingState.cookies[set][binding] = internal_image.GetCookie();
+    m_bindingState.cookies[set][binding] = internal.GetCookie();
     m_dirtySetMask |= 1u << set;
     
 }
@@ -589,7 +571,7 @@ void CommandList_Vulkan::BindSampler(uint32_t set, uint32_t binding, const Sampl
     m_dirtySetMask |= 1u << set;
 }
 
-void CommandList_Vulkan::CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageSubresourceRange& subresouce)
+void CommandList_Vulkan::CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageCopySubresourceRange& subresouce)
 {
     auto& internal_buffer = ToInternal(&buffer);
 	auto& internal_image = ToInternal(&image);
@@ -598,7 +580,7 @@ void CommandList_Vulkan::CopyImageToBuffer(const Buffer& buffer, const Image& im
 	copy_region.bufferOffset = buffer_offset;
 	copy_region.bufferRowLength = row_pitch;
 	copy_region.bufferImageHeight = slice_pitch;
-	copy_region.imageSubresource.aspectMask = _ConvertImageAspect(subresouce.aspect);
+	copy_region.imageSubresource.aspectMask = ConvertImageAspect(subresouce.aspect);
 	copy_region.imageSubresource.baseArrayLayer = subresouce.baseArrayLayer;
 	copy_region.imageSubresource.layerCount = subresouce.layerCount;
     copy_region.imageSubresource.mipLevel = subresouce.mipLevel;

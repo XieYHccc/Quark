@@ -29,6 +29,23 @@ constexpr VkImageLayout ConvertImageLayout(ImageLayout layout)
     }
 }
 
+constexpr VkImageAspectFlags ConvertImageAspect(uint32_t value)
+{
+    VkImageAspectFlags ret = 0;
+    if (value & IMAGE_ASPECT_COLOR_BIT)
+        ret |= VK_IMAGE_ASPECT_COLOR_BIT;
+    if (value & IMAGE_ASPECT_DEPTH_BIT)
+        ret |= VK_IMAGE_ASPECT_DEPTH_BIT;
+    if (value & IMAGE_ASPECT_STENCIL_BIT)
+        ret |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    if (value & IMAGE_ASPECT_LUMINANCE_BIT)
+        ret |= VK_IMAGE_ASPECT_PLANE_0_BIT;
+    if (value & IMAGE_ASPECT_CHROMINANCE_BIT)
+        ret |= VK_IMAGE_ASPECT_PLANE_1_BIT;
+
+    return ret;
+}
+
 constexpr VkImageType ConvertImageType(ImageType type)
 {
     switch (type) 
@@ -42,14 +59,60 @@ constexpr VkImageType ConvertImageType(ImageType type)
     }
 }
 
-class Image_Vulkan : public Image, public Cookie, public InternalSyncEnabled {
+class ImageView_Vulkan : public ImageView, public Cookie, public InternalSyncEnabled
+{
+public:
+    ImageView_Vulkan(Device_Vulkan* device, const ImageViewDesc& desc);
+    ImageView_Vulkan(Device_Vulkan* device, VkImageView default_view, const ImageViewDesc& desc);
+    virtual ~ImageView_Vulkan();
+
+    // By default, gets a combined view which includes all aspects in the image.
+    // This would be used mostly for render targets.
+    const VkImageView GetView() const { return m_view; }
+    const VkImageView GetRTView(uint32_t layer) const;
+    const VkImageView GetMipView(uint32_t level) const;
+
+    // Gets an image view which only includes floating point domains.
+    // Takes effect when we want to sample from an image which is Depth/Stencil,
+    // but we only want to sample depth.
+    const VkImageView GetFloatView() const { return m_depth_view != VK_NULL_HANDLE ? m_depth_view : m_view; }
+
+    // Gets an image view which only includes integer domains.
+    // Takes effect when we want to sample from an image which is Depth/Stencil,
+    // but we only want to sample stencil.
+    const VkImageView GetIntegerView() const { return m_stencil_view != VK_NULL_HANDLE ? m_stencil_view : m_view; }
+
+
+private:
+    bool CreateDefalutView(const VkImageViewCreateInfo& info);
+    bool CreateRTViews(const ImageDesc& image_desc, const VkImageViewCreateInfo& info);
+    bool CreateMipViews(const VkImageViewCreateInfo& info);
+    bool CreateAlternateViews(const ImageDesc& image_desc, const VkImageViewCreateInfo& info);
+
+    void FreeView(VkImageView view);
+
+    Device_Vulkan* m_device;
+    VkImageView m_view = VK_NULL_HANDLE;
+    std::vector<VkImageView> m_render_target_views;
+    std::vector<VkImageView> m_mip_views;
+    VkImageView m_depth_view = VK_NULL_HANDLE;
+    VkImageView m_stencil_view = VK_NULL_HANDLE;
+
+    friend class Device_Vulkan;
+};
+CONVERT_TO_VULKAN_INTERNAL_FUNC(ImageView)
+
+class Image_Vulkan : public Image, public Cookie, public InternalSyncEnabled 
+{
 public:
     Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc); // only used for fill swapchain image infomation
     Image_Vulkan(Device_Vulkan* device, const ImageDesc& desc, const ImageInitData* init_data);
     virtual ~Image_Vulkan();
     
+    const ImageView& GetDefaultView() const override;
+    ImageView& GetDefaultView() override;
+
     const VkImage GetHandle() const { return m_handle; }
-    const VkImageView GetView() const { return m_view; }
     
     bool IsSwapChainImage() const { return m_isSwapChainImage; }
     
@@ -60,7 +123,7 @@ private:
     Device_Vulkan* m_device;
     VkImage m_handle;
     VmaAllocation m_allocation;
-    VkImageView m_view;
+    Ref<ImageView_Vulkan> m_default_view;
     bool m_isSwapChainImage;
 
     friend class Device_Vulkan;
