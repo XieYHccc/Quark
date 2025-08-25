@@ -15,8 +15,10 @@ void SkyboxRender(rhi::CommandList& cmd, const RenderQueueTask* task, unsigned i
 
 	SkyboxPerDrawCallData* data = (SkyboxPerDrawCallData*)task->perdrawcall_data;
 
+	std::vector<std::pair<std::string, int>> defines;
+	StaticMesh::GetAttribDefines(defines, resource_manager.mesh_attrib_mask_skybox);
 	Ref<rhi::PipeLine> pipeline_skybox = resource_manager.RequestGraphicsPSO(
-		*resource_manager.GetShaderLibrary().program_skybox,
+		*resource_manager.GetShaderLibrary().program_skybox->RequestVariant(defines),
 		cmd.GetCurrentRenderPassInfo(),
 		resource_manager.mesh_attrib_mask_skybox,
 		true, DrawPipeline::AlphaTest); // TODO: should be opaque here, change the Request PSO Interface in the future.

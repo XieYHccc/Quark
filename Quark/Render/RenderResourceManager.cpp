@@ -466,13 +466,13 @@ Ref<PBRMaterial> RenderResourceManager::RequestMateral(Ref<MaterialAsset> mat_as
     return new_material;
 }
 
-Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgram& program, const rhi::RenderPassInfo& rp, uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline)
+Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp, uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline)
 {
 
     auto& vertex_layout = RequestMeshVertexLayout(mesh_attrib_mask);
-    ShaderVariantKey key;
-    key.meshAttributeMask = mesh_attrib_mask;
-    ShaderProgramVariant* programVariant = program.IsStatic()? program.GetPrecompiledVariant() : program.GetOrCreateVariant(key);
+    //ShaderVariantKey key;
+    //key.meshAttributeMask = mesh_attrib_mask;
+    //ShaderProgramVariant* programVariant = program.IsStatic()? program.GetPrecompiledVariant() : program.GetOrCreateVariant(key);
         
     rhi::PipelineColorBlendState& bs = draw_pipeline == DrawPipeline::Opaque ? blendState_opaque : blendState_transparent;
     rhi::PipelineDepthStencilState ds = depthStencilState_disabled;
@@ -480,7 +480,7 @@ Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgram& prog
         ds = (draw_pipeline == DrawPipeline::Opaque) ? depthStencilState_depthWrite : depthStencilState_depthTestOnly;
 
     util::Hasher h;
-    h.u64(programVariant->GetHash());
+    h.u64(program.GetHash());
     h.u64(rp.GetHash());
 
     // hash depth stencil state
@@ -534,8 +534,8 @@ Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgram& prog
     else
     {
         rhi::GraphicPipeLineDesc desc = {};
-        desc.vertShader = programVariant->GetShader(rhi::ShaderStage::STAGE_VERTEX);
-        desc.fragShader = programVariant->GetShader(rhi::ShaderStage::STAGE_FRAGEMNT);
+        desc.vertShader = program.GetShader(rhi::ShaderStage::STAGE_VERTEX);
+        desc.fragShader = program.GetShader(rhi::ShaderStage::STAGE_FRAGEMNT);
         desc.depthStencilState = ds;
         desc.blendState = bs;
         desc.rasterState = rasterizationState_fill;
@@ -549,6 +549,40 @@ Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgram& prog
 
         return newPipeline;
     }
+}
+
+Ref<rhi::PipeLine> RenderResourceManager::RequestFullScreenQuadPSO(ShaderProgramVariant& program, bool depth_test, bool depth_write, rhi::CompareOperation depth_compare)
+{
+    util::Hasher h;
+    h.u64(program.GetHash());
+    h.u32(depth_test);
+    h.u32(depth_write);
+    h.u32(util::ecast(depth_compare));
+
+    auto find = m_cached_psos.find(h.get());
+    if (find != m_cached_psos.end())
+    {
+        return find->second;
+    }
+    else
+    {
+        rhi::PipelineColorBlendState bs = rhi::PipelineColorBlendState::create_disabled(1);
+        rhi::PipelineDepthStencilState ds = {};
+        ds.depthCompareOp = depth_compare;
+        ds.enableDepthTest = depth_test;
+        ds.enableDepthWrite = depth_write;
+        ds.enableStencil = false;
+        rhi::RasterizationState rs = rasterizationState_fill;
+
+        rhi::GraphicPipeLineDesc desc;
+        desc.vertShader = program.GetShader(rhi::ShaderStage::STAGE_VERTEX);
+        desc.fragShader = program.GetShader(rhi::ShaderStage::STAGE_FRAGEMNT);
+        desc.blendState = bs;
+        desc.depthStencilState = ds;
+        desc.rasterState = rs;
+    }
+
+    return nullptr;
 }
 
 Ref<rhi::Image> RenderResourceManager::RequestImage(Ref<ImageAsset> image_asset)

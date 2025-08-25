@@ -235,12 +235,12 @@ namespace quark
         new_image_asset->width = static_cast<u32>(width);
         new_image_asset->height = static_cast<u32>(height);
         new_image_asset->depth = 1u;
-        new_image_asset->arraySize = 1;     // Only support 1 layer and 1 mipmap level for embedded image
+        new_image_asset->arraySize = 1;
         new_image_asset->mipLevels = 1;
         new_image_asset->format = rhi::DataFormat::R8G8B8A8_UNORM;
         new_image_asset->type = rhi::ImageType::TYPE_2D;
-        new_image_asset->data.resize(width * height * 4);
-        memcpy(new_image_asset->data.data(), data, width * height * 4);
+        new_image_asset->data.resize(width * height * rhi::GetFormatStride(rhi::DataFormat::R8G8B8A8_UNORM));
+        memcpy(new_image_asset->data.data(), data, new_image_asset->data.size());
         stbi_image_free(data);
 
         rhi::ImageInitData init_data;
@@ -252,5 +252,37 @@ namespace quark
         QK_CORE_LOGI_TAG("ImageAssetImporter", "ImageAssetImporter: Import Image asset: {0}", file_path);
 
         return new_image_asset;
+    }
+    Ref<ImageAsset> ImageImporter::ImportHdr(const std::string& file_path)
+    {
+        int width, height, nrComponents;
+        float* data = stbi_loadf(file_path.c_str(), &width, &height, &nrComponents, 3);
+
+        if (!data)
+        {
+            QK_CORE_LOGW_TAG("ImageAssetImporter", "TextureImporter::LoadStb: Failed to load image {}", file_path);
+            return nullptr;
+        }
+        QK_CORE_ASSERT(nrComponents == 3);
+        
+        Ref<ImageAsset> ret = CreateRef<ImageAsset>();
+        ret->width = static_cast<u32>(width);
+        ret->height = static_cast<u32>(height);
+        ret->depth = 1u;
+        ret->arraySize = 1;
+        ret->mipLevels = 1;
+        ret->format = rhi::DataFormat::R32G32B32A32_SFLOAT;
+        ret->type = rhi::ImageType::TYPE_2D;
+        ret->data.resize(width * height * rhi::GetFormatStride(rhi::DataFormat::R32G32B32A32_SFLOAT));
+        glm::vec4* dst = reinterpret_cast<glm::vec4*>(ret->data.data());
+        for (uint32_t i = 0; i < width * height; i++)
+        {
+            *dst = glm::vec4(data[i * 3], data[i * 3 + 1], data[i * 3 + 2], 1.f);
+            dst++;
+        }
+
+        QK_CORE_LOGI_TAG("ImageAssetImporter", "ImageAssetImporter: Import Image asset: {0}", file_path);
+
+        return ret;
     }
 }

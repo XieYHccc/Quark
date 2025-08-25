@@ -74,28 +74,28 @@ void RenderSystem::Flush(rhi::CommandList& cmd, const RenderQueue& queue, const 
     queue.Dispatch(Queue::Opaque, cmd);
 }
 
- void RenderSystem::DrawSkybox(Ref<ImageAsset> cubemap, const RenderContext& ctx, rhi::CommandList& cmd)
- {
-    Ref<MeshAsset> cubeMesh = AssetManager::Get().mesh_cube;
-    Ref<MeshBuffers> cubeRenderMesh = m_renderResourceManager->RequestMeshBuffers(cubeMesh);
-    Ref<rhi::Image> envMap = m_renderResourceManager->RequestImage(cubemap);
+ //void RenderSystem::DrawSkybox(Ref<ImageAsset> cubemap, const RenderContext& ctx, rhi::CommandList& cmd)
+ //{
+ //   Ref<MeshAsset> cubeMesh = AssetManager::Get().mesh_cube;
+ //   Ref<MeshBuffers> cubeRenderMesh = m_renderResourceManager->RequestMeshBuffers(cubeMesh);
+ //   Ref<rhi::Image> envMap = m_renderResourceManager->RequestImage(cubemap);
 
-    Ref<rhi::PipeLine> pipeline_skybox = m_renderResourceManager->RequestGraphicsPSO(
-        *m_renderResourceManager->GetShaderLibrary().program_skybox,
-        cmd.GetCurrentRenderPassInfo(),
-        m_renderResourceManager->mesh_attrib_mask_skybox,
-        false, DrawPipeline::Opaque);
-    
-    BindCameraParameters(cmd, ctx);
+ //   Ref<rhi::PipeLine> pipeline_skybox = m_renderResourceManager->RequestGraphicsPSO(
+ //       *m_renderResourceManager->GetShaderLibrary().program_skybox,
+ //       cmd.GetCurrentRenderPassInfo(),
+ //       m_renderResourceManager->mesh_attrib_mask_skybox,
+ //       false, DrawPipeline::Opaque);
+ //   
+ //   BindCameraParameters(cmd, ctx);
 
-    cmd.BindImage(2, 0, envMap->GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL);
-    cmd.BindSampler(2, 0, *m_renderResourceManager->sampler_cube);
-    cmd.BindVertexBuffer(0, *cubeRenderMesh->vbo_position, 0);
-    cmd.BindIndexBuffer(*cubeRenderMesh->ibo, 0, IndexBufferFormat::UINT32);
+ //   cmd.BindImage(2, 0, envMap->GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL);
+ //   cmd.BindSampler(2, 0, *m_renderResourceManager->sampler_cube);
+ //   cmd.BindVertexBuffer(0, *cubeRenderMesh->vbo_position, 0);
+ //   cmd.BindIndexBuffer(*cubeRenderMesh->ibo, 0, IndexBufferFormat::UINT32);
 
-    cmd.BindPipeLine(*pipeline_skybox);
-    cmd.DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);
- }
+ //   cmd.BindPipeLine(*pipeline_skybox);
+ //   cmd.DrawIndexed((uint32_t)cubeMesh->indices.size(), 1, 0, 0, 0);
+ //}
 
 void RenderSystem::DrawGrid(rhi::CommandList* cmd)
 {

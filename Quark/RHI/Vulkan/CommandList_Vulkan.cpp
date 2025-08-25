@@ -532,6 +532,12 @@ void CommandList_Vulkan::BindImage(uint32_t set, uint32_t binding, const ImageVi
     
 }
 
+void CommandList_Vulkan::BindImageSampler(uint32_t set, uint32_t binding, const ImageView& image_view, ImageLayout layout, const Sampler& sampler)
+{
+    BindImage(set, binding, image_view, layout);
+    BindSampler(set, binding, sampler);
+}
+
 void CommandList_Vulkan::BindPipeLine(const PipeLine &pipeline)
 {
     auto& internal_pipeline = ToInternal(&pipeline);
@@ -588,6 +594,100 @@ void CommandList_Vulkan::CopyImageToBuffer(const Buffer& buffer, const Image& im
 	copy_region.imageExtent = { extent.width, extent.height, extent.depth };
 
 	vkCmdCopyImageToBuffer(m_cmdBuffer, internal_image.GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, internal_buffer.GetHandle(), 1, &copy_region);
+}
+
+void CommandList_Vulkan::GenerateMipmap(Image& image)
+{
+    const ImageDesc& desc = image.GetDesc();
+    auto& internal = ToInternal(&image);
+
+    // Generate mipmap layout
+    TextureFormatLayout layout;
+    layout.SetUp2D(desc.format, desc.width, desc.height, desc.arraySize, 0);
+
+    auto& vulkan_ctx = m_device->GetVulkanContext();
+    // Transit the base mip level to transfer src layout
+    {
+        VkImageMemoryBarrier2 barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        barrier.pNext = nullptr;
+        barrier.image = internal.GetHandle();
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier.srcAccessMask = 0;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = desc.arraySize;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        VkDependencyInfo dependencyInfo = {};
+        dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dependencyInfo.imageMemoryBarrierCount = 1;
+        dependencyInfo.pImageMemoryBarriers = &barrier;
+        vulkan_ctx.extendFunction.pVkCmdPipelineBarrier2KHR(m_cmdBuffer, &dependencyInfo);
+    }
+
+    // Generate mipmaps
+    for (uint32_t level = 1; level < layout.GetMipLevels(); ++level) {
+        VkImageBlit blit = {};
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.layerCount = desc.arraySize;
+        blit.srcSubresource.mipLevel = level - 1;
+        blit.srcOffsets[1].x = layout.GetMipInfo(level - 1).width;
+        blit.srcOffsets[1].y = layout.GetMipInfo(level - 1).height;
+        blit.srcOffsets[1].z = desc.depth;
+
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.layerCount = desc.arraySize;
+        blit.dstSubresource.mipLevel = level;
+        blit.dstOffsets[1].x = layout.GetMipInfo(level).width;
+        blit.dstOffsets[1].y = layout.GetMipInfo(level).height;
+        blit.dstOffsets[1].z = desc.depth;
+
+        // Transit the dst mip level to transfer dst layout
+        VkImageMemoryBarrier2 barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        barrier.pNext = nullptr;
+        barrier.image = internal.GetHandle();
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+        barrier.srcAccessMask = 0;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = level;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = desc.arraySize;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+        VkDependencyInfo dependencyInfo = {};
+        dependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dependencyInfo.imageMemoryBarrierCount = 1;
+        dependencyInfo.pImageMemoryBarriers = &barrier;
+
+        vulkan_ctx.extendFunction.pVkCmdPipelineBarrier2KHR(m_cmdBuffer, &dependencyInfo);
+
+        // Blit image
+        vkCmdBlitImage(m_cmdBuffer, internal.GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, internal.GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+
+        // Transit the dst mip level to transfer src layout
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+        vulkan_ctx.extendFunction.pVkCmdPipelineBarrier2KHR(m_cmdBuffer, &dependencyInfo);
+    }
 }
 
 void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const IndexBufferFormat format)

@@ -43,7 +43,12 @@ void StaticMesh::GetRenderData(const RenderContext& context, const RenderInfoCmp
 		// TODO :Remvoe hard code
 		const std::string& pass_name = queue.GetPassName();
 		if (pass_name == "ForwardBase")
-			perdrawcall_data->shader_program = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh;
+		{
+			// TODO:figure out a way to avoid allocating memory here
+			std::vector<std::pair<std::string, int>> defines;
+			GetAttribDefines(defines, mesh_attribute_mask);
+			perdrawcall_data->shader_program = RenderSystem::Get().GetRenderResourceManager().GetShaderLibrary().program_staticMesh->RequestVariant(defines);
+		}
 		else if (pass_name == "ShadowMapDepth")
 			QK_CORE_ASSERT(false);
 	}
@@ -101,9 +106,26 @@ void SkinnedMesh::GetRenderData(const RenderContext& context, const RenderInfoCm
 
 }
 
+void StaticMesh::GetAttribDefines(std::vector<std::pair<std::string, int>>& defines, uint32_t mask)
+{
+	if (mask & MESH_ATTRIBUTE_POSITION_BIT)
+		defines.emplace_back("HAVE_POSITION", 1);
+	if (mask & MESH_ATTRIBUTE_NORMAL_BIT)
+		defines.emplace_back("HAVE_NORMAL", 1);
+	if (mask & MESH_ATTRIBUTE_UV_BIT)
+		defines.emplace_back("HAVE_UV", 1);
+	if (mask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
+		defines.emplace_back("HAVE_VERTEX_COLOR", 1);
+	if (mask & MESH_ATTRIBUTE_BONE_INDEX_BIT)
+		defines.emplace_back("HAVE_BONE_INDEX", 1);
+	if (mask & MESH_ATTRIBUTE_BONE_WEIGHT_BIT)
+		defines.emplace_back("HAVE_BONE_WEIGHT", 1);
+}
+
 void BindMeshState(rhi::CommandList& cmd, const StaticMeshPerDrawcallData& data)
 {
 	using namespace rhi;
+
 	auto& render_resource_manager = RenderSystem::Get().GetRenderResourceManager();
 	Ref<rhi::PipeLine> pipeline = RenderSystem::Get().GetRenderResourceManager().RequestGraphicsPSO(
 		*(data.shader_program), cmd.GetCurrentRenderPassInfo(), data.mesh_attribute_mask,

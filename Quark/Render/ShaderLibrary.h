@@ -7,17 +7,17 @@
 
 namespace quark {
 
-struct ShaderVariantKey
-{
-	uint32_t meshAttributeMask = 0;
-
-	uint64_t GetHash() const;
-};
+//struct ShaderVariantKey
+//{
+//	uint32_t meshAttributeMask = 0;
+//
+//	uint64_t GetHash() const;
+//};
 
 // a shaderTemplateVariant instance contains a gpu shader resource
 struct ShaderTemplateVariant
 {
-	ShaderVariantKey signatureKey;
+	// ShaderVariantKey signatureKey;
 	Ref<rhi::Shader> gpuShaderHandle;
 	
 	std::vector<uint32_t> spirv;	// maybe used for serialization
@@ -33,7 +33,7 @@ public:
 	ShaderTemplate(const std::string& path, rhi::ShaderStage stage);
 
 	// static shader template won't be able to (compile)create any variant
-	ShaderTemplateVariant* GetOrCreateVariant(const ShaderVariantKey& key);
+	ShaderTemplateVariant* RequestVariant(const std::vector<std::pair<std::string, int>>& defines);
 	ShaderTemplateVariant* GetPrecompiledVariant();
 
 	std::string GetPath() const { return m_path; }
@@ -71,7 +71,7 @@ public:
 	ShaderProgram(ShaderTemplate* compute);
 	ShaderProgram(ShaderTemplate* vert, ShaderTemplate* frag);
 
-	ShaderProgramVariant* GetOrCreateVariant(const ShaderVariantKey& key);
+	ShaderProgramVariant* RequestVariant(const std::vector<std::pair<std::string, int>>& defines);
 	ShaderProgramVariant* GetPrecompiledVariant();
 
 	uint64_t GetHash() const { return m_hash; }

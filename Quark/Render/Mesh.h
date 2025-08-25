@@ -35,7 +35,7 @@ struct StaticMeshPerDrawcallData
 	const rhi::Buffer* vbo_varying;
 	const rhi::Buffer* ibo;
 	const rhi::Image* textures[util::ecast(TextureKind::Count)];
-	ShaderProgram* shader_program;	// TODO: use ShaderProgramVariant
+	ShaderProgramVariant* shader_program;	// TODO: use ShaderProgramVariant
 
 	uint32_t ibo_offset = 0;
 	uint32_t vertex_offset = 0;
@@ -98,6 +98,8 @@ struct StaticMesh : public IRenderable
 	const math::Aabb* GetStaticAabb() const override { return &static_aabb; }
 
 	DrawPipeline GetMeshDrawPipeline() const override { return material->draw_pipeline; }
+
+	static void GetAttribDefines(std::vector<std::pair<std::string, int>>& defines, uint32_t mask);
 
 protected:
 	void FillPerDrawcallData(StaticMeshPerDrawcallData& data) const;

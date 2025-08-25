@@ -63,6 +63,7 @@ public:
     void BindUniformBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) override final;
     void BindStorageBuffer(uint32_t set, uint32_t binding, const Buffer& buffer, uint64_t offset, uint64_t size) override final;
     void BindImage(uint32_t set, uint32_t binding, const ImageView& image_view, ImageLayout layout) override final;
+    void BindImageSampler(uint32_t set, uint32_t binding, const ImageView& image_view, ImageLayout layout, const Sampler& sampler) override final;
     void BindVertexBuffer(uint32_t binding, const Buffer& buffer, u64 offset) override final;
     void BindIndexBuffer(const Buffer& buffer, u64 offset, const IndexBufferFormat format) override final;
     void BindSampler(uint32_t set, uint32_t binding, const Sampler& sampler) override final;
@@ -74,7 +75,8 @@ public:
     void BeginRenderPass(const RenderPassInfo& renderPassInfo, const FrameBufferInfo& frameBufferInfo) override final;
     void EndRenderPass() override final;
     void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageCopySubresourceRange& subresouce) override final;
-    
+    void GenerateMipmap(Image& image) override final;
+
     // buffer pool allocation
     void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) override final;
     void* AllocateVertexData(unsigned binding, uint64_t size, uint64_t stride, VertexInputLayout::VertexBindInfo::InputRate inputRate) override final;

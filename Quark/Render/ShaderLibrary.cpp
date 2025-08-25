@@ -6,13 +6,13 @@
 
 namespace quark {
 
-uint64_t ShaderVariantKey::GetHash() const
-{
-	util::Hasher hasher;
-	hasher.u32(meshAttributeMask);
-
-	return hasher.get();
-}
+//uint64_t ShaderVariantKey::GetHash() const
+//{
+//	util::Hasher hasher;
+//	hasher.u32(meshAttributeMask);
+//
+//	return hasher.get();
+//}
 
 
 ShaderProgram::ShaderProgram(ShaderTemplate* compute)
@@ -31,27 +31,81 @@ ShaderProgram::ShaderProgram(ShaderTemplate* vert, ShaderTemplate* frag)
 	m_hash = h.get();
 }
 
-ShaderProgramVariant* ShaderProgram::GetOrCreateVariant(const ShaderVariantKey& key)
+ShaderTemplateVariant* ShaderTemplate::RequestVariant(const std::vector<std::pair<std::string, int>>& defines)
 {
-	uint64_t hash = key.GetHash();
+	util::Hasher hasher;
 
-	auto it = m_variants.find(hash);
+	for (const auto& [s, v] : defines)
+	{
+		hasher.string(s);
+		hasher.u32(v);
+	}
+
+	util::Hash hash = hasher.get();
+	auto it = m_Variants.find(hash);
+	if (it != m_Variants.end())
+	{
+		return it->second.get();
+	}
+	else
+	{
+		// Compile glsl shader with new key
+		GLSLCompiler::CompileOptions ops;
+		for (const auto& [s, v] : defines)
+		{
+			if (v == 1)
+				ops.AddDefine(s);
+			else if (v == 0)
+				ops.AddUndefine(s);
+		}
+
+		std::string messages;
+		std::vector<uint32_t> spirv;
+		if (!m_compiler->Compile(messages, spirv, ops))
+		{
+			QK_CORE_LOGE_TAG("Renderer", "ShaderTemplate: Failed to compile shader : {} : {}", m_path, messages);
+			return nullptr;
+		}
+		Ref<rhi::Shader> newShader = RenderSystem::Get().GetDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size() * sizeof(uint32_t));
+
+		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
+		newVariant->gpuShaderHandle = newShader;
+		// newVariant->signatureKey = key;
+		newVariant->spirv = spirv;
+
+		m_Variants[hash] = std::move(newVariant);
+		return m_Variants[hash].get();
+
+	}
+}
+
+ShaderProgramVariant* ShaderProgram::RequestVariant(const std::vector<std::pair<std::string, int>>& defines)
+{
+	util::Hasher hasher;
+
+	for (const auto& [s, v] : defines)
+	{
+		hasher.string(s);
+		hasher.u32(v);
+	}
+
+	auto it = m_variants.find(hasher.get());
 	if (it != m_variants.end())
 	{
 		return it->second.get();
 	}
 	else
 	{
-		ShaderTemplateVariant* vert = m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)]->GetOrCreateVariant(key);
-		ShaderTemplateVariant* frag = m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)]->GetOrCreateVariant(key);
+		ShaderTemplateVariant* vert = m_stages[util::ecast(rhi::ShaderStage::STAGE_VERTEX)]->RequestVariant(defines);
+		ShaderTemplateVariant* frag = m_stages[util::ecast(rhi::ShaderStage::STAGE_FRAGEMNT)]->RequestVariant(defines);
 
 		Scope<ShaderProgramVariant> newVariant = CreateScope<ShaderProgramVariant>(vert, frag);
 
-		m_variants[hash] = std::move(newVariant);
+		m_variants[hasher.get()] = std::move(newVariant);
 
-		return m_variants[hash].get();
+		return m_variants[hasher.get()].get();
+
 	}
-	return nullptr;
 }
 
 ShaderProgramVariant* ShaderProgram::GetPrecompiledVariant()
@@ -179,58 +233,6 @@ ShaderTemplate::ShaderTemplate(const std::string& path, rhi::ShaderStage stage)
 
 }
 
-ShaderTemplateVariant* ShaderTemplate::GetOrCreateVariant(const ShaderVariantKey &key)
-{
-	if (IsStatic())
-	{
-		QK_CORE_LOGW_TAG("Renderer", "You can't create a variant from a static shader template");
-		return nullptr;
-	}
-
-	uint64_t hash = key.GetHash();
-
-	auto it = m_Variants.find(hash);
-	if (it != m_Variants.end())
-	{
-		return it->second.get();
-	}
-	else
-	{
-		// Compile glsl shader with new key
-		GLSLCompiler::CompileOptions ops;
-		if (key.meshAttributeMask & MESH_ATTRIBUTE_POSITION_BIT)
-			ops.AddDefine("HAVE_POSITION");
-		if (key.meshAttributeMask & MESH_ATTRIBUTE_NORMAL_BIT)
-			ops.AddDefine("HAVE_NORMAL");
-		if (key.meshAttributeMask & MESH_ATTRIBUTE_UV_BIT)
-			ops.AddDefine("HAVE_UV");
-		if (key.meshAttributeMask & MESH_ATTRIBUTE_VERTEX_COLOR_BIT)
-			ops.AddDefine("HAVE_VERTEX_COLOR");
-		if (key.meshAttributeMask & MESH_ATTRIBUTE_BONE_INDEX_BIT)
-			ops.AddDefine("HAVE_BONE_INDEX");
-		if (key.meshAttributeMask & MESH_ATTRIBUTE_BONE_WEIGHT_BIT)
-			ops.AddDefine("HAVE_BONE_WEIGHT");
-
-		std::string messages;
-		std::vector<uint32_t> spirv;
-		if (!m_compiler->Compile(messages, spirv, ops))
-		{
-			QK_CORE_LOGE_TAG("Renderer", "ShaderTemplate: Failed to compile shader : {} : {}", m_path, messages);
-			return nullptr;
-		}
-
-		Ref<rhi::Shader> newShader = RenderSystem::Get().GetDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size() * sizeof(uint32_t));
-
-		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
-		newVariant->gpuShaderHandle = newShader;
-		newVariant->signatureKey = key;
-		newVariant->spirv = spirv;
-
-		m_Variants[hash] = std::move(newVariant);
-		return m_Variants[hash].get();
-	}
-}
-
 ShaderTemplateVariant* ShaderTemplate::GetPrecompiledVariant()
 {
 	util::Hasher h;
@@ -251,7 +253,7 @@ ShaderTemplateVariant* ShaderTemplate::GetPrecompiledVariant()
 		Ref<rhi::Shader> newShader = RenderSystem::Get().GetDevice()->CreateShaderFromBytes(m_stage, spirv.data(), spirv.size());
 		Scope<ShaderTemplateVariant> newVariant = CreateScope<ShaderTemplateVariant>();
 		newVariant->gpuShaderHandle = newShader;
-		newVariant->signatureKey = ShaderVariantKey();
+		// newVariant->signatureKey = ShaderVariantKey();
 		newVariant->spirv = std::vector<uint32_t>(spirv.begin(), spirv.end());
 		m_Variants[hash] = std::move(newVariant);
 

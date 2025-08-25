@@ -70,6 +70,7 @@ enum class DataFormat
     R8G8B8A8_UNORM,
     B8G8R8A8_UNORM,
     R16G16B16A16_SFLOAT,
+    R16G16B16_SFLOAT,
     R32G32B32_SFLOAT,
     R32G32B32A32_SFLOAT,
     D32_SFLOAT,
@@ -192,7 +193,10 @@ inline u32 GetFormatStride(DataFormat format)
         return 12u;
     case DataFormat::R16G16B16A16_SFLOAT:
         return 8u;
+    case DataFormat::R16G16B16_SFLOAT:
+        return 6u;
     case DataFormat::BC7_UNORM_BLOCK:
+    case DataFormat::R32G32B32A32_SFLOAT:
         return 16u;
     default:
     {
