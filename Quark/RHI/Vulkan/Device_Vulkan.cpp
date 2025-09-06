@@ -176,7 +176,12 @@ void PerFrameContext::begin()
 
     for (auto& b : ubo_blocks)
         device->m_ubo_pool.RecycleBlock(b);
+
+    for (auto& b : vbo_blocks)
+        device->m_vbo_pool.RecycleBlock(b);
+
     ubo_blocks.clear();
+    vbo_blocks.clear();
 
     // destroy deferred-destroyed resources
     clear();
@@ -197,6 +202,7 @@ void PerFrameContext::destroy()
     }
 
     ubo_blocks.clear();
+    vbo_blocks.clear();
 }
 
 void CopyCmdAllocator::init(Device_Vulkan *device)
@@ -450,6 +456,7 @@ Device_Vulkan::~Device_Vulkan()
     copyAllocator.destroy();
 
     m_ubo_pool.Reset();
+    m_vbo_pool.Reset();
 
     // destroy command buffers, pools, semaphore, and fences
     for (size_t i = 0; i < m_config.framesInFlight; i++)

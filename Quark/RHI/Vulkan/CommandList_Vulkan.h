@@ -79,7 +79,7 @@ public:
 
     // buffer pool allocation
     void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) override final;
-    void* AllocateVertexData(unsigned binding, uint64_t size, uint64_t stride, VertexInputLayout::VertexBindInfo::InputRate inputRate) override final;
+    void* AllocateVertexData(unsigned binding, uint64_t size) override final;
 
     // state tracking
     const RenderPassInfo& GetCurrentRenderPassInfo() const override final;

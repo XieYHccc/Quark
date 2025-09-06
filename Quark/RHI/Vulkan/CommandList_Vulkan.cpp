@@ -413,13 +413,13 @@ void* CommandList_Vulkan::AllocateConstantData(uint32_t set, uint32_t binding, u
     return data.host;
 }
 
-void* CommandList_Vulkan::AllocateVertexData(unsigned binding, uint64_t size, uint64_t stride, VertexInputLayout::VertexBindInfo::InputRate inputRate)
+void* CommandList_Vulkan::AllocateVertexData(unsigned binding, uint64_t size)
 {
     auto data = m_vbo_block.Allocate(size);
     if (!data.host)
     {
         m_device->RequestVertexBlock(m_vbo_block, size);
-        data = m_ubo_block.Allocate(size);
+        data = m_vbo_block.Allocate(size);
         QK_CORE_ASSERT(data.host);
     }
 

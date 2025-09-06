@@ -58,22 +58,27 @@ Application::Application(const ApplicationSpecification& specs)
         QK_CORE_LOGI_TAG("Core", "Window created");
     }
 
-    // Init Render System
-    JobSystem::Counter counter;
-    m_jobSystem->Execute([&]()
-    {
-        RenderSystem::CreateSingleton(specs.render_system_config);
-    }, &counter);
+    //TODO: Fix jobsystem
+    //// Init Render System
+    //JobSystem::Counter counter;
+    //m_jobSystem->Execute([&]()
+    //{
+    //    RenderSystem::CreateSingleton(specs.render_system_config);
+    //}, &counter);
 
-    // Init UI system
-    m_jobSystem->Execute([this, &specs, &counter]() 
-    {
-        m_jobSystem->Wait(&counter, 1);
-        UI::CreateSingleton();
-        UI::Get()->Init(RenderSystem::Get().GetDevice(), specs.uiSpecs);
-    });
+    //// Init UI system
+    //m_jobSystem->Execute([this, &specs, &counter]() 
+    //{
+    //    m_jobSystem->Wait(&counter, 1);
+    //    UI::CreateSingleton();
+    //    UI::Get()->Init(RenderSystem::Get().GetDevice(), specs.uiSpecs);
+    //});
 
-    m_jobSystem->Wait(&counter, 1);
+    //m_jobSystem->Wait(&counter, 1);
+
+    RenderSystem::CreateSingleton(specs.render_system_config);
+    UI::CreateSingleton();
+    UI::Get()->Init(RenderSystem::Get().GetDevice(), specs.uiSpecs);
 
     // Register application callback functions
     EventManager::Get().Subscribe<WindowCloseEvent>([this](const WindowCloseEvent& event) { OnWindowClose(event);});

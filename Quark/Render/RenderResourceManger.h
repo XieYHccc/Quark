@@ -34,6 +34,7 @@ public:
 	// vertex input layout
 	uint32_t mesh_attrib_mask_skybox;
 	rhi::VertexInputLayout vertexInputLayout_skybox;
+	rhi::VertexInputLayout vertexInputLayout_fullscreenQuad;
 
 	// renderPassInfo
 	rhi::RenderPassInfo renderPassInfo_swapchainPass;
@@ -55,9 +56,9 @@ public:
 	Ref<PBRMaterial> default_material;
 
 	// pipelines
-	//Ref<rhi::PipeLine> pipeline_skybox;
-	//Ref<rhi::PipeLine> pipeline_infiniteGrid;
-	Ref<rhi::PipeLine> pipeline_entityID;
+	// Ref<rhi::PipeLine> pipeline_skybox;
+	// Ref<rhi::PipeLine> pipeline_infiniteGrid;
+	// Ref<rhi::PipeLine> pipeline_entityID;
 		
 	RenderResourceManager(Ref<rhi::Device> device);
 
@@ -67,7 +68,7 @@ public:
 	Ref<MeshBuffers>				RequestMeshBuffers(Ref<MeshAsset> mesh_asset);
 	Ref<PBRMaterial>				RequestMateral(Ref<MaterialAsset> mat_asset);
 	Ref<rhi::PipeLine>				RequestGraphicsPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp, const uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline);
-	Ref<rhi::PipeLine>				RequestFullScreenQuadPSO(ShaderProgramVariant& program, bool depth_test, bool depth_write, rhi::CompareOperation depth_compare);
+	Ref<rhi::PipeLine>				RequestFullScreenQuadPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp_info, bool depth_test, bool depth_write, rhi::CompareOperation depth_compare);
 	Ref<rhi::Image>					RequestImage(Ref<ImageAsset> image_asset);
 	rhi::VertexInputLayout&			RequestMeshVertexLayout(uint32_t meshAttributesMask);
 

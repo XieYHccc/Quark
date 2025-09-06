@@ -2,87 +2,37 @@
 #include <Quark/Asset/GLTFImporter.h>
 #include <Quark/Asset/ImageImporter.h>
 #include <Quark/Render/RenderContext.h>
-#include <Quark/Render/RenderQueue.h>
-#include <Quark/Render/Skybox.h>
-#include <Quark/Render/Utils/ImageUtils.h>
-#include <Quark/Scene/Components/MoveControlCmpt.h>
+#include <Quark/Render/Utils/CommandListUtils.h>
 #include <Quark/EntryPoint.h>
 
 using namespace std;
 using namespace quark;
 
-class IBLTest : public Application
+class TextureViewer : public Application
 {
 public:
-	IBLTest(const ApplicationSpecification& specs)
+	TextureViewer(const ApplicationSpecification& specs)
 		: Application(specs)
 	{
 		using namespace rhi;
 
-		// load cube map
+		// load texture
 		ImageImporter imageLoader;
-		m_cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
-		m_skybox = CreateRef<Skybox>();
-		m_skybox->SetCubemap(m_cubeMap);
+		m_texture = imageLoader.ImportStb("BuiltInResources/Textures/grid_box_grey.png");
 
-		// load hdr
-		m_hdr = imageLoader.ImportHdr("BuiltInResources/Textures/Hdr/newport_loft.hdr");
-
-		// Create depth image
-		uint32_t width = m_window->GetFrambufferWidth();
-		uint32_t height = m_window->GetFrambufferHeight();
-		ImageDesc image_desc;
-		image_desc.type = ImageType::TYPE_2D;
-		auto ratio = Application::Get().GetWindow()->GetRatio();
-		image_desc.width = width;
-		image_desc.height = height;
-		image_desc.depth = 1;
-		image_desc.format = RenderSystem::Get().GetRenderResourceManager().format_depthAttachment_main;
-		image_desc.arraySize = 1;
-		image_desc.mipLevels = 1;
-		image_desc.initialLayout = ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		image_desc.usageBits = IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-		m_depth_attachment = RenderSystem::Get().GetDevice()->CreateImage(image_desc);
-
-		// add a camera component to the scene
-		m_scene = CreateRef<Scene>("TestIBL");
-		Entity* camera_entity = m_scene->CreateEntity("Camera");
-		auto* camcmpt = camera_entity->AddComponent<CameraCmpt>();
-		camcmpt->aspect = 2500.f / 1600;
-		camcmpt->fov = 60.f;
-		camcmpt->zNear = 0.1f;
-		camcmpt->zFar = 1000.f;
-		camera_entity->GetComponent<TransformCmpt>()->SetLocalPosition(glm::vec3(0.f, 0.f, 5.f));
-		camera_entity->AddComponent<MoveControlCmpt>();
-		m_scene->SetMainCameraEntity(camera_entity);
-
-		auto& render_system = RenderSystem::Get();
-		Ref<rhi::Device> rhi_device = render_system.GetDevice();
-		Ref<rhi::Image> hdr = RenderSystem::Get().GetRenderResourceManager().RequestImage(m_hdr);
-		// ConvertEquirectToCube(*rhi_device, *hdr, 1);
+		auto& resource_manager= RenderSystem::Get().GetRenderResourceManager();
+		m_texture_gpu_resouce = resource_manager.RequestImage(m_texture);
 	}
 
 	void OnUpdate(TimeStep ts) override final
 	{
-		m_scene->OnUpdate(ts);
+
 	}
 
 	void OnRender(TimeStep ts) override final
 	{
 		auto& render_system = RenderSystem::Get();
 		Ref<rhi::Device> rhi_device = render_system.GetDevice();
-
-		//auto* cam = m_scene->GetMainCameraEntity()->GetComponent<CameraCmpt>();
-		////glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		////glm::mat4 proj = glm::perspective(glm::radians(45.0f), 2500.f / 1600, 0.1f, 1000.0f);
-		//glm::mat4 view = cam->GetViewMatrix();
-		//glm::mat4 proj = cam->GetProjectionMatrix();
-		//proj[1][1] *= -1;
-		//m_render_context.SetCamera(view, proj);
-
-		//m_render_queue.Reset();
-		//m_skybox->GetRenderData(m_render_context, nullptr, m_render_queue);
-		//m_render_queue.Sort();
 
 		// Rendering commands
 		if (rhi_device->BeiginFrame(ts))
@@ -123,23 +73,13 @@ public:
 			fb_info.colorAttatchemtsStoreOp[0] = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
 			fb_info.colorAttachments[0] = &swap_chain_image->GetDefaultView();
 			fb_info.clearColors[0] = { 0.2f, 0.2f, 0.3f, 1.f };
-			fb_info.depthAttachment = &m_depth_attachment->GetDefaultView();
-			fb_info.depthAttachmentLoadOp = rhi::FrameBufferInfo::AttachmentLoadOp::CLEAR;
-			fb_info.depthAttachmentStoreOp = rhi::FrameBufferInfo::AttachmentStoreOp::STORE;
-			fb_info.clearDepthStencil.depth_stencil = { 1.f, 0 };
 
 			rhi::RenderPassInfo render_pass_info = render_system.GetRenderResourceManager().renderPassInfo_swapchainPass;
-			render_pass_info.depthAttachmentFormat = m_depth_attachment->GetDesc().format;
-
-		//	cmd->SetViewPort(viewport);
-		//	cmd->SetScissor(scissor);
 
 			cmd->BeginRegion("Main pass");
 			cmd->BeginRenderPass(render_pass_info, fb_info);
-			// RenderSystem::Get().DrawSkybox(m_cubeMap, m_render_context, *cmd);
-			// render_system.Flush(*cmd, m_render_queue, m_render_context);
-			render_system.BindCameraParameters(*cmd, m_render_context);
-			// m_render_queue.Dispatch(Queue::OpaqueEmissive, *cmd);
+			cmd->BindImageSampler(0, 0, m_texture_gpu_resouce->GetDefaultView(), rhi::ImageLayout::SHADER_READ_ONLY_OPTIMAL, *render_system.GetRenderResourceManager().sampler_nearst);
+			CommandListUtil::DrawFullScreenQuad(*cmd, "BuiltInResources/Shaders/quad.vert","BuiltInResources/Shaders/blit.frag");
 			cmd->EndRenderPass();
 			cmd->EndRegion();
 
@@ -189,12 +129,8 @@ public:
 		UI::Get()->EndFrame();
 	}
 
-	Ref<Scene> m_scene;
-	RenderContext m_render_context;
-	RenderQueue m_render_queue;
-	Ref<rhi::Image> m_depth_attachment;
-	Ref<ImageAsset> m_cubeMap;
-	Ref<ImageAsset> m_hdr;
+	Ref<ImageAsset> m_texture;
+	Ref<rhi::Image> m_texture_gpu_resouce;
 	Ref<Skybox> m_skybox;
 };
 
@@ -204,12 +140,12 @@ namespace quark
 	{
 		ApplicationSpecification specs;
 		specs.uiSpecs.flags = 0;
-		specs.title = "Skybox_Test";
+		specs.title = "TextureViewer";
 		specs.width = 1440;
 		specs.height = 960;
 		specs.isFullScreen = false;
 		specs.workingDirectory = "E:/Quark/bin";
 
-		return new IBLTest(specs);
+		return new TextureViewer(specs);
 	}
 }

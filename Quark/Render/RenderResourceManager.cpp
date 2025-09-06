@@ -115,6 +115,7 @@ RenderResourceManager::RenderResourceManager(Ref<rhi::Device> device)
 
     // vertex input layout
     {
+        // skybox
         mesh_attrib_mask_skybox = MESH_ATTRIBUTE_POSITION_BIT;
 
         VertexInputLayout::VertexBindInfo vert_bind_info;
@@ -130,6 +131,13 @@ RenderResourceManager::RenderResourceManager(Ref<rhi::Device> device)
 
         vertexInputLayout_skybox.vertexBindInfos.push_back(vert_bind_info);
         vertexInputLayout_skybox.vertexAttribInfos.push_back(pos_attrib);
+
+        // fullscreen quad
+        vert_bind_info.stride = 8; //R32G32
+        vertexInputLayout_fullscreenQuad.vertexBindInfos.push_back(vert_bind_info);
+
+        pos_attrib.format = VertexInputLayout::VertexAttribInfo::ATTRIB_FORMAT_VEC2;
+        vertexInputLayout_fullscreenQuad.vertexAttribInfos.push_back(pos_attrib);
     }
 
     // images
@@ -210,16 +218,16 @@ RenderResourceManager::RenderResourceManager(Ref<rhi::Device> device)
         //pipeline_infiniteGrid = m_device->CreateGraphicPipeLine(pipelineDesc_infiniteGrid);
 
         // entityId pipeline
-        rhi::GraphicPipeLineDesc desc;
-        desc.vertShader = GetShaderLibrary().staticProgram_entityID->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
-        desc.fragShader = GetShaderLibrary().staticProgram_entityID->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
-        desc.depthStencilState = depthStencilState_depthWrite;
-        desc.blendState = blendState_opaque;
-        desc.rasterState = rasterizationState_fill;
-        desc.topologyType = TopologyType::TRANGLE_LIST;
-        desc.renderPassInfo = renderPassInfo_entityIdPass;
-        desc.vertexInputLayout = vertexInputLayout_skybox;
-        pipeline_entityID = m_device->CreateGraphicPipeLine(desc);
+        //rhi::GraphicPipeLineDesc desc;
+        //desc.vertShader = GetShaderLibrary().staticProgram_entityID->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_VERTEX);
+        //desc.fragShader = GetShaderLibrary().staticProgram_entityID->GetPrecompiledVariant()->GetShader(ShaderStage::STAGE_FRAGEMNT);
+        //desc.depthStencilState = depthStencilState_depthWrite;
+        //desc.blendState = blendState_opaque;
+        //desc.rasterState = rasterizationState_fill;
+        //desc.topologyType = TopologyType::TRANGLE_LIST;
+        //desc.renderPassInfo = renderPassInfo_entityIdPass;
+        //desc.vertexInputLayout = vertexInputLayout_skybox;
+        //pipeline_entityID = m_device->CreateGraphicPipeLine(desc);
     }
 
     // default material
@@ -551,7 +559,7 @@ Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgramVarian
     }
 }
 
-Ref<rhi::PipeLine> RenderResourceManager::RequestFullScreenQuadPSO(ShaderProgramVariant& program, bool depth_test, bool depth_write, rhi::CompareOperation depth_compare)
+Ref<rhi::PipeLine> RenderResourceManager::RequestFullScreenQuadPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp_info, bool depth_test, bool depth_write, rhi::CompareOperation depth_compare)
 {
     util::Hasher h;
     h.u64(program.GetHash());
@@ -580,6 +588,14 @@ Ref<rhi::PipeLine> RenderResourceManager::RequestFullScreenQuadPSO(ShaderProgram
         desc.blendState = bs;
         desc.depthStencilState = ds;
         desc.rasterState = rs;
+        desc.topologyType = rhi::TopologyType::TRANGLE_LIST;
+        desc.renderPassInfo = rp_info;
+        desc.vertexInputLayout = vertexInputLayout_fullscreenQuad;
+        Ref<rhi::PipeLine> newPipeline = m_device->CreateGraphicPipeLine(desc);
+		m_cached_psos[h.get()] = newPipeline;
+
+		return newPipeline;
+
     }
 
     return nullptr;
