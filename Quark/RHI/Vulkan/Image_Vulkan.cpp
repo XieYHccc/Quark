@@ -37,28 +37,34 @@ static inline ImageViewType GetImageViewType(const ImageDesc& create_info, const
     if (layers == REMAINING_ARRAY_LAYERS)
         layers = create_info.arraySize - base_layer;
 
+    QK_CORE_ASSERT(create_info.width >= 1);
+    QK_CORE_ASSERT(create_info.height >= 1);
     switch (create_info.type)
     {
     case ImageType::TYPE_2D:
-        QK_CORE_ASSERT(create_info.width >= 1);
-        QK_CORE_ASSERT(create_info.height >= 1);
         QK_CORE_ASSERT(create_info.depth == 1);
         if (layers > 1)
             return ImageViewType::TYPE_2D_ARRAY;
         else
             return ImageViewType::TYPE_2D;
     case ImageType::TYPE_CUBE:
-        QK_CORE_ASSERT(create_info.width >= 1);
-        QK_CORE_ASSERT(create_info.height >= 1);
         QK_CORE_ASSERT(create_info.depth == 1);
         QK_CORE_ASSERT(create_info.width == create_info.height);
-        if (layers > 6)
-            return ImageViewType::TYPE_CUBE_ARRAY;
+        if (layers % 6 == 0)
+        {
+            if (layers > 6)
+                return ImageViewType::TYPE_CUBE_ARRAY;
+            else
+                return ImageViewType::TYPE_CUBE;
+        }
         else
-            return ImageViewType::TYPE_CUBE;
+        {
+            if (layers > 1)
+                return ImageViewType::TYPE_2D_ARRAY;
+            else
+                return ImageViewType::TYPE_2D;
+        }
     case ImageType::TYPE_3D:
-        QK_CORE_ASSERT(create_info.width >= 1);
-        QK_CORE_ASSERT(create_info.height >= 1);
         QK_CORE_ASSERT(create_info.depth >= 1);
         return ImageViewType::TYPE_3D;
 
@@ -524,17 +530,6 @@ ImageView& Image_Vulkan::GetDefaultView()
 Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
     : Sampler(desc), m_device(device)
 {
-    auto convert_sampler_filter = [](SamplerFilter filter) {
-        switch (filter) {
-        case SamplerFilter::NEAREST:
-            return VK_FILTER_NEAREST;
-        case SamplerFilter::LINEAR:
-            return VK_FILTER_LINEAR;
-        default:
-            return VK_FILTER_MAX_ENUM;
-        }
-    };
-
     auto convert_sampler_address_mode = [](SamplerAddressMode mode) {
         switch (mode) {
         case SamplerAddressMode::REPEAT:
@@ -551,8 +546,8 @@ Sampler_Vulkan::Sampler_Vulkan(Device_Vulkan* device, const SamplerDesc& desc)
     // Sampler create info
 	VkSamplerCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	info.magFilter = convert_sampler_filter(desc.minFilter);
-	info.minFilter = convert_sampler_filter(desc.magFliter);
+	info.magFilter = ConvertSamplerFilter(desc.minFilter);
+	info.minFilter = ConvertSamplerFilter(desc.magFliter);
 	info.addressModeU = convert_sampler_address_mode(desc.addressModeU);
 	info.addressModeV = convert_sampler_address_mode(desc.addressModeV);
 	info.addressModeW = convert_sampler_address_mode(desc.addressModeW);
@@ -598,7 +593,7 @@ ImageView_Vulkan::ImageView_Vulkan(Device_Vulkan* device, const ImageViewDesc& d
     }
 
     VkFormat format = (desc.format != DataFormat::UNDEFINED) ? ConvertDataFormat(desc.format) : ConvertDataFormat(image_desc.format);
-    VkImageUsageFlags usage = image_desc.usageBits;
+    VkImageUsageFlags usage = ConvertImageUsageFlags(image_desc.usageBits);
 
     VkFormatProperties3 props3 = { VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3 };
     m_device->GetFormatProperties(format, &props3);

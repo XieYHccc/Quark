@@ -145,8 +145,8 @@ struct ImageDesc
         desc.format = format;
         desc.type = ImageType::TYPE_2D;
         desc.arraySize = 1;
-        desc.usageBits = (IsFormatSupportDepthOrStencil(format) ? IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT :
-            IMAGE_USAGE_COLOR_ATTACHMENT_BIT) | IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
+        desc.usageBits = IsFormatSupportDepthOrStencil(format) ? IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT :
+            (IMAGE_USAGE_COLOR_ATTACHMENT_BIT | IMAGE_USAGE_CAN_COPY_TO_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT);
         desc.samples = SampleCount::SAMPLES_1;
         desc.initialLayout = IsFormatSupportDepthOrStencil(format) ? ImageLayout::DEPTH_STENCIL_ATTACHMENT_OPTIMAL :
             ImageLayout::COLOR_ATTACHMENT_OPTIMAL;

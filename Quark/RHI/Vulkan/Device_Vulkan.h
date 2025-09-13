@@ -29,6 +29,7 @@ struct PerFrameContext
     std::vector<VkSampler> garbage_samplers;
     std::vector<BufferBlock> ubo_blocks;
     std::vector<BufferBlock> vbo_blocks;
+    std::vector<BufferBlock> staging_blocks;
 
     void init(Device_Vulkan* device);
     void begin();   // reset this frame
@@ -50,7 +51,7 @@ public:
         VkCommandBuffer transitionCmdBuffer = VK_NULL_HANDLE;
 
         Ref<Buffer> stageBuffer = nullptr;
-
+        //BufferBlockAllocation buffer;
         VkSemaphore semaphores[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
         VkFence fence = VK_NULL_HANDLE;
 
@@ -66,6 +67,7 @@ private:
     Device_Vulkan* m_device;
     std::vector<CopyCmd> m_freeList;
     std::mutex m_locker;
+    // BufferBlock m_staging_block;
 };
 
 class Device_Vulkan final: public Device {
@@ -133,6 +135,8 @@ public:
     void RequestUniformBlockNoLock(BufferBlock& block, VkDeviceSize size);
     void RequestVertexBlock(BufferBlock& block, VkDeviceSize size);
     void RequestVertexBlockNoLock(BufferBlock& block, VkDeviceSize size);
+    void RequestStagingBlock(BufferBlock& block, VkDeviceSize size);
+    void RequestStagingBlockNoLock(BufferBlock& block, VkDeviceSize size);
     void GetFormatProperties(VkFormat format, VkFormatProperties3* properties3) const;
     
 private:
@@ -200,6 +204,7 @@ private:
     // buffer pool
     BufferPool m_ubo_pool;
     BufferPool m_vbo_pool;
+    BufferPool m_staging_pool;
 
 };
 }

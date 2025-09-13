@@ -474,7 +474,7 @@ Ref<PBRMaterial> RenderResourceManager::RequestMateral(Ref<MaterialAsset> mat_as
     return new_material;
 }
 
-Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp, uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline)
+Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp, uint32_t mesh_attrib_mask, DrawPipeline draw_pipeline)
 {
 
     auto& vertex_layout = RequestMeshVertexLayout(mesh_attrib_mask);
@@ -482,11 +482,25 @@ Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgramVarian
     //key.meshAttributeMask = mesh_attrib_mask;
     //ShaderProgramVariant* programVariant = program.IsStatic()? program.GetPrecompiledVariant() : program.GetOrCreateVariant(key);
         
-    rhi::PipelineColorBlendState& bs = draw_pipeline == DrawPipeline::Opaque ? blendState_opaque : blendState_transparent;
+    rhi::PipelineColorBlendState& bs = (draw_pipeline == DrawPipeline::AlphaBlend) ? blendState_transparent : blendState_opaque;
     rhi::PipelineDepthStencilState ds = depthStencilState_disabled;
-    if (enableDepth)
-        ds = (draw_pipeline == DrawPipeline::Opaque) ? depthStencilState_depthWrite : depthStencilState_depthTestOnly;
+    //if (enableDepth)
+    //    ds = (draw_pipeline == DrawPipeline::Opaque) ? depthStencilState_depthWrite : depthStencilState_depthTestOnly;
 
+    switch (draw_pipeline)
+    {
+    case DrawPipeline::Opaque:
+        ds = depthStencilState_depthWrite;
+        break;
+    case DrawPipeline::AlphaTest:
+        ds = depthStencilState_depthTestOnly;
+        break;
+    case DrawPipeline::AlphaBlend:
+        ds = depthStencilState_disabled;
+        break;
+    default:
+        QK_CORE_ASSERT(0);
+    }
     util::Hasher h;
     h.u64(program.GetHash());
     h.u64(rp.GetHash());

@@ -24,7 +24,7 @@ enum PipelineStageBits {
     PIPELINE_STAGE_ALL_COMMANDS_BIT = (1 << 16),
 };
 
-enum PipelineMemoryAccessBits {
+enum PipelineMemoryAccessBits : uint64_t { // TODO: Make this consistent
     BARRIER_ACCESS_INDIRECT_COMMAND_READ_BIT = (1 << 0),
     BARRIER_ACCESS_INDEX_READ_BIT = (1 << 1),
     BARRIER_ACCESS_VERTEX_ATTRIBUTE_READ_BIT = (1 << 2),
@@ -42,6 +42,9 @@ enum PipelineMemoryAccessBits {
     BARRIER_ACCESS_HOST_WRITE_BIT = (1 << 14),
     BARRIER_ACCESS_MEMORY_READ_BIT = (1 << 15),
     BARRIER_ACCESS_MEMORY_WRITE_BIT = (1 << 16),
+    BARRIER_ACCESS_SHADER_SAMPLED_READ_BIT = 0x100000000ULL,
+    BARRIER_ACCESS_SHADER_STORAGE_READ_BIT = 0x200000000ULL,
+    BARRIER_ACCESS_SHADER_STORAGE_WRITE_BIT = 0x400000000ULL,
 };
 
 struct PipelineMemoryBarrier
@@ -65,13 +68,15 @@ struct PipelineBufferBarrier
 // In addition to memory barrier, we need to convert the layout(a state) of a image
 struct PipelineImageBarrier
 {
-    Image* image = nullptr;
+    const Image* image = nullptr;
     uint32_t srcStageBits = 0;
     uint32_t dstStageBits = 0;
     uint32_t srcMemoryAccessBits = 0;
     uint32_t dstMemoryAccessBits = 0;
     uint32_t baseMipLevel = UINT32_MAX;
+    uint32_t levelCount = UINT32_MAX;   // remaning levels
     uint32_t baseArrayLayer = UINT32_MAX;
+    uint32_t layerCount = UINT32_MAX;   // remaining layers
     ImageLayout layoutBefore = ImageLayout::UNDEFINED;
     ImageLayout layoutAfter = ImageLayout::UNDEFINED;
 };
@@ -99,7 +104,8 @@ public:
     virtual void BeginRenderPass(const RenderPassInfo& renderPassInfo, const FrameBufferInfo& frameBufferInfo) = 0; //TODO: remove renderpass info from parameter list
     virtual void EndRenderPass() = 0;
     virtual void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageCopySubresourceRange& subresouce) = 0;
-    virtual void GenerateMipmap(Image& image) = 0;
+    virtual void GenerateMipmap(Image& image, ImageLayout base_level_layout) = 0;
+    virtual void BlitImage(const Image& dst, const Image& src, const Offset3D& dst_offset, const Offset3D& dst_extent, const Offset3D& src_offset, const Offset3D& src_extent, uint32_t dst_level, uint32_t src_level, uint32_t dst_base_layer, uint32_t src_base_layer, uint32_t num_layers, SamplerFilter filter) = 0;
 
     // buffer allocation, immplementation with buffer pool
     virtual void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) = 0;

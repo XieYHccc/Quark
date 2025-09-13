@@ -11,8 +11,8 @@ struct CameraParameters
 	glm::mat4 inv_projection;
 	glm::mat4 inv_view;
 	glm::mat4 inv_view_projection;
-	// glm::mat4 local_view_projection;
-	// glm::mat4 inv_local_view_projection;
+	glm::mat4 local_view_projection;
+	glm::mat4 inv_local_view_projection;
 
 	// glm::mat4 unjittered_view_projection;
 	// glm::mat4 unjittered_inv_view_projection;

@@ -59,6 +59,18 @@ constexpr VkImageType ConvertImageType(ImageType type)
     }
 }
 
+constexpr VkFilter ConvertSamplerFilter(SamplerFilter filter)
+{
+    switch (filter) {
+    case SamplerFilter::NEAREST:
+        return VK_FILTER_NEAREST;
+    case SamplerFilter::LINEAR:
+        return VK_FILTER_LINEAR;
+    default:
+        return VK_FILTER_MAX_ENUM;
+    }
+}
+
 class ImageView_Vulkan : public ImageView, public Cookie, public InternalSyncEnabled
 {
 public:

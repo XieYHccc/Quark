@@ -75,7 +75,8 @@ public:
     void BeginRenderPass(const RenderPassInfo& renderPassInfo, const FrameBufferInfo& frameBufferInfo) override final;
     void EndRenderPass() override final;
     void CopyImageToBuffer(const Buffer& buffer, const Image& image, uint64_t buffer_offset, const Offset3D& offset, const Extent3D& extent, uint32_t row_pitch, uint32_t slice_pitch, const ImageCopySubresourceRange& subresouce) override final;
-    void GenerateMipmap(Image& image) override final;
+    void GenerateMipmap(Image& image, ImageLayout base_level_layout) override final;
+    void BlitImage(const Image& dst, const Image& src, const Offset3D& dst_offset, const Offset3D& dst_extent, const Offset3D& src_offset, const Offset3D& src_extent, uint32_t dst_level, uint32_t src_level, uint32_t dst_base_layer, uint32_t src_base_layer, uint32_t num_layers, SamplerFilter filter) override final;
 
     // buffer pool allocation
     void* AllocateConstantData(uint32_t set, uint32_t binding, uint64_t size) override final;

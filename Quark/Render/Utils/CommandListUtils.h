@@ -20,5 +20,10 @@ struct CommandListUtil
 
 	static void DrawFullScreenQuad(rhi::CommandList& cmd, unsigned instances = 1);
 	static void DrawQuad(rhi::CommandList& cmd, unsigned instances = 1);
+
+	static void ImageBarrier(rhi::CommandList& cmd, const rhi::Image& image,
+		rhi::ImageLayout old_layout, rhi::ImageLayout new_layout,
+		uint32_t src_stages, uint32_t src_access,
+		uint32_t dst_stages, uint32_t dst_access);
 };
 }

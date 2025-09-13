@@ -21,7 +21,7 @@ void SkyboxRender(rhi::CommandList& cmd, const RenderQueueTask* task, unsigned i
 		*resource_manager.GetShaderLibrary().program_skybox->RequestVariant(defines),
 		cmd.GetCurrentRenderPassInfo(),
 		resource_manager.mesh_attrib_mask_skybox,
-		true, DrawPipeline::AlphaTest); // TODO: should be opaque here, change the Request PSO Interface in the future.
+		DrawPipeline::AlphaTest);
 
 	cmd.BindImage(2, 0, data->cubemap->GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL);
 	cmd.BindSampler(2, 0, *resource_manager.sampler_cube);
@@ -37,7 +37,7 @@ void Skybox::GetRenderData(const RenderContext& context, const RenderInfoCmpt* t
 	util::Hasher hasher;
 	
 	if (m_cubemap)
-		hasher.u64(m_cubemap->GetAssetID());
+		hasher.pointer(m_cubemap.get()); // TODO: pointer is unstable due to reused
 	else
 		hasher.u32(0);
 
@@ -49,7 +49,7 @@ void Skybox::GetRenderData(const RenderContext& context, const RenderInfoCmpt* t
 	if (sky_data)
 	{
 		if (m_cubemap)
-			sky_data->cubemap = RenderSystem::Get().GetRenderResourceManager().RequestImage(m_cubemap).get();
+			sky_data->cubemap = m_cubemap.get();
 		else
 			sky_data->cubemap = nullptr;
 

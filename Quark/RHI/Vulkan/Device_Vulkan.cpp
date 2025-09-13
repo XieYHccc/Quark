@@ -137,7 +137,7 @@ void PerFrameContext::clear()
 {
     VkDevice vk_device = device->vkDevice;
 
-    // Destroy deferred destroyed resources
+    // destroy deferred destroyed resources
     for (auto& sampler : garbage_samplers) 
         vkDestroySampler(vk_device, sampler, nullptr);
     for (auto& view : grabage_views) 
@@ -174,14 +174,18 @@ void PerFrameContext::begin()
     for (size_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++)
         cmdListCount[i] = 0;
 
+    // recycle buffer blocks
     for (auto& b : ubo_blocks)
         device->m_ubo_pool.RecycleBlock(b);
-
     for (auto& b : vbo_blocks)
         device->m_vbo_pool.RecycleBlock(b);
+    for (auto& b : staging_blocks)
+        device->m_staging_pool.RecycleBlock(b);
 
+    // clear un-recycled blocks, the internal buffer will be collected as garbage
     ubo_blocks.clear();
     vbo_blocks.clear();
+    staging_blocks.clear();
 
     // destroy deferred-destroyed resources
     clear();
@@ -193,8 +197,11 @@ void PerFrameContext::destroy()
     {
         for (size_t j = 0; j < cmdLists[i].size(); j++) 
         {
-            delete cmdLists[i][j];
-            cmdLists[i][j] = nullptr;
+            if (cmdLists[i][j] != nullptr)
+            {
+                delete cmdLists[i][j];
+                cmdLists[i][j] = nullptr;
+            }
         }
         cmdLists[i].clear();
 
@@ -203,6 +210,9 @@ void PerFrameContext::destroy()
 
     ubo_blocks.clear();
     vbo_blocks.clear();
+    staging_blocks.clear();
+    
+    clear();
 }
 
 void CopyCmdAllocator::init(Device_Vulkan *device)
@@ -288,7 +298,8 @@ CopyCmdAllocator::CopyCmd CopyCmdAllocator::allocate(VkDeviceSize required_buffe
         bufferDesc.size = std::max(bufferDesc.size, uint64_t(65536));
         bufferDesc.usageBits = BUFFER_USAGE_TRANSFER_FROM_BIT;
         cmd.stageBuffer = m_device->CreateBuffer(bufferDesc);
-
+        auto& internal = ToInternal(cmd.stageBuffer.get());
+        internal.SetInternalSynced();
         m_device->SetName(cmd.stageBuffer, "CopyCmdAllocator staging buffer");
     }
 
@@ -432,9 +443,13 @@ Device_Vulkan::Device_Vulkan(const DeviceConfig& config)
     m_vbo_pool.Init(this, 4 * 1024, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_ubo_pool.Init(this, 256 * 1024, std::max<VkDeviceSize>(16u, GetDeviceProperties().limits.minUniformBufferOffsetAlignment)
         , VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    m_staging_pool.Init(this, 64 * 1024, std::max<VkDeviceSize>(m_vulkan_context->gpu_properties2.properties.limits.minStorageBufferOffsetAlignment,
+        std::max<VkDeviceSize>(16u, m_vulkan_context->gpu_properties2.properties.limits.optimalBufferCopyOffsetAlignment)),
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     m_ubo_pool.SetSpillRegionSize(VULKAN_MAX_UBO_SIZE);
     m_ubo_pool.SetMaxRetainedBlocks(64);
     m_vbo_pool.SetMaxRetainedBlocks(256);
+    m_staging_pool.SetMaxRetainedBlocks(32);
 
     // register callback functions
     EventManager::Get().Subscribe<WindowResizeEvent>([this](const WindowResizeEvent& event) { OnWindowResize(event); });
@@ -446,24 +461,29 @@ Device_Vulkan::~Device_Vulkan()
 {
     QK_CORE_LOGI_TAG("RHI", "Shutdown vulkan device...");
 
+    DRAIN_FRAME_LOCK();
+    if (!m_frames.empty())
+        EndFrameContextNoLock();
     vkDeviceWaitIdle(vkDevice);
 
     // destroy cached pipeline layout
     cached_pipelineLayouts.clear();
     // destory cached descriptor allocator
     cached_descriptorSetAllocator.clear();
+
     // destroy copy allocator
     copyAllocator.destroy();
 
     m_ubo_pool.Reset();
     m_vbo_pool.Reset();
+    m_staging_pool.Reset();
 
-    // destroy command buffers, pools, semaphore, and fences
-    for (size_t i = 0; i < m_config.framesInFlight; i++)
+    // destroy command buffers, pools, semaphore, and fences, deferred garbage resouces
+    for (size_t i = 0; i < m_frames.size(); i++)
         m_frames[i].destroy();
-    // destroy the buffers, images...
-    for (size_t i = 0; i < m_config.framesInFlight; i++)
-        m_frames[i].clear();
+
+    // destroy command list will push some garbage buffers to the current frame
+    GetCurrentFrame().clear();
 
     // destroy wsi data
     m_wsi.destroy();
@@ -943,6 +963,17 @@ void Device_Vulkan::RequestVertexBlock(BufferBlock& block, VkDeviceSize size)
 void Device_Vulkan::RequestVertexBlockNoLock(BufferBlock& block, VkDeviceSize size)
 {
     request_block(*this, block, size, m_vbo_pool, GetCurrentFrame().vbo_blocks);
+}
+
+void Device_Vulkan::RequestStagingBlock(BufferBlock& block, VkDeviceSize size)
+{
+    LOCK();
+    RequestStagingBlockNoLock(block, size);
+}
+
+void Device_Vulkan::RequestStagingBlockNoLock(BufferBlock& block, VkDeviceSize size)
+{
+    request_block(*this, block, size, m_staging_pool, GetCurrentFrame().staging_blocks);
 }
 
 void Device_Vulkan::GetFormatProperties(VkFormat format, VkFormatProperties3* properties3) const

@@ -20,11 +20,11 @@ public:
 
 	void GetRenderData(const RenderContext& context, const RenderInfoCmpt* transform,
 		RenderQueue& queue) const override;
-	void SetCubemap(Ref<ImageAsset> cubemap) { m_cubemap = cubemap; }
+	void SetCubemap(Ref<rhi::Image> cubemap) { m_cubemap = cubemap; }
 	void SetColor(const glm::vec3& color) { m_color = color; }
 
 private:
-	Ref<ImageAsset> m_cubemap;
+	Ref<rhi::Image> m_cubemap;
 	glm::vec3 m_color;
 };
 

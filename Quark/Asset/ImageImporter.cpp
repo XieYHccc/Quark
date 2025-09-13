@@ -232,8 +232,8 @@ namespace quark
         }
 
         Ref<ImageAsset> new_image_asset = CreateRef<ImageAsset>();
-        new_image_asset->width = static_cast<u32>(width);
-        new_image_asset->height = static_cast<u32>(height);
+        new_image_asset->width = static_cast<uint32_t>(width);
+        new_image_asset->height = static_cast<uint32_t>(height);
         new_image_asset->depth = 1u;
         new_image_asset->arraySize = 1;
         new_image_asset->mipLevels = 1;
@@ -253,6 +253,7 @@ namespace quark
 
         return new_image_asset;
     }
+
     Ref<ImageAsset> ImageImporter::ImportHdr(const std::string& file_path)
     {
         int width, height, nrComponents;
@@ -260,29 +261,38 @@ namespace quark
 
         if (!data)
         {
-            QK_CORE_LOGW_TAG("ImageAssetImporter", "TextureImporter::LoadStb: Failed to load image {}", file_path);
+            QK_CORE_LOGW_TAG("ImageAssetImporter", "TextureImporter::LoadHdr: Failed to load image {}", file_path);
             return nullptr;
         }
         QK_CORE_ASSERT(nrComponents == 3);
         
         Ref<ImageAsset> ret = CreateRef<ImageAsset>();
-        ret->width = static_cast<u32>(width);
-        ret->height = static_cast<u32>(height);
+        ret->width = static_cast<uint32_t>(width);
+        ret->height = static_cast<uint32_t>(height);
         ret->depth = 1u;
         ret->arraySize = 1;
         ret->mipLevels = 1;
         ret->format = rhi::DataFormat::R32G32B32A32_SFLOAT;
         ret->type = rhi::ImageType::TYPE_2D;
         ret->data.resize(width * height * rhi::GetFormatStride(rhi::DataFormat::R32G32B32A32_SFLOAT));
-        glm::vec4* dst = reinterpret_cast<glm::vec4*>(ret->data.data());
+        glm::vec4* dst = reinterpret_cast<glm::vec4*>(ret->data.data());    //TODO: This cast may not okay on some platforms except x86
+        //std::vector<glm::vec4> data_vec4(width * height);
         for (uint32_t i = 0; i < width * height; i++)
         {
-            *dst = glm::vec4(data[i * 3], data[i * 3 + 1], data[i * 3 + 2], 1.f);
-            dst++;
+            dst[i] = glm::vec4(data[i * 3], data[i * 3 + 1], data[i * 3 + 2], 1.f);
         }
+        //const uint8_t* raw = reinterpret_cast<const uint8_t*>(data_vec4.data());
+        //ret->data.resize(width * height * sizeof(glm::vec4));
+        //memcpy(ret->data.data(), data_vec4.data(), data_vec4.size() * sizeof(glm::vec4));
+        stbi_image_free(data);
+
+        rhi::ImageInitData init_data;
+        init_data.data = ret->data.data();
+        init_data.rowPitch = width * rhi::GetFormatStride(rhi::DataFormat::R32G32B32A32_SFLOAT);
+        init_data.slicePitch = init_data.rowPitch * height;
+        ret->slices.push_back(init_data);
 
         QK_CORE_LOGI_TAG("ImageAssetImporter", "ImageAssetImporter: Import Image asset: {0}", file_path);
-
         return ret;
     }
 }

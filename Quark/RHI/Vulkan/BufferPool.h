@@ -10,7 +10,7 @@ class Device_Vulkan;
 
 struct BufferBlockAllocation
 {
-	uint8_t* host;
+	uint8_t* host = nullptr;
 	Ref<Buffer> buffer;
 	VkDeviceSize offset;
 	VkDeviceSize padded_size;

@@ -18,7 +18,8 @@ public:
 
 		// load texture
 		ImageImporter imageLoader;
-		m_texture = imageLoader.ImportStb("BuiltInResources/Textures/grid_box_grey.png");
+		m_texture = imageLoader.ImportHdr("BuiltInResources/Textures/Hdr/newport_loft.hdr");
+		// m_texture = imageLoader.ImportStb("BuiltInResources/Textures/grid_box_grey.png");
 
 		auto& resource_manager= RenderSystem::Get().GetRenderResourceManager();
 		m_texture_gpu_resouce = resource_manager.RequestImage(m_texture);

@@ -90,7 +90,7 @@ void SkinnedMesh::GetRenderData(const RenderContext& context, const RenderInfoCm
 	QK_CORE_ASSERT(material->hash != 0);
 	h.u64(material->hash);
 	util::Hash material_hash = h.get(); // hash for a material
-	h.pointer(mesh_buffers->vbo_position.get());
+	h.pointer(mesh_buffers->vbo_position.get());					// TODO: pointer is unstable due to reused
 	util::Hash draw_hash = h.get(); // hash for a drawcall
 
 	QK_CORE_ASSERT(hash != 0);
@@ -129,8 +129,7 @@ void BindMeshState(rhi::CommandList& cmd, const StaticMeshPerDrawcallData& data)
 	auto& render_resource_manager = RenderSystem::Get().GetRenderResourceManager();
 	Ref<rhi::PipeLine> pipeline = RenderSystem::Get().GetRenderResourceManager().RequestGraphicsPSO(
 		*(data.shader_program), cmd.GetCurrentRenderPassInfo(), data.mesh_attribute_mask,
-		true, data.draw_pipeline
-	);
+		data.draw_pipeline);
 
 	cmd.BindPipeLine(*pipeline.get());
 

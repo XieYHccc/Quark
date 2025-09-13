@@ -23,7 +23,7 @@ public:
 		ImageImporter imageLoader;
 		m_cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
 		m_skybox = CreateRef<Skybox>();
-		m_skybox->SetCubemap(m_cubeMap);
+		m_skybox->SetCubemap(RenderSystem::Get().GetRenderResourceManager().RequestImage(m_cubeMap));
 
 		// load hdr
 		m_hdr = imageLoader.ImportHdr("BuiltInResources/Textures/Hdr/newport_loft.hdr");
@@ -59,7 +59,8 @@ public:
 		auto& render_system = RenderSystem::Get();
 		Ref<rhi::Device> rhi_device = render_system.GetDevice();
 		Ref<rhi::Image> hdr = RenderSystem::Get().GetRenderResourceManager().RequestImage(m_hdr);
-		// ConvertEquirectToCube(*rhi_device, *hdr, 1);
+		Ref<rhi::Image> cube = ConvertEquirectToCube(*rhi_device, *hdr, 1);
+		m_skybox->SetCubemap(cube);
 	}
 
 	void OnUpdate(TimeStep ts) override final
@@ -72,17 +73,17 @@ public:
 		auto& render_system = RenderSystem::Get();
 		Ref<rhi::Device> rhi_device = render_system.GetDevice();
 
-		//auto* cam = m_scene->GetMainCameraEntity()->GetComponent<CameraCmpt>();
-		////glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		////glm::mat4 proj = glm::perspective(glm::radians(45.0f), 2500.f / 1600, 0.1f, 1000.0f);
-		//glm::mat4 view = cam->GetViewMatrix();
-		//glm::mat4 proj = cam->GetProjectionMatrix();
-		//proj[1][1] *= -1;
-		//m_render_context.SetCamera(view, proj);
+		auto* cam = m_scene->GetMainCameraEntity()->GetComponent<CameraCmpt>();
+		//glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		//glm::mat4 proj = glm::perspective(glm::radians(45.0f), 2500.f / 1600, 0.1f, 1000.0f);
+		glm::mat4 view = cam->GetViewMatrix();
+		glm::mat4 proj = cam->GetProjectionMatrix();
+		proj[1][1] *= -1;
+		m_render_context.SetCamera(view, proj);
 
-		//m_render_queue.Reset();
-		//m_skybox->GetRenderData(m_render_context, nullptr, m_render_queue);
-		//m_render_queue.Sort();
+		m_render_queue.Reset();
+		m_skybox->GetRenderData(m_render_context, nullptr, m_render_queue);
+		m_render_queue.Sort();
 
 		// Rendering commands
 		if (rhi_device->BeiginFrame(ts))
@@ -131,15 +132,13 @@ public:
 			rhi::RenderPassInfo render_pass_info = render_system.GetRenderResourceManager().renderPassInfo_swapchainPass;
 			render_pass_info.depthAttachmentFormat = m_depth_attachment->GetDesc().format;
 
-		//	cmd->SetViewPort(viewport);
-		//	cmd->SetScissor(scissor);
+			cmd->SetViewPort(viewport);
+			cmd->SetScissor(scissor);
 
 			cmd->BeginRegion("Main pass");
 			cmd->BeginRenderPass(render_pass_info, fb_info);
-			// RenderSystem::Get().DrawSkybox(m_cubeMap, m_render_context, *cmd);
-			// render_system.Flush(*cmd, m_render_queue, m_render_context);
 			render_system.BindCameraParameters(*cmd, m_render_context);
-			// m_render_queue.Dispatch(Queue::OpaqueEmissive, *cmd);
+			m_render_queue.Dispatch(Queue::OpaqueEmissive, *cmd);
 			cmd->EndRenderPass();
 			cmd->EndRegion();
 

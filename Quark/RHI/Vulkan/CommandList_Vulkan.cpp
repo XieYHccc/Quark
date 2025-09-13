@@ -7,6 +7,12 @@
 #include "Quark/RHI/Vulkan/DescriptorSetAllocator.h"
 
 namespace quark::rhi {
+
+static VkOffset3D ConvertOffset(const Offset3D& offset)
+{
+	return { offset.x, offset.y, offset.z };
+}
+
 CommandList_Vulkan::CommandList_Vulkan(Device_Vulkan* device, QueueType type)
     : CommandList(type), m_device(device)
 {
@@ -123,7 +129,7 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
 
         if (image_barrier.baseMipLevel != UINT32_MAX) {
             vk_image_barrier.subresourceRange.baseMipLevel = image_barrier.baseMipLevel;
-            vk_image_barrier.subresourceRange.levelCount = 1;
+            vk_image_barrier.subresourceRange.levelCount = (image_barrier.levelCount != UINT32_MAX)? image_barrier.levelCount : VK_REMAINING_MIP_LEVELS;
         }
         else {
             vk_image_barrier.subresourceRange.baseMipLevel = 0;
@@ -132,7 +138,7 @@ void CommandList_Vulkan::PipeLineBarriers(const PipelineMemoryBarrier *memoryBar
 
         if (image_barrier.baseArrayLayer != UINT32_MAX) {
             vk_image_barrier.subresourceRange.baseArrayLayer = image_barrier.baseArrayLayer;
-            vk_image_barrier.subresourceRange.layerCount = 1;
+            vk_image_barrier.subresourceRange.layerCount = (image_barrier.layerCount != UINT32_MAX)? image_barrier.layerCount : VK_REMAINING_ARRAY_LAYERS;
         }
         else {
             vk_image_barrier.subresourceRange.baseArrayLayer = 0;
@@ -596,7 +602,7 @@ void CommandList_Vulkan::CopyImageToBuffer(const Buffer& buffer, const Image& im
 	vkCmdCopyImageToBuffer(m_cmdBuffer, internal_image.GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, internal_buffer.GetHandle(), 1, &copy_region);
 }
 
-void CommandList_Vulkan::GenerateMipmap(Image& image)
+void CommandList_Vulkan::GenerateMipmap(Image& image, ImageLayout base_level_layout)
 {
     const ImageDesc& desc = image.GetDesc();
     auto& internal = ToInternal(&image);
@@ -607,12 +613,13 @@ void CommandList_Vulkan::GenerateMipmap(Image& image)
 
     auto& vulkan_ctx = m_device->GetVulkanContext();
     // Transit the base mip level to transfer src layout
+    if (base_level_layout != ImageLayout::TRANSFER_SRC_OPTIMAL)
     {
         VkImageMemoryBarrier2 barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
         barrier.pNext = nullptr;
         barrier.image = internal.GetHandle();
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.oldLayout = ConvertImageLayout(base_level_layout);
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         barrier.srcAccessMask = 0;
@@ -688,6 +695,27 @@ void CommandList_Vulkan::GenerateMipmap(Image& image)
         barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
         vulkan_ctx.extendFunction.pVkCmdPipelineBarrier2KHR(m_cmdBuffer, &dependencyInfo);
     }
+}
+
+
+void CommandList_Vulkan::BlitImage(const Image& dst, const Image& src, const Offset3D& dst_offset, const Offset3D& dst_extent, const Offset3D& src_offset, const Offset3D& src_extent, uint32_t dst_level, uint32_t src_level, uint32_t dst_base_layer, uint32_t src_base_layer, uint32_t num_layers, SamplerFilter filter)
+{
+    auto& internal_src = ToInternal(&src);
+    auto& internal_dst = ToInternal(&dst);
+
+    const auto add_offset = [](const VkOffset3D& a, const VkOffset3D& b) -> VkOffset3D {
+        return { a.x + b.x, a.y + b.y, a.z + b.z };
+    };
+    
+    VkImageBlit blit;
+    blit.srcSubresource = { ConvertImageAspect(FormatToImageAspect(src.GetDesc().format)), src_level, src_base_layer, num_layers };
+    blit.dstSubresource = { ConvertImageAspect(FormatToImageAspect(dst.GetDesc().format)), dst_level, dst_base_layer, num_layers };
+    blit.srcOffsets[0] = ConvertOffset(src_offset);
+    blit.srcOffsets[1] = add_offset(blit.srcOffsets[0], ConvertOffset(src_extent));
+    blit.dstOffsets[0] = ConvertOffset(dst_offset);
+    blit.dstOffsets[1] = add_offset(blit.dstOffsets[0], ConvertOffset(dst_extent));
+
+    vkCmdBlitImage(m_cmdBuffer, internal_src.GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, internal_dst.GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, ConvertSamplerFilter(filter));
 }
 
 void CommandList_Vulkan::BindIndexBuffer(const Buffer &buffer, u64 offset, const IndexBufferFormat format)

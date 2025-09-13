@@ -11,6 +11,8 @@ layout(set = 0, binding = BINDING_GLOBAL_TRANSFORM_PARAMETERS, std140) uniform C
 	mat4 inv_projection;
 	mat4 inv_view;
 	mat4 inv_view_projection;
+	mat4 local_view_projection;
+	mat4 inv_local_view_projection;
 
 	vec3 camera_position;
 	vec3 camera_front;

@@ -67,7 +67,7 @@ public:
 	std::vector<Ref<StaticMesh>>   RequestStaticMeshRenderables(Ref<MeshAsset> mesh_asset); // Should we cache renderables? or let scene manage their lifelong
 	Ref<MeshBuffers>				RequestMeshBuffers(Ref<MeshAsset> mesh_asset);
 	Ref<PBRMaterial>				RequestMateral(Ref<MaterialAsset> mat_asset);
-	Ref<rhi::PipeLine>				RequestGraphicsPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp, const uint32_t mesh_attrib_mask, bool enableDepth, DrawPipeline draw_pipeline);
+	Ref<rhi::PipeLine>				RequestGraphicsPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp, const uint32_t mesh_attrib_mask, DrawPipeline draw_pipeline);
 	Ref<rhi::PipeLine>				RequestFullScreenQuadPSO(ShaderProgramVariant& program, const rhi::RenderPassInfo& rp_info, bool depth_test, bool depth_write, rhi::CompareOperation depth_compare);
 	Ref<rhi::Image>					RequestImage(Ref<ImageAsset> image_asset);
 	rhi::VertexInputLayout&			RequestMeshVertexLayout(uint32_t meshAttributesMask);

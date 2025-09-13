@@ -219,7 +219,7 @@ void Scene::AddBackGroundComponent(Entity* entity, Ref<ImageAsset> cubemap, cons
     if (cubemap)
         skybox = CreateRef<Skybox>();
 
-    skybox->SetCubemap(cubemap);
+    skybox->SetCubemap(RenderSystem::Get().GetRenderResourceManager().RequestImage(cubemap));
     skybox->SetColor(color);
 
     entity->AddComponent<BackGroundCmpt>();
