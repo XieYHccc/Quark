@@ -4,18 +4,18 @@
 
 namespace quark
 {
-	void CommandListUtil::DrawFullScreenQuad(rhi::CommandList& cmd, const std::string& vertex, const std::string& fragment, const std::vector<std::pair<std::string, int>>& defines)
+	void CommandListUtils::DrawFullScreenQuad(rhi::CommandList& cmd, const std::string& vertex, const std::string& fragment, const std::vector<std::pair<std::string, int>>& defines)
 	{
 		DrawFullScreenQuadDepth(cmd, vertex, fragment, false, false, rhi::CompareOperation::ALWAYS, defines);
 	}
 
-	void CommandListUtil::DrawFullScreenQuadDepth(rhi::CommandList& cmd, const std::string& vertex, const std::string& fragment, bool depth_test, bool depth_write, rhi::CompareOperation depth_compare, const std::vector<std::pair<std::string, int>>& defines)
+	void CommandListUtils::DrawFullScreenQuadDepth(rhi::CommandList& cmd, const std::string& vertex, const std::string& fragment, bool depth_test, bool depth_write, rhi::CompareOperation depth_compare, const std::vector<std::pair<std::string, int>>& defines)
 	{
 		SetupFullScreenQuad(cmd, vertex, fragment, defines, depth_test, depth_write, depth_compare);
 		DrawFullScreenQuad(cmd);
 
 	}
-	void CommandListUtil::SetFullScreenQuadVertexState(rhi::CommandList& cmd)
+	void CommandListUtils::SetFullScreenQuadVertexState(rhi::CommandList& cmd)
 	{
 		float* data = static_cast<float*>(cmd.AllocateVertexData(0, 6 * sizeof(float)));
 		*data++ = -1.0f;
@@ -26,7 +26,7 @@ namespace quark
 		*data++ = +1.0f;
 	}	
 
-	void CommandListUtil::SetupFullScreenQuad(rhi::CommandList& cmd, const std::string& vertex, const std::string& fragment,
+	void CommandListUtils::SetupFullScreenQuad(rhi::CommandList& cmd, const std::string& vertex, const std::string& fragment,
 		const std::vector<std::pair<std::string, int>>& defines,
 		bool depth_test, bool depth_write,
 		rhi::CompareOperation depth_compare)
@@ -43,12 +43,12 @@ namespace quark
 		SetFullScreenQuadVertexState(cmd);
 	}
 
-	void CommandListUtil::DrawFullScreenQuad(rhi::CommandList& cmd, unsigned instances)
+	void CommandListUtils::DrawFullScreenQuad(rhi::CommandList& cmd, unsigned instances)
 	{
 		cmd.Draw(3, instances, 0, 0);
 	}
 
-	void CommandListUtil::ImageBarrier(rhi::CommandList& cmd, const rhi::Image& image, rhi::ImageLayout old_layout, rhi::ImageLayout new_layout, uint32_t src_stages, uint32_t src_access, uint32_t dst_stages, uint32_t dst_access)
+	void CommandListUtils::ImageBarrier(rhi::CommandList& cmd, const rhi::Image& image, rhi::ImageLayout old_layout, rhi::ImageLayout new_layout, uint32_t src_stages, uint32_t src_access, uint32_t dst_stages, uint32_t dst_access)
 	{
 		rhi::PipelineImageBarrier barrier;
 		barrier.image = &image;

@@ -503,7 +503,13 @@ Ref<rhi::PipeLine> RenderResourceManager::RequestGraphicsPSO(ShaderProgramVarian
     }
     util::Hasher h;
     h.u64(program.GetHash());
-    h.u64(rp.GetHash());
+
+    // hash render pass info
+    for (size_t i = 0; i < rp.numColorAttachments; i++)
+        h.u32(util::ecast(rp.colorAttachmentFormats[i]));
+
+    h.u32(util::ecast(rp.depthAttachmentFormat));
+
 
     // hash depth stencil state
     h.u32(static_cast<uint32_t>(ds.enableDepthTest));

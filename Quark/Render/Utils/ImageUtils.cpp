@@ -109,4 +109,48 @@ Ref<rhi::Image> ConvertEquirectToCube(rhi::Device& device, const rhi::Image& equ
 
 	return handle;
 }
+Ref<rhi::Image> CreateIrradianceMap(rhi::Device& device, const rhi::Image& cube)
+{
+	using namespace rhi;
+	uint32_t size = 32;
+	rhi::ImageDesc desc = ImageDesc::RenderTarget(size, size, DataFormat::R16G16B16A16_SFLOAT);
+	desc.mipLevels = 1;
+	desc.arraySize = 6;
+	desc.type = ImageType::TYPE_CUBE;
+	desc.usageBits |= IMAGE_USAGE_SAMPLING_BIT | IMAGE_USAGE_CAN_COPY_FROM_BIT;
+	desc.initialLayout = ImageLayout::COLOR_ATTACHMENT_OPTIMAL;
+
+	Ref<Image> handle = device.CreateImage(desc);
+	CommandList* cmd = device.BeginCommandList();
+
+	CameraParameters params;
+	for (uint32_t i = 0; i < 6; i++)
+	{
+		ImageViewDesc view_desc;
+		view_desc.layerCount = 1;
+		view_desc.baseLayer = i;
+		view_desc.format = desc.format;
+		view_desc.baseLevel = 0;
+		view_desc.levelCount = 1;
+
+		Ref<ImageView> rt_view = device.CreateImageView(view_desc);
+		RenderPassInfo rp_info;
+		rp_info.numColorAttachments = 1;
+		rp_info.colorAttachmentFormats[0] = desc.format;
+		FrameBufferInfo fb_info;
+		fb_info.colorAttachments[0] = rt_view.get();
+		fb_info.colorAttatchemtsLoadOp[0] = FrameBufferInfo::AttachmentLoadOp::DONTCARE;
+		
+		cmd->BeginRenderPass(rp_info, fb_info);
+
+		glm::mat4 look, proj;
+		ComputeCubeFaceRenderTransform(glm::vec3(0.f), i, proj, look, 0.1f, 100.f);
+		params.inv_local_view_projection = glm::inverse(proj * look);
+		memcpy(cmd->AllocateConstantData(0, 0, sizeof(params)), &params, sizeof(params));
+		cmd->BindImageSampler(2, 0, cube.GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+			*RenderSystem::Get().GetRenderResourceManager().sampler_linear);
+
+	}
+	return Ref<Image>();
+}
 }

@@ -170,8 +170,8 @@ void Image_Vulkan::PrepareCopy(const ImageDesc& desc, const TextureFormatLayout&
 
         for (uint32_t layer = 0; layer < desc.arraySize; layer++, index++) {
             const ImageInitData& sub_resouce = init_data[index];
-            size_t src_row_size = sub_resouce.rowPitch;
-            size_t src_slice_size = sub_resouce.slicePitch;
+            size_t src_row_size = sub_resouce.rowPitch? sub_resouce.rowPitch : mip_info.row_length;
+            size_t src_slice_size = sub_resouce.slicePitch ? sub_resouce.rowPitch : mip_info.slice_pitch;;
 
             uint8_t* dst = static_cast<uint8_t*>(mapped) + mip_info.offset + dst_slice_pitch * desc.depth * layer;
             const uint8_t* src = static_cast<const uint8_t*>(sub_resouce.data);

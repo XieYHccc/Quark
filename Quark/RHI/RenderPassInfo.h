@@ -32,16 +32,6 @@ struct RenderPassInfo
 
     bool IsValid() const { return numColorAttachments > 0; }
 
-    uint64_t GetHash() const
-    {
-        util::Hasher h;
-        for (size_t i = 0; i < numColorAttachments; i++)
-            h.u32(util::ecast(colorAttachmentFormats[i]));
-
-        h.u32(util::ecast(depthAttachmentFormat));
-
-        return h.get();
-    }
 };
 
 struct FrameBufferInfo
@@ -76,6 +66,7 @@ struct FrameBufferInfo
     ClearValue clearDepthStencil = { 1.f, 0.f };
 
     ImageView* depthResolveAttachment = nullptr;
+
 };
 
 }

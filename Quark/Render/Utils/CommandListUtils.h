@@ -3,7 +3,7 @@
 namespace quark
 {
 
-struct CommandListUtil
+struct CommandListUtils
 {
 	static void DrawFullScreenQuad(rhi::CommandList& cmd, const std::string& vertex, const std::string& fragment,
 		const std::vector<std::pair<std::string, int>>& defines = {});

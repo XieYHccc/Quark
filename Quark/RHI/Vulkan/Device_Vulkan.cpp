@@ -654,6 +654,34 @@ void Device_Vulkan::CopyBuffer(Buffer& dst, Buffer& src, uint64_t size, uint64_t
     copyAllocator.submit(copyCmd);
 }
 
+void Device_Vulkan::WaitIdle()
+{
+    DRAIN_FRAME_LOCK();
+
+    if (vkDevice != VK_NULL_HANDLE)
+    {
+        auto result = vkDeviceWaitIdle(vkDevice);
+        if (result != VK_SUCCESS)
+            QK_CORE_LOGE_TAG("RHI", "vkDeviceWaitIdle failed with code: {}", (int)result);
+    }
+
+    // free memory for buffer pools
+    m_ubo_pool.Reset();
+    m_vbo_pool.Reset();
+    m_staging_pool.Reset();
+
+    for (auto& frame : m_frames)
+    {
+        frame.ubo_blocks.clear();
+        frame.vbo_blocks.clear();
+        frame.staging_blocks.clear();
+    }
+
+    for (auto& frame : m_frames)
+        frame.clear();
+
+}
+
 void Device_Vulkan::SetName(const Ref<GpuResource>& resouce, const char* name)
 {
     if (!m_vulkan_context->supportDebugUtils || !resouce)

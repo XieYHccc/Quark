@@ -51,6 +51,7 @@ namespace quark::rhi {
         virtual bool BeiginFrame(TimeStep ts) = 0;  
         virtual bool EndFrame(TimeStep ts) = 0;
         virtual void OnWindowResize(const WindowResizeEvent& event) = 0;    // window resize callback
+        virtual void WaitIdle() = 0;
 
         /*** RESOURCES ***/
         virtual Ref<Buffer> CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr) = 0;

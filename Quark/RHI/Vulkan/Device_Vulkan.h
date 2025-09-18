@@ -51,7 +51,6 @@ public:
         VkCommandBuffer transitionCmdBuffer = VK_NULL_HANDLE;
 
         Ref<Buffer> stageBuffer = nullptr;
-        //BufferBlockAllocation buffer;
         VkSemaphore semaphores[2] = { VK_NULL_HANDLE, VK_NULL_HANDLE };
         VkFence fence = VK_NULL_HANDLE;
 
@@ -67,7 +66,6 @@ private:
     Device_Vulkan* m_device;
     std::vector<CopyCmd> m_freeList;
     std::mutex m_locker;
-    // BufferBlock m_staging_block;
 };
 
 class Device_Vulkan final: public Device {
@@ -94,6 +92,7 @@ public:
     bool EndFrame(TimeStep ts) override final;
     void OnWindowResize(const WindowResizeEvent& event) override final;
     void CopyBuffer(Buffer& dst, Buffer& src, uint64_t size, uint64_t dstOffset = 0, uint64_t srcOffset = 0) override final;
+    void WaitIdle() override final;
 
     /*** RESOURCES ***/
     Ref<Buffer>         CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr) override final;
@@ -146,6 +145,7 @@ private:
     void SubmitCommandListNoLock(CommandList* cmd, CommandList* waitedCmds = nullptr, uint32_t waitedCmdCounts = 0, bool signal = false);
     void EndFrameContext();
     void EndFrameContextNoLock();
+
     CommandList* RequestCommandListNoLock(QueueType type);
 
     // represent a physical queue
