@@ -36,7 +36,6 @@ Application::Application(const ApplicationSpecification& specs)
 
     // Init Asset system
     AssetManager::CreateSingleton();
-    AssetManager::Get().Init();
     // Init Input System
     Input::CreateSingleton();
     Input::Get()->Init();
@@ -77,6 +76,10 @@ Application::Application(const ApplicationSpecification& specs)
     //m_jobSystem->Wait(&counter, 1);
 
     RenderSystem::CreateSingleton(specs.render_system_config);
+
+    // Init default assets (needs RenderSystem device)
+    AssetManager::Get().Init();
+
     UI::CreateSingleton();
     UI::Get()->Init(RenderSystem::Get().GetDevice(), specs.uiSpecs);
 

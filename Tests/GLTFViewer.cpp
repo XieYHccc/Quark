@@ -204,7 +204,7 @@ Application* CreateApplication(int argc, char** argv)
 	specs.width = 1440;
 	specs.height = 960;
 	specs.isFullScreen = false;
-	specs.workingDirectory = "E:/Quark/bin";
+	// specs.workingDirectory = "E:/Quark/bin";
 
 	return new GLTFViewer(specs);
 }
