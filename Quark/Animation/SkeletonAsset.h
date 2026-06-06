@@ -2,6 +2,7 @@
 #include "Quark/Asset/Asset.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <vector>
 #include <string>
@@ -12,7 +13,7 @@ namespace quark
 	{
 		QUARK_ASSET_TYPE_DECL(SKELETON)
 
-		static const uint32_t null_index = ~0;
+		static constexpr uint32_t null_index = ~0u;
 
 		std::string skeleton_name;
 		std::vector<std::string> bone_names;

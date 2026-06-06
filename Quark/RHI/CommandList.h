@@ -51,8 +51,8 @@ struct PipelineMemoryBarrier
 {
     uint32_t srcStageBits = 0;
     uint32_t dstStageBits = 0;
-    uint32_t srcMemoryAccessBits = 0;
-    uint32_t dstMemoryAccessBits = 0;
+    uint64_t srcMemoryAccessBits = 0;
+    uint64_t dstMemoryAccessBits = 0;
 };
 
 // we don't actually use this...
@@ -61,8 +61,8 @@ struct PipelineBufferBarrier
     Buffer* buffer;
     uint32_t srcStageBits = 0;
     uint32_t dstStageBits = 0;
-    uint32_t srcMemoryAccessBits = 0;
-    uint32_t dstMemoryAccessBits = 0;
+    uint64_t srcMemoryAccessBits = 0;
+    uint64_t dstMemoryAccessBits = 0;
 };
 
 // In addition to memory barrier, we need to convert the layout(a state) of a image
@@ -71,8 +71,8 @@ struct PipelineImageBarrier
     const Image* image = nullptr;
     uint32_t srcStageBits = 0;
     uint32_t dstStageBits = 0;
-    uint32_t srcMemoryAccessBits = 0;
-    uint32_t dstMemoryAccessBits = 0;
+    uint64_t srcMemoryAccessBits = 0;
+    uint64_t dstMemoryAccessBits = 0;
     uint32_t baseMipLevel = UINT32_MAX;
     uint32_t levelCount = UINT32_MAX;   // remaning levels
     uint32_t baseArrayLayer = UINT32_MAX;

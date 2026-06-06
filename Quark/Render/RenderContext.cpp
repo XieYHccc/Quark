@@ -15,10 +15,10 @@ void RenderContext::SetCamera(const glm::mat4& view, const glm::mat4& proj)
 	m_camera_params.inv_projection = glm::inverse(proj);
 	m_camera_params.inv_view = glm::inverse(view);
 	m_camera_params.inv_view_projection = glm::inverse(m_camera_params.view_projection);
-	m_camera_params.camera_position = m_camera_params.inv_view[3].xyz;
-	m_camera_params.camera_up = m_camera_params.inv_view[1].xyz;
-	m_camera_params.camera_right = m_camera_params.inv_view[0].xyz;
-	m_camera_params.camera_front = -glm::vec3(m_camera_params.inv_view[2].xyz);
+	m_camera_params.camera_position = m_camera_params.inv_view[3].xyz();
+	m_camera_params.camera_up = m_camera_params.inv_view[1].xyz();
+	m_camera_params.camera_right = m_camera_params.inv_view[0].xyz();
+	m_camera_params.camera_front = -glm::vec3(m_camera_params.inv_view[2].xyz());
 
 	m_frustum.Build(m_camera_params.inv_view_projection);
 

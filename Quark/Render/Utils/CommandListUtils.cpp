@@ -48,7 +48,7 @@ namespace quark
 		cmd.Draw(3, instances, 0, 0);
 	}
 
-	void CommandListUtils::ImageBarrier(rhi::CommandList& cmd, const rhi::Image& image, rhi::ImageLayout old_layout, rhi::ImageLayout new_layout, uint32_t src_stages, uint32_t src_access, uint32_t dst_stages, uint32_t dst_access)
+	void CommandListUtils::ImageBarrier(rhi::CommandList& cmd, const rhi::Image& image, rhi::ImageLayout old_layout, rhi::ImageLayout new_layout, uint32_t src_stages, uint64_t src_access, uint32_t dst_stages, uint64_t dst_access)
 	{
 		rhi::PipelineImageBarrier barrier;
 		barrier.image = &image;

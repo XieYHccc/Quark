@@ -95,14 +95,14 @@ Ref<rhi::Image> ConvertEquirectToCube(rhi::Device& device, const rhi::Image& equ
 		cmd->BindImageSampler(2, 0, equirect.GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL, 
 			*RenderSystem::Get().GetRenderResourceManager().sampler_linear);
 
-		CommandListUtil::DrawFullScreenQuad(*cmd, "BuiltInResources/Shaders/skybox_quad.vert", "BuiltInResources/Shaders/equirect_to_cube.frag");
+		CommandListUtils::DrawFullScreenQuad(*cmd, "BuiltInResources/Shaders/skybox_quad.vert", "BuiltInResources/Shaders/equirect_to_cube.frag");
 
 		cmd->EndRenderPass();
 
 	}
 
 	cmd->GenerateMipmap(*handle, ImageLayout::COLOR_ATTACHMENT_OPTIMAL);
-	CommandListUtil::ImageBarrier(*cmd, *handle, ImageLayout::TRANSFER_SRC_OPTIMAL, ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+	CommandListUtils::ImageBarrier(*cmd, *handle, ImageLayout::TRANSFER_SRC_OPTIMAL, ImageLayout::SHADER_READ_ONLY_OPTIMAL,
 		PIPELINE_STAGE_TRANSFER_BIT, 0, PIPELINE_STAGE_FRAGMENT_SHADER_BIT | PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 		BARRIER_ACCESS_SHADER_SAMPLED_READ_BIT | BARRIER_ACCESS_SHADER_STORAGE_READ_BIT);
 	device.SubmitCommandList(cmd);

@@ -23,7 +23,7 @@ struct CommandListUtils
 
 	static void ImageBarrier(rhi::CommandList& cmd, const rhi::Image& image,
 		rhi::ImageLayout old_layout, rhi::ImageLayout new_layout,
-		uint32_t src_stages, uint32_t src_access,
-		uint32_t dst_stages, uint32_t dst_access);
+		uint32_t src_stages, uint64_t src_access,
+		uint32_t dst_stages, uint64_t dst_access);
 };
-}
+} 
