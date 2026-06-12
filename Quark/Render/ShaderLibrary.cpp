@@ -149,20 +149,20 @@ bool ShaderProgram::IsStatic() const
 
 ShaderLibrary::ShaderLibrary()
 {
-	program_staticMesh = RequestGraphicsProgram("BuiltInResources/Shaders/static_mesh.vert",
-		"BuiltInResources/Shaders/static_mesh.frag");
+	program_staticMesh = RequestGraphicsProgram("builtin://Shaders/static_mesh.vert",
+		"builtin://Shaders/static_mesh.frag");
 
-	program_staticMeshEditor = RequestGraphicsProgram("BuiltInResources/Shaders/editor_scene.vert",
-		"BuiltInResources/Shaders/editor_scene.frag");
+	program_staticMeshEditor = RequestGraphicsProgram("builtin://Shaders/editor_scene.vert",
+		"builtin://Shaders/editor_scene.frag");
 
-	program_skybox = RequestGraphicsProgram("BuiltInResources/Shaders/skybox.vert",
-		"BuiltInResources/Shaders/skybox.frag");
+	program_skybox = RequestGraphicsProgram("builtin://Shaders/skybox.vert",
+		"builtin://Shaders/skybox.frag");
 
-	staticProgram_infiniteGrid = RequestGraphicsProgram("BuiltInResources/Shaders/Spirv/infinite_grid.vert.spv",
-		"BuiltInResources/Shaders/Spirv/infinite_grid.frag.spv");
+	staticProgram_infiniteGrid = RequestGraphicsProgram("builtin://Shaders/Spirv/infinite_grid.vert.spv",
+		"builtin://Shaders/Spirv/infinite_grid.frag.spv");
 	
-	staticProgram_entityID = RequestGraphicsProgram("BuiltInResources/Shaders/Spirv/entityID.vert.spv",
-		"BuiltInResources/Shaders/Spirv/entityID.frag.spv");
+	staticProgram_entityID = RequestGraphicsProgram("builtin://Shaders/Spirv/entityID.vert.spv",
+		"builtin://Shaders/Spirv/entityID.frag.spv");
 
 	QK_CORE_LOGI_TAG("Renderer", "ShaderLibrary Initialized");
 }

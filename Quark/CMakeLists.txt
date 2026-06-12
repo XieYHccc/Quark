@@ -1,5 +1,4 @@
 set(QUARK_SOURCE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(QUARK_INCLUDE_DIRS ${QUARK_SOURCE_ROOT_DIR})
 
 FILE(GLOB_RECURSE QUARK_SOURCE_FILES ${QUARK_SOURCE_ROOT_DIR} "*.cpp" "*.c" "*.h")
 source_group(TREE ${QUARK_SOURCE_ROOT_DIR} FILES ${QUARK_SOURCE_FILES})
@@ -13,9 +12,10 @@ else()
     target_compile_options(quark PRIVATE -Wno-nullability-completeness)
 endif()
 
-add_compile_definitions(
+target_compile_definitions(quark PUBLIC
     $<$<CONFIG:Debug>:QK_DEBUG_BUILD>
-    $<$<CONFIG:Release>:QK_RELEASE_BUILD> 
+    $<$<CONFIG:Release>:QK_RELEASE_BUILD>
+    QUARK_ROOT_DIR="${QUARK_ROOT_DIR}"
 )
 
 target_include_directories(quark PUBLIC ${CMAKE_SOURCE_DIR} )

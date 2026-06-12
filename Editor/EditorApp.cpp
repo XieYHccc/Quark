@@ -13,13 +13,24 @@ namespace quark {
 
 Application* CreateApplication(int argc, char** argv)
 {   
+    std::filesystem::path savedDir = std::filesystem::path(QUARK_ROOT_DIR) / "Saved";
+    std::filesystem::create_directories(savedDir);
+
+    std::filesystem::path iniPath = savedDir / "imgui.ini";
+    if (!std::filesystem::exists(iniPath))
+    {
+        std::filesystem::path defaultIni = std::filesystem::path(QUARK_ROOT_DIR) / "Editor" / "imgui.ini";
+        if (std::filesystem::exists(defaultIni))
+            std::filesystem::copy_file(defaultIni, iniPath);
+    }
+
     ApplicationSpecification specs;
     specs.uiSpecs.flags = UI_INIT_FLAG_DOCKING | UI_INIT_FLAG_VIEWPORTS;
+    specs.uiSpecs.iniFilename = iniPath.string();
     specs.title = "Quark Editor";
     specs.width = 2500;
     specs.height = 1600;
     specs.isFullScreen = false;
-    specs.workingDirectory = "D:/Dev/Quark/bin";
 
     return new EditorApp(specs);
 }

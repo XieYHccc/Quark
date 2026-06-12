@@ -95,7 +95,7 @@ Ref<rhi::Image> ConvertEquirectToCube(rhi::Device& device, const rhi::Image& equ
 		cmd->BindImageSampler(2, 0, equirect.GetDefaultView(), ImageLayout::SHADER_READ_ONLY_OPTIMAL, 
 			*RenderSystem::Get().GetRenderResourceManager().sampler_linear);
 
-		CommandListUtils::DrawFullScreenQuad(*cmd, "BuiltInResources/Shaders/skybox_quad.vert", "BuiltInResources/Shaders/equirect_to_cube.frag");
+		CommandListUtils::DrawFullScreenQuad(*cmd, "builtin://Shaders/skybox_quad.vert", "builtin://Shaders/equirect_to_cube.frag");
 
 		cmd->EndRenderPass();
 

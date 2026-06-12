@@ -26,6 +26,7 @@ private:
     VkFormat m_colorFormat;
 
     std::unordered_map<uint64_t, ImTextureID> m_textureIdMap;
+    std::string m_iniFilename;
     
 
 };

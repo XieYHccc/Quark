@@ -323,7 +323,7 @@ void AssetManager::ReloadAssets()
 void AssetManager::CreateDefaultAssets()
 {
 	MeshImporter mesh_loader;
-	mesh_cube = mesh_loader.ImportGLTF("BuiltInResources/Gltf/cube.gltf");
+	mesh_cube = mesh_loader.ImportGLTF(FileSystem::Resolve("builtin://Gltf/cube.gltf"));
 	mesh_cube->SetAssetID(15);
 
 	AddMemoryOnlyAsset(mesh_cube);

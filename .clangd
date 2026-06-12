@@ -1,3 +1,7 @@
+CompileFlags:
+  CompilationDatabase: build/macos-make-debug
+
+---
 If:
   PathMatch: Quark/qkpch.h
 Diagnostics:

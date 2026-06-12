@@ -1,6 +1,7 @@
 #include "Quark/qkpch.h"
 #include "Quark/UI/Vulkan/UI_Vulkan.h"
 #include "Quark/Core/Application.h"
+#include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Util/Hash.h"
 #include "Quark/Events/EventManager.h"
 #include "Quark/RHI/Vulkan/CommandList_Vulkan.h"
@@ -28,8 +29,14 @@ void UI_Vulkan::Init(Ref<rhi::Device> device, const UiSpecification& specs)
 	io.ConfigViewportsNoAutoMerge = false;
 	io.ConfigViewportsNoTaskBarIcon = true;
 
-    io.Fonts->AddFontFromFileTTF("BuiltInResources/Fonts/OpenSans/OpenSans-Bold.ttf", 25.f);
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("BuiltInResources/Fonts/OpenSans/OpenSans-Regular.ttf", 25.f);
+    if (!specs.iniFilename.empty())
+    {
+        m_iniFilename = specs.iniFilename;
+        io.IniFilename = m_iniFilename.c_str();
+    }
+
+    io.Fonts->AddFontFromFileTTF(FileSystem::Resolve("builtin://Fonts/OpenSans/OpenSans-Bold.ttf").c_str(), 25.f);
+	io.FontDefault = io.Fonts->AddFontFromFileTTF(FileSystem::Resolve("builtin://Fonts/OpenSans/OpenSans-Regular.ttf").c_str(), 25.f);
 
     // Style
     {

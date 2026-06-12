@@ -240,7 +240,7 @@ bool GLSLCompiler::ParseSource(const std::string& source, const std::string sour
 				includePath.pop_back();
 
 			// TODO: Remove this when we have project
-			includePath = "BuiltInResources/Shaders/" + includePath;
+			includePath = "builtin://Shaders/" + includePath;
 
 			std::string includedSource;
 			if (!FileSystem::ReadFileText(includePath, includedSource))

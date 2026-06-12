@@ -1,5 +1,6 @@
 #include "Quark/qkpch.h"
 #include "Quark/Core/Application.h"
+#include "Quark/Core/FileSystem.h"
 #include "Quark/Core/Input.h"
 #include "Quark/Events/EventManager.h"
 #include "Quark/Events/ApplicationEvent.h"
@@ -23,8 +24,7 @@ Application::Application(const ApplicationSpecification& specs)
 {
     s_instance = this;
 
-    if (!specs.workingDirectory.empty())
-        std::filesystem::current_path(specs.workingDirectory);
+    FileSystem::Init();
 
     Logger::Init();
 

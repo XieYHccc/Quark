@@ -7,6 +7,13 @@
 namespace quark {
 class FileSystem {
 public:
+	// Initialize virtual path roots. Call once at startup before any resource access.
+	static void Init();
+
+	// Resolve a virtual path ("builtin://", "user://") to an absolute path.
+	// Plain paths are returned unchanged.
+	static std::string Resolve(const std::string& path);
+
 	static std::filesystem::path GetWorkingDirectory();
 	static void SetWorkingDirectory(std::filesystem::path path);
 	static bool CreateDirectory(const std::filesystem::path& directory);
@@ -32,5 +39,9 @@ public:
 
 	static std::filesystem::path OpenFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters = {});
 	static std::filesystem::path SaveFileDialog(const std::initializer_list<FileDialogFilterItem> inFilters = {});
+
+private:
+	static std::filesystem::path s_builtinRoot;
+	static std::filesystem::path s_userRoot;
 };
 }

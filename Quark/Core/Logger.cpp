@@ -1,4 +1,5 @@
 #include "Quark/Core/Logger.h"
+#include "Quark/Core/FileSystem.h"
 
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
@@ -24,20 +25,23 @@ std::map<std::string, Logger::TagDetails> Logger::s_DefaultTagDetails = {
 
 void Logger::Init()
 {
-    // Create "logs" directory if doesn't exist
-    std::string logsDirectory = "logs";
+    std::string quarkLogPath = FileSystem::Resolve("user://Logs/QUARK.log");
+    std::string appLogPath = FileSystem::Resolve("user://Logs/APP.log");
+
+    // Create logs directory if doesn't exist
+    std::filesystem::path logsDirectory = std::filesystem::path(quarkLogPath).parent_path();
     if (!std::filesystem::exists(logsDirectory))
         std::filesystem::create_directories(logsDirectory);
-    
+
     std::vector<spdlog::sink_ptr> quarkSinks =
     {
-        std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/QUARK.log", true),
+        std::make_shared<spdlog::sinks::basic_file_sink_mt>(quarkLogPath, true),
         std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
     };
 
     std::vector<spdlog::sink_ptr> appSinks =
     {
-        std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/APP.log", true),
+        std::make_shared<spdlog::sinks::basic_file_sink_mt>(appLogPath, true),
 		std::make_shared<spdlog::sinks::stdout_color_sink_mt>()
     };
 

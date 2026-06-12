@@ -15,6 +15,7 @@ enum UiInitFlagBit
 struct UiSpecification 
 {
     uint32_t flags;
+    std::string iniFilename;
 };
 
 class UI : public util::MakeSingletonPtr<UI>{

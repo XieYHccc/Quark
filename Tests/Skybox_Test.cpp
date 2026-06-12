@@ -196,7 +196,6 @@ namespace quark
 		specs.width = 1440;
 		specs.height = 960;
 		specs.isFullScreen = false;
-		specs.workingDirectory = "E:/Quark/bin";
 
 		return new SkyboxTest(specs);
 	}
