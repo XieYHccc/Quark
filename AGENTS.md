@@ -1,14 +1,11 @@
 # Quark Agent Entry
 
 Before planning or editing in this repository, read:
-- ...
-- ...
-- ai/
+- `.agents/README.md`
+- `.agents/skills/README.md`
 
 Then, as needed:
-- ...
-- ...
-- ...
+- releveant task files under `.agents/tasks`, if they exist
 
 ## Project Overview
 
