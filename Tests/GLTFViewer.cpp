@@ -1,4 +1,5 @@
 #include <Quark/Quark.h>
+#include <Quark/Core/FileSystem.h>
 #include <Quark/Asset/GLTFImporter.h>
 #include <Quark/Asset/ImageImporter.h>
 #include <Quark/Render/RenderContext.h>
@@ -17,7 +18,7 @@ public:
 	{
 		using namespace rhi;
 
-		m_gltf_importer.Import("BuiltInResources/Gltf/structure.glb", GLTFImporter::ImportAll);
+		m_gltf_importer.Import(FileSystem::Resolve("builtin://Gltf/structure.glb"), GLTFImporter::ImportAll);
 		//m_gltf_importer.Import("BuiltInResources/Gltf/CesiumMan/glTF/CesiumMan.gltf", GLTFImporter::ImportAll);
 		// load cube map
 		//ImageImporter imageLoader;
