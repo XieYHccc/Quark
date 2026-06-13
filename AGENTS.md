@@ -5,7 +5,8 @@ Before planning or editing in this repository, read:
 - `.agents/skills/README.md`
 
 Then, as needed:
-- releveant task files under `.agents/tasks`, if they exist
+- relevant task files under `.agents/tasks`, if they exist
+- relevant files under `.agents/knowledge`
 
 ## Project Overview
 
@@ -16,6 +17,10 @@ techniques by building them from scratch.
 **Tech Stack**: C++20, CMake, Vulkan, WebGL
 
 ## Architecture Overview
+...
 
 
-
+## Rules
+- Preserve unrelated user changes in the worktree. 
+- Promote repeated stable facts to ai/knowledge/.
+- Promote repeated workflows to skills.
