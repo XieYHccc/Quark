@@ -20,7 +20,7 @@ public:
 
 		// load cube map
 		ImageImporter imageLoader;
-		m_cubeMap = imageLoader.ImportKtx2("BuiltInResources/Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
+		m_cubeMap = imageLoader.ImportKtx2("builtin://Textures/Cubemaps/etc1s_cubemap_learnopengl.ktx2", true);
 		m_skybox = CreateRef<Skybox>();
 		m_skybox->SetCubemap(RenderSystem::Get().GetRenderResourceManager().RequestImage(m_cubeMap));
 
